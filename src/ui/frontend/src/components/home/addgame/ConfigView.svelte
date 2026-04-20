@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { fade } from "svelte/transition";
-	import NumericInput from "../../NumericInput.svelte";
-	import Dropdown from "../../Dropdown.svelte";
+	import NumericInput from "@components/shared/NumericInput.svelte";
+	import Dropdown from "@components/shared/Dropdown.svelte";
 
 	export let selectedFolder: string;
 	export let searchDepth: string;
@@ -18,13 +18,26 @@
 
 	<div class="settings-grid">
 		<div class="setting-item">
-			<label class="item-label" for="prefix-select">Target Prefix</label>
-			<Dropdown options={prefixes} bind:value={selectedPrefix} placeholder="Select WINE Prefix" />
-			<p class="setting-hint">Games will be assigned to this prefix.</p>
+			<label class="item-label" for="prefix-select"
+				>Target Prefix</label
+			>
+			<Dropdown
+				options={prefixes}
+				bind:value={selectedPrefix}
+				placeholder="Select WINE Prefix"
+			/>
+			<p class="setting-hint">
+				Games will be assigned to this prefix.
+			</p>
 		</div>
 
 		<div class="setting-item">
-			<NumericInput label="Search Depth" bind:value={searchDepth} min={1} max={999} />
+			<NumericInput
+				label="Search Depth"
+				bind:value={searchDepth}
+				min={1}
+				max={999}
+			/>
 			<p class="setting-hint">
 				Use <b>-1</b> for recursive search without limit.
 			</p>
@@ -40,7 +53,9 @@
 					placeholder="e.g. Unity.*, *64, redist"
 				/>
 			</div>
-			<p class="setting-hint">Comma-separated regex patterns or wildcards.</p>
+			<p class="setting-hint">
+				Comma-separated regex patterns or wildcards.
+			</p>
 		</div>
 	</div>
 </div>

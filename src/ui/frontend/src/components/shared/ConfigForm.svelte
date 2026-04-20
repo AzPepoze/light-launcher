@@ -1,12 +1,15 @@
 <script lang="ts">
-	import SlideButton from "./SlideButton.svelte";
-	import Modal from "./Modal.svelte";
-	import RangeSlider from "./RangeSlider.svelte";
-	import LsfgConfigForm from "./LsfgConfigForm.svelte";
-	import { PickFileCustom, GetTotalRam } from "@bindings/light-launcher-wails/backend/app";
+	import SlideButton from "@components/shared/SlideButton.svelte";
+	import Modal from "@components/shared/Modal.svelte";
+	import RangeSlider from "@components/shared/RangeSlider.svelte";
+	import LsfgConfigForm from "@components/editlsfg/LsfgConfigForm.svelte";
+	import {
+		PickFileCustom,
+		GetTotalRam,
+	} from "@bindings/light-launcher-wails/backend/app";
 	import * as core from "@bindings/light-launcher/pkg/core/models";
 	import { onMount } from "svelte";
-	import { loadLsfgResources, parseMemoryValue } from "../lib/formService";
+	import { loadLsfgResources, parseMemoryValue } from "@lib/formService";
 
 	export let options: core.LaunchOptions;
 	let showLsfgModal = false;
@@ -23,7 +26,8 @@
 			if (ram > 0) systemRamTotal = ram;
 
 			if (options.MemoryMinValue) {
-				const numericMatch = options.MemoryMinValue.match(/([\d.]+)/);
+				const numericMatch =
+					options.MemoryMinValue.match(/([\d.]+)/);
 				if (numericMatch) {
 					const val = parseMemoryValue(options.MemoryMinValue);
 					if (options.MemoryMinValue.endsWith("M")) {
@@ -73,8 +77,16 @@
 	</div>
 
 	<div class="toggles-grid">
-		<SlideButton bind:checked={options.EnableMangoHud} label="MangoHud" subtitle="Performance overlay" />
-		<SlideButton bind:checked={options.EnableGamemode} label="GameMode" subtitle="Optimize priorities" />
+		<SlideButton
+			bind:checked={options.EnableMangoHud}
+			label="MangoHud"
+			subtitle="Performance overlay"
+		/>
+		<SlideButton
+			bind:checked={options.EnableGamemode}
+			label="GameMode"
+			subtitle="Optimize priorities"
+		/>
 		<SlideButton
 			bind:checked={options.EnableLsfgVk}
 			label="LSFG-VK"
@@ -109,7 +121,11 @@
 	</Modal>
 
 	<!-- Gamescope Settings Modal -->
-	<Modal show={showGamescopeModal} title="Gamescope Configuration" onClose={() => (showGamescopeModal = false)}>
+	<Modal
+		show={showGamescopeModal}
+		title="Gamescope Configuration"
+		onClose={() => (showGamescopeModal = false)}
+	>
 		<div class="modal-form">
 			<div class="form-group">
 				<label for="gamescopeWidth">Width (px)</label>
@@ -141,12 +157,18 @@
 					placeholder="e.g. 60"
 				/>
 			</div>
-			<p class="note">Note: Mouse visibility fix enabled automatically.</p>
+			<p class="note">
+				Note: Mouse visibility fix enabled automatically.
+			</p>
 		</div>
 	</Modal>
 
 	<!-- Memory Settings Modal -->
-	<Modal show={showMemoryModal} title="Memory Protection" onClose={() => (showMemoryModal = false)}>
+	<Modal
+		show={showMemoryModal}
+		title="Memory Protection"
+		onClose={() => (showMemoryModal = false)}
+	>
 		<div class="modal-form">
 			<div class="form-group">
 				<label for="memorySlider">Minimum RAM Allocation</label>
@@ -161,8 +183,10 @@
 				/>
 			</div>
 			<p class="note">
-				Guarantees {options.MemoryMinValue} of physical RAM for the game process, preventing swapping.
-				<br />Values in Red Zone (>75%) might cause system instability.
+				Guarantees {options.MemoryMinValue} of physical RAM for the game
+				process, preventing swapping.
+				<br />Values in Red Zone (>75%) might cause system
+				instability.
 			</p>
 		</div>
 	</Modal>

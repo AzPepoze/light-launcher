@@ -16,7 +16,9 @@
 
 	function updateIndicator(id: string) {
 		if (!navbarRef) return;
-		const activeEl = navbarRef.querySelector(`button[data-id="${id}"]`) as HTMLElement;
+		const activeEl = navbarRef.querySelector(
+			`button[data-id="${id}"]`,
+		) as HTMLElement;
 		if (activeEl) {
 			const top = activeEl.offsetTop;
 			const height = activeEl.offsetHeight;
@@ -88,9 +90,9 @@
 		span {
 			font-size: 0.75rem;
 			font-weight: 950;
-			color: var(--text-dim);
-			opacity: 0.4;
-			animation: char-wave 2s infinite ease-in-out;
+			color: var(--text-muted);
+			opacity: 0.7;
+			animation: char-wave 4s infinite ease-in-out;
 			line-height: 1;
 		}
 	}
@@ -203,11 +205,15 @@
 		width: 140%;
 		height: 140%;
 		border-radius: 50%;
-		background: radial-gradient(circle, var(--text-main) 0%, transparent 70%);
-		opacity: 0.1;
-		animation: pulse 2s infinite;
+		background: radial-gradient(
+			circle,
+			var(--accent-primary) 0%,
+			transparent 70%
+		);
+		opacity: 0.15;
+		animation: pulse 3s infinite;
 	}
- 
+
 	.theme-toggle {
 		position: absolute;
 		bottom: 24px;
@@ -221,13 +227,14 @@
 		align-items: center;
 		justify-content: center;
 		transition: all 0.3s;
- 
+
 		&:hover {
-			background: var(--glass-surface);
+			background: var(--glass-border);
 			color: var(--text-main);
 			border-color: var(--glass-border-bright);
+			transform: scale(1.1);
 		}
- 
+
 		.material-icons {
 			font-size: 20px;
 		}

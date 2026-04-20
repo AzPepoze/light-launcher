@@ -11,13 +11,12 @@
 		LoadPrefixConfig,
 		GetSystemToolsStatus,
 	} from "@bindings/light-launcher-wails/backend/app";
-	import Dropdown from "../components/Dropdown.svelte";
-	import ConfigForm from "../components/ConfigForm.svelte";
-	import ToolButton from "../components/ToolButton.svelte";
+	import Dropdown from "@components/shared/Dropdown.svelte";
+	import ConfigForm from "@components/shared/ConfigForm.svelte";
+	import ToolButton from "@components/shared/ToolButton.svelte";
 	import * as core from "@bindings/light-launcher/pkg/core/models";
-	import { notifications } from "../notificationStore";
-	import { createLaunchOptions } from "../lib/formService";
-
+	import { notifications } from "@stores/notificationStore";
+	import { createLaunchOptions } from "@lib/formService";
 
 	// State
 	let availablePrefixes: string[] = [];
@@ -52,7 +51,10 @@
 
 	onMount(async () => {
 		try {
-			const [tools, status] = await Promise.all([ScanProtonVersions(), GetSystemToolsStatus()]);
+			const [tools, status] = await Promise.all([
+				ScanProtonVersions(),
+				GetSystemToolsStatus(),
+			]);
 			systemStatus = status;
 			protonVersions = tools;
 			protonOptions = protonVersions.map((t) => t.DisplayName);
@@ -74,10 +76,13 @@
 
 				if (config.ProtonPattern) {
 					const match = protonVersions.find(
-						(p) => p.Name === config.ProtonPattern || p.DisplayName === config.ProtonPattern,
+						(p) =>
+							p.Name === config.ProtonPattern ||
+							p.DisplayName === config.ProtonPattern,
 					);
 					if (match) selectedProton = match.DisplayName;
-					else if (config.ProtonPattern) selectedProton = config.ProtonPattern;
+					else if (config.ProtonPattern)
+						selectedProton = config.ProtonPattern;
 				}
 			} else {
 				resetOptions();
@@ -100,17 +105,23 @@
 		const name = prefixPath.split("/").pop() || "Default";
 
 		// Update proton info in options
-		const tool = protonVersions.find((p) => p.DisplayName === selectedProton);
+		const tool = protonVersions.find(
+			(p) => p.DisplayName === selectedProton,
+		);
 		let cleanName = selectedProton;
-		if (cleanName.startsWith("(Steam) ")) cleanName = cleanName.substring(8);
+		if (cleanName.startsWith("(Steam) "))
+			cleanName = cleanName.substring(8);
 
 		prefixOptions.ProtonPattern = cleanName;
 		prefixOptions.ProtonPath = tool ? tool.Path : "";
 
-		await notifications.withNotification(SavePrefixConfig(name, prefixOptions), {
-			success: "Prefix defaults saved!",
-			error: "Failed to save configuration",
-		});
+		await notifications.withNotification(
+			SavePrefixConfig(name, prefixOptions),
+			{
+				success: "Prefix defaults saved!",
+				error: "Failed to save configuration",
+			},
+		);
 	}
 
 	async function handleBrowse() {
@@ -169,7 +180,9 @@
 		}
 	}
 
-	$: currentPrefixName = prefixPath.startsWith(baseDir) ? prefixPath.replace(baseDir + "/", "") : prefixPath;
+	$: currentPrefixName = prefixPath.startsWith(baseDir)
+		? prefixPath.replace(baseDir + "/", "")
+		: prefixPath;
 </script>
 
 <div class="prefix-container">
@@ -193,7 +206,9 @@
 					</button>
 				{/each}
 				{#if availablePrefixes.length === 0}
-					<div class="empty-state">No prefixes found in default directory.</div>
+					<div class="empty-state">
+						No prefixes found in default directory.
+					</div>
 				{/if}
 			</div>
 			<div class="add-prefix-area">
@@ -202,9 +217,12 @@
 					placeholder="New prefix..."
 					bind:value={newPrefixName}
 					class="input sm"
-					on:keydown={(e) => e.key === "Enter" && handleCreatePrefix()}
+					on:keydown={(e) =>
+						e.key === "Enter" && handleCreatePrefix()}
 				/>
-				<button class="btn primary sm" on:click={handleCreatePrefix}>Create</button>
+				<button class="btn primary sm" on:click={handleCreatePrefix}
+					>Create</button
+				>
 			</div>
 		</div>
 		<div class="content-section">
@@ -212,12 +230,22 @@
 				<div class="form-group">
 					<label for="prefixPath">Selected Prefix Path</label>
 					<div class="input-group">
-						<input id="prefixPath" type="text" class="input" bind:value={prefixPath} readonly />
-						<button class="btn" on:click={handleBrowse}>Browse Other</button>
+						<input
+							id="prefixPath"
+							type="text"
+							class="input"
+							bind:value={prefixPath}
+							readonly
+						/>
+						<button class="btn" on:click={handleBrowse}
+							>Browse Other</button
+						>
 					</div>
 				</div>
 				<div class="form-group">
-					<label for="protonRuntime">Runtime Environment (Proton)</label>
+					<label for="protonRuntime"
+						>Runtime Environment (Proton)</label
+					>
 					<div id="protonRuntime">
 						<Dropdown
 							options={protonOptions}
@@ -276,7 +304,10 @@
 			<div class="config-card glass">
 				<div class="section-header-row">
 					<h3>Default Configuration</h3>
-					<button class="btn primary sm" on:click={handleSaveConfig}>Save Defaults</button>
+					<button
+						class="btn primary sm"
+						on:click={handleSaveConfig}>Save Defaults</button
+					>
 				</div>
 				<div class="config-form-wrapper">
 					<ConfigForm bind:options={prefixOptions} />
@@ -354,7 +385,7 @@
 		text-align: left;
 		transition: all 0.2s;
 		&:hover {
-			background: rgba(255, 255, 255, 0.05);
+			background: var(--glass-hover);
 		}
 		&.active {
 			background: var(--accent-primary);

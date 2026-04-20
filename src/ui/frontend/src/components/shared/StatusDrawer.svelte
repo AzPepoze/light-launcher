@@ -11,7 +11,7 @@
 	} from "@bindings/light-launcher-wails/backend/app";
 	import * as core from "@bindings/light-launcher/pkg/core/models";
 
-	import StatusUtilityButton from "./StatusUtilityButton.svelte";
+	import StatusUtilityButton from "@components/shared/StatusUtilityButton.svelte";
 
 	let isExpanded = false;
 	let isCleaning = false;
@@ -22,7 +22,14 @@
 	let showCacheSuccess = false;
 	let showDropSuccess = false;
 	let showSwapSuccess = false;
-	let sysInfo: core.SystemInfo = { os: "", kernel: "", cpu: "", gpu: "", ram: "", driver: "" };
+	let sysInfo: core.SystemInfo = {
+		os: "",
+		kernel: "",
+		cpu: "",
+		gpu: "",
+		ram: "",
+		driver: "",
+	};
 	let sysUsage: core.SystemUsage = { cpu: "0%", ram: "0%", gpu: "0%" };
 	let shaderCacheSize = "...";
 	let usageInterval;
@@ -149,7 +156,11 @@
 
 <div class="status-drawer-wrapper" class:expanded={isExpanded}>
 	<button class="toggle-btn" on:click={() => (isExpanded = !isExpanded)}>
-		<span class="trigger-text">{isExpanded ? "CLOSE DRAWER" : "SYSTEM STATUS & UTILITIES"}</span>
+		<span class="trigger-text"
+			>{isExpanded
+				? "CLOSE DRAWER"
+				: "SYSTEM STATUS & UTILITIES"}</span
+		>
 	</button>
 
 	<div class="drawer-content">
@@ -158,13 +169,19 @@
 			<div class="status-box">
 				<div class="box-header">
 					<div class="icon-label">
-						<span class="material-icons mini-icon">laptop_windows</span>
+						<span class="material-icons mini-icon"
+							>laptop_windows</span
+						>
 						<span class="label">SYSTEM</span>
 					</div>
 				</div>
 				<div class="system-info">
-					<span class="os-text" title={sysInfo.os}>{sysInfo.os}</span>
-					<span class="kernel-text">Kernel: {sysInfo.kernel}</span>
+					<span class="os-text" title={sysInfo.os}
+						>{sysInfo.os}</span
+					>
+					<span class="kernel-text"
+						>Kernel: {sysInfo.kernel}</span
+					>
 				</div>
 			</div>
 
@@ -172,27 +189,39 @@
 			<div class="status-box">
 				<div class="box-header">
 					<div class="icon-label">
-						<span class="material-icons mini-icon">memory</span>
+						<span class="material-icons mini-icon"
+							>memory</span
+						>
 						<span class="label">CPU</span>
 					</div>
 					<span class="usage">{sysUsage.cpu}</span>
 				</div>
 				<div class="progress-bg">
-					<div class="progress-fill" style="width: {sysUsage.cpu}"></div>
+					<div
+						class="progress-fill"
+						style="width: {sysUsage.cpu}"
+					></div>
 				</div>
-				<span class="info-text" title={sysInfo.cpu}>{sysInfo.cpu}</span>
+				<span class="info-text" title={sysInfo.cpu}
+					>{sysInfo.cpu}</span
+				>
 			</div>
 
 			<!-- RAM -->
 			<div class="status-box">
 				<div class="box-header">
 					<div class="icon-label">
-						<span class="material-icons mini-icon">storage</span>
+						<span class="material-icons mini-icon"
+							>storage</span
+						>
 						<span class="label">RAM</span>
 					</div>
 					<span class="usage"
 						>{sysUsage.ram.includes("(")
-							? sysUsage.ram.split("(").pop().replace(")", "")
+							? sysUsage.ram
+									.split("(")
+									.pop()
+									.replace(")", "")
 							: "0%"}</span
 					>
 				</div>
@@ -200,18 +229,25 @@
 					<div
 						class="progress-fill"
 						style="width: {sysUsage.ram.includes('(')
-							? sysUsage.ram.split('(').pop().replace(')', '')
+							? sysUsage.ram
+									.split('(')
+									.pop()
+									.replace(')', '')
 							: '0%'}"
 					></div>
 				</div>
-				<span class="info-text">{sysUsage.ram.split(" / ")[0]} used</span>
+				<span class="info-text"
+					>{sysUsage.ram.split(" / ")[0]} used</span
+				>
 			</div>
 
 			<!-- GPU -->
 			<div class="status-box">
 				<div class="box-header">
 					<div class="icon-label">
-						<span class="material-icons mini-icon">videogame_asset</span>
+						<span class="material-icons mini-icon"
+							>videogame_asset</span
+						>
 						<span class="label">GPU</span>
 					</div>
 					<span class="usage">{sysUsage.gpu}</span>
@@ -222,7 +258,11 @@
 						style="width: {sysUsage.gpu}; background: var(--accent-secondary, #b197fc)"
 					></div>
 				</div>
-				<span class="info-text" title="{sysInfo.gpu} ({sysInfo.driver})">{sysInfo.gpu}</span>
+				<span
+					class="info-text"
+					title="{sysInfo.gpu} ({sysInfo.driver})"
+					>{sysInfo.gpu}</span
+				>
 			</div>
 		</div>
 
@@ -304,27 +344,27 @@
 		border: 1px solid var(--glass-border);
 		border-radius: 12px;
 		margin: 10px 0;
-		transition: all 0.2s ease;
+		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
 		.trigger-text {
 			font-size: 0.8rem;
-			font-weight: 700;
+			font-weight: 800;
 			color: var(--text-dim);
-			letter-spacing: 1px;
+			letter-spacing: 1.5px;
 			text-transform: uppercase;
 		}
 
 		&:hover {
-			background: rgba(80, 80, 85, 0.6);
-			border-color: rgba(255, 255, 255, 0.1);
+			background: var(--glass-border);
+			border-color: var(--glass-border-bright);
 
 			.trigger-text {
-				color: #fff;
+				color: var(--text-main);
 			}
 		}
 
 		&:active {
-			background: rgba(45, 45, 50, 0.6);
+			background: var(--glass-hover);
 			transform: scale(0.995);
 		}
 	}
@@ -418,7 +458,7 @@
 
 	.progress-bg {
 		height: 4px;
-		background: rgba(255, 255, 255, 0.05);
+		background: var(--glass-hover);
 		border-radius: 2px;
 		overflow: hidden;
 
@@ -431,7 +471,12 @@
 
 	.divider {
 		height: 1px;
-		background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+		background: linear-gradient(
+			90deg,
+			transparent,
+			var(--glass-border),
+			transparent
+		);
 	}
 
 	.utilities-row {

@@ -15,18 +15,16 @@
 		GetExeIcon,
 	} from "@bindings/light-launcher-wails/backend/app";
 	import * as core from "@bindings/light-launcher/pkg/core/models";
-	import Dropdown from "../components/Dropdown.svelte";
-	import ConfigForm from "../components/ConfigForm.svelte";
-	import SlideButton from "../components/SlideButton.svelte";
-	import Modal from "../components/Modal.svelte";
-	import ExecutableSelector from "../components/ExecutableSelector.svelte";
-	import { notifications } from "../notificationStore";
-	import { runState } from "../stores/runState";
+	import Dropdown from "@components/shared/Dropdown.svelte";
+	import ConfigForm from "@components/shared/ConfigForm.svelte";
+	import SlideButton from "@components/shared/SlideButton.svelte";
+	import ExecutableSelector from "@components/run/ExecutableSelector.svelte";
+	import MissingDependenciesModal from "@components/run/MissingDependenciesModal.svelte";
+	import { notifications } from "@stores/notificationStore";
+	import { runState } from "@stores/runState";
 	import { get } from "svelte/store";
 	import { Window } from "@wailsio/runtime";
-	import { createLaunchOptions } from "../lib/formService";
-
-
+	import { createLaunchOptions } from "@lib/formService";
 
 	// Component State
 	let mounted = false;
@@ -58,7 +56,11 @@
 	let showLogsWindow = false;
 	let showValidationModal = false;
 	let missingToolsList: string[] = [];
-	let systemStatus: core.SystemToolsStatus = { hasGamescope: false, hasMangoHud: false, hasGameMode: false };
+	let systemStatus: core.SystemToolsStatus = {
+		hasGamescope: false,
+		hasMangoHud: false,
+		hasGameMode: false,
+	};
 
 	// Config
 	let options: core.LaunchOptions = createLaunchOptions();
@@ -69,7 +71,10 @@
 			if (config) {
 				prefixPath = config.PrefixPath;
 				if (prefixPath.startsWith(baseDir)) {
-					selectedPrefixName = prefixPath.replace(baseDir + "/", "");
+					selectedPrefixName = prefixPath.replace(
+						baseDir + "/",
+						"",
+					);
 				} else {
 					selectedPrefixName = "Custom...";
 				}
@@ -115,7 +120,9 @@
 	}
 
 	function applyConfigToOptions(config: core.LaunchOptions) {
-		const match = protonVersions.find((p) => p.Path === config.ProtonPath);
+		const match = protonVersions.find(
+			(p) => p.Path === config.ProtonPath,
+		);
 		if (match) {
 			selectedProton = match.DisplayName;
 		} else if (config.ProtonPattern) {
@@ -146,12 +153,20 @@
 			console.log(
 				"[CONFIG] HaveGameExe=false: enforcing MainExecutablePath=LauncherPath (launcher-only mode)",
 			);
-			console.log("[CONFIG]   MainExecutablePath set to:", options.LauncherPath);
+			console.log(
+				"[CONFIG]   MainExecutablePath set to:",
+				options.LauncherPath,
+			);
 		} else if (options.HaveGameExe && config.MainExecutablePath) {
 			// Only load MainExecutablePath from config if HaveGameExe is true (separate game exe)
 			options.MainExecutablePath = config.MainExecutablePath;
-			console.log("[CONFIG] HaveGameExe=true: loaded separate game exe from config");
-			console.log("[CONFIG]   MainExecutablePath set to:", config.MainExecutablePath);
+			console.log(
+				"[CONFIG] HaveGameExe=true: loaded separate game exe from config",
+			);
+			console.log(
+				"[CONFIG]   MainExecutablePath set to:",
+				config.MainExecutablePath,
+			);
 		}
 
 		options.EnableGamescope = config.EnableGamescope;
@@ -173,7 +188,8 @@
 				if (s.gameIcon) gameIcon = s.gameIcon;
 				if (s.launcherIcon) launcherIcon = s.launcherIcon;
 				if (s.prefixPath) prefixPath = s.prefixPath;
-				if (s.selectedPrefixName) selectedPrefixName = s.selectedPrefixName;
+				if (s.selectedPrefixName)
+					selectedPrefixName = s.selectedPrefixName;
 				if (s.selectedProton) selectedProton = s.selectedProton;
 				if (s.options) {
 					options = { ...options, ...s.options };
@@ -196,7 +212,10 @@
 					options.LauncherPath = initialPath;
 					const icon = await GetExeIcon(initialPath);
 					if (icon) launcherIcon = icon;
-				} else if (!options.MainExecutablePath || options.MainExecutablePath === options.LauncherPath) {
+				} else if (
+					!options.MainExecutablePath ||
+					options.MainExecutablePath === options.LauncherPath
+				) {
 					// Prior state has launcher but no game - set initial path as game
 					mainExePath = initialPath;
 					options.MainExecutablePath = initialPath;
@@ -229,7 +248,9 @@
 					selectedProton = protonOptions[0];
 				}
 			}
-			availablePrefixes = Array.isArray(prefixes) ? prefixes : ["Default"];
+			availablePrefixes = Array.isArray(prefixes)
+				? prefixes
+				: ["Default"];
 			baseDir = base;
 			systemStatus = sysStatus;
 
@@ -271,13 +292,25 @@
 			const path = await PickFile();
 			if (path) {
 				console.log("[GAME] Selected game exe:", path);
-				console.log("[GAME] Current LauncherPath before game selection:", options.LauncherPath);
+				console.log(
+					"[GAME] Current LauncherPath before game selection:",
+					options.LauncherPath,
+				);
 				mainExePath = path;
 				// Use object spread to trigger Svelte reactivity
 				options = { ...options, MainExecutablePath: path };
-				console.log("[GAME] Set options.MainExecutablePath to:", options.MainExecutablePath);
-				console.log("[GAME] LauncherPath after game selection:", options.LauncherPath);
-				console.log("[GAME] Full options object:", JSON.stringify(options));
+				console.log(
+					"[GAME] Set options.MainExecutablePath to:",
+					options.MainExecutablePath,
+				);
+				console.log(
+					"[GAME] LauncherPath after game selection:",
+					options.LauncherPath,
+				);
+				console.log(
+					"[GAME] Full options object:",
+					JSON.stringify(options),
+				);
 				// NOTE: Do NOT load config for game exe
 				// Game exe is only for LSFG profile matching
 				// Configuration is ALWAYS saved under launcher exe path only
@@ -293,8 +326,14 @@
 			if (path) {
 				console.log("[LAUNCHER] Selected launcher exe:", path);
 				options = { ...options, LauncherPath: path };
-				console.log("[LAUNCHER] Set options.LauncherPath to:", options.LauncherPath);
-				console.log("[LAUNCHER] Full options object after assignment:", JSON.stringify(options));
+				console.log(
+					"[LAUNCHER] Set options.LauncherPath to:",
+					options.LauncherPath,
+				);
+				console.log(
+					"[LAUNCHER] Full options object after assignment:",
+					JSON.stringify(options),
+				);
 
 				// Only set MainExecutablePath if user has not explicitly selected a separate game exe
 				if (!mainExePath) {
@@ -302,7 +341,10 @@
 						"[LAUNCHER] No separate game exe selected by user, initializing MainExecutablePath to launcher",
 					);
 					options = { ...options, MainExecutablePath: path };
-					console.log("[LAUNCHER] Set MainExecutablePath to launcher path:", options.MainExecutablePath);
+					console.log(
+						"[LAUNCHER] Set MainExecutablePath to launcher path:",
+						options.MainExecutablePath,
+					);
 				} else {
 					console.log(
 						"[LAUNCHER] User already selected separate game exe, keeping MainExecutablePath:",
@@ -312,9 +354,14 @@
 
 				// Load config for the launcher
 				// applyConfigToOptions will enforce UseGameExe if true
-				console.log("[LAUNCHER] Loading config for launcher path...");
+				console.log(
+					"[LAUNCHER] Loading config for launcher path...",
+				);
 				await loadConfigForGame(path);
-				console.log("[LAUNCHER] Config loaded, final MainExecutablePath:", options.MainExecutablePath);
+				console.log(
+					"[LAUNCHER] Config loaded, final MainExecutablePath:",
+					options.MainExecutablePath,
+				);
 			}
 		} catch (err) {
 			console.error("[LAUNCHER] Error selecting launcher:", err);
@@ -339,7 +386,10 @@
 
 	async function handleLaunch() {
 		if (!options.LauncherPath) {
-			notifications.add("Please select a launcher executable.", "error");
+			notifications.add(
+				"Please select a launcher executable.",
+				"error",
+			);
 			return;
 		}
 
@@ -349,9 +399,12 @@
 		}
 
 		missingToolsList = [];
-		if (options.EnableGamescope && !systemStatus.hasGamescope) missingToolsList.push("Gamescope");
-		if (options.EnableMangoHud && !systemStatus.hasMangoHud) missingToolsList.push("MangoHud");
-		if (options.EnableGamemode && !systemStatus.hasGameMode) missingToolsList.push("GameMode");
+		if (options.EnableGamescope && !systemStatus.hasGamescope)
+			missingToolsList.push("Gamescope");
+		if (options.EnableMangoHud && !systemStatus.hasMangoHud)
+			missingToolsList.push("MangoHud");
+		if (options.EnableGamemode && !systemStatus.hasGameMode)
+			missingToolsList.push("GameMode");
 		if (missingToolsList.length > 0) {
 			showValidationModal = true;
 			return;
@@ -365,12 +418,20 @@
 
 		// DEBUG: Log state at execution time
 		console.log("[EXECUTE] Step 1 - Initial state");
-		console.log("[EXECUTE]   options.LauncherPath:", options.LauncherPath);
-		console.log("[EXECUTE]   options.MainExecutablePath:", options.MainExecutablePath);
+		console.log(
+			"[EXECUTE]   options.LauncherPath:",
+			options.LauncherPath,
+		);
+		console.log(
+			"[EXECUTE]   options.MainExecutablePath:",
+			options.MainExecutablePath,
+		);
 		console.log("[EXECUTE]   mainExePath variable:", mainExePath);
 		console.log("[EXECUTE]   Full options:", JSON.stringify(options));
 
-		const tool = protonVersions.find((p) => p.DisplayName === selectedProton);
+		const tool = protonVersions.find(
+			(p) => p.DisplayName === selectedProton,
+		);
 		let cleanName = selectedProton;
 		if (cleanName.startsWith("(Steam) ")) {
 			cleanName = cleanName.substring(8);
@@ -383,14 +444,25 @@
 		options.ProtonPattern = cleanName;
 		options.ProtonPath = tool ? tool.Path : "";
 
-		console.log("[EXECUTE] Step 2 - Final options object before RunGame:");
+		console.log(
+			"[EXECUTE] Step 2 - Final options object before RunGame:",
+		);
 		console.log(JSON.stringify(options, null, 2));
 		console.log("============ ABOUT TO CALL RunGame ============\n");
 
 		try {
-			console.log("[EXECUTE] Calling RunGame with LauncherPath:", options.LauncherPath);
-			console.log("[EXECUTE] Calling RunGame with MainExecutablePath:", options.MainExecutablePath);
-			console.log("[EXECUTE] Calling RunGame with full options:", JSON.stringify(options, null, 2));
+			console.log(
+				"[EXECUTE] Calling RunGame with LauncherPath:",
+				options.LauncherPath,
+			);
+			console.log(
+				"[EXECUTE] Calling RunGame with MainExecutablePath:",
+				options.MainExecutablePath,
+			);
+			console.log(
+				"[EXECUTE] Calling RunGame with full options:",
+				JSON.stringify(options, null, 2),
+			);
 			await RunGame(options, showLogsWindow);
 			Window.Close();
 		} catch (err) {
@@ -428,7 +500,9 @@
 						onChange={handlePrefixChange}
 					/>
 				</div>
-				<button on:click={handleBrowsePrefix} class="btn">Browse</button>
+				<button on:click={handleBrowsePrefix} class="btn"
+					>Browse</button
+				>
 			</div>
 			{#if selectedPrefixName === "Custom..." || !prefixPath.startsWith(baseDir)}
 				<div class="path-display">{prefixPath}</div>
@@ -441,7 +515,9 @@
 				<Dropdown
 					options={protonOptions}
 					bind:value={selectedProton}
-					placeholder={isLoadingProton ? "Scanning..." : "Select Version"}
+					placeholder={isLoadingProton
+						? "Scanning..."
+						: "Select Version"}
 					disabled={isLoadingProton}
 					onChange={handleProtonChange}
 				/>
@@ -451,27 +527,19 @@
 		<ConfigForm bind:options />
 
 		<div class="form-group">
-			<SlideButton bind:checked={showLogsWindow} label="Show Logs" subtitle="Open logs in terminal" />
+			<SlideButton
+				bind:checked={showLogsWindow}
+				label="Show Logs"
+				subtitle="Open logs in terminal"
+			/>
 		</div>
 
-		<Modal show={showValidationModal} title="Missing Dependencies" onClose={() => (showValidationModal = false)}>
-			<div class="warning-modal-content">
-				<div class="warning-icon">
-					<span class="material-icons" style="font-size: 48px; color: #ef4444;">warning</span>
-				</div>
-				<p>The following requested features are not installed on your system:</p>
-				<div class="missing-list">
-					{#each missingToolsList as tool}
-						<span class="tool-tag">{tool}</span>
-					{/each}
-				</div>
-				<p class="question">Do you want to launch the game without these features?</p>
-				<div class="modal-actions">
-					<button class="btn secondary" on:click={() => (showValidationModal = false)}>Cancel</button>
-					<button class="btn primary" on:click={proceedToLaunch}>Launch Anyway</button>
-				</div>
-			</div>
-		</Modal>
+		<MissingDependenciesModal
+			show={showValidationModal}
+			missingTools={missingToolsList}
+			onClose={() => (showValidationModal = false)}
+			onConfirm={proceedToLaunch}
+		/>
 
 		<div class="action-area">
 			<button class="btn primary launch-btn" on:click={handleLaunch}>
@@ -520,51 +588,7 @@
 		border: 1px solid var(--glass-border);
 		border-radius: 6px;
 	}
-	.warning-modal-content {
-		text-align: center;
-		.warning-icon {
-			font-size: 3rem;
-			margin-bottom: 16px;
-			display: flex;
-			justify-content: center;
 
-		}
-		p {
-			color: var(--text-main);
-			line-height: 1.5;
-		}
-		.missing-list {
-			margin: 16px 0;
-			display: flex;
-			flex-wrap: wrap;
-			justify-content: center;
-			gap: 12px;
-			.tool-tag {
-				background: rgba(239, 68, 68, 0.1);
-				color: #ef4444;
-				padding: 6px 16px;
-				border-radius: 20px;
-				font-size: 0.9rem;
-				border: 1px solid rgba(239, 68, 68, 0.2);
-				font-weight: bold;
-			}
-		}
-		.question {
-			margin-top: 24px;
-			font-weight: 600;
-			color: var(--accent-secondary);
-		}
-	}
-	.modal-actions {
-		display: flex;
-		gap: 12px;
-		margin-top: 32px;
-		button {
-			flex: 1;
-			padding: 12px;
-			font-weight: 600;
-		}
-	}
 	.action-area {
 		position: sticky;
 		bottom: -32px; /* Locks to the bottom edge of the view */
@@ -591,7 +615,7 @@
 		background: var(--accent-primary) !important;
 		color: var(--glass-bg) !important;
 		border: none;
-		box-shadow: 0 15px 45px rgba(0, 0, 0, 0.5);
+		box-shadow: var(--glass-shadow);
 		cursor: pointer;
 		transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
 		font-weight: 800;
@@ -623,6 +647,7 @@
 		}
 	}
 
+	/* Local .btn overrides - updating to use theme variables */
 	.btn {
 		display: inline-flex;
 		align-items: center;
@@ -632,20 +657,22 @@
 		font-weight: 600;
 		font-size: 0.9rem;
 		cursor: pointer;
-		transition: all 0.2s ease;
+		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 		border: 1px solid var(--glass-border);
-		background: rgba(255, 255, 255, 0.05);
+		background: var(--glass-hover);
 		color: var(--text-main);
+
 		&:hover {
-			background: rgba(255, 255, 255, 0.1);
+			background: var(--glass-border);
 			border-color: var(--glass-border-bright);
 		}
+
 		&.primary {
 			background: var(--accent-primary);
-			border: none;
-			color: #000;
+			border: 1px solid var(--accent-primary);
+			color: var(--glass-bg);
 			&:hover {
-				background: var(--accent-secondary);
+				filter: brightness(1.2);
 			}
 		}
 	}

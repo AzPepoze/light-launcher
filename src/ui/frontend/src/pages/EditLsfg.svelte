@@ -1,6 +1,6 @@
 <script lang="ts">
-	import Modal from "../components/Modal.svelte";
-	import LsfgConfigForm from "../components/LsfgConfigForm.svelte";
+	import Modal from "@components/shared/Modal.svelte";
+	import LsfgConfigForm from "@components/editlsfg/LsfgConfigForm.svelte";
 	import {
 		GetLsfgProfileForGame,
 		GetInitialGamePath,
@@ -10,7 +10,7 @@
 	} from "@bindings/light-launcher-wails/backend/app";
 	import * as core from "@bindings/light-launcher/pkg/core/models";
 	import { onMount } from "svelte";
-	import { loadLsfgResources, createLaunchOptions } from "../lib/formService";
+	import { loadLsfgResources, createLaunchOptions } from "@lib/formService";
 
 	export let gamePath = "";
 
@@ -112,39 +112,71 @@
 </script>
 
 {#if loading}
-	<Modal show={true} title="LSFG-VK Configuration" onClose={handleClose} fullscreen={true} showDone={false}>
+	<Modal
+		show={true}
+		title="LSFG-VK Configuration"
+		onClose={handleClose}
+		fullscreen={true}
+		showDone={false}
+	>
 		<div class="loading-container">
 			<p>Loading LSFG configuration...</p>
 		</div>
 	</Modal>
 {:else if error}
-	<Modal show={true} title="LSFG-VK Configuration" onClose={handleClose} fullscreen={true} showDone={false}>
+	<Modal
+		show={true}
+		title="LSFG-VK Configuration"
+		onClose={handleClose}
+		fullscreen={true}
+		showDone={false}
+	>
 		<div class="error-container">
 			<p>Error loading profile: {error}</p>
 		</div>
 		<div slot="footer">
-			<button class="btn secondary" on:click={handleClose}>Close</button>
+			<button class="btn secondary" on:click={handleClose}
+				>Close</button
+			>
 		</div>
 	</Modal>
 {:else}
-	<Modal show={true} title="LSFG-VK Configuration" onClose={handleClose} fullscreen={true} showDone={false}>
+	<Modal
+		show={true}
+		title="LSFG-VK Configuration"
+		onClose={handleClose}
+		fullscreen={true}
+		showDone={false}
+	>
 		<div class="modal-content">
 			<div class="profile-info">
 				<p class="game-path">{options.MainExecutablePath}</p>
 			</div>
 
-			<LsfgConfigForm {options} {gpuList} onDllBrowse={handleBrowseDll} />
+			<LsfgConfigForm
+				{options}
+				{gpuList}
+				onDllBrowse={handleBrowseDll}
+			/>
 
 			{#if saveSuccess}
-				<div class="status-message success">✓ Configuration saved successfully</div>
+				<div class="status-message success">
+					✓ Configuration saved successfully
+				</div>
 			{:else if saveError}
 				<div class="status-message error">✗ Error: {saveError}</div>
 			{/if}
 		</div>
 
 		<div slot="footer" class="actions">
-			<button class="btn secondary" on:click={handleClose}>Close</button>
-			<button class="btn primary" on:click={handleApply} disabled={saving}>
+			<button class="btn secondary" on:click={handleClose}
+				>Close</button
+			>
+			<button
+				class="btn primary"
+				on:click={handleApply}
+				disabled={saving}
+			>
 				{saving ? "Saving..." : "Apply"}
 			</button>
 		</div>
@@ -210,12 +242,14 @@
 
 	.btn {
 		padding: 10px 20px;
-		border: none;
-		border-radius: 8px;
-		font-weight: 600;
+		border: 1px solid var(--glass-border);
+		border-radius: 10px;
+		font-weight: 800;
 		cursor: pointer;
-		transition: all 0.2s;
+		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 		font-size: 0.9rem;
+		background: var(--glass-hover);
+		color: var(--text-main);
 
 		&:disabled {
 			opacity: 0.5;
@@ -223,22 +257,23 @@
 		}
 
 		&.primary {
-			background: #3b82f6;
-			color: white;
+			background: var(--accent-primary);
+			border: 1px solid var(--accent-primary);
+			color: var(--glass-bg);
 
 			&:hover:not(:disabled) {
-				background: #2563eb;
+				filter: brightness(1.2);
 			}
 		}
 
 		&.secondary {
-			background: transparent;
-			border: 1px solid var(--glass-border);
-			color: var(--text-main);
+			background: var(--glass-hover);
+			color: var(--text-muted);
 
 			&:hover:not(:disabled) {
-				background: rgba(255, 255, 255, 0.05);
-				border-color: var(--text-main);
+				background: var(--glass-border);
+				color: var(--text-main);
+				border-color: var(--glass-border-bright);
 			}
 		}
 	}

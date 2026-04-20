@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { notifications } from "../notificationStore";
+	import { notifications } from "@stores/notificationStore";
 	import { flip } from "svelte/animate";
 	import { fade, fly } from "svelte/transition";
 </script>
@@ -22,7 +22,9 @@
 				{/if}
 			</div>
 			<div class="message">{n.message}</div>
-			<button class="close" on:click={() => notifications.remove(n.id)}>&times;</button>
+			<button class="close" on:click={() => notifications.remove(n.id)}
+				>&times;</button
+			>
 		</div>
 	{/each}
 </div>

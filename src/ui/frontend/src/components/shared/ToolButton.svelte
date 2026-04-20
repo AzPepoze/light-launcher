@@ -82,7 +82,7 @@
 	.spinner {
 		width: 28px;
 		height: 28px;
-		border: 3px solid rgba(255, 255, 255, 0.3);
+		border: 3px solid var(--glass-border);
 		border-radius: 50%;
 		border-top-color: var(--accent-primary);
 		animation: spin 1s ease-in-out infinite;

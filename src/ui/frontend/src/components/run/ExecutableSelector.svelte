@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { loadExeIcon } from "../lib/iconService";
-	import SlideButton from "./SlideButton.svelte";
+	import { loadExeIcon } from "@lib/iconService";
+	import SlideButton from "@components/shared/SlideButton.svelte";
 
 	export let launcherPath = "";
 	export let mainExePath = "";
@@ -21,12 +21,18 @@
 
 	// When props change, update internal state
 	$: if (launcherPath !== internalLauncherPath) {
-		console.log("ExecutableSelector: launcherPath prop changed to:", launcherPath);
+		console.log(
+			"ExecutableSelector: launcherPath prop changed to:",
+			launcherPath,
+		);
 		internalLauncherPath = launcherPath;
 	}
 
 	$: if (mainExePath !== internalMainExePath) {
-		console.log("ExecutableSelector: mainExePath prop changed to:", mainExePath);
+		console.log(
+			"ExecutableSelector: mainExePath prop changed to:",
+			mainExePath,
+		);
 		internalMainExePath = mainExePath;
 	}
 
@@ -98,7 +104,10 @@
 					/>
 				{:else}
 					<div class="exe-icon-placeholder">
-						<span class="material-icons" style="font-size: 32px;">laptop_windows</span>
+						<span
+							class="material-icons"
+							style="font-size: 32px;">laptop_windows</span
+						>
 					</div>
 				{/if}
 			</div>
@@ -111,11 +120,15 @@
 					placeholder="Path to launcher.exe (main executable to run)..."
 					class="input"
 				/>
-				<button on:click={handleBrowseLauncherClick} class="btn">Browse</button>
+				<button on:click={handleBrowseLauncherClick} class="btn"
+					>Browse</button
+				>
 			</div>
 		</div>
 
-		<p class="exe-note launcher-note">Main executable to launch. Required for game execution.</p>
+		<p class="exe-note launcher-note">
+			Main executable to launch. Required for game execution.
+		</p>
 	</div>
 
 	<!-- Game Executable Toggle -->
@@ -129,7 +142,8 @@
 	{#if haveGameExe}
 		<div class="game-exe-section">
 			<label for="gameExe">
-				Game Executable <span class="optional-tag">For LSFG-VK</span>
+				Game Executable <span class="optional-tag">For LSFG-VK</span
+				>
 			</label>
 
 			<div class="game-exe-wrapper">
@@ -148,7 +162,11 @@
 						/>
 					{:else}
 						<div class="exe-icon-placeholder">
-							<span class="material-icons" style="font-size: 32px;">laptop_windows</span>
+							<span
+								class="material-icons"
+								style="font-size: 32px;"
+								>laptop_windows</span
+							>
 						</div>
 					{/if}
 				</div>
@@ -161,11 +179,15 @@
 						placeholder="Select game .exe file..."
 						class="input"
 					/>
-					<button on:click={handleBrowseGameClick} class="btn">Browse</button>
+					<button on:click={handleBrowseGameClick} class="btn"
+						>Browse</button
+					>
 				</div>
 			</div>
 
-			<p class="exe-note game-note">Used for LSFG-VK profile matching and configuration.</p>
+			<p class="exe-note game-note">
+				Used for LSFG-VK profile matching and configuration.
+			</p>
 		</div>
 	{/if}
 </div>
@@ -210,11 +232,17 @@
 	}
 
 	.launcher-exe-section label {
-		color: #60a5fa;
+		color: #2563eb; /* Darker blue for light mode */
+		:global([data-theme="dark"]) & {
+			color: #60a5fa;
+		}
 	}
 
 	.game-exe-section label {
-		color: #c084fc;
+		color: #9333ea; /* Darker purple for light mode */
+		:global([data-theme="dark"]) & {
+			color: #c084fc;
+		}
 	}
 
 	.required-tag {
@@ -223,9 +251,13 @@
 		border-radius: 4px;
 		margin-left: 8px;
 		text-transform: uppercase;
-		font-weight: bold;
-		background: rgba(96, 165, 250, 0.25);
-		color: #60a5fa;
+		font-weight: 900;
+		background: rgba(37, 99, 235, 0.1);
+		color: #2563eb;
+		:global([data-theme="dark"]) & {
+			background: rgba(96, 165, 250, 0.25);
+			color: #60a5fa;
+		}
 	}
 
 	.optional-tag {
@@ -234,9 +266,13 @@
 		border-radius: 4px;
 		margin-left: 8px;
 		text-transform: uppercase;
-		font-weight: bold;
-		background: rgba(192, 132, 252, 0.25);
-		color: #c084fc;
+		font-weight: 900;
+		background: rgba(147, 51, 234, 0.1);
+		color: #9333ea;
+		:global([data-theme="dark"]) & {
+			background: rgba(192, 132, 252, 0.25);
+			color: #c084fc;
+		}
 	}
 
 	.launcher-exe-wrapper,
@@ -308,7 +344,8 @@
 		&:focus {
 			outline: none;
 			border-color: var(--accent-primary);
-			background: rgba(0, 0, 0, 0.3);
+			background: var(--glass-surface);
+			box-shadow: 0 0 0 2px var(--glass-low-alpha);
 		}
 	}
 
@@ -318,17 +355,17 @@
 		justify-content: center;
 		padding: 8px 16px;
 		border-radius: 6px;
-		font-weight: 600;
+		font-weight: 800;
 		font-size: 0.8rem;
 		cursor: pointer;
-		transition: all 0.2s ease;
+		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 		border: 1px solid var(--glass-border);
-		background: rgba(255, 255, 255, 0.05);
+		background: var(--glass-hover);
 		color: var(--text-main);
 		white-space: nowrap;
 
 		&:hover {
-			background: rgba(255, 255, 255, 0.1);
+			background: var(--glass-border);
 			border-color: var(--glass-border-bright);
 		}
 	}

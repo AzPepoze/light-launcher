@@ -1,5 +1,5 @@
 <script lang="ts">
-	import warningIcon from "../icons/warning.svg";
+	import warningIcon from "@icons/warning.svg";
 
 	export let value: number = 4;
 	export let min: number = 0.1;
@@ -109,20 +109,31 @@
 			{#if showWarning}
 				<div
 					class="warning-zone"
-					style="width: {(1 - warningPercentage) * 100}%; left: {warningPercentage * 100}%"
+					style="width: {(1 - warningPercentage) *
+						100}%; left: {warningPercentage * 100}%"
 				></div>
 			{/if}
 
 			<!-- Fill -->
-			<div class="fill {isWarning ? 'warning' : ''}" style="width: {percentage}%"></div>
+			<div
+				class="fill {isWarning ? 'warning' : ''}"
+				style="width: {percentage}%"
+			></div>
 
 			<!-- Thumb -->
-			<div class="thumb {isDragging ? 'active' : ''}" style="left: {percentage}%"></div>
+			<div
+				class="thumb {isDragging ? 'active' : ''}"
+				style="left: {percentage}%"
+			></div>
 
 			<!-- Snap Points -->
 			{#each snapValues as point}
 				{#if point <= max && point >= min}
-					<div class="snap-point" style="left: {((point - min) / (max - min)) * 100}%"></div>
+					<div
+						class="snap-point"
+						style="left: {((point - min) / (max - min)) *
+							100}%"
+					></div>
 				{/if}
 			{/each}
 		</div>
@@ -161,10 +172,10 @@
 	.input-wrapper {
 		display: flex;
 		align-items: center;
-		background: rgba(0, 0, 0, 0.3);
-		border-radius: 6px;
-		padding: 4px 8px;
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		background: var(--glass-low-alpha);
+		border-radius: 8px;
+		padding: 4px 10px;
+		border: 1px solid var(--glass-border);
 
 		&:focus-within {
 			border-color: var(--accent-primary);
@@ -173,7 +184,7 @@
 		.manual-input {
 			background: transparent;
 			border: none;
-			color: white;
+			color: var(--text-main);
 			width: 60px;
 			text-align: right;
 			font-weight: bold;
@@ -207,7 +218,7 @@
 		position: relative;
 		width: 100%;
 		height: 8px;
-		background: rgba(255, 255, 255, 0.1);
+		background: var(--glass-border);
 		border-radius: 4px;
 		overflow: visible; // Allow thumb to overflow
 	}
@@ -256,7 +267,7 @@
 		top: 50%;
 		width: 2px;
 		height: 4px;
-		background: rgba(255, 255, 255, 0.3);
+		background: var(--glass-border-bright);
 		transform: translate(-50%, -50%);
 		pointer-events: none;
 	}
@@ -274,7 +285,8 @@
 		.svg-icon {
 			width: 14px;
 			height: 14px;
-			filter: invert(36%) sepia(84%) saturate(4644%) hue-rotate(345deg) brightness(98%) contrast(93%); // #ef4444
+			filter: invert(36%) sepia(84%) saturate(4644%) hue-rotate(345deg)
+				brightness(98%) contrast(93%); // #ef4444
 		}
 	}
 </style>

@@ -20,15 +20,29 @@
 		onConfigure(game);
 	}
 </script>
-<div class="game-card" class:running={isRunning} class:selection-mode={isSelectionMode} class:selected={isSelected}>
+
+<div
+	class="game-card"
+	class:running={isRunning}
+	class:selection-mode={isSelectionMode}
+	class:selected={isSelected}
+>
 	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div class="game-icon-container" on:click={handleLaunch} role="button" tabindex="0">
+	<div
+		class="game-icon-container"
+		on:click={handleLaunch}
+		role="button"
+		tabindex="0"
+	>
 		{#if isSelectionMode}
 			<div class="selection-overlay">
 				<div class="checkbox">
 					{#if isSelected}
-						<span class="material-icons" style="font-size: 16px;">check</span>
+						<span
+							class="material-icons"
+							style="font-size: 16px;">check</span
+						>
 					{/if}
 				</div>
 			</div>
@@ -47,7 +61,8 @@
 			{#if icon}
 				<img src={icon} alt={game.name} class="game-icon" />
 			{:else}
-				<span class="material-icons system-icon">rocket_launch</span>
+				<span class="material-icons system-icon">rocket_launch</span
+				>
 			{/if}
 		</div>
 
@@ -58,7 +73,11 @@
 
 	<div class="game-footer">
 		<span class="game-name" title={game.name}>{game.name}</span>
-		<button class="config-btn" title="Configure" on:click|stopPropagation={handleConfigure}>
+		<button
+			class="config-btn"
+			title="Configure"
+			on:click|stopPropagation={handleConfigure}
+		>
 			<span class="material-icons">settings</span>
 		</button>
 	</div>
@@ -78,7 +97,8 @@
 		&.selected {
 			.game-icon-container {
 				border-color: var(--accent-primary);
-				box-shadow: 0 0 20px rgba(var(--accent-primary-rgb, 255, 255, 255), 0.3);
+				box-shadow: 0 0 20px
+					rgba(var(--accent-primary-rgb, 255, 255, 255), 0.3);
 			}
 
 			.checkbox {
@@ -97,8 +117,8 @@
 			}
 
 			.game-icon-container {
-				border-color: rgba(255, 255, 255, 0.4);
-				box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+				border-color: var(--glass-border-bright);
+				box-shadow: var(--glass-shadow);
 
 				.play-overlay {
 					opacity: 1;
@@ -110,8 +130,8 @@
 			}
 
 			.game-footer .game-name {
-				color: #fff;
-				text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+				color: var(--text-main);
+				text-shadow: 0 0 10px var(--glass-surface);
 			}
 
 			.config-btn {
@@ -169,7 +189,16 @@
 	.rainbow-glow {
 		position: absolute;
 		inset: -2px;
-		background: conic-gradient(from 0deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000);
+		background: conic-gradient(
+			from 0deg,
+			#ff0000,
+			#ffff00,
+			#00ff00,
+			#00ffff,
+			#0000ff,
+			#ff00ff,
+			#ff0000
+		);
 		opacity: 0;
 		transition: opacity 0.4s;
 		z-index: 1;
@@ -206,7 +235,8 @@
 			color: #fff;
 			filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.5));
 			transform: scale(0.8);
-			transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+			transition: transform 0.3s
+				cubic-bezier(0.175, 0.885, 0.32, 1.275);
 		}
 	}
 
@@ -218,21 +248,20 @@
 		justify-content: flex-end;
 		padding: 12px;
 		z-index: 5;
-		background: rgba(0, 0, 0, 0.2);
+		background: var(--glass-low-alpha);
 		border-radius: 26px;
 
 		.checkbox {
 			width: 24px;
 			height: 24px;
-			border: 2px solid rgba(255, 255, 255, 0.3);
+			border: 2px solid var(--glass-border-bright);
 			border-radius: 6px;
-			background: rgba(0, 0, 0, 0.5);
+			background: var(--glass-surface);
 			display: flex;
 			align-items: center;
 			justify-content: center;
 			transition: all 0.2s;
 			color: transparent;
-
 		}
 	}
 

@@ -1,6 +1,4 @@
 <script lang="ts">
-
-
 	export let game: any;
 	export let icon: string = "";
 	export let isRunning: boolean = false;
@@ -16,6 +14,7 @@
 		onConfigure(game);
 	}
 </script>
+
 <div class="perspective-card" class:active class:running={isRunning}>
 	<div
 		class="card-inner"
@@ -39,8 +38,14 @@
 		<div class="info-overlay">
 			<div class="name-row">
 				<span class="name">{game.name}</span>
-				<button class="config-btn-small" title="Configure" on:click|stopPropagation={handleConfigure}>
-					<span class="material-icons" style="font-size: 14px;">settings</span>
+				<button
+					class="config-btn-small"
+					title="Configure"
+					on:click|stopPropagation={handleConfigure}
+				>
+					<span class="material-icons" style="font-size: 14px;"
+						>settings</span
+					>
 				</button>
 			</div>
 			{#if isRunning}
@@ -108,7 +113,11 @@
 	.glow {
 		position: absolute;
 		inset: 0;
-		background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.2), transparent);
+		background: radial-gradient(
+			circle at 50% 0%,
+			rgba(255, 255, 255, 0.2),
+			transparent
+		);
 		opacity: 0.2;
 		transition: opacity 0.4s;
 		pointer-events: none;

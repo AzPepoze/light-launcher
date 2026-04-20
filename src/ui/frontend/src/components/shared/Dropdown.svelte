@@ -30,7 +30,12 @@
 <svelte:window on:click={handleOutsideClick} />
 
 <div class="custom-dropdown" class:disabled>
-	<button class="dropdown-trigger" class:open={isOpen} on:click={toggle} type="button">
+	<button
+		class="dropdown-trigger"
+		class:open={isOpen}
+		on:click={toggle}
+		type="button"
+	>
 		<span class="text">{value || placeholder}</span>
 		<span class="material-icons arrow">expand_more</span>
 	</button>
@@ -102,11 +107,12 @@
 		max-height: 220px;
 		overflow-y: auto;
 		z-index: 100;
-		background: var(--glass-bg);
+		background: var(--glass-surface);
+		backdrop-filter: blur(20px);
 		border: 1px solid var(--glass-border-bright);
-		border-radius: 10px;
-		box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-		padding: 4px;
+		border-radius: 12px;
+		box-shadow: var(--glass-shadow);
+		padding: 6px;
 	}
 
 	.dropdown-item {
@@ -120,17 +126,17 @@
 		font-size: 0.85rem;
 		border-radius: 8px;
 		cursor: pointer;
-		transition: all 0.1s;
+		transition: all 0.2s;
 
 		&:hover {
-			background: rgba(255, 255, 255, 0.05);
+			background: var(--glass-hover);
 			color: var(--text-main);
 		}
 
 		&.selected {
 			background: var(--accent-primary);
 			color: var(--glass-bg);
-			font-weight: 600;
+			font-weight: 700;
 		}
 	}
 </style>

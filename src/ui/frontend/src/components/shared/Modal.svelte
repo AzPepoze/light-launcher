@@ -41,7 +41,11 @@
 		>
 			<div class="modal-header">
 				<h3>{title}</h3>
-				<button class="close-btn" on:click={close} aria-label="Close modal">
+				<button
+					class="close-btn"
+					on:click={close}
+					aria-label="Close modal"
+				>
 					<span class="material-icons">close</span>
 				</button>
 			</div>
@@ -51,7 +55,9 @@
 			{#if $$slots.footer || showDone}
 				<div class="modal-footer">
 					<slot name="footer">
-						<button class="btn primary" on:click={close}>Done</button>
+						<button class="btn primary" on:click={close}
+							>Done</button
+						>
 					</slot>
 				</div>
 			{/if}

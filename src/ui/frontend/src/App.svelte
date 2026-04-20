@@ -1,12 +1,12 @@
 <script lang="ts">
-	import Navbar from "./components/Navbar.svelte";
+	import Navbar from "@components/shared/Navbar.svelte";
 	import Home from "./pages/Home.svelte";
 	import Run from "./pages/Run.svelte";
 	import Versions from "./pages/Versions.svelte";
 	import Prefix from "./pages/Prefix.svelte";
 	import Utils from "./pages/Utils.svelte";
 	import EditLsfg from "./pages/EditLsfg.svelte";
-	import NotificationHost from "./components/NotificationHost.svelte";
+	import NotificationHost from "@components/shared/NotificationHost.svelte";
 	import { fade, fly } from "svelte/transition";
 	import {
 		GetInitialLauncherPath,
@@ -14,16 +14,16 @@
 		GetShouldEditLsfg,
 	} from "@bindings/light-launcher-wails/backend/app";
 	import { onMount } from "svelte";
-	import { navigationCommand } from "./stores/navigationStore";
-	import { runState } from "./stores/runState";
+	import { navigationCommand } from "@stores/navigationStore";
+	import { runState } from "@stores/runState";
 	import { writable } from "svelte/store";
- 
+
 	const theme = writable(localStorage.getItem("theme") || "light");
 	theme.subscribe((val) => {
 		document.documentElement.dataset.theme = val;
 		localStorage.setItem("theme", val);
 	});
- 
+
 	function toggleTheme() {
 		theme.update((t) => (t === "light" ? "dark" : "light"));
 	}
@@ -79,7 +79,11 @@
 	<div class="app-layout" class:fullscreen={activePage === "editlsfg"}>
 		{#if activePage !== "editlsfg"}
 			<div class="navbar-container">
-				<Navbar {activePage} onNavigate={handleNavigate} {toggleTheme} />
+				<Navbar
+					{activePage}
+					onNavigate={handleNavigate}
+					{toggleTheme}
+				/>
 			</div>
 		{/if}
 

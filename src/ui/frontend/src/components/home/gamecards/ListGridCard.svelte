@@ -35,7 +35,9 @@
 		<div class="selection-checkbox">
 			<div class="checkbox" class:checked={isSelected}>
 				{#if isSelected}
-					<span class="material-icons" style="font-size: 16px;">check</span>
+					<span class="material-icons" style="font-size: 16px;"
+						>check</span
+					>
 				{/if}
 			</div>
 		</div>
@@ -46,7 +48,11 @@
 			<img src={icon} alt={game.name} class="game-icon" />
 		{:else}
 			<div class="fallback-wrapper">
-				<span class="material-icons" style="font-size: 32px; color: var(--text-dim); opacity: 0.5;">rocket_launch</span>
+				<span
+					class="material-icons"
+					style="font-size: 32px; color: var(--text-dim); opacity: 0.5;"
+					>rocket_launch</span
+				>
 			</div>
 		{/if}
 
@@ -60,14 +66,20 @@
 	<div class="content-section">
 		<div class="info">
 			<span class="game-name">{game.name}</span>
-			<span class="game-path">{game.path || game.config.LauncherPath}</span>
+			<span class="game-path"
+				>{game.path || game.config.LauncherPath}</span
+			>
 		</div>
 
 		<div class="actions">
 			<button class="action-btn play" title="Play Now">
 				<span class="material-icons">play_arrow</span>
 			</button>
-			<button class="action-btn config" title="Configure" on:click|stopPropagation={handleConfigure}>
+			<button
+				class="action-btn config"
+				title="Configure"
+				on:click|stopPropagation={handleConfigure}
+			>
 				<span class="material-icons">settings</span>
 			</button>
 		</div>
@@ -103,7 +115,11 @@
 
 		&.running {
 			border-color: var(--success, #22c55e);
-			background: linear-gradient(90deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.02) 100%);
+			background: linear-gradient(
+				90deg,
+				rgba(34, 197, 94, 0.1) 0%,
+				rgba(34, 197, 94, 0.02) 100%
+			);
 		}
 
 		&.selected {
@@ -132,7 +148,6 @@
 			justify-content: center;
 			transition: all 0.2s;
 			color: transparent;
-
 		}
 	}
 
@@ -161,8 +176,6 @@
 			justify-content: center;
 			opacity: 1;
 		}
-
-
 
 		.running-indicator-small {
 			position: absolute;

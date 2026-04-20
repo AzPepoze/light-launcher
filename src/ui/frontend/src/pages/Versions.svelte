@@ -3,10 +3,10 @@
 	import { ScanProtonVersions } from "@bindings/light-launcher-wails/backend/app";
 	import { Browser } from "@wailsio/runtime";
 	import * as core from "@bindings/light-launcher/pkg/core/models";
-	import { notifications } from "../notificationStore";
+	import { notifications } from "@stores/notificationStore";
 
-	import steamIcon from "../icons/steam.png";
-	import externalIcon from "../icons/protron_forked.png";
+	import steamIcon from "@icons/steam.png";
+	import externalIcon from "@icons/protron_forked.png";
 
 	let protonVersions: core.ProtonTool[] = [];
 	let isLoading = true;
@@ -40,11 +40,26 @@
 		</div>
 
 		<div class="actions">
-			<button class="btn secondary" on:click={() => openExternal("https://protondb.com")}> ProtonDB </button>
-			<button class="btn secondary" on:click={() => openExternal("https://github.com/Vysp3r/ProtonPlus")}>
+			<button
+				class="btn secondary"
+				on:click={() => openExternal("https://protondb.com")}
+			>
+				ProtonDB
+			</button>
+			<button
+				class="btn secondary"
+				on:click={() =>
+					openExternal("https://github.com/Vysp3r/ProtonPlus")}
+			>
 				ProtonPlus
 			</button>
-			<button class="btn secondary" on:click={() => openExternal("https://github.com/DavidoTek/ProtonUp-Qt")}>
+			<button
+				class="btn secondary"
+				on:click={() =>
+					openExternal(
+						"https://github.com/DavidoTek/ProtonUp-Qt",
+					)}
+			>
 				ProtonUp
 			</button>
 		</div>
@@ -57,11 +72,17 @@
 			{#each protonVersions as tool}
 				<div class="version-card">
 					<div class="icon">
-						<img src={tool.IsSteam ? steamIcon : externalIcon} alt="tool" class="tool-icon" />
+						<img
+							src={tool.IsSteam ? steamIcon : externalIcon}
+							alt="tool"
+							class="tool-icon"
+						/>
 					</div>
 					<div class="info">
 						<div class="name">{tool.Name}</div>
-						<div class="path" title={tool.Path}>{tool.Path}</div>
+						<div class="path" title={tool.Path}>
+							{tool.Path}
+						</div>
 					</div>
 					<div class="type-badge" class:steam={tool.IsSteam}>
 						{tool.IsSteam ? "Steam" : "External"}
@@ -141,20 +162,26 @@
 
 		.icon {
 			font-size: 1.5rem;
-			background: var(--glass-bg);
+			background: var(--glass-surface);
 			border: 1px solid var(--glass-border);
-			width: 48px;
-			height: 48px;
+			width: 52px;
+			height: 52px;
 			display: flex;
 			align-items: center;
 			justify-content: center;
 			border-radius: 12px;
+			box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
 
 			.tool-icon {
-				width: 24px;
-				height: 24px;
-				filter: brightness(0) invert(1);
-				opacity: 0.8;
+				width: 32px;
+				height: 32px;
+				opacity: 0.9;
+				object-fit: contain;
+
+				/* Use dynamic filter for dark mode if needed, but in light mode keep original */
+				:global([data-theme="dark"]) & {
+					filter: brightness(0) invert(1);
+				}
 			}
 		}
 
@@ -164,10 +191,11 @@
 		}
 
 		.name {
-			font-size: 1.1rem;
-			font-weight: 700;
+			font-size: 1.15rem;
+			font-weight: 800;
 			color: var(--text-main);
 			margin-bottom: 4px;
+			letter-spacing: -0.3px;
 		}
 
 		.path {
@@ -176,23 +204,29 @@
 			white-space: nowrap;
 			overflow: hidden;
 			text-overflow: ellipsis;
+			opacity: 0.8;
 		}
 
 		.type-badge {
-			font-size: 0.75rem;
-			padding: 6px 12px;
+			font-size: 0.7rem;
+			padding: 6px 14px;
 			border-radius: 8px;
-			background: var(--glass-bg);
+			background: var(--glass-hover);
 			border: 1px solid var(--glass-border);
-			color: var(--text-dim);
-			font-weight: 600;
+			color: var(--text-muted);
+			font-weight: 800;
 			text-transform: uppercase;
-			letter-spacing: 0.5px;
+			letter-spacing: 1px;
 
 			&.steam {
-				background: rgba(14, 165, 233, 0.15);
-				color: var(--accent-primary);
-				border: 1px solid rgba(14, 165, 233, 0.2);
+				background: rgba(14, 165, 233, 0.1);
+				color: #0284c7; /* Solid blue for readability in both modes */
+				border: 1px solid rgba(14, 165, 233, 0.3);
+
+				:global([data-theme="dark"]) & {
+					color: #38bdf8;
+					background: rgba(14, 165, 233, 0.2);
+				}
 			}
 		}
 	}

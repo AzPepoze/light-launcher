@@ -1,10 +1,8 @@
 <script lang="ts">
-	import Dropdown from "./Dropdown.svelte";
-	import SlideButton from "./SlideButton.svelte";
-	import MultiplierInput from "./MultiplierInput.svelte";
+	import Dropdown from "@components/shared/Dropdown.svelte";
+	import SlideButton from "@components/shared/SlideButton.svelte";
+	import MultiplierInput from "@components/shared/MultiplierInput.svelte";
 	import * as core from "@bindings/light-launcher/pkg/core/models";
-
-
 
 	export let options: core.LaunchOptions;
 	export let gpuList: string[] = [];
@@ -27,7 +25,9 @@
 				<span class="status-badge success">✓ Found</span>
 			{:else}
 				<span class="status-badge error">
-					<span class="material-icons" style="font-size: 14px;">warning</span>
+					<span class="material-icons" style="font-size: 14px;"
+						>warning</span
+					>
 					Not Set
 				</span>
 			{/if}
@@ -43,7 +43,8 @@
 				readonly={!compact}
 			/>
 			{#if onDllBrowse && showDllSection}
-				<button class="btn sm" on:click={onDllBrowse}>Browse</button>
+				<button class="btn sm" on:click={onDllBrowse}>Browse</button
+				>
 			{/if}
 		</div>
 		<p class="help-text">Lossless Scaling DLL path for LSFG-VK</p>
@@ -52,7 +53,10 @@
 	<div class="form-group">
 		<label for="lsfgMultiplier">FPS Multiplier</label>
 		<div id="lsfgMultiplier">
-			<MultiplierInput value={options.LsfgMultiplier} onChange={(val) => (options.LsfgMultiplier = val)} />
+			<MultiplierInput
+				value={options.LsfgMultiplier}
+				onChange={(val) => (options.LsfgMultiplier = val)}
+			/>
 		</div>
 	</div>
 
@@ -75,10 +79,14 @@
 			<Dropdown
 				options={gpuList}
 				bind:value={options.LsfgGpu}
-				onChange={(val) => (options.LsfgGpu = val === "Auto (Detect)" ? "" : val)}
+				onChange={(val) =>
+					(options.LsfgGpu = val === "Auto (Detect)" ? "" : val)}
 			/>
 		</div>
-		<p class="help-text">Select GPU for frame generation. Auto-detects if available GPUs are found.</p>
+		<p class="help-text">
+			Select GPU for frame generation. Auto-detects if available GPUs
+			are found.
+		</p>
 	</div>
 
 	<div class="form-group">
@@ -90,7 +98,10 @@
 			bind:value={options.LsfgFlowScale}
 			placeholder="e.g. 0.8"
 		/>
-		<p class="help-text">Optical flow scale for frame interpolation (0.0-2.0). Default: 0.8</p>
+		<p class="help-text">
+			Optical flow scale for frame interpolation (0.0-2.0). Default:
+			0.8
+		</p>
 	</div>
 
 	<div class="form-group">
@@ -188,7 +199,10 @@
 		transition: background 0.2s;
 
 		&:hover {
-			background: var(--accent-primary-hover, color-mix(in srgb, var(--accent-primary) 80%, black));
+			background: var(
+				--accent-primary-hover,
+				color-mix(in srgb, var(--accent-primary) 80%, black)
+			);
 		}
 
 		&.sm {

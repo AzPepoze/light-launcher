@@ -1,5 +1,5 @@
 <script lang="ts">
-	import RangeSlider from "./RangeSlider.svelte";
+	import RangeSlider from "@components/shared/RangeSlider.svelte";
 
 	export let value: string = "2";
 	export let onChange: ((val: string) => void) | null = null;

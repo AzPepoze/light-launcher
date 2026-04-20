@@ -10,7 +10,11 @@
 	export let onclick: () => void = () => {};
 </script>
 
-<button class="util-btn {btnClass}" class:pulsing={isPulsing} on:click={onclick}>
+<button
+	class="util-btn {btnClass}"
+	class:pulsing={isPulsing}
+	on:click={onclick}
+>
 	<div class="content-left">
 		<span class="material-icons util-icon">{icon}</span>
 		<div class="btn-stack">
@@ -19,8 +23,13 @@
 		</div>
 	</div>
 	{#if showSuccess}
-		<div class="check-indicator" in:fly={{ x: 20, duration: 400 }} out:fade={{ duration: 200 }}>
-			<span class="material-icons" style="font-size: 14px;">check</span>
+		<div
+			class="check-indicator"
+			in:fly={{ x: 20, duration: 400 }}
+			out:fade={{ duration: 200 }}
+		>
+			<span class="material-icons" style="font-size: 14px;">check</span
+			>
 		</div>
 	{/if}
 </button>
@@ -103,7 +112,12 @@
 				box-shadow: 0 4px 15px rgba(234, 179, 8, 0.2);
 			}
 			&.pulsing::after {
-				background: linear-gradient(90deg, transparent, rgba(234, 179, 8, 0.4), transparent);
+				background: linear-gradient(
+					90deg,
+					transparent,
+					rgba(234, 179, 8, 0.4),
+					transparent
+				);
 			}
 		}
 
@@ -127,7 +141,12 @@
 				box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
 			}
 			&.pulsing::after {
-				background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.4), transparent);
+				background: linear-gradient(
+					90deg,
+					transparent,
+					rgba(59, 130, 246, 0.4),
+					transparent
+				);
 			}
 		}
 
@@ -151,7 +170,12 @@
 				box-shadow: 0 4px 15px rgba(167, 139, 250, 0.2);
 			}
 			&.pulsing::after {
-				background: linear-gradient(90deg, transparent, rgba(167, 139, 250, 0.4), transparent);
+				background: linear-gradient(
+					90deg,
+					transparent,
+					rgba(167, 139, 250, 0.4),
+					transparent
+				);
 			}
 		}
 
@@ -175,7 +199,12 @@
 				box-shadow: 0 4px 15px rgba(52, 211, 153, 0.2);
 			}
 			&.pulsing::after {
-				background: linear-gradient(90deg, transparent, rgba(52, 211, 153, 0.4), transparent);
+				background: linear-gradient(
+					90deg,
+					transparent,
+					rgba(52, 211, 153, 0.4),
+					transparent
+				);
 			}
 		}
 
@@ -201,7 +230,7 @@
 		justify-content: center;
 		width: 20px;
 		height: 20px;
-			background: var(--accent-primary);
+		background: var(--accent-primary);
 		border-radius: 50%;
 		color: var(--glass-bg);
 		padding: 3px;

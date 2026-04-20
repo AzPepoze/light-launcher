@@ -7,11 +7,11 @@
 		GetSystemToolsStatus,
 		DetectLosslessDll,
 	} from "@bindings/light-launcher-wails/backend/app";
-	import { notifications } from "../notificationStore";
+	import { notifications } from "@stores/notificationStore";
 	import { Events } from "@wailsio/runtime";
 	import * as core from "@bindings/light-launcher/pkg/core/models";
 
-	import lsfgPng from "../icons/lsfg.png";
+	import lsfgPng from "@icons/lsfg.png";
 
 	let status: core.UtilsStatus = { isLsfgInstalled: false, lsfgVersion: "" };
 	let systemStatus: core.SystemToolsStatus & { hasLosslessDll: boolean } = {
@@ -88,28 +88,44 @@
 			<div class="status-item" class:ok={systemStatus.hasGamescope}>
 				<span class="dot"></span>
 				<span class="label">Gamescope</span>
-				<span class="value">{systemStatus.hasGamescope ? "Available" : "Not Found"}</span>
+				<span class="value"
+					>{systemStatus.hasGamescope
+						? "Available"
+						: "Not Found"}</span
+				>
 			</div>
 			<div class="status-item" class:ok={systemStatus.hasMangoHud}>
 				<span class="dot"></span>
 				<span class="label">MangoHud</span>
-				<span class="value">{systemStatus.hasMangoHud ? "Available" : "Not Found"}</span>
+				<span class="value"
+					>{systemStatus.hasMangoHud
+						? "Available"
+						: "Not Found"}</span
+				>
 			</div>
 			<div class="status-item" class:ok={systemStatus.hasGameMode}>
 				<span class="dot"></span>
 				<span class="label">GameMode</span>
-				<span class="value">{systemStatus.hasGameMode ? "Available" : "Not Found"}</span>
+				<span class="value"
+					>{systemStatus.hasGameMode
+						? "Available"
+						: "Not Found"}</span
+				>
 			</div>
 			<div class="status-item" class:ok={systemStatus.hasLosslessDll}>
 				<span class="dot"></span>
 				<span class="label">Lossless.dll</span>
-				<span class="value">{systemStatus.hasLosslessDll ? "Found" : "Not Found"}</span>
+				<span class="value"
+					>{systemStatus.hasLosslessDll
+						? "Found"
+						: "Not Found"}</span
+				>
 			</div>
 		</div>
 		{#if !systemStatus.hasGamescope || !systemStatus.hasMangoHud || !systemStatus.hasGameMode || !systemStatus.hasLosslessDll}
 			<p class="warning-text">
-				Some features may not work until you install these tools. LSFG-VK requires Lossless Scaling
-				installed via Steam.
+				Some features may not work until you install these tools.
+				LSFG-VK requires Lossless Scaling installed via Steam.
 			</p>
 		{/if}
 	</div>
@@ -123,42 +139,70 @@
 				</div>
 				<div class="title-area">
 					<h3>LSFG-VK</h3>
-					<span class="badge" class:installed={status.isLsfgInstalled}>
-						{status.isLsfgInstalled ? "Installed" : "Not Installed"}
+					<span
+						class="badge"
+						class:installed={status.isLsfgInstalled}
+					>
+						{status.isLsfgInstalled
+							? "Installed"
+							: "Not Installed"}
 					</span>
 				</div>
 			</div>
 
 			<div class="description">
 				<p>
-					Lossless Scaling is a Windows-exclusive program featuring various algorithms for scaling and
+					Lossless Scaling is a Windows-exclusive program
+					featuring various algorithms for scaling and
 					interpolating programs.
 				</p>
 				<p>
-					<strong>lsfg-vk</strong> is a Vulkan layer that hooks into Vulkan applications and generates additional
-					frames using Lossless Scaling's frame generation algorithm.
+					<strong>lsfg-vk</strong> is a Vulkan layer that hooks into
+					Vulkan applications and generates additional frames using
+					Lossless Scaling's frame generation algorithm.
 				</p>
-				<p class="note">Note: Requires Lossless Scaling downloaded on Steam.</p>
+				<p class="note">
+					Note: Requires Lossless Scaling downloaded on Steam.
+				</p>
 			</div>
 
 			<div class="action-area">
 				{#if status.isLsfgInstalled}
-					<button class="btn danger" on:click={handleUninstall} disabled={isUninstalling}>
-						{isUninstalling ? "Removing..." : "Remove Utility"}
+					<button
+						class="btn danger"
+						on:click={handleUninstall}
+						disabled={isUninstalling}
+					>
+						{isUninstalling
+							? "Removing..."
+							: "Remove Utility"}
 					</button>
 				{:else}
 					<div class="install-controls">
-						<button class="btn primary" on:click={handleInstall} disabled={isInstalling}>
-							{isInstalling ? "Installing..." : "Install LSFG-VK"}
+						<button
+							class="btn primary"
+							on:click={handleInstall}
+							disabled={isInstalling}
+						>
+							{isInstalling
+								? "Installing..."
+								: "Install LSFG-VK"}
 						</button>
 						{#if isInstalling}
 							<div class="install-progress-area">
 								<div class="progress-header">
-									<span class="msg">{progressMessage}</span>
-									<span class="pct">{progressPercent}%</span>
+									<span class="msg"
+										>{progressMessage}</span
+									>
+									<span class="pct"
+										>{progressPercent}%</span
+									>
 								</div>
 								<div class="progress-bar-container">
-									<div class="progress-fill" style="width: {progressPercent}%"></div>
+									<div
+										class="progress-fill"
+										style="width: {progressPercent}%"
+									></div>
 								</div>
 							</div>
 						{/if}
@@ -316,8 +360,8 @@
 		font-size: 0.7rem;
 		font-weight: 700;
 		text-transform: uppercase;
-		background: rgba(255, 255, 255, 0.1);
-		color: var(--text-dim);
+		background: var(--glass-high-alpha);
+		color: var(--text-muted);
 
 		&.installed {
 			background: rgba(16, 185, 129, 0.2);
@@ -345,8 +389,8 @@
 			font-size: 0.8rem;
 			color: var(--accent-secondary);
 			font-style: italic;
-			padding-top: 4px;
-			border-top: 1px solid rgba(255, 255, 255, 0.05);
+			padding-top: 8px;
+			border-top: 1px solid var(--glass-border);
 		}
 	}
 
@@ -381,17 +425,18 @@
 	}
 
 	.progress-bar-container {
-		height: 6px;
-		background: rgba(255, 255, 255, 0.05);
+		height: 8px;
+		background: var(--glass-low-alpha);
 		border-radius: 10px;
 		overflow: hidden;
+		border: 1px solid var(--glass-border);
 	}
 
 	.progress-fill {
 		height: 100%;
 		background: var(--accent-primary);
 		transition: width 0.3s ease;
-		box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+		box-shadow: 0 0 10px var(--glass-border-bright);
 	}
 
 	.action-area {

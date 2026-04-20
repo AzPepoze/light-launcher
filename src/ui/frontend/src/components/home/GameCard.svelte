@@ -1,7 +1,7 @@
 <script lang="ts">
-	import GridCard from "./gameCards/GridCard.svelte";
-	import ListGridCard from "./gameCards/ListGridCard.svelte";
-	import PerspectiveCard from "./gameCards/PerspectiveCard.svelte";
+	import GridCard from "@components/home/gamecards/GridCard.svelte";
+	import ListGridCard from "@components/home/gamecards/ListGridCard.svelte";
+	import PerspectiveCard from "@components/home/gamecards/PerspectiveCard.svelte";
 
 	export let game: any;
 	export let icon: string = "";
@@ -38,5 +38,12 @@
 		{onSelect}
 	/>
 {:else}
-	<PerspectiveCard {game} {icon} {isRunning} {active} {onLaunch} {onConfigure} />
+	<PerspectiveCard
+		{game}
+		{icon}
+		{isRunning}
+		{active}
+		{onLaunch}
+		{onConfigure}
+	/>
 {/if}

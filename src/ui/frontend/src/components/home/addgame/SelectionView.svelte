@@ -9,7 +9,9 @@
 	<div class="mode-buttons">
 		<button class="mode-btn" on:click={onAddFile}>
 			<div class="icon-box">
-				<span class="material-icons" style="font-size: 28px;">add_box</span>
+				<span class="material-icons" style="font-size: 28px;"
+					>add_box</span
+				>
 			</div>
 			<div class="btn-text">
 				<span class="title">Single File</span>
@@ -19,7 +21,9 @@
 
 		<button class="mode-btn" on:click={onAddFolder}>
 			<div class="icon-box">
-				<span class="material-icons" style="font-size: 28px;">create_new_folder</span>
+				<span class="material-icons" style="font-size: 28px;"
+					>create_new_folder</span
+				>
 			</div>
 			<div class="btn-text">
 				<span class="title">Scan Folder</span>
@@ -62,7 +66,11 @@
 			left: 0;
 			right: 0;
 			bottom: 0;
-			background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.1), transparent 70%);
+			background: radial-gradient(
+				circle at top left,
+				var(--glass-high-alpha),
+				transparent 70%
+			);
 			opacity: 0;
 			transition: opacity 0.3s;
 		}

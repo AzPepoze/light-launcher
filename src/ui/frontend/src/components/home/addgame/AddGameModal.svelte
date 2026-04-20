@@ -7,13 +7,13 @@
 		ListPrefixes,
 		GetPrefixBaseDir,
 	} from "@bindings/light-launcher-wails/backend/app";
-	import { notifications } from "../../../notificationStore";
-	import { loadExeIcon } from "../../../lib/iconService";
+	import { notifications } from "@stores/notificationStore";
+	import { loadExeIcon } from "@lib/iconService";
 	import SelectionView from "./SelectionView.svelte";
 	import ConfigView from "./ConfigView.svelte";
 	import ReviewView from "./ReviewView.svelte";
-	import Modal from "../../Modal.svelte";
-	import Dropdown from "../../Dropdown.svelte";
+	import Modal from "@components/shared/Modal.svelte";
+	import Dropdown from "@components/shared/Dropdown.svelte";
 	import { onMount } from "svelte";
 	import { fade } from "svelte/transition";
 
@@ -25,7 +25,11 @@
 	let searchDepth = "2";
 	let excludeNames = "UnityCrashHandler64, uninstall, redist";
 	let selectedFolder = "";
-	let foundExecutables: { path: string; name: string; icon: string | null }[] = [];
+	let foundExecutables: {
+		path: string;
+		name: string;
+		icon: string | null;
+	}[] = [];
 	let discardedExecutables = new Set<string>();
 	let isSearching = false;
 
@@ -73,7 +77,8 @@
 		try {
 			const path = await PickFile();
 			if (path) {
-				const name = path.split("/").pop()?.replace(".exe", "") || "Game";
+				const name =
+					path.split("/").pop()?.replace(".exe", "") || "Game";
 				await saveGame(path);
 				notifications.add(`Added ${name}`, "success");
 				onRefresh();
@@ -107,11 +112,17 @@
 				.map((e) => e.trim())
 				.filter((e) => e !== "");
 
-			const exes = await SearchExecutables(selectedFolder, validDepth, excludes);
+			const exes = await SearchExecutables(
+				selectedFolder,
+				validDepth,
+				excludes,
+			);
 			if (exes && exes.length > 0) {
 				foundExecutables = exes.map((path) => ({
 					path,
-					name: path.split("/").pop()?.replace(".exe", "") || "Game",
+					name:
+						path.split("/").pop()?.replace(".exe", "") ||
+						"Game",
 					icon: null,
 				}));
 				addMode = "folder-review";
@@ -160,7 +171,9 @@
 	}
 
 	async function confirmAddFolder() {
-		const toAdd = foundExecutables.filter((exe) => !discardedExecutables.has(exe.path));
+		const toAdd = foundExecutables.filter(
+			(exe) => !discardedExecutables.has(exe.path),
+		);
 		if (toAdd.length === 0) {
 			onClose();
 			return;
@@ -201,22 +214,48 @@
 		{#if addMode === "select"}
 			<div class="prefix-selection-quick" transition:fade>
 				<label for="quick-prefix">Target Prefix</label>
-				<Dropdown options={prefixes} bind:value={selectedPrefix} placeholder="Select WINE Prefix" />
+				<Dropdown
+					options={prefixes}
+					bind:value={selectedPrefix}
+					placeholder="Select WINE Prefix"
+				/>
 			</div>
-			<SelectionView onAddFile={handleAddFile} onAddFolder={handleAddFolder} />
+			<SelectionView
+				onAddFile={handleAddFile}
+				onAddFolder={handleAddFolder}
+			/>
 		{:else if addMode === "folder-config"}
-			<ConfigView {selectedFolder} bind:searchDepth bind:excludeNames {prefixes} bind:selectedPrefix />
+			<ConfigView
+				{selectedFolder}
+				bind:searchDepth
+				bind:excludeNames
+				{prefixes}
+				bind:selectedPrefix
+			/>
 		{:else}
-			<ReviewView {foundExecutables} {discardedExecutables} onToggleDiscard={toggleDiscard} />
+			<ReviewView
+				{foundExecutables}
+				{discardedExecutables}
+				onToggleDiscard={toggleDiscard}
+			/>
 		{/if}
 	</div>
 
 	<div slot="footer" class="modal-footer-wizard">
 		{#if addMode === "select"}
-			<p class="selection-footer-text">Select how you want to add games to your library</p>
+			<p class="selection-footer-text">
+				Select how you want to add games to your library
+			</p>
 		{:else if addMode === "folder-config"}
-			<button class="secondary-btn" on:click={() => (addMode = "select")}>Back</button>
-			<button class="primary-btn" on:click={startFolderScan} disabled={isSearching}>
+			<button
+				class="secondary-btn"
+				on:click={() => (addMode = "select")}>Back</button
+			>
+			<button
+				class="primary-btn"
+				on:click={startFolderScan}
+				disabled={isSearching}
+			>
 				{#if isSearching}
 					<div class="spinner small"></div>
 					Scanning...
@@ -225,7 +264,10 @@
 				{/if}
 			</button>
 		{:else if addMode === "folder-review"}
-			<button class="secondary-btn" on:click={() => (addMode = "folder-config")}>Back</button>
+			<button
+				class="secondary-btn"
+				on:click={() => (addMode = "folder-config")}>Back</button
+			>
 			<button class="primary-btn" on:click={confirmAddFolder}>
 				Add {foundExecutables.length - discardedExecutables.size} Games
 			</button>
@@ -239,7 +281,7 @@
 		background: var(--glass-bg) !important;
 		border-radius: 30px !important;
 		border: 1px solid var(--glass-border) !important;
-		box-shadow: 0 50px 100px rgba(0, 0, 0, 0.3) !important;
+		box-shadow: var(--glass-shadow) !important;
 
 		&::before {
 			content: "";
@@ -248,7 +290,12 @@
 			left: 0;
 			right: 0;
 			height: 1px;
-			background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+			background: linear-gradient(
+				90deg,
+				transparent,
+				var(--glass-border-bright),
+				transparent
+			);
 		}
 
 		:global(.modal-header) {
@@ -328,7 +375,7 @@
 		display: flex;
 		align-items: center;
 		gap: 10px;
-		box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1);
+		box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 
 		&:hover {
 			transform: scale(1.05) translateY(-2px);

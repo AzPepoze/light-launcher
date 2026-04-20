@@ -33,12 +33,22 @@
 	</div>
 	<div class="actions">
 		{#if hasConfig}
-			<button class="config-btn" on:click={openConfig} title="Configure">
-				<span class="material-icons" style="font-size: 16px;">settings</span>
+			<button
+				class="config-btn"
+				on:click={openConfig}
+				title="Configure"
+			>
+				<span class="material-icons" style="font-size: 16px;"
+					>settings</span
+				>
 			</button>
 		{/if}
 		<div class="switch-container">
-			<input type="checkbox" {checked} on:change|stopPropagation={toggle} />
+			<input
+				type="checkbox"
+				{checked}
+				on:change|stopPropagation={toggle}
+			/>
 			<span class="slider"></span>
 		</div>
 	</div>
@@ -82,18 +92,19 @@
 	.config-btn {
 		background: none;
 		border: none;
-		color: white;
+		color: var(--text-muted);
 		padding: 6px;
 		border-radius: 6px;
 		cursor: pointer;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		opacity: 0.6;
+		opacity: 0.8;
 		transition: all 0.2s;
 
 		&:hover {
-			background: rgba(255, 255, 255, 0.1);
+			background: var(--glass-hover);
+			color: var(--text-main);
 			opacity: 1;
 		}
 	}

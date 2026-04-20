@@ -1,7 +1,11 @@
 <script lang="ts">
 	import { fade } from "svelte/transition";
 
-	export let foundExecutables: { path: string; name: string; icon: string | null }[];
+	export let foundExecutables: {
+		path: string;
+		name: string;
+		icon: string | null;
+	}[];
 	export let discardedExecutables: Set<string>;
 	export let onToggleDiscard: (path: string) => void;
 </script>
@@ -15,15 +19,24 @@
 				on:click={() => onToggleDiscard(exe.path)}
 				role="button"
 				tabindex="0"
-				on:keydown={(e) => e.key === "Enter" && onToggleDiscard(exe.path)}
+				on:keydown={(e) =>
+					e.key === "Enter" && onToggleDiscard(exe.path)}
 			>
 				<div class="card-content">
 					<div class="icon-container">
 						{#if exe.icon}
-							<img src={exe.icon} alt={exe.name} class="game-icon" />
+							<img
+								src={exe.icon}
+								alt={exe.name}
+								class="game-icon"
+							/>
 						{:else}
 							<div class="icon-placeholder">
-								<span class="material-icons" style="font-size: 24px;">rocket_launch</span>
+								<span
+									class="material-icons"
+									style="font-size: 24px;"
+									>rocket_launch</span
+								>
 							</div>
 						{/if}
 					</div>
@@ -67,7 +80,11 @@
 			content: "";
 			position: absolute;
 			inset: 0;
-			background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.05), transparent 70%);
+			background: radial-gradient(
+				circle at top left,
+				var(--glass-low-alpha),
+				transparent 70%
+			);
 			opacity: 0;
 			transition: opacity 0.3s;
 		}
