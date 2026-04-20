@@ -1,4 +1,4 @@
-import * as core from "../../bindings/goproton/pkg/core/models";
+import * as core from "@bindings/light-launcher/pkg/core/models";
 
 export const DEFAULT_LAUNCH_OPTIONS: core.LaunchOptions = {
 	...({

@@ -8,12 +8,9 @@
 		ClearShaderCache,
 		DropCaches,
 		ClearSwap,
-	} from "../../bindings/goproton-wails/backend/app";
-	import * as core from "../../bindings/goproton/pkg/core/models";
-	import trashIcon from "../icons/trash.svg";
-	import rocketIcon from "../icons/rocket.svg";
-	import magicIcon from "../icons/magic.svg";
-	import swapIcon from "../icons/swap.svg";
+	} from "@bindings/light-launcher-wails/backend/app";
+	import * as core from "@bindings/light-launcher/pkg/core/models";
+
 	import StatusUtilityButton from "./StatusUtilityButton.svelte";
 
 	let isExpanded = false;
@@ -161,21 +158,7 @@
 			<div class="status-box">
 				<div class="box-header">
 					<div class="icon-label">
-						<svg
-							class="mini-icon"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2.5"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							><rect width="20" height="14" x="2" y="3" rx="2" /><line
-								x1="8"
-								x2="16"
-								y1="21"
-								y2="21"
-							/><line x1="12" x2="12" y1="17" y2="21" /></svg
-						>
+						<span class="material-icons mini-icon">laptop_windows</span>
 						<span class="label">SYSTEM</span>
 					</div>
 				</div>
@@ -189,25 +172,7 @@
 			<div class="status-box">
 				<div class="box-header">
 					<div class="icon-label">
-						<svg
-							class="mini-icon"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2.5"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							><rect width="16" height="16" x="4" y="4" rx="2" /><rect
-								width="6"
-								height="6"
-								x="9"
-								y="9"
-							/><path d="M15 2v2" /><path d="M15 20v2" /><path d="M2 15h2" /><path
-								d="M2 9h2"
-							/><path d="M20 15h2" /><path d="M20 9h2" /><path d="M9 2v2" /><path
-								d="M9 20v2"
-							/></svg
-						>
+						<span class="material-icons mini-icon">memory</span>
 						<span class="label">CPU</span>
 					</div>
 					<span class="usage">{sysUsage.cpu}</span>
@@ -222,24 +187,7 @@
 			<div class="status-box">
 				<div class="box-header">
 					<div class="icon-label">
-						<svg
-							class="mini-icon"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2.5"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							><path d="M6 19v-3" /><path d="M10 19v-3" /><path d="M14 19v-3" /><path
-								d="M18 19v-3"
-							/><path d="M8 11V9" /><path d="M16 11V9" /><rect
-								width="18"
-								height="12"
-								x="3"
-								y="7"
-								rx="2"
-							/><path d="M3 13h18" /></svg
-						>
+						<span class="material-icons mini-icon">storage</span>
 						<span class="label">RAM</span>
 					</div>
 					<span class="usage"
@@ -263,24 +211,7 @@
 			<div class="status-box">
 				<div class="box-header">
 					<div class="icon-label">
-						<svg
-							class="mini-icon"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2.5"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							><path d="M18 8V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h2" /><rect
-								width="12"
-								height="8"
-								x="10"
-								y="10"
-								rx="2"
-							/><path d="M14 10V8" /><path d="M18 10V8" /><path d="M14 20v-2" /><path
-								d="M18 20v-2"
-							/><path d="M22 14h-2" /><path d="M22 18h-2" /></svg
-						>
+						<span class="material-icons mini-icon">videogame_asset</span>
 						<span class="label">GPU</span>
 					</div>
 					<span class="usage">{sysUsage.gpu}</span>
@@ -299,7 +230,7 @@
 
 		<div class="utilities-row">
 			<StatusUtilityButton
-				icon={trashIcon}
+				icon="delete"
 				title="Cleanup System"
 				subtitle="Terminate all running processes"
 				isPulsing={isCleaning}
@@ -309,7 +240,7 @@
 			/>
 
 			<StatusUtilityButton
-				icon={rocketIcon}
+				icon="rocket_launch"
 				title="Clear Shader Cache"
 				subtitle={shaderCacheSize}
 				isPulsing={isClearingCache}
@@ -319,7 +250,7 @@
 			/>
 
 			<StatusUtilityButton
-				icon={magicIcon}
+				icon="auto_fix_high"
 				title="Drop Caches"
 				subtitle="Free up pagecache & dentries"
 				isPulsing={isDroppingCaches}
@@ -329,7 +260,7 @@
 			/>
 
 			<StatusUtilityButton
-				icon={swapIcon}
+				icon="swap_horiz"
 				title="Clear Swap"
 				subtitle="Reset swap usage"
 				isPulsing={isClearingSwap}
@@ -345,14 +276,14 @@
 	.status-drawer-wrapper {
 		position: fixed;
 		bottom: 20px;
-		background: rgba(18, 18, 22, 1);
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		background: var(--glass-bg);
+		border: 1px solid var(--glass-border);
 		border-radius: 20px;
 		transform: translateY(calc(100% - 55px));
 		transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
 		z-index: 100;
 		padding: 0 20px 20px 20px;
-		box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+		box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
 		overflow: hidden;
 		margin-right: 20px;
 		width: -webkit-fill-available;
@@ -369,8 +300,8 @@
 		align-items: center;
 		justify-content: center;
 		cursor: pointer;
-		background: rgba(60, 60, 65, 0.4);
-		border: 1px solid rgba(255, 255, 255, 0.05);
+		background: var(--glass-surface);
+		border: 1px solid var(--glass-border);
 		border-radius: 12px;
 		margin: 10px 0;
 		transition: all 0.2s ease;
@@ -378,7 +309,7 @@
 		.trigger-text {
 			font-size: 0.8rem;
 			font-weight: 700;
-			color: rgba(255, 255, 255, 0.6);
+			color: var(--text-dim);
 			letter-spacing: 1px;
 			text-transform: uppercase;
 		}
@@ -412,10 +343,10 @@
 	}
 
 	.status-box {
-		background: rgba(255, 255, 255, 0.03);
+		background: var(--glass-surface);
 		padding: 12px;
 		border-radius: 12px;
-		border: 1px solid rgba(255, 255, 255, 0.05);
+		border: 1px solid var(--glass-border);
 		display: flex;
 		flex-direction: column;
 		min-width: 0;
@@ -433,8 +364,7 @@
 				color: var(--text-dim);
 
 				.mini-icon {
-					width: 14px;
-					height: 14px;
+					font-size: 14px;
 					opacity: 0.8;
 				}
 

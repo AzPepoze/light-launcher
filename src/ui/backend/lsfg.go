@@ -4,8 +4,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"goproton/pkg/core"
-	"goproton/pkg/lsfg_utils"
+	"light-launcher/pkg/core"
+	"light-launcher/pkg/lsfg_utils"
 
 	"github.com/pelletier/go-toml/v2"
 	"github.com/wailsapp/wails/v3/pkg/application"

@@ -98,21 +98,7 @@
 					/>
 				{:else}
 					<div class="exe-icon-placeholder">
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="32"
-							height="32"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-						>
-							<rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-							<line x1="8" y1="21" x2="16" y2="21"></line>
-							<line x1="12" y1="17" x2="12" y2="21"></line>
-						</svg>
+						<span class="material-icons" style="font-size: 32px;">laptop_windows</span>
 					</div>
 				{/if}
 			</div>
@@ -162,21 +148,7 @@
 						/>
 					{:else}
 						<div class="exe-icon-placeholder">
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								width="32"
-								height="32"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-							>
-								<rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-								<line x1="8" y1="21" x2="16" y2="21"></line>
-								<line x1="12" y1="17" x2="12" y2="21"></line>
-							</svg>
+							<span class="material-icons" style="font-size: 32px;">laptop_windows</span>
 						</div>
 					{/if}
 				</div>
@@ -209,20 +181,23 @@
 	.launcher-exe-section,
 	.game-exe-section {
 		padding: 16px;
-		background: rgba(255, 255, 255, 0.04);
+		background: var(--glass-surface);
 		border-radius: 10px;
 		border: 1px solid var(--glass-border);
 	}
 
 	.launcher-exe-section {
 		padding: 20px 16px;
-		background: rgba(96, 165, 250, 0.15);
-		border-color: rgba(96, 165, 250, 0.3);
+		background: var(--glass-surface);
+		border-radius: 10px;
+		border: 1px solid rgba(96, 165, 250, 0.3);
 	}
 
 	.game-exe-section {
-		background: rgba(192, 132, 252, 0.15);
-		border-color: rgba(192, 132, 252, 0.3);
+		padding: 16px;
+		background: var(--glass-surface);
+		border-radius: 10px;
+		border: 1px solid rgba(192, 132, 252, 0.3);
 	}
 
 	label {
@@ -279,7 +254,7 @@
 		align-items: center;
 		justify-content: center;
 		border-radius: 8px;
-		background: rgba(0, 0, 0, 0.2);
+		background: var(--glass-bg);
 		border: 1px solid var(--glass-border);
 		overflow: hidden;
 
@@ -319,7 +294,7 @@
 	.input {
 		flex: 1;
 		padding: 10px 12px;
-		background: rgba(0, 0, 0, 0.2);
+		background: var(--glass-bg);
 		border: 1px solid var(--glass-border);
 		border-radius: 6px;
 		color: var(--text-main);

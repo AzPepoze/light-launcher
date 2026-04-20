@@ -1,8 +1,4 @@
 <script lang="ts">
-	import playIcon from "../../../icons/play.svg";
-	import settingsIcon from "../../../icons/settings.svg";
-	import rocketIcon from "../../../icons/rocket.svg";
-
 	export let game: any;
 	export let icon: string = "";
 	export let isRunning: boolean = false;
@@ -39,17 +35,7 @@
 		<div class="selection-checkbox">
 			<div class="checkbox" class:checked={isSelected}>
 				{#if isSelected}
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="16"
-						height="16"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="3"
-						stroke-linecap="round"
-						stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg
-					>
+					<span class="material-icons" style="font-size: 16px;">check</span>
 				{/if}
 			</div>
 		</div>
@@ -60,7 +46,7 @@
 			<img src={icon} alt={game.name} class="game-icon" />
 		{:else}
 			<div class="fallback-wrapper">
-				<img src={rocketIcon} alt="rocket" class="game-icon-fallback" />
+				<span class="material-icons" style="font-size: 32px; color: var(--text-dim); opacity: 0.5;">rocket_launch</span>
 			</div>
 		{/if}
 
@@ -79,10 +65,10 @@
 
 		<div class="actions">
 			<button class="action-btn play" title="Play Now">
-				<img src={playIcon} alt="play" />
+				<span class="material-icons">play_arrow</span>
 			</button>
 			<button class="action-btn config" title="Configure" on:click|stopPropagation={handleConfigure}>
-				<img src={settingsIcon} alt="configure" />
+				<span class="material-icons">settings</span>
 			</button>
 		</div>
 	</div>
@@ -92,8 +78,8 @@
 	.list-card {
 		display: flex;
 		align-items: center;
-		background: rgba(255, 255, 255, 0.03);
-		border: 1px solid rgba(255, 255, 255, 0.05);
+		background: var(--glass-surface);
+		border: 1px solid var(--glass-border);
 		border-radius: 16px;
 		padding: 12px 20px;
 		gap: 20px;
@@ -102,15 +88,15 @@
 		max-width: 100%;
 
 		&:hover {
-			background: rgba(255, 255, 255, 0.07);
-			border-color: rgba(255, 255, 255, 0.2);
+			background: var(--glass-border-bright);
+			border-color: var(--glass-border-bright);
 			transform: translateX(8px);
 
 			.game-icon {
 				transform: scale(1.1);
 			}
 
-			.play img {
+			.play .material-icons {
 				transform: scale(1.2);
 			}
 		}
@@ -138,18 +124,15 @@
 		.checkbox {
 			width: 24px;
 			height: 24px;
-			border: 2px solid rgba(255, 255, 255, 0.1);
+			border: 2px solid var(--glass-border);
 			border-radius: 6px;
-			background: rgba(0, 0, 0, 0.3);
+			background: var(--glass-bg);
 			display: flex;
 			align-items: center;
 			justify-content: center;
 			transition: all 0.2s;
 			color: transparent;
 
-			svg {
-				stroke: currentColor;
-			}
 		}
 	}
 
@@ -160,8 +143,8 @@
 		overflow: hidden;
 		position: relative;
 		flex-shrink: 0;
-		background: #000;
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		background: var(--glass-bg);
+		border: 1px solid var(--glass-border);
 
 		.game-icon {
 			width: 100%;
@@ -179,11 +162,7 @@
 			opacity: 1;
 		}
 
-		.game-icon-fallback {
-			width: 32px;
-			height: 32px;
-			filter: brightness(0) invert(1);
-		}
+
 
 		.running-indicator-small {
 			position: absolute;
@@ -221,7 +200,7 @@
 
 		.game-name {
 			font-weight: 700;
-			color: #fff;
+			color: var(--text-main);
 			font-size: 1.1rem;
 			white-space: nowrap;
 			overflow: hidden;
@@ -230,7 +209,7 @@
 
 		.game-path {
 			font-size: 0.8rem;
-			color: rgba(255, 255, 255, 0.4);
+			color: var(--text-dim);
 			white-space: nowrap;
 			overflow: hidden;
 			text-overflow: ellipsis;
@@ -242,29 +221,18 @@
 		display: flex;
 		gap: 8px;
 	}
-
 	.action-btn {
-		background: rgba(255, 255, 255, 0.05);
-		border: 1px solid rgba(255, 255, 255, 0.1);
-		width: 40px;
-		height: 40px;
-		border-radius: 12px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		cursor: pointer;
-		transition: all 0.2s;
-
-		img {
-			width: 20px;
-			height: 20px;
-			filter: brightness(0) invert(1);
+		.material-icons {
+			font-size: 20px;
 			transition: transform 0.2s;
+			display: flex;
+			align-items: center;
+			justify-content: center;
 		}
 
 		&:hover {
-			background: rgba(255, 255, 255, 0.15);
-			border-color: rgba(255, 255, 255, 0.3);
+			background: var(--glass-border-bright);
+			border-color: var(--glass-border-bright);
 		}
 
 		&.play:hover {

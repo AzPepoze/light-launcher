@@ -1,10 +1,10 @@
 {
 	"$schema": "https://wails.io/schemas/config.v3.json",
-	"name": "goproton",
-	"outputfilename": "goproton",
-	"frontend:install": "pnpm install",
-	"frontend:build": "pnpm run build",
-	"frontend:dev:watcher": "pnpm run dev",
+	"name": "light-launcher",
+	"outputfilename": "light-launcher",
+	"frontend:install": "bun install",
+	"frontend:build": "bun run build",
+	"frontend:dev:watcher": "bun run dev",
 	"frontend:dev:serverUrl": "auto",
 	"author": {
 		"name": "AzPepoze",

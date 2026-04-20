@@ -1,0 +1,12 @@
+post_install() {
+    echo "==> LightLauncher installed successfully!"
+    echo "==> To launch the UI, run: light-launcher"
+    echo ""
+    echo "==> Make sure to install umu-launcher and Steam first:"
+    echo "    $ sudo pacman -S umu-launcher steam"
+}
+
+post_upgrade() {
+    echo "==> LightLauncher upgraded successfully!"
+    echo "==> Run 'light-launcher' to start the launcher"
+}

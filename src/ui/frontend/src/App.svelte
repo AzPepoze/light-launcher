@@ -12,10 +12,21 @@
 		GetInitialLauncherPath,
 		GetInitialGamePath,
 		GetShouldEditLsfg,
-	} from "../bindings/goproton-wails/backend/app";
+	} from "@bindings/light-launcher-wails/backend/app";
 	import { onMount } from "svelte";
 	import { navigationCommand } from "./stores/navigationStore";
 	import { runState } from "./stores/runState";
+	import { writable } from "svelte/store";
+ 
+	const theme = writable(localStorage.getItem("theme") || "light");
+	theme.subscribe((val) => {
+		document.documentElement.dataset.theme = val;
+		localStorage.setItem("theme", val);
+	});
+ 
+	function toggleTheme() {
+		theme.update((t) => (t === "light" ? "dark" : "light"));
+	}
 
 	let activePage = "home";
 	let editLsfgGamePath = "";
@@ -68,7 +79,7 @@
 	<div class="app-layout" class:fullscreen={activePage === "editlsfg"}>
 		{#if activePage !== "editlsfg"}
 			<div class="navbar-container">
-				<Navbar {activePage} onNavigate={handleNavigate} />
+				<Navbar {activePage} onNavigate={handleNavigate} {toggleTheme} />
 			</div>
 		{/if}
 
@@ -109,7 +120,7 @@
 		position: relative;
 		height: 100vh;
 		width: 100vw;
-		background-color: #0c0c0e;
+		background-color: var(--glass-bg);
 		color: var(--text-main);
 		user-select: none;
 		overflow: hidden; /* Prevent scrollbar flicker during transition */

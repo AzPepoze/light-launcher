@@ -11,14 +11,14 @@ import (
 	"syscall"
 	"time"
 
-	"goproton/pkg/core"
-	"goproton/pkg/lsfg_utils"
+	"light-launcher/pkg/core"
+	"light-launcher/pkg/lsfg_utils"
 
 	"github.com/getlantern/systray"
 )
 
 func sendNotification(title, message string) {
-	_ = exec.Command("notify-send", "-a", "GoProton", title, message).Run()
+	_ = exec.Command("notify-send", "-a", "LightLauncher", title, message).Run()
 }
 
 func onReady(logPath string) {
@@ -26,10 +26,10 @@ func onReady(logPath string) {
 	exeNameClean := strings.TrimSuffix(exeName, filepath.Ext(exeName))
 	launcherName := filepath.Base(launcherPath)
 
-	systray.SetTitle("GoProton: " + exeNameClean)
+	systray.SetTitle("LightLauncher: " + exeNameClean)
 	systray.SetTooltip("Running: " + exeNameClean)
 
-	sendNotification("GoProton", "Launching "+exeNameClean+" ("+launcherName+")...")
+	sendNotification("LightLauncher", "Launching "+exeNameClean+" ("+launcherName+")...")
 
 	// Setup UI
 	mStatus := systray.AddMenuItem("Running: "+exeNameClean, "")
@@ -138,27 +138,27 @@ func setupLsfgMenu() {
 	}()
 }
 
-// launchLsfgUI launches the goproton in LSFG edit mode
+// launchLsfgUI launches the light-launcher in LSFG edit mode
 func launchLsfgUI() {
-	uiBinary := "goproton"
+	uiBinary := "light-launcher"
 
 	// Try to find local UI binary first
 	if exePath, err := os.Executable(); err == nil {
-		localBinary := filepath.Join(filepath.Dir(exePath), "goproton")
+		localBinary := filepath.Join(filepath.Dir(exePath), "light-launcher")
 		if _, err := os.Stat(localBinary); err == nil {
 			uiBinary = localBinary
-			log.Printf("Found local goproton binary: %s", localBinary)
+			log.Printf("Found local light-launcher binary: %s", localBinary)
 		}
 	}
 
 	uiCmd := exec.Command(uiBinary)
 	env := os.Environ()
-	env = append(env, fmt.Sprintf("GOPROTON_GAME_PATH=%s", gamePath))
-	env = append(env, "GOPROTON_EDIT_LSFG=1")
+	env = append(env, fmt.Sprintf("LIGHT_LAUNCHER_GAME_PATH=%s", gamePath))
+	env = append(env, "LIGHT_LAUNCHER_EDIT_LSFG=1")
 	uiCmd.Env = env
 	uiCmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
-	log.Printf("Launching goproton with GOPROTON_GAME_PATH=%s and GOPROTON_EDIT_LSFG=1", gamePath)
+	log.Printf("Launching light-launcher with LIGHT_LAUNCHER_GAME_PATH=%s and LIGHT_LAUNCHER_EDIT_LSFG=1", gamePath)
 
 	if err := uiCmd.Start(); err != nil {
 		sendNotification("LSFG-VK Config", fmt.Sprintf("Failed to launch UI: %v", err))

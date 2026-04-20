@@ -10,9 +10,9 @@ import (
 func GetBaseDir() string {
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return "GoProton"
+		return "LightLauncher"
 	}
-	return filepath.Join(home, "GoProton")
+	return filepath.Join(home, "LightLauncher")
 }
 
 func GetConfigDir() string {
@@ -46,7 +46,7 @@ func GetGameLsfgConfigPath(exePath string) string {
 }
 
 func GetPrefixConfigPath(prefixName string) string {
-	return filepath.Join(GetPrefixBaseDir(), prefixName, "goproton.json")
+	return filepath.Join(GetPrefixBaseDir(), prefixName, "light-launcher.json")
 }
 
 func ListPrefixes() ([]string, error) {

@@ -2,9 +2,9 @@
 	import Dropdown from "./Dropdown.svelte";
 	import SlideButton from "./SlideButton.svelte";
 	import MultiplierInput from "./MultiplierInput.svelte";
-	import * as core from "../../bindings/goproton/pkg/core/models";
+	import * as core from "@bindings/light-launcher/pkg/core/models";
 
-	import warningIcon from "../icons/warning.svg";
+
 
 	export let options: core.LaunchOptions;
 	export let gpuList: string[] = [];
@@ -27,7 +27,7 @@
 				<span class="status-badge success">✓ Found</span>
 			{:else}
 				<span class="status-badge error">
-					<img src={warningIcon} alt="warning" class="svg-icon" />
+					<span class="material-icons" style="font-size: 14px;">warning</span>
 					Not Set
 				</span>
 			{/if}
@@ -159,10 +159,10 @@
 
 	.input {
 		padding: 8px 12px;
-		background: rgba(0, 0, 0, 0.3);
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		background: var(--glass-surface);
+		border: 1px solid var(--glass-border);
 		border-radius: 6px;
-		color: white;
+		color: var(--text-main);
 		font-size: 0.95rem;
 
 		&:focus {
@@ -182,7 +182,7 @@
 		background: var(--accent-primary);
 		border: none;
 		border-radius: 6px;
-		color: #000000;
+		color: var(--glass-bg);
 		font-weight: 600;
 		cursor: pointer;
 		transition: background 0.2s;
@@ -208,10 +208,8 @@
 		align-items: center;
 		gap: 4px;
 
-		.svg-icon {
-			width: 10px;
-			height: 10px;
-			filter: invert(36%) sepia(84%) saturate(4644%) hue-rotate(345deg) brightness(98%) contrast(93%); // #ef4444
+		.material-icons {
+			font-size: 10px;
 		}
 
 		&.success {

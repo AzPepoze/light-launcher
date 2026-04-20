@@ -93,7 +93,7 @@ func FetchReleases(variantID string) ([]GitHubRelease, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("User-Agent", "GoProton-Launcher")
+	req.Header.Set("User-Agent", "LightLauncher-Launcher")
 
 	resp, err := client.Do(req)
 	if err != nil {

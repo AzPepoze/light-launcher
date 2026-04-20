@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	"goproton/pkg/core"
-	"goproton/pkg/lsfg_utils"
+	"light-launcher/pkg/core"
+	"light-launcher/pkg/lsfg_utils"
 )
 
 func (a *App) RunGame(opts core.LaunchOptions, showLogs bool) error {
@@ -59,7 +59,7 @@ func (a *App) RunGame(opts core.LaunchOptions, showLogs bool) error {
 		}
 	}
 
-	instanceName := "goproton-instance"
+	instanceName := "light-launcher-instance"
 	exeDir := "."
 	if exe, err := os.Executable(); err == nil {
 		exeDir = filepath.Dir(exe)
@@ -159,9 +159,9 @@ func (a *App) GetAllGames() ([]GameInfo, error) {
 }
 
 func (a *App) GetRunningSessions() ([]RunningSession, error) {
-	out, _ := exec.Command("pgrep", "goproton-instance").Output()
+	out, _ := exec.Command("pgrep", "light-launcher-instance").Output()
 	if len(out) == 0 {
-		out, _ = exec.Command("pgrep", "goproton-instan").Output()
+		out, _ = exec.Command("pgrep", "light-launcher-instan").Output()
 	}
 
 	pids := strings.Split(strings.TrimSpace(string(out)), "\n")

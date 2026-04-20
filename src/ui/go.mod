@@ -1,11 +1,11 @@
-module goproton-wails
+module light-launcher-wails
 
 go 1.25.6
 
 require (
 	github.com/pelletier/go-toml/v2 v2.1.1
 	github.com/wailsapp/wails/v3 v3.0.0-alpha.67
-	goproton v0.0.0-00010101000000-000000000000
+	light-launcher v0.0.0-00010101000000-000000000000
 )
 
 require (
@@ -52,4 +52,4 @@ require (
 
 // replace github.com/wailsapp/wails/v2 v2.11.0 => /home/azpepoze/go/pkg/mod
 
-replace goproton => ../
+replace light-launcher => ../

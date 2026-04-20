@@ -14,7 +14,7 @@
 			{#if icon.includes("/") || icon.includes(".svg") || icon.startsWith("data:")}
 				<img src={icon} alt={title} class="svg-icon" />
 			{:else}
-				{icon}
+				<span class="material-icons">{icon}</span>
 			{/if}
 		</div>
 	{/if}
@@ -26,7 +26,7 @@
 
 <style lang="scss">
 	.tool-card {
-		background: rgba(255, 255, 255, 0.03);
+		background: var(--glass-surface);
 		border: 1px solid var(--glass-border);
 		border-radius: 16px;
 		padding: 16px;
@@ -41,7 +41,7 @@
 		overflow: hidden;
 
 		&:hover {
-			background: rgba(255, 255, 255, 0.08);
+			background: var(--glass-border-bright);
 			border-color: var(--accent-primary);
 			transform: translateY(-2px);
 		}
@@ -59,11 +59,11 @@
 			justify-content: center;
 			width: 32px;
 			height: 32px;
+			color: var(--accent-primary);
 
 			.svg-icon {
 				width: 100%;
 				height: 100%;
-				filter: brightness(0) invert(1);
 				opacity: 0.8;
 			}
 		}

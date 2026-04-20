@@ -8,7 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"goproton/pkg/core"
+	"light-launcher/pkg/core"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
@@ -54,15 +54,15 @@ func (a *App) Startup(ctx context.Context) {
 }
 
 func (a *App) GetInitialLauncherPath() string {
-	return os.Getenv("GOPROTON_LAUNCHER_PATH")
+	return os.Getenv("LIGHT_LAUNCHER_LAUNCHER_PATH")
 }
 
 func (a *App) GetInitialGamePath() string {
-	return os.Getenv("GOPROTON_GAME_PATH")
+	return os.Getenv("LIGHT_LAUNCHER_GAME_PATH")
 }
 
 func (a *App) GetShouldEditLsfg() bool {
-	return os.Getenv("GOPROTON_EDIT_LSFG") == "1"
+	return os.Getenv("LIGHT_LAUNCHER_EDIT_LSFG") == "1"
 }
 
 func (a *App) CloseWindow() {
@@ -74,7 +74,7 @@ func (a *App) GetExeIcon(exePath string) string {
 		return ""
 	}
 
-	tempDir, err := os.MkdirTemp("", "goproton-icon-*")
+	tempDir, err := os.MkdirTemp("", "light-launcher-icon-*")
 	if err != nil {
 		return ""
 	}

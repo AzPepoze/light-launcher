@@ -1,7 +1,7 @@
 package backend
 
 import (
-	"goproton/pkg/core"
+	"light-launcher/pkg/core"
 )
 
 func (a *App) ListPrefixes() ([]string, error) {

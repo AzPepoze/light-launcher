@@ -1,4 +1,4 @@
-import { GetExeIcon } from "../../bindings/goproton-wails/backend/app";
+import { GetExeIcon } from "@bindings/light-launcher-wails/backend/app";
 
 /**
  * Loads an executable icon asynchronously

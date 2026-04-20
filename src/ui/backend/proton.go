@@ -1,7 +1,7 @@
 package backend
 
 import (
-	"goproton/pkg/core"
+	"light-launcher/pkg/core"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 )

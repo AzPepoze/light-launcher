@@ -32,7 +32,7 @@
 <div class="custom-dropdown" class:disabled>
 	<button class="dropdown-trigger" class:open={isOpen} on:click={toggle} type="button">
 		<span class="text">{value || placeholder}</span>
-		<span class="arrow">▼</span>
+		<span class="material-icons arrow">expand_more</span>
 	</button>
 
 	{#if isOpen}
@@ -73,7 +73,7 @@
 		color: var(--text-main);
 		cursor: pointer;
 		text-align: left;
-		background: rgba(0, 0, 0, 0.4);
+		background: var(--glass-surface);
 		border: 1px solid var(--glass-border);
 		border-radius: 10px;
 		transition: all 0.2s;
@@ -102,10 +102,10 @@
 		max-height: 220px;
 		overflow-y: auto;
 		z-index: 100;
-		background: #18181b; /* Dark gray menu */
+		background: var(--glass-bg);
 		border: 1px solid var(--glass-border-bright);
 		border-radius: 10px;
-		box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+		box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
 		padding: 4px;
 	}
 
@@ -128,8 +128,8 @@
 		}
 
 		&.selected {
-			background: rgba(255, 255, 255, 0.1);
-			color: #fff;
+			background: var(--accent-primary);
+			color: var(--glass-bg);
 			font-weight: 600;
 		}
 	}

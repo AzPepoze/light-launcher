@@ -1,5 +1,5 @@
 <script lang="ts">
-	import rocketIcon from "../../../icons/rocket.svg";
+
 
 	export let game: any;
 	export let icon: string = "";
@@ -31,7 +31,7 @@
 				<img src={icon} alt={game.name} class="game-icon" />
 			{:else}
 				<div class="fallback">
-					<img src={rocketIcon} alt="rocket" />
+					<span class="material-icons">rocket_launch</span>
 				</div>
 			{/if}
 		</div>
@@ -40,20 +40,7 @@
 			<div class="name-row">
 				<span class="name">{game.name}</span>
 				<button class="config-btn-small" title="Configure" on:click|stopPropagation={handleConfigure}>
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="14"
-						height="14"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						><circle cx="12" cy="12" r="3"></circle><path
-							d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
-						></path></svg
-					>
+					<span class="material-icons" style="font-size: 14px;">settings</span>
 				</button>
 			</div>
 			{#if isRunning}
@@ -109,13 +96,13 @@
 	.card-inner {
 		width: 100%;
 		height: 100%;
-		background: #111;
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		background: var(--glass-surface);
+		border: 1px solid var(--glass-border);
 		border-radius: 20px;
 		overflow: hidden;
 		position: relative;
 		transition: all 0.4s;
-		box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+		box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
 	}
 
 	.glow {
@@ -143,12 +130,12 @@
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			background: linear-gradient(135deg, #1a1a1a 0%, #000 100%);
+			background: var(--glass-bg);
 
-			img {
-				width: 48px;
-				height: 48px;
+			.material-icons {
+				font-size: 48px;
 				opacity: 0.1;
+				color: var(--text-main);
 			}
 		}
 	}
@@ -169,9 +156,9 @@
 
 		.name {
 			font-weight: 800;
-			color: #fff;
+			color: var(--text-main);
 			font-size: 1rem;
-			text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+			text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 			white-space: nowrap;
 			overflow: hidden;
 			text-overflow: ellipsis;
@@ -185,9 +172,9 @@
 		}
 
 		.config-btn-small {
-			background: rgba(255, 255, 255, 0.1);
-			border: none;
-			color: #fff;
+			background: var(--glass-bg);
+			border: 1px solid var(--glass-border);
+			color: var(--text-main);
 			padding: 4px;
 			border-radius: 6px;
 			cursor: pointer;
@@ -195,7 +182,8 @@
 			transition: all 0.2s;
 
 			&:hover {
-				background: rgba(255, 255, 255, 0.2);
+				background: var(--glass-border-bright);
+				border-color: var(--accent-primary);
 				transform: rotate(45deg);
 			}
 		}

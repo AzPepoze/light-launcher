@@ -6,7 +6,7 @@
 		RunGame,
 		ListPrefixes,
 		RemoveGame,
-	} from "../../bindings/goproton-wails/backend/app";
+	} from "@bindings/light-launcher-wails/backend/app";
 	import { onMount, onDestroy } from "svelte";
 	import { fly, fade } from "svelte/transition";
 	import { notifications } from "../notificationStore";
@@ -195,44 +195,14 @@
 						on:click={handleBulkRemove}
 						disabled={selectedPaths.size === 0}
 					>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="18"
-							height="18"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"
-							></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line
-								x1="10"
-								y1="11"
-								x2="10"
-								y2="17"
-							></line><line x1="14" y1="11" x2="14" y2="17"></line></svg
-						>
+						<span class="material-icons" style="font-size: 18px;">delete</span>
 						Remove Selected
 					</button>
 					<button class="cancel-selection-btn" on:click={toggleSelectionMode}> Cancel </button>
 				</div>
 			{:else}
 				<button class="add-btn" on:click={() => (showAddModal = true)} title="Add Game">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="20"
-						height="20"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2.5"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					>
-						<line x1="12" y1="5" x2="12" y2="19"></line>
-						<line x1="5" y1="12" x2="19" y2="12"></line>
-					</svg>
+					<span class="material-icons" style="font-size: 20px;">add</span>
 				</button>
 
 				<button
@@ -241,38 +211,11 @@
 					title="Bulk Remove"
 					class:active={isSelectionMode}
 				>
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="20"
-						height="20"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						><polyline points="9 11 12 14 22 4"></polyline><path
-							d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"
-						></path></svg
-					>
+					<span class="material-icons" style="font-size: 20px;">checklist</span>
 				</button>
 
 				<button class="help-btn" on:click={() => (showHelpModal = true)} title="How it works">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="20"
-						height="20"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2.5"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					>
-						<circle cx="12" cy="12" r="10" />
-						<path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-						<line x1="12" y1="17" x2="12.01" y2="17" />
-					</svg>
+					<span class="material-icons" style="font-size: 24px;">help_outline</span>
 				</button>
 			{/if}
 
@@ -281,38 +224,11 @@
 			</div>
 
 			<div class="search-container">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="16"
-					height="16"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					class="search-icon"
-				>
-					<circle cx="11" cy="11" r="8"></circle>
-					<line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-				</svg>
+				<span class="material-icons search-icon">search</span>
 				<input type="text" placeholder="Search games..." bind:value={searchQuery} class="search-input" />
 				{#if searchQuery}
 					<button class="clear-search" on:click={() => (searchQuery = "")} aria-label="Clear search">
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="14"
-							height="14"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-						>
-							<line x1="18" y1="6" x2="6" y2="18"></line>
-							<line x1="6" y1="6" x2="18" y2="18"></line>
-						</svg>
+						<span class="material-icons" style="font-size: 14px;">close</span>
 					</button>
 				{/if}
 			</div>
@@ -324,24 +240,7 @@
 					on:click={() => (currentView = "grid")}
 					title="Grid View"
 				>
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="18"
-						height="18"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"
-						></rect><rect x="14" y="14" width="7" height="7"></rect><rect
-							x="3"
-							y="14"
-							width="7"
-							height="7"
-						></rect></svg
-					>
+					<span class="material-icons" style="font-size: 18px;">grid_view</span>
 				</button>
 				<button
 					class="view-btn"
@@ -349,25 +248,7 @@
 					on:click={() => (currentView = "list-grid")}
 					title="List View"
 				>
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="18"
-						height="18"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"
-						></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"
-						></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line
-							x1="3"
-							y1="18"
-							x2="3.01"
-							y2="18"
-						></line></svg
-					>
+					<span class="material-icons" style="font-size: 18px;">view_list</span>
 				</button>
 			</div>
 		</div>
@@ -452,7 +333,7 @@
 		<section>
 			<h3>CLI Usage</h3>
 			<p>You can also launch games directly from your terminal or add them to your desktop entries:</p>
-			<code class="help-code">goproton /path/to/game.exe</code>
+			<code class="help-code">light-launcher /path/to/game.exe</code>
 		</section>
 	</div>
 </Modal>
@@ -460,20 +341,7 @@
 <Modal show={showBulkRemoveModal} title="Remove Games" onClose={() => (showBulkRemoveModal = false)}>
 	<div class="confirm-modal-content">
 		<div class="warning-icon">
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				width="48"
-				height="48"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="#ef4444"
-				stroke-width="2"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-				><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
-				></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"
-				></line></svg
-			>
+			<span class="material-icons" style="font-size: 48px; color: #ef4444;">warning</span>
 		</div>
 		<p>Are you sure you want to remove <strong>{selectedPaths.size}</strong> games from the library?</p>
 		<p class="sub-text">This will only remove them from the Quick Launch list, not from your disk.</p>
@@ -506,7 +374,8 @@
 	.section-title {
 		font-size: 1.2rem;
 		font-weight: 800;
-		color: rgba(255, 255, 255, 0.4);
+		color: var(--text-dim);
+		opacity: 0.4;
 		text-transform: uppercase;
 		letter-spacing: 2px;
 		margin-bottom: 20px;
@@ -537,8 +406,8 @@
 	}
 
 	.session-card {
-		background: rgba(0, 0, 0, 0.3);
-		border: 1px solid rgba(255, 255, 255, 0.05);
+		background: var(--glass-surface);
+		border: 1px solid var(--glass-border);
 		border-radius: 16px;
 		padding: 14px 20px;
 		display: flex;
@@ -548,7 +417,7 @@
 
 		&:hover {
 			border-color: rgba(239, 68, 68, 0.4);
-			background: rgba(0, 0, 0, 0.5);
+			background: var(--glass-surface);
 			transform: translateX(4px);
 		}
 
@@ -560,7 +429,7 @@
 
 		.session-title {
 			font-weight: 800;
-			color: #fff;
+			color: var(--text-main);
 			font-size: 1rem;
 			letter-spacing: -0.3px;
 			white-space: nowrap;
@@ -571,7 +440,7 @@
 
 		.session-pid {
 			font-size: 0.7rem;
-			color: rgba(255, 255, 255, 0.4);
+			color: var(--text-dim);
 			font-family: monospace;
 			font-weight: 600;
 		}
@@ -633,16 +502,17 @@
 
 		.view-switcher {
 			display: flex;
-			background: rgba(255, 255, 255, 0.05);
+			background: var(--glass-surface);
 			padding: 4px;
 			border-radius: 12px;
 			gap: 4px;
-			border: 1px solid rgba(255, 255, 255, 0.05);
+			border: 1px solid var(--glass-border);
 
 			.view-btn {
 				background: none;
 				border: none;
-				color: rgba(255, 255, 255, 0.4);
+				color: var(--text-dim);
+				opacity: 0.5;
 				padding: 6px;
 				cursor: pointer;
 				border-radius: 8px;
@@ -653,13 +523,13 @@
 				transition: all 0.2s;
 
 				&:hover {
-					color: #fff;
-					background: rgba(255, 255, 255, 0.05);
+					color: var(--text-main);
+					background: var(--glass-border-bright);
 				}
 
 				&.active {
-					color: #fff;
-					background: rgba(255, 255, 255, 0.1);
+					color: var(--glass-bg);
+					background: var(--accent-primary);
 					box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 				}
 			}
@@ -668,7 +538,8 @@
 		.help-btn {
 			background: none;
 			border: none;
-			color: rgba(255, 255, 255, 0.2);
+			color: var(--text-dim);
+			opacity: 0.4;
 			cursor: pointer;
 			padding: 4px;
 			display: flex;
@@ -678,21 +549,18 @@
 			border-radius: 50%;
 
 			&:hover {
-				color: var(--accent-primary, #fff);
-				background: rgba(255, 255, 255, 0.05);
+				color: var(--accent-primary);
+				opacity: 1;
+				background: var(--glass-surface);
 				transform: scale(1.1);
 			}
 
-			svg {
-				width: 20px;
-				height: 20px;
-			}
 		}
 
 		.select-mode-btn {
-			background: rgba(255, 255, 255, 0.05);
-			border: 1px solid rgba(255, 255, 255, 0.1);
-			color: rgba(255, 255, 255, 0.6);
+			background: var(--glass-surface);
+			border: 1px solid var(--glass-border);
+			color: var(--text-dim);
 			cursor: pointer;
 			padding: 4px;
 			display: flex;
@@ -702,31 +570,27 @@
 			border-radius: 50%;
 
 			&:hover {
-				color: #fff;
-				background: rgba(255, 255, 255, 0.1);
+				color: var(--text-main);
+				background: var(--glass-border-bright);
 				transform: scale(1.1);
 			}
 
 			&.active {
 				background: var(--accent-primary);
-				color: #000;
+				color: var(--glass-bg);
 				border-color: transparent;
 			}
 
-			svg {
-				width: 18px;
-				height: 18px;
-			}
 		}
 
 		.selection-actions {
 			display: flex;
 			align-items: center;
 			gap: 12px;
-			background: rgba(255, 255, 255, 0.05);
+			background: var(--glass-surface);
 			padding: 4px 12px;
 			border-radius: 16px;
-			border: 1px solid rgba(255, 255, 255, 0.1);
+			border: 1px solid var(--glass-border);
 
 			.selection-count {
 				font-size: 0.85rem;
@@ -762,13 +626,13 @@
 			.cancel-selection-btn {
 				background: none;
 				border: none;
-				color: rgba(255, 255, 255, 0.4);
+				color: var(--text-dim);
 				font-size: 0.8rem;
 				font-weight: 700;
 				cursor: pointer;
 
 				&:hover {
-					color: #fff;
+					color: var(--text-main);
 				}
 			}
 		}
@@ -776,7 +640,7 @@
 		.add-btn {
 			background: var(--accent-primary);
 			border: none;
-			color: #000;
+			color: var(--glass-bg);
 			cursor: pointer;
 			padding: 4px;
 			display: flex;
@@ -792,10 +656,6 @@
 				box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
 			}
 
-			svg {
-				width: 20px;
-				height: 20px;
-			}
 		}
 
 		.prefix-filter-container {

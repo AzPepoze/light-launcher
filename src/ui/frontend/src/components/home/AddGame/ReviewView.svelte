@@ -23,40 +23,14 @@
 							<img src={exe.icon} alt={exe.name} class="game-icon" />
 						{:else}
 							<div class="icon-placeholder">
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									width="24"
-									height="24"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="2"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path
-										d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"
-									></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg
-								>
+								<span class="material-icons" style="font-size: 24px;">rocket_launch</span>
 							</div>
 						{/if}
 					</div>
 					<div class="name" title={exe.path}>{exe.name}</div>
 				</div>
 				<div class="discard-overlay">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="24"
-						height="24"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						><polyline points="3 6 5 6 21 6"></polyline><path
-							d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
-						></path></svg
-					>
+					<span class="material-icons">delete</span>
 				</div>
 			</div>
 		{/each}
@@ -77,8 +51,8 @@
 
 	.exe-card {
 		position: relative;
-		background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		background: var(--glass-surface);
+		border: 1px solid var(--glass-border);
 		border-radius: 20px;
 		padding: 20px 16px;
 		display: flex;
@@ -124,7 +98,7 @@
 		}
 
 		&:hover:not(.discarded) {
-			background: rgba(255, 255, 255, 0.1);
+			background: var(--glass-border-bright);
 			border-color: var(--accent-primary);
 			transform: translateY(-4px);
 		}
@@ -151,14 +125,15 @@
 			}
 
 			.icon-placeholder {
-				color: rgba(255, 255, 255, 0.15);
+				color: var(--text-dim);
+				opacity: 0.3;
 			}
 		}
 
 		.name {
 			font-size: 0.85rem;
 			font-weight: 700;
-			color: #fff;
+			color: var(--text-main);
 			text-align: center;
 			white-space: nowrap;
 			overflow: hidden;

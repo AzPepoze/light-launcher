@@ -1,18 +1,14 @@
 <script lang="ts">
-	import homeIcon from "../icons/home.svg";
-	import runIcon from "../icons/run.svg";
-	import versionsIcon from "../icons/versions.svg";
-	import prefixIcon from "../icons/prefix.svg";
-
 	export let activePage: string = "home";
 	export let onNavigate: (page: string) => void = () => {};
+	export let toggleTheme: () => void = () => {};
 
 	const navItems = [
-		{ id: "home", label: "Home", icon: homeIcon },
-		{ id: "run", label: "Run", icon: runIcon },
-		{ id: "versions", label: "Versions", icon: versionsIcon },
-		{ id: "prefix", label: "Prefix", icon: prefixIcon },
-		{ id: "utils", label: "Utils", icon: runIcon },
+		{ id: "home", label: "Home", icon: "home" },
+		{ id: "run", label: "Run", icon: "rocket_launch" },
+		{ id: "versions", label: "Versions", icon: "history" },
+		{ id: "prefix", label: "Prefix", icon: "folder_shared" },
+		{ id: "utils", label: "Utils", icon: "handyman" },
 	];
 
 	let navbarRef: HTMLElement;
@@ -41,7 +37,7 @@
 
 <div class="navbar-wrapper">
 	<div class="brand-v-text">
-		{#each "GOPROTON".split("") as char, i}
+		{#each "LIGHTLAUNCHER".split("") as char, i}
 			<span style="animation-delay: {i * 0.1}s">{char}</span>
 		{/each}
 	</div>
@@ -55,7 +51,7 @@
 				on:click={() => setActive(item.id)}
 			>
 				<div class="icon-container">
-					<img src={item.icon} alt={item.label} class="icon" />
+					<span class="material-icons icon">{item.icon}</span>
 					{#if activePage === item.id}
 						<div class="glow-ring"></div>
 					{/if}
@@ -64,6 +60,10 @@
 			</button>
 		{/each}
 	</nav>
+
+	<button class="theme-toggle" on:click={toggleTheme} title="Toggle Theme">
+		<span class="material-icons">contrast</span>
+	</button>
 </div>
 
 <style lang="scss">
@@ -88,7 +88,8 @@
 		span {
 			font-size: 0.75rem;
 			font-weight: 950;
-			color: rgba(255, 255, 255, 0.4);
+			color: var(--text-dim);
+			opacity: 0.4;
 			animation: char-wave 2s infinite ease-in-out;
 			line-height: 1;
 		}
@@ -98,12 +99,12 @@
 		0%,
 		100% {
 			transform: scale(0.8);
-			color: rgba(255, 255, 255, 0.4);
+			opacity: 0.4;
 		}
 		50% {
 			transform: scale(1);
-			color: #fff;
-			text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+			opacity: 1;
+			text-shadow: 0 0 10px var(--text-main);
 		}
 	}
 
@@ -123,7 +124,7 @@
 		position: absolute;
 		left: 0;
 		width: 3px;
-		background: #ffffff;
+		background: var(--accent-primary);
 		border-radius: 0 4px 4px 0;
 		transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
 		pointer-events: none;
@@ -158,12 +159,12 @@
 		}
 
 		&.active {
-			color: #fff;
+			color: var(--accent-primary);
 
 			.icon {
 				transform: scale(1.1);
 				opacity: 1;
-				filter: brightness(0) invert(1) drop-shadow(0 0 8px rgba(255, 255, 255, 0.4));
+				color: var(--accent-primary);
 			}
 
 			.label {
@@ -182,9 +183,8 @@
 	}
 
 	.icon {
-		width: 100%;
-		height: 100%;
-		filter: brightness(0) invert(1);
+		font-size: 22px;
+		color: var(--text-main);
 		opacity: 0.6;
 		transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
 	}
@@ -203,8 +203,34 @@
 		width: 140%;
 		height: 140%;
 		border-radius: 50%;
-		background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+		background: radial-gradient(circle, var(--text-main) 0%, transparent 70%);
+		opacity: 0.1;
 		animation: pulse 2s infinite;
+	}
+ 
+	.theme-toggle {
+		position: absolute;
+		bottom: 24px;
+		background: none;
+		border: 1px solid var(--glass-border);
+		color: var(--text-dim);
+		cursor: pointer;
+		padding: 8px;
+		border-radius: 12px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: all 0.3s;
+ 
+		&:hover {
+			background: var(--glass-surface);
+			color: var(--text-main);
+			border-color: var(--glass-border-bright);
+		}
+ 
+		.material-icons {
+			font-size: 20px;
+		}
 	}
 
 	@keyframes pulse {

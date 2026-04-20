@@ -1,6 +1,6 @@
 package main
 
-import "goproton/pkg/core"
+import "light-launcher/pkg/core"
 
 // buildLaunchOptions creates the launch options from command line flags
 func buildLaunchOptions() core.LaunchOptions {

@@ -6,7 +6,7 @@
 		SaveGameConfig,
 		ListPrefixes,
 		GetPrefixBaseDir,
-	} from "../../../../bindings/goproton-wails/backend/app";
+	} from "@bindings/light-launcher-wails/backend/app";
 	import { notifications } from "../../../notificationStore";
 	import { loadExeIcon } from "../../../lib/iconService";
 	import SelectionView from "./SelectionView.svelte";
@@ -236,10 +236,10 @@
 <style lang="scss">
 	:global(.selection-modal-style) {
 		max-width: 620px !important;
-		background: linear-gradient(145deg, #1e1e22 0%, #121214 100%) !important;
+		background: var(--glass-bg) !important;
 		border-radius: 30px !important;
-		border: 1px solid rgba(255, 255, 255, 0.1) !important;
-		box-shadow: 0 50px 100px rgba(0, 0, 0, 0.5) !important;
+		border: 1px solid var(--glass-border) !important;
+		box-shadow: 0 50px 100px rgba(0, 0, 0, 0.3) !important;
 
 		&::before {
 			content: "";
@@ -254,17 +254,15 @@
 		:global(.modal-header) {
 			padding: 40px 40px 15px !important;
 			border-bottom: none !important;
-			background: linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 0%, transparent 100%) !important;
 
 			:global(h3) {
 				font-size: 1.6rem !important;
 				font-weight: 900 !important;
 				letter-spacing: -1px !important;
 				text-transform: uppercase !important;
-				background: linear-gradient(135deg, #fff 0%, #a1a1aa 100%);
-				-webkit-background-clip: text;
-				background-clip: text;
-				-webkit-text-fill-color: transparent;
+				color: var(--text-main) !important;
+				background: none !important;
+				-webkit-text-fill-color: initial !important;
 			}
 		}
 
@@ -282,7 +280,8 @@
 	.selection-footer-text {
 		margin: 0;
 		font-size: 0.85rem;
-		color: rgba(255, 255, 255, 0.3);
+		color: var(--text-dim);
+		opacity: 0.5;
 		font-weight: 600;
 		text-align: center;
 	}
@@ -296,7 +295,7 @@
 		label {
 			font-size: 0.75rem;
 			font-weight: 800;
-			color: rgba(255, 255, 255, 0.4);
+			color: var(--text-dim);
 			text-transform: uppercase;
 			letter-spacing: 1px;
 		}
@@ -316,8 +315,8 @@
 	}
 
 	.primary-btn {
-		background: linear-gradient(135deg, #ffffff 0%, #e4e4e7 100%);
-		color: #000;
+		background: var(--accent-primary);
+		color: var(--glass-bg);
 		border: none;
 		border-radius: 12px;
 		padding: 12px 28px;
@@ -333,8 +332,8 @@
 
 		&:hover {
 			transform: scale(1.05) translateY(-2px);
-			box-shadow: 0 8px 25px rgba(255, 255, 255, 0.2);
-			background: #fff;
+			box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+			opacity: 0.9;
 		}
 
 		&:active {
@@ -350,25 +349,25 @@
 	}
 
 	.secondary-btn {
-		background: rgba(255, 255, 255, 0.05);
-		color: #fff;
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		background: var(--glass-surface);
+		color: var(--text-main);
+		border: 1px solid var(--glass-border);
 		border-radius: 12px;
 		padding: 12px 24px;
 		font-weight: 800;
 		cursor: pointer;
 		transition: all 0.2s;
 		&:hover {
-			background: rgba(255, 255, 255, 0.1);
-			border-color: rgba(255, 255, 255, 0.2);
+			background: var(--glass-border-bright);
+			border-color: var(--glass-border-bright);
 		}
 	}
 
 	.spinner {
 		width: 18px;
 		height: 18px;
-		border: 2px solid rgba(0, 0, 0, 0.1);
-		border-top-color: #000;
+		border: 2px solid var(--glass-border);
+		border-top-color: var(--accent-primary);
 		border-radius: 50%;
 		animation: spin 0.8s linear infinite;
 	}

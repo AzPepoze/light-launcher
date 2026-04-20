@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"goproton-wails/backend"
+	"light-launcher-wails/backend"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
@@ -20,7 +20,7 @@ func main() {
 
 		if _, err := os.Stat(gamePath); err == nil {
 			if absPath, err := filepath.Abs(gamePath); err == nil {
-				os.Setenv("GOPROTON_LAUNCHER_PATH", absPath)
+				os.Setenv("LIGHT_LAUNCHER_LAUNCHER_PATH", absPath)
 				fmt.Printf("Pre-selecting launcher path: %s\n", absPath)
 			}
 		}
@@ -29,14 +29,14 @@ func main() {
 	app := backend.NewApp()
 
 	wailsApp := application.New(application.Options{
-		Name: "GoProton",
+		Name: "LightLauncher",
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),
 		},
 	})
 
 	wailsApp.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:            "GoProton",
+		Title:            "LightLauncher",
 		Width:            1024,
 		Height:           768,
 		BackgroundColour: application.NewRGB(24, 24, 27),

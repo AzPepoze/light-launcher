@@ -22,7 +22,7 @@ func GetConfigPath() (string, error) {
 }
 
 // GetProfilePath returns the path to store LSFG profile for a game exe
-// Uses format: GoProton/config/lsfg/exename-hash.toml
+// Uses format: LightLauncher/config/lsfg/exename-hash.toml
 func GetProfilePath(gamePath, baseDir string) string {
 	h := sha1.New()
 	h.Write([]byte(gamePath))

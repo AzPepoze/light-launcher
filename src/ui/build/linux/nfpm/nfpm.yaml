@@ -3,7 +3,7 @@
 #
 # The lines below are called `modelines`. See `:help modeline`
 
-name: "goproton"
+name: "light-launcher"
 arch: ${GOARCH}
 platform: "linux"
 version: "0.1.0"
@@ -12,17 +12,17 @@ priority: "extra"
 maintainer: "AzPepoze <azpepoze@gmail.com>"
 description: "Proton Instance Manager for Linux"
 vendor: "AzPepoze"
-homepage: "https://github.com/AzPepoze/goproton"
+homepage: "https://github.com/AzPepoze/light-launcher"
 license: "MIT"
 release: "1"
 
 contents:
-   - src: "./bin/goproton"
-     dst: "/usr/local/bin/goproton"
+   - src: "./bin/light-launcher"
+     dst: "/usr/local/bin/light-launcher"
    - src: "./build/appicon.png"
-     dst: "/usr/share/icons/hicolor/128x128/apps/goproton.png"
-   - src: "./build/linux/goproton.desktop"
-     dst: "/usr/share/applications/goproton.desktop"
+     dst: "/usr/share/icons/hicolor/128x128/apps/light-launcher.png"
+   - src: "./build/linux/light-launcher.desktop"
+     dst: "/usr/share/applications/light-launcher.desktop"
 
 # Default dependencies for Debian 12/Ubuntu 22.04+ with WebKit 4.1
 depends:

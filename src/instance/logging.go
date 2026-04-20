@@ -12,7 +12,7 @@ import (
 
 func getLogPath() string {
 	homeDir := os.ExpandEnv("$HOME")
-	logDir := filepath.Join(homeDir, "GoProton/logs")
+	logDir := filepath.Join(homeDir, "LightLauncher/logs")
 	os.MkdirAll(logDir, 0755)
 	cleanupLogs(logDir, 10)
 	timestamp := time.Now().Format("20060102-150405")

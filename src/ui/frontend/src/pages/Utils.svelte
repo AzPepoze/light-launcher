@@ -6,10 +6,10 @@
 		UninstallLsfg,
 		GetSystemToolsStatus,
 		DetectLosslessDll,
-	} from "../../bindings/goproton-wails/backend/app";
+	} from "@bindings/light-launcher-wails/backend/app";
 	import { notifications } from "../notificationStore";
 	import { Events } from "@wailsio/runtime";
-	import * as core from "../../bindings/goproton/pkg/core/models";
+	import * as core from "@bindings/light-launcher/pkg/core/models";
 
 	import lsfgPng from "../icons/lsfg.png";
 
@@ -189,7 +189,7 @@
 		padding: 20px 24px;
 		border-radius: 16px;
 		border: 1px solid var(--glass-border);
-		background: rgba(255, 255, 255, 0.01);
+		background: var(--glass-surface);
 		margin-bottom: 32px;
 
 		h3 {
@@ -213,7 +213,8 @@
 		gap: 10px;
 		font-size: 0.9rem;
 		padding: 8px 16px;
-		background: rgba(0, 0, 0, 0.2);
+		background: var(--glass-bg);
+		border: 1px solid var(--glass-border);
 		border-radius: 10px;
 		color: var(--text-muted);
 
@@ -258,14 +259,14 @@
 		padding: 24px;
 		border-radius: 20px;
 		border: 1px solid var(--glass-border);
-		background: rgba(255, 255, 255, 0.02);
+		background: var(--glass-surface);
 		display: flex;
 		flex-direction: column;
 		gap: 20px;
 		transition: all 0.2s;
 
 		&:hover {
-			background: rgba(255, 255, 255, 0.04);
+			background: var(--glass-border-bright);
 			border-color: var(--glass-border-bright);
 		}
 	}
@@ -278,7 +279,8 @@
 		.icon-bg {
 			width: 56px;
 			height: 56px;
-			background: rgba(255, 255, 255, 0.05);
+			background: var(--glass-bg);
+			border: 1px solid var(--glass-border);
 			border-radius: 14px;
 			display: flex;
 			align-items: center;
@@ -288,7 +290,7 @@
 			.lsfg-logo {
 				width: 32px;
 				height: 32px;
-				filter: brightness(0) invert(1);
+				color: var(--accent-primary);
 				opacity: 0.9;
 				object-fit: contain;
 			}
@@ -359,7 +361,7 @@
 		flex-direction: column;
 		gap: 8px;
 		padding: 16px;
-		background: rgba(0, 0, 0, 0.2);
+		background: var(--glass-bg);
 		border-radius: 12px;
 		border: 1px solid var(--glass-border);
 	}

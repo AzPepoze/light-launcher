@@ -3,8 +3,8 @@
 	import Modal from "./Modal.svelte";
 	import RangeSlider from "./RangeSlider.svelte";
 	import LsfgConfigForm from "./LsfgConfigForm.svelte";
-	import { PickFileCustom, GetTotalRam } from "../../bindings/goproton-wails/backend/app";
-	import * as core from "../../bindings/goproton/pkg/core/models";
+	import { PickFileCustom, GetTotalRam } from "@bindings/light-launcher-wails/backend/app";
+	import * as core from "@bindings/light-launcher/pkg/core/models";
 	import { onMount } from "svelte";
 	import { loadLsfgResources, parseMemoryValue } from "../lib/formService";
 
@@ -191,6 +191,9 @@
 	.form-group .input {
 		width: 100%;
 		display: block;
+		background: var(--glass-surface);
+		border: 1px solid var(--glass-border);
+		color: var(--text-main);
 	}
 	.note {
 		font-size: 0.75rem;

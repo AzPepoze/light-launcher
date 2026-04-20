@@ -7,8 +7,8 @@
 		SaveLsfgProfile,
 		CloseWindow,
 		PickFileCustom,
-	} from "../../bindings/goproton-wails/backend/app";
-	import * as core from "../../bindings/goproton/pkg/core/models";
+	} from "@bindings/light-launcher-wails/backend/app";
+	import * as core from "@bindings/light-launcher/pkg/core/models";
 	import { onMount } from "svelte";
 	import { loadLsfgResources, createLaunchOptions } from "../lib/formService";
 

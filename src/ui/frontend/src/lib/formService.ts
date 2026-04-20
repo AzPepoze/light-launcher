@@ -1,5 +1,5 @@
-import * as core from "../../bindings/goproton/pkg/core/models";
-import { GetListGpus, DetectLosslessDll } from "../../bindings/goproton-wails/backend/app";
+import * as core from "@bindings/light-launcher/pkg/core/models";
+import { GetListGpus, DetectLosslessDll } from "@bindings/light-launcher-wails/backend/app";
 import { DEFAULT_LAUNCH_OPTIONS } from "./constants";
 
 export interface FormState<T> {

@@ -10,20 +10,14 @@
 		SavePrefixConfig,
 		LoadPrefixConfig,
 		GetSystemToolsStatus,
-	} from "../../bindings/goproton-wails/backend/app";
+	} from "@bindings/light-launcher-wails/backend/app";
 	import Dropdown from "../components/Dropdown.svelte";
 	import ConfigForm from "../components/ConfigForm.svelte";
 	import ToolButton from "../components/ToolButton.svelte";
-	import * as core from "../../bindings/goproton/pkg/core/models";
+	import * as core from "@bindings/light-launcher/pkg/core/models";
 	import { notifications } from "../notificationStore";
 	import { createLaunchOptions } from "../lib/formService";
-	// Icons
-	import folderIcon from "../icons/folder.svg";
-	import settingsIcon from "../icons/settings.svg";
-	import editIcon from "../icons/edit.svg";
-	import terminalIcon from "../icons/terminal.svg";
-	import magicIcon from "../icons/magic.svg";
-	import chartIcon from "../icons/chart.svg";
+
 
 	// State
 	let availablePrefixes: string[] = [];
@@ -193,7 +187,7 @@
 						on:click={() => selectPrefix(name)}
 					>
 						<span class="folder-icon">
-							<img src={folderIcon} alt="folder" />
+							<span class="material-icons">folder</span>
 						</span>
 						<span class="name">{name}</span>
 					</button>
@@ -236,42 +230,42 @@
 
 			<div class="tools-grid">
 				<ToolButton
-					icon={settingsIcon}
+					icon="settings"
 					title="Winecfg"
 					subtitle="Settings"
 					loading={runningToolName === "winecfg"}
 					onClick={() => runTool("winecfg")}
 				/>
 				<ToolButton
-					icon={editIcon}
+					icon="edit"
 					title="Regedit"
 					subtitle="Registry"
 					loading={runningToolName === "regedit"}
 					onClick={() => runTool("regedit")}
 				/>
 				<ToolButton
-					icon={terminalIcon}
+					icon="terminal"
 					title="CMD"
 					subtitle="Terminal"
 					loading={runningToolName === "cmd"}
 					onClick={() => runTool("cmd")}
 				/>
 				<ToolButton
-					icon={magicIcon}
+					icon="auto_fix_high"
 					title="Winetricks"
 					subtitle="Extras"
 					loading={runningToolName === "winetricks"}
 					onClick={() => runTool("winetricks")}
 				/>
 				<ToolButton
-					icon={chartIcon}
+					icon="bar_chart"
 					title="TaskMgr"
 					subtitle="Processes"
 					loading={runningToolName === "taskmgr"}
 					onClick={() => runTool("taskmgr")}
 				/>
 				<ToolButton
-					icon={folderIcon}
+					icon="folder"
 					title="Explorer"
 					subtitle="Files"
 					loading={runningToolName === "explorer"}
@@ -323,7 +317,7 @@
 		border-radius: 16px;
 		overflow: hidden;
 		border: 1px solid var(--glass-border);
-		background: rgba(255, 255, 255, 0.02);
+		background: var(--glass-surface);
 		height: 100%;
 		box-sizing: border-box;
 
@@ -364,10 +358,10 @@
 		}
 		&.active {
 			background: var(--accent-primary);
-			color: black;
+			color: var(--glass-bg);
 			font-weight: 600;
-			.folder-icon img {
-				filter: brightness(0);
+			.folder-icon {
+				color: var(--glass-bg);
 				opacity: 0.9;
 			}
 		}
@@ -379,11 +373,9 @@
 			width: 18px;
 			height: 18px;
 
-			img {
-				width: 100%;
-				height: 100%;
-				filter: brightness(0) invert(1);
-				opacity: 0.6;
+			.material-icons {
+				font-size: 1.2rem;
+				color: var(--accent-primary);
 			}
 		}
 		.name {
@@ -399,7 +391,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: 8px;
-		background: rgba(0, 0, 0, 0.1);
+		background: var(--glass-surface);
 	}
 	.content-section {
 		display: flex;

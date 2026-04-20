@@ -1,20 +1,25 @@
 # Maintainer: AzPepoze
-pkgname=goproton
+_go_path="${srcdir}/go-path"
+_go_mod_cache="${srcdir}/go-mod-cache"
+_go_build_cache="${srcdir}/go-build-cache"
+_bun_cache="${srcdir}/bun-cache"
+
+pkgname=light-launcher
 pkgver=r0.git
 pkgrel=1
-pkgdesc="Proton Instance Manager for Linux - Run Windows games with umu-run"
+pkgdesc="LightLauncher - Proton Instance Manager for Linux"
 arch=('x86_64')
-url="https://github.com/AzPepoze/goproton"
+url="https://github.com/AzPepoze/light-launcher"
 license=('MIT')
 depends=('umu-launcher' 'steam' 'webkit2gtk-4.1' 'gtk3' 'libayatana-appindicator')
-makedepends=('go' 'pnpm' 'git' 'nodejs')
+makedepends=('go' 'bun' 'git' 'nodejs')
 optdepends=('protonplus: recommended for managing Proton versions')
-source=("$pkgname::git+https://github.com/AzPepoze/goproton.git#branch=main"
-        "goproton.install::https://raw.githubusercontent.com/AzPepoze/goproton/main/install/arch/goproton.install")
+source=("$pkgname::git+https://github.com/AzPepoze/light-launcher.git#branch=main"
+        "light-launcher.install::https://raw.githubusercontent.com/AzPepoze/light-launcher/main/install/arch/light-launcher.install")
 sha256sums=('SKIP' 'SKIP')
 
 # Reference external install script for post-install messages
-install=goproton.install
+install=light-launcher.install
 
 pkgver() {
 	cd "$srcdir/$pkgname"
@@ -26,8 +31,9 @@ prepare() {
 	cd "$srcdir/$pkgname"
 	
 	# Set up isolated Go environment
-	export GOPATH="${srcdir}/go-path"
-	export GOMODCACHE="${srcdir}/go-mod-cache"
+	export GOPATH="$_go_path"
+	export GOMODCACHE="$_go_mod_cache"
+	export GOCACHE="$_go_build_cache"
 	export PATH="${GOPATH}/bin:$PATH"
 	
 	# Install Wails v3 CLI locally for the build process
@@ -38,13 +44,13 @@ build() {
 	cd "$srcdir/$pkgname"
 	
 	# Set up isolated Go environment
-	export GOPATH="${srcdir}/go-path"
-	export GOMODCACHE="${srcdir}/go-mod-cache"
+	export GOPATH="$_go_path"
+	export GOMODCACHE="$_go_mod_cache"
+	export GOCACHE="$_go_build_cache"
 	export PATH="${GOPATH}/bin:$PATH"
 	
-	# Configure pnpm Store and Cache within srcdir to avoid Permission issues
-	export pnpm_config_store_dir="$srcdir/pnpm-store"
-	export pnpm_config_cache_dir="$srcdir/pnpm-cache"
+	# Configure Bun Cache within srcdir to avoid Permission issues
+	export BUN_INSTALL_CACHE_DIR="$_bun_cache"
 	
 	# Build using Makefile and Wails v3
 	make dist
@@ -54,14 +60,14 @@ package() {
 	cd "$srcdir/$pkgname"
 	
 	# Install Binaries
-	install -Dm755 "dist/linux/bin/goproton" "$pkgdir/usr/bin/goproton"
-	install -Dm755 "dist/linux/bin/goproton-instance" "$pkgdir/usr/bin/goproton-instance"
+	install -Dm755 "dist/linux/bin/light-launcher" "$pkgdir/usr/bin/light-launcher"
+	install -Dm755 "dist/linux/bin/light-launcher-instance" "$pkgdir/usr/bin/light-launcher-instance"
 	
 	# Install Desktop Entry
-	install -Dm644 "dist/linux/share/applications/goproton.desktop" "$pkgdir/usr/share/applications/goproton.desktop"
+	install -Dm644 "dist/linux/share/applications/light-launcher.desktop" "$pkgdir/usr/share/applications/light-launcher.desktop"
 	
 	# Install Icon
-	install -Dm644 "dist/linux/share/icons/hicolor/128x128/apps/goproton.png" "$pkgdir/usr/share/icons/hicolor/128x128/apps/goproton.png"
+	install -Dm644 "dist/linux/share/icons/hicolor/128x128/apps/light-launcher.png" "$pkgdir/usr/share/icons/hicolor/128x128/apps/light-launcher.png"
 	
 	# Install License
 	install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"

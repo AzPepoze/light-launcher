@@ -42,19 +42,7 @@
 			<div class="modal-header">
 				<h3>{title}</h3>
 				<button class="close-btn" on:click={close} aria-label="Close modal">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="20"
-						height="20"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2.5"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"
-						></line></svg
-					>
+					<span class="material-icons">close</span>
 				</button>
 			</div>
 			<div class="modal-body">
@@ -78,7 +66,9 @@
 		left: 0;
 		width: 100%;
 		height: 100%;
-		background: rgba(0, 0, 0, 0.85);
+		background: rgba(0, 0, 0, 0.4);
+		backdrop-filter: blur(8px);
+		-webkit-backdrop-filter: blur(8px);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -88,10 +78,10 @@
 	.modal-content {
 		width: 90%;
 		max-width: 600px;
-		background: #1a1a1a;
-		border: 1px solid #333;
+		background: var(--glass-bg);
+		border: 1px solid var(--glass-border);
 		border-radius: 16px;
-		box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+		box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
 		display: flex;
 		flex-direction: column;
 		max-height: 90vh; /* Default max height */
@@ -122,8 +112,8 @@
 		}
 
 		.close-btn {
-			background: rgba(255, 255, 255, 0.05);
-			border: 1px solid rgba(255, 255, 255, 0.1);
+			background: var(--glass-surface);
+			border: 1px solid var(--glass-border);
 			color: var(--text-dim);
 			width: 32px;
 			height: 32px;
@@ -136,7 +126,7 @@
 
 			&:hover {
 				color: var(--text-main);
-				background: rgba(255, 255, 255, 0.1);
+				background: var(--glass-border-bright);
 				transform: scale(1.1);
 			}
 		}

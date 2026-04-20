@@ -12,14 +12,14 @@ tasks:
           dir: frontend
           sources:
              - package.json
-             - pnpm-lock.yaml
+             - bun.lockb
           generates:
              - node_modules
           preconditions:
-             - sh: pnpm --version
-               msg: "Looks like pnpm isn't installed."
+             - sh: bun --version
+               msg: "Looks like bun isn't installed."
           cmds:
-             - pnpm install
+             - bun install
 
      build:frontend:
           label: build:frontend (DEV={{.DEV}})
@@ -36,7 +36,7 @@ tasks:
                     BUILD_FLAGS:
                          ref: .BUILD_FLAGS
           cmds:
-             - pnpm run {{.BUILD_COMMAND}}
+             - bun run {{.BUILD_COMMAND}}
           env:
                PRODUCTION: '{{if eq .DEV "true"}}false{{else}}true{{end}}'
           vars:
@@ -65,4 +65,4 @@ tasks:
           deps:
              - task: install:frontend:deps
           cmds:
-             - pnpm run dev --port {{.VITE_PORT}} --strictPort
+             - bun run dev --port {{.VITE_PORT}} --strictPort

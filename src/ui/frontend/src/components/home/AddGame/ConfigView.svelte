@@ -53,8 +53,8 @@
 
 		.selected-path {
 			padding: 12px 16px;
-			background: linear-gradient(to right, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
-			border: 1px solid rgba(255, 255, 255, 0.05);
+			background: var(--glass-surface);
+			border: 1px solid var(--glass-border);
 			border-radius: 12px;
 			position: relative;
 			overflow: hidden;
@@ -129,11 +129,11 @@
 		}
 
 		input {
-			background: rgba(0, 0, 0, 0.3);
-			border: 1px solid rgba(255, 255, 255, 0.1);
+			background: var(--glass-bg);
+			border: 1px solid var(--glass-border);
 			border-radius: 8px;
 			padding: 12px 16px;
-			color: #fff;
+			color: var(--text-main);
 			font-size: 1rem;
 			width: 100%;
 

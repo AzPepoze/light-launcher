@@ -13,8 +13,8 @@
 		GetInitialLauncherPath,
 		DetectLosslessDll,
 		GetExeIcon,
-	} from "../../bindings/goproton-wails/backend/app";
-	import * as core from "../../bindings/goproton/pkg/core/models";
+	} from "@bindings/light-launcher-wails/backend/app";
+	import * as core from "@bindings/light-launcher/pkg/core/models";
 	import Dropdown from "../components/Dropdown.svelte";
 	import ConfigForm from "../components/ConfigForm.svelte";
 	import SlideButton from "../components/SlideButton.svelte";
@@ -26,7 +26,7 @@
 	import { Window } from "@wailsio/runtime";
 	import { createLaunchOptions } from "../lib/formService";
 
-	import warningIcon from "../icons/warning.svg";
+
 
 	// Component State
 	let mounted = false;
@@ -457,7 +457,7 @@
 		<Modal show={showValidationModal} title="Missing Dependencies" onClose={() => (showValidationModal = false)}>
 			<div class="warning-modal-content">
 				<div class="warning-icon">
-					<img src={warningIcon} alt="warning" class="svg-icon" />
+					<span class="material-icons" style="font-size: 48px; color: #ef4444;">warning</span>
 				</div>
 				<p>The following requested features are not installed on your system:</p>
 				<div class="missing-list">
@@ -475,27 +475,7 @@
 
 		<div class="action-area">
 			<button class="btn primary launch-btn" on:click={handleLaunch}>
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="24"
-					height="24"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2.5"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					class="run-icon"
-				>
-					<path
-						d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"
-					></path>
-					<path
-						d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"
-					></path>
-					<path d="M9 12H4s.5-1 1-4c2 0 3 .5 3 .5"></path>
-					<path d="M12 15v5s1-.5 4-1c0-2-.5-3-.5-3"></path>
-				</svg>
+				<span class="material-icons run-icon">rocket_launch</span>
 				<span>LAUNCH GAME</span>
 			</button>
 		</div>
@@ -536,7 +516,8 @@
 		color: var(--text-dim);
 		word-break: break-all;
 		padding: 8px;
-		background: rgba(0, 0, 0, 0.2);
+		background: var(--glass-surface);
+		border: 1px solid var(--glass-border);
 		border-radius: 6px;
 	}
 	.warning-modal-content {
@@ -547,12 +528,6 @@
 			display: flex;
 			justify-content: center;
 
-			.svg-icon {
-				width: 48px;
-				height: 48px;
-				filter: brightness(0) invert(1);
-				opacity: 0.8;
-			}
 		}
 		p {
 			color: var(--text-main);
@@ -596,7 +571,7 @@
 		margin: 48px -32px -32px -32px; /* Pull out of parent padding */
 		padding: 32px;
 		z-index: 10;
-		background: linear-gradient(to top, #0c0c0e 70%, transparent);
+		background: linear-gradient(to top, var(--glass-bg) 70%, transparent);
 		display: flex;
 		justify-content: center;
 		pointer-events: none; /* Let clicks pass through the gradient area */
@@ -613,8 +588,8 @@
 		align-items: center;
 		justify-content: center;
 		gap: 12px;
-		background: #ffffff !important;
-		color: #000000 !important;
+		background: var(--accent-primary) !important;
+		color: var(--glass-bg) !important;
 		border: none;
 		box-shadow: 0 15px 45px rgba(0, 0, 0, 0.5);
 		cursor: pointer;
@@ -629,9 +604,9 @@
 		}
 
 		&:hover {
-			background: #f4f4f5 !important;
+			background: var(--accent-secondary) !important;
 			transform: translateY(-4px) scale(1.02);
-			box-shadow: 0 20px 60px rgba(255, 255, 255, 0.15);
+			box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
 
 			.run-icon {
 				transform: rotate(-10deg) scale(1.1);
@@ -643,10 +618,7 @@
 		}
 
 		.run-icon {
-			width: 28px;
-			height: 28px;
-			fill: #000000;
-			stroke: #000000;
+			font-size: 28px;
 			transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
 		}
 	}

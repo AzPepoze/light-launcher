@@ -1,8 +1,4 @@
 <script lang="ts">
-	import playIcon from "../../../icons/play.svg";
-	import settingsIcon from "../../../icons/settings.svg";
-	import rocketIcon from "../../../icons/rocket.svg";
-
 	export let game: any;
 	export let icon: string = "";
 	export let isRunning: boolean = false;
@@ -32,17 +28,7 @@
 			<div class="selection-overlay">
 				<div class="checkbox">
 					{#if isSelected}
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="16"
-							height="16"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="3"
-							stroke-linecap="round"
-							stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg
-						>
+						<span class="material-icons" style="font-size: 16px;">check</span>
 					{/if}
 				</div>
 			</div>
@@ -61,19 +47,19 @@
 			{#if icon}
 				<img src={icon} alt={game.name} class="game-icon" />
 			{:else}
-				<img src={rocketIcon} alt="rocket" class="game-icon-fallback" />
+				<span class="material-icons system-icon">rocket_launch</span>
 			{/if}
 		</div>
 
 		<div class="play-overlay">
-			<img src={playIcon} alt="play" class="launch-icon-large" />
+			<span class="material-icons launch-icon-large">play_arrow</span>
 		</div>
 	</div>
 
 	<div class="game-footer">
 		<span class="game-name" title={game.name}>{game.name}</span>
 		<button class="config-btn" title="Configure" on:click|stopPropagation={handleConfigure}>
-			<img src={settingsIcon} alt="configure" />
+			<span class="material-icons">settings</span>
 		</button>
 	</div>
 </div>
@@ -156,8 +142,8 @@
 
 	.game-icon-container {
 		aspect-ratio: 1;
-		background: #000;
-		border: 1px solid rgba(255, 255, 255, 0.08);
+		background: var(--glass-surface);
+		border: 1px solid var(--glass-border);
 		border-radius: 28px;
 		display: flex;
 		align-items: center;
@@ -171,7 +157,7 @@
 	.icon-wrapper {
 		position: absolute;
 		inset: 2px;
-		background: #111;
+		background: var(--glass-bg);
 		border-radius: 26px;
 		z-index: 2;
 		overflow: hidden;
@@ -198,11 +184,10 @@
 		transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
 	}
 
-	.game-icon-fallback {
-		width: 64px;
-		height: 64px;
-		opacity: 0.8;
-		filter: brightness(0) invert(1) drop-shadow(0 0 10px rgba(255, 255, 255, 0.4));
+	.system-icon {
+		font-size: 64px;
+		color: var(--text-dim);
+		opacity: 0.4;
 	}
 
 	.play-overlay {
@@ -217,9 +202,9 @@
 		z-index: 3;
 
 		.launch-icon-large {
-			width: 60px;
-			height: 60px;
-			filter: brightness(0) invert(1) drop-shadow(0 0 15px rgba(0, 0, 0, 0.9));
+			font-size: 60px;
+			color: #fff;
+			filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.5));
 			transform: scale(0.8);
 			transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 		}
@@ -248,9 +233,6 @@
 			transition: all 0.2s;
 			color: transparent;
 
-			svg {
-				stroke: currentColor;
-			}
 		}
 	}
 
@@ -294,7 +276,7 @@
 		.game-name {
 			font-size: 0.95rem;
 			font-weight: 700;
-			color: rgba(255, 255, 255, 0.9);
+			color: var(--text-main);
 			white-space: nowrap;
 			overflow: hidden;
 			text-overflow: ellipsis;
@@ -304,8 +286,8 @@
 		}
 
 		.config-btn {
-			background: rgba(255, 255, 255, 0.05);
-			border: 1px solid rgba(255, 255, 255, 0.1);
+			background: var(--glass-surface);
+			border: 1px solid var(--glass-border);
 			padding: 6px;
 			border-radius: 10px;
 			cursor: pointer;
@@ -316,17 +298,16 @@
 			opacity: 0;
 			visibility: hidden;
 			transform: translateX(10px);
+			color: var(--text-main);
 
 			&:hover {
-				background: rgba(255, 255, 255, 0.15);
+				background: var(--glass-border-bright);
 				transform: rotate(45deg) !important;
-				border-color: rgba(255, 255, 255, 0.3);
+				border-color: var(--glass-border-bright);
 			}
 
-			img {
-				width: 16px;
-				height: 16px;
-				filter: brightness(0) invert(1);
+			.material-icons {
+				font-size: 16px;
 			}
 		}
 	}

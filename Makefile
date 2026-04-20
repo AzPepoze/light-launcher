@@ -1,5 +1,5 @@
-BINARY_NAME=goproton
-INSTANCE_BIN=goproton-instance
+BINARY_NAME=light-launcher
+INSTANCE_BIN=light-launcher-instance
 BIN_DIR=bin
 DIST_DIR=dist
 PROJECT_DIR=src/ui
@@ -19,7 +19,7 @@ build-ui:
 
 package: build-instance
 	cd $(PROJECT_DIR) && PATH="$(shell go env GOPATH)/bin:$(PATH)" $(WAILS_BIN) task package
-	cp $(PROJECT_DIR)/bin/goproton* $(BIN_DIR)/
+	cp $(PROJECT_DIR)/bin/light-launcher* $(BIN_DIR)/
 
 dist: build
 	rm -rf $(DIST_DIR)

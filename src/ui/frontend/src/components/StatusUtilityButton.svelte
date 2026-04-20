@@ -12,7 +12,7 @@
 
 <button class="util-btn {btnClass}" class:pulsing={isPulsing} on:click={onclick}>
 	<div class="content-left">
-		<img src={icon} alt="" />
+		<span class="material-icons util-icon">{icon}</span>
 		<div class="btn-stack">
 			<span>{title}</span>
 			<small>{subtitle}</small>
@@ -20,14 +20,7 @@
 	</div>
 	{#if showSuccess}
 		<div class="check-indicator" in:fly={{ x: 20, duration: 400 }} out:fade={{ duration: 200 }}>
-			<svg
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="3"
-				stroke-linecap="round"
-				stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg
-			>
+			<span class="material-icons" style="font-size: 14px;">check</span>
 		</div>
 	{/if}
 </button>
@@ -40,10 +33,10 @@
 		justify-content: space-between;
 		padding: 12px 16px;
 		min-height: 64px;
-		background: rgba(255, 255, 255, 0.02);
-		border: 1px solid rgba(255, 255, 255, 0.05);
+		background: var(--glass-surface);
+		border: 1px solid var(--glass-border);
 		border-radius: 12px;
-		color: #fff;
+		color: var(--text-main);
 		cursor: pointer;
 		transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
 		position: relative;
@@ -57,9 +50,8 @@
 			min-width: 0;
 		}
 
-		img {
-			width: 20px;
-			height: 20px;
+		.util-icon {
+			font-size: 20px;
 			opacity: 0.9;
 			z-index: 2;
 			transition: all 0.3s;
@@ -86,17 +78,17 @@
 
 		&:hover {
 			transform: translateY(-2px);
-			img {
+			.util-icon {
 				opacity: 1;
 			}
 		}
 
 		&.cleanup {
-			background: rgba(254, 240, 138, 0.1);
+			background: rgba(234, 179, 8, 0.1);
 			border-color: rgba(234, 179, 8, 0.3);
 
-			img {
-				filter: invert(79%) sepia(50%) saturate(1000%) hue-rotate(10deg) brightness(100%) contrast(100%);
+			.util-icon {
+				color: #facc15;
 			}
 			span {
 				color: #facc15;
@@ -116,11 +108,11 @@
 		}
 
 		&.cache {
-			background: rgba(59, 130, 246, 0.08);
+			background: rgba(59, 130, 246, 0.1);
 			border-color: rgba(59, 130, 246, 0.3);
 
-			img {
-				filter: invert(53%) sepia(90%) saturate(3000%) hue-rotate(200deg) brightness(100%) contrast(105%);
+			.util-icon {
+				color: #60a5fa;
 			}
 			span {
 				color: #60a5fa;
@@ -140,11 +132,11 @@
 		}
 
 		&.drop-caches {
-			background: rgba(167, 139, 250, 0.08);
+			background: rgba(167, 139, 250, 0.1);
 			border-color: rgba(167, 139, 250, 0.3);
 
-			img {
-				filter: invert(65%) sepia(50%) saturate(1000%) hue-rotate(220deg) brightness(100%) contrast(100%);
+			.util-icon {
+				color: #a78bfa;
 			}
 			span {
 				color: #a78bfa;
@@ -164,11 +156,11 @@
 		}
 
 		&.clear-swap {
-			background: rgba(52, 211, 153, 0.08);
+			background: rgba(52, 211, 153, 0.1);
 			border-color: rgba(52, 211, 153, 0.3);
 
-			img {
-				filter: invert(75%) sepia(30%) saturate(1000%) hue-rotate(110deg) brightness(100%) contrast(100%);
+			.util-icon {
+				color: #34d399;
 			}
 			span {
 				color: #34d399;
@@ -209,13 +201,13 @@
 		justify-content: center;
 		width: 20px;
 		height: 20px;
-		background: rgba(255, 255, 255, 0.15);
+			background: var(--accent-primary);
 		border-radius: 50%;
-		color: #fff;
+		color: var(--glass-bg);
 		padding: 3px;
 		z-index: 2;
 
-		svg {
+		.material-icons {
 			width: 100%;
 			height: 100%;
 		}

@@ -38,7 +38,7 @@ func GetProtonTools() ([]ProtonTool, error) {
 		{filepath.Join(u.HomeDir, ".local/share/Steam/steamapps/common"), true},
 
 		// Custom user path
-		{filepath.Join(u.HomeDir, "GoProton/protons"), false},
+		{filepath.Join(u.HomeDir, "LightLauncher/protons"), false},
 	}
 
 	var tools []ProtonTool

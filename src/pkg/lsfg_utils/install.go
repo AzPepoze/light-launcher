@@ -137,7 +137,7 @@ func downloadFileWithProgress(url string, dest string, onProgress func(current, 
 	if err != nil {
 		return err
 	}
-	req.Header.Set("User-Agent", "GoProton-App")
+	req.Header.Set("User-Agent", "LightLauncher-App")
 
 	resp, err := client.Do(req)
 	if err != nil {

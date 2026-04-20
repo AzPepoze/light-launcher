@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { onMount } from "svelte";
-	import { ScanProtonVersions } from "../../bindings/goproton-wails/backend/app";
+	import { ScanProtonVersions } from "@bindings/light-launcher-wails/backend/app";
 	import { Browser } from "@wailsio/runtime";
-	import * as core from "../../bindings/goproton/pkg/core/models";
+	import * as core from "@bindings/light-launcher/pkg/core/models";
 	import { notifications } from "../notificationStore";
 
 	import steamIcon from "../icons/steam.png";
@@ -106,11 +106,11 @@
 	}
 
 	.count-badge {
-		background: rgba(255, 255, 255, 0.1);
+		background: var(--glass-surface);
 		padding: 4px 12px;
 		border-radius: 20px;
 		font-size: 0.8rem;
-		color: var(--text-muted);
+		color: var(--text-dim);
 		border: 1px solid var(--glass-border);
 	}
 
@@ -128,20 +128,21 @@
 		align-items: center;
 		gap: 20px;
 		padding: 20px;
-		background: rgba(255, 255, 255, 0.03);
+		background: var(--glass-surface);
 		border: 1px solid var(--glass-border);
 		border-radius: 16px;
 		transition: all 0.2s;
 
 		&:hover {
-			background: rgba(255, 255, 255, 0.06);
-			border-color: var(--glass-border-bright);
+			background: var(--glass-border-bright);
+			border-color: var(--accent-primary);
 			transform: translateX(4px);
 		}
 
 		.icon {
 			font-size: 1.5rem;
-			background: rgba(0, 0, 0, 0.2);
+			background: var(--glass-bg);
+			border: 1px solid var(--glass-border);
 			width: 48px;
 			height: 48px;
 			display: flex;
@@ -181,8 +182,9 @@
 			font-size: 0.75rem;
 			padding: 6px 12px;
 			border-radius: 8px;
-			background: rgba(255, 255, 255, 0.05);
-			color: var(--text-muted);
+			background: var(--glass-bg);
+			border: 1px solid var(--glass-border);
+			color: var(--text-dim);
 			font-weight: 600;
 			text-transform: uppercase;
 			letter-spacing: 0.5px;
