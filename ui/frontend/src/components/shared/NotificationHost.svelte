@@ -7,9 +7,9 @@
 <div class="notification-container">
 	{#each $notifications as n (n.id)}
 		<div
-			class="notification-card {n.type} glass"
+			class="notification-card {n.type}"
 			animate:flip={{ duration: 300 }}
-			in:fly={{ x: 100, duration: 300 }}
+			in:fly={{ y: 20, duration: 300 }}
 			out:fade={{ duration: 200 }}
 		>
 			<span class="material-icons mini-icon">
@@ -32,15 +32,17 @@
 <style lang="scss">
 	.notification-container {
 		position: fixed;
-		top: 32px;
-		right: 32px;
+		bottom: 32px;
+		left: 50%;
+		transform: translateX(-50%);
 		z-index: 9999;
 		display: flex;
-		flex-direction: column;
+		flex-direction: column-reverse;
 		gap: 12px;
 		width: 350px;
 		max-width: 90%;
 		pointer-events: none;
+		align-items: center;
 	}
 
 	.notification-card {
@@ -50,11 +52,11 @@
 		display: flex;
 		align-items: center;
 		gap: 12px;
-		box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+		box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 		border: 1px solid var(--glass-border);
-		background: var(--glass-surface);
-		backdrop-filter: blur(12px);
+		background: var(--solid-surface);
 		color: var(--text-main);
+		width: 100%;
 
 		.mini-icon {
 			font-size: 1.25rem;
@@ -62,15 +64,12 @@
 		}
 
 		&.error {
-			border-left: 4px solid #ef4444;
 			.mini-icon { color: #ef4444; }
 		}
 		&.success {
-			border-left: 4px solid #10b981;
 			.mini-icon { color: #10b981; }
 		}
 		&.info {
-			border-left: 4px solid #818cf8;
 			.mini-icon { color: #818cf8; }
 		}
 

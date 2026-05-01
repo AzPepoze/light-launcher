@@ -78,7 +78,7 @@
 		color: var(--text-main);
 		cursor: pointer;
 		text-align: left;
-		background: var(--glass-surface);
+		background: var(--solid-surface);
 		border: 1px solid var(--glass-border);
 		border-radius: 10px;
 		transition: all 0.2s;
@@ -107,7 +107,7 @@
 		max-height: 220px;
 		overflow-y: auto;
 		z-index: 100;
-		background: var(--glass-surface);
+		background: var(--solid-surface);
 		border: 1px solid var(--glass-border-bright);
 		border-radius: 12px;
 		box-shadow: var(--glass-shadow);

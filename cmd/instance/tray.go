@@ -18,10 +18,25 @@ import (
 	"github.com/getlantern/systray"
 )
 
+//go:embed appicon.png
 var applicationIconData []byte
 
+func getIconPath() string {
+	if exe, err := os.Executable(); err == nil {
+		local := filepath.Join(filepath.Dir(exe), "appicon.png")
+		if _, err := os.Stat(local); err == nil {
+			return local
+		}
+	}
+	tmpPath := filepath.Join(os.TempDir(), "light-launcher-icon.png")
+	if _, err := os.Stat(tmpPath); os.IsNotExist(err) {
+		_ = os.WriteFile(tmpPath, applicationIconData, 0644)
+	}
+	return tmpPath
+}
+
 func sendNotification(title, message string) {
-	_ = exec.Command("notify-send", "-a", "LightLauncher", title, message).Run()
+	_ = exec.Command("notify-send", "-a", "LightLauncher", "-i", getIconPath(), title, message).Run()
 }
 
 func onReady(logPath string) {

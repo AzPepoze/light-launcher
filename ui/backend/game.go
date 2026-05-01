@@ -66,24 +66,36 @@ func (a *App) RunGame(opts core.LaunchOptions, showLogs bool) error {
 	}
 
 	potentialPaths := []string{
+		// 1. Same directory as current executable
 		filepath.Join(exeDir, instanceName),
-		filepath.Join(exeDir, "../../../bin", instanceName),
+		// 2. Project bin directory (relative to ui/ frontend dev)
+		filepath.Join(exeDir, "../bin", instanceName),
+		// 3. Project bin directory (relative to ui/backend)
+		"../bin/" + instanceName,
+		// 4. Local bin or current dir
 		"./bin/" + instanceName,
 		"./" + instanceName,
+		// 5. System path (fallback)
 		"/usr/bin/" + instanceName,
 	}
 
 	foundPath := ""
 	for _, p := range potentialPaths {
 		if _, err := os.Stat(p); err == nil {
-			foundPath = p
+			if abs, err := filepath.Abs(p); err == nil {
+				foundPath = abs
+			} else {
+				foundPath = p
+			}
 			break
 		}
 	}
 
 	if foundPath == "" {
-		return fmt.Errorf("instance manager not found")
+		return fmt.Errorf("instance manager '%s' not found in potential paths", instanceName)
 	}
+
+	core.DebugLog("[APP.RunGame] Using instance manager: " + foundPath)
 
 	args := []string{
 		"--game", opts.MainExecutablePath,

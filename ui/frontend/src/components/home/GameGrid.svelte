@@ -10,7 +10,8 @@
 	export let isSelectionMode = false;
 	export let selectedPaths = new Set<string>();
 	
-	export let isGameRunning: (game: any) => boolean;
+	export let isGameRunning: (game: any, sessionsList: any[]) => boolean;
+	export let sessions: any[] = [];
 	export let handleQuickLaunch: (game: any) => Promise<void>;
 	export let handleConfigure: (game: any) => void;
 	export let toggleGameSelection: (game: any) => void;
@@ -44,7 +45,7 @@
 				<GameCard
 					{game}
 					icon={gameIcons[game.path || game.config.LauncherPath]}
-					isRunning={isGameRunning(game)}
+					isRunning={isGameRunning(game, sessions)}
 					{isSelectionMode}
 					isSelected={selectedPaths.has(game.path || game.config.LauncherPath)}
 					view={currentView}

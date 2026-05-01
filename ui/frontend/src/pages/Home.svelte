@@ -108,9 +108,9 @@
 		navigationCommand.set({ page: "run" });
 	}
 
-	function isGameRunning(game) {
+	function isGameRunning(game, sessionsList) {
 		const path = game.path || game.config.LauncherPath;
-		return sessions.some((s) => s.gamePath === path);
+		return sessionsList.some((s) => s.gamePath === path);
 	}
 
 	async function handleKillSession(pid, name) {
@@ -209,7 +209,8 @@
 				{selectedPrefixFilter}
 				{isSelectionMode}
 				{selectedPaths}
-				isGameRunning={isGameRunning}
+				{sessions}
+				{isGameRunning}
 				handleQuickLaunch={handleQuickLaunch}
 				handleConfigure={handleConfigure}
 				toggleGameSelection={toggleGameSelection}
