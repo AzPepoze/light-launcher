@@ -8,22 +8,31 @@
 	--glass-low-alpha: rgba(24, 24, 27, 0.02);
 	--glass-high-alpha: rgba(24, 24, 27, 0.08);
 	--glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+	--solid-surface: #ffffff;
 
-	--accent-primary: #27272a; /* Dark Zinc */
-	--accent-secondary: #52525b; 
+	--accent-primary: #27272a;
+	/* Dark Zinc */
+	--accent-secondary: #52525b;
 	--accent-gradient: linear-gradient(135deg, #27272a 0%, #52525b 100%);
 
-	--text-main: #09090b; /* Zinc-950 */
+	--text-main: #09090b;
+	/* Zinc-950 */
 	--text-muted: #3f3f46;
 	--text-dim: #71717a;
 
 	--danger: #ef4444;
 	--success: #10b981;
+
+	--radius-xl: 24px;
+	--radius-lg: 35px;
+	--radius-md: 12px;
+	--radius-sm: 8px;
 }
 
 [data-theme="dark"] {
 	/* Dark Theme */
-	--glass-bg: rgba(9, 9, 11, var(--app-opacity, 1.0)); /* Dark Zinc */
+	--glass-bg: rgba(9, 9, 11, var(--app-opacity, 1.0));
+	/* Dark Zinc */
 	--glass-surface: rgba(18, 18, 22, 0.75);
 	--glass-border: rgba(255, 255, 255, 0.08);
 	--glass-border-bright: rgba(255, 255, 255, 0.15);
@@ -31,9 +40,11 @@
 	--glass-low-alpha: rgba(255, 255, 255, 0.03);
 	--glass-high-alpha: rgba(255, 255, 255, 0.1);
 	--glass-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+	--solid-surface: #18181b; /* Zinc-900 */
 
-	--accent-primary: #ffffff; /* Pure White */
-	--accent-secondary: #e4e4e7; 
+	--accent-primary: #ffffff;
+	/* Pure White */
+	--accent-secondary: #e4e4e7;
 	--accent-gradient: linear-gradient(135deg, #ffffff 0%, #e4e4e7 100%);
 
 	--text-main: #fafafa;
@@ -101,7 +112,8 @@ body {
 	&.primary {
 		background: var(--accent-primary);
 		border: 1px solid var(--accent-primary);
-		color: var(--glass-bg); /* Use theme background color for contrast */
+		color: var(--glass-bg);
+		/* Use theme background color for contrast */
 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 
 		&:hover {

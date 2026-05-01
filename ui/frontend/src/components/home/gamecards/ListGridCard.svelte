@@ -92,7 +92,7 @@
 		align-items: center;
 		background: var(--glass-surface);
 		border: 1px solid var(--glass-border);
-		border-radius: 16px;
+		border-radius: var(--radius-lg);
 		padding: 12px 20px;
 		gap: 20px;
 		cursor: pointer;
@@ -141,7 +141,7 @@
 			width: 24px;
 			height: 24px;
 			border: 2px solid var(--glass-border);
-			border-radius: 6px;
+			border-radius: var(--radius-sm);
 			background: var(--glass-bg);
 			display: flex;
 			align-items: center;
@@ -152,9 +152,9 @@
 	}
 
 	.icon-section {
-		height: 64px;
+		height: 80px;
 		aspect-ratio: 1/1;
-		border-radius: 12px;
+		border-radius: var(--radius-md);
 		overflow: hidden;
 		position: relative;
 		flex-shrink: 0;
@@ -184,7 +184,7 @@
 			width: 8px;
 			height: 8px;
 			background: var(--success, #22c55e);
-			border-radius: 50%;
+			border-radius: var(--radius-xl);
 			box-shadow: 0 0 8px var(--success, #22c55e);
 
 			.pulse {

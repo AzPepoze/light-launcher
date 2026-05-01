@@ -39,9 +39,8 @@
 			<div class="selection-overlay">
 				<div class="checkbox">
 					{#if isSelected}
-						<span
-							class="material-icons"
-							style="font-size: 16px;">check</span
+						<span class="material-icons" style="font-size: 16px;"
+							>check</span
 						>
 					{/if}
 				</div>
@@ -61,8 +60,7 @@
 			{#if icon}
 				<img src={icon} alt={game.name} class="game-icon" />
 			{:else}
-				<span class="material-icons system-icon">rocket_launch</span
-				>
+				<span class="material-icons system-icon">rocket_launch</span>
 			{/if}
 		</div>
 
@@ -87,12 +85,12 @@
 	.game-card {
 		display: flex;
 		flex-direction: column;
-		gap: 16px;
+		gap: 8px;
 		transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
 		position: relative;
-		max-width: 180px;
 		width: 100%;
-		margin: 0 auto;
+		max-width: 160px;
+		margin: 4px;
 
 		&.selected {
 			.game-icon-container {
@@ -139,6 +137,12 @@
 				visibility: visible;
 				transform: translateX(0);
 			}
+
+			.game-footer .game-name {
+				white-space: normal;
+				overflow: visible;
+				word-break: break-all;
+			}
 		}
 
 		&.selection-mode:hover {
@@ -164,7 +168,7 @@
 		aspect-ratio: 1;
 		background: var(--glass-surface);
 		border: 1px solid var(--glass-border);
-		border-radius: 28px;
+		border-radius: var(--radius-lg);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -178,7 +182,7 @@
 		position: absolute;
 		inset: 2px;
 		background: var(--glass-bg);
-		border-radius: 26px;
+		border-radius: calc(var(--radius-lg) - 2px);
 		z-index: 2;
 		overflow: hidden;
 		display: flex;
@@ -203,7 +207,7 @@
 		transition: opacity 0.4s;
 		z-index: 1;
 		filter: blur(3px) brightness(1.5);
-		border-radius: 32px;
+		border-radius: calc(var(--radius-lg) + 4px);
 	}
 
 	.game-icon {
@@ -233,10 +237,10 @@
 		.launch-icon-large {
 			font-size: 60px;
 			color: #fff;
-			filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.5));
+			filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.8))
+				drop-shadow(0 0 20px rgba(0, 0, 0, 0.4));
 			transform: scale(0.8);
-			transition: transform 0.3s
-				cubic-bezier(0.175, 0.885, 0.32, 1.275);
+			transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 		}
 	}
 
@@ -249,13 +253,13 @@
 		padding: 12px;
 		z-index: 5;
 		background: var(--glass-low-alpha);
-		border-radius: 26px;
+		border-radius: calc(var(--radius-lg) - 2px);
 
 		.checkbox {
 			width: 24px;
 			height: 24px;
 			border: 2px solid var(--glass-border-bright);
-			border-radius: 6px;
+			border-radius: var(--radius-sm);
 			background: var(--glass-surface);
 			display: flex;
 			align-items: center;
@@ -276,7 +280,7 @@
 		background: var(--success, #22c55e);
 		color: #fff;
 		padding: 4px 10px;
-		border-radius: 20px;
+		border-radius: var(--radius-xl);
 		font-size: 0.65rem;
 		font-weight: 900;
 		display: flex;
@@ -300,10 +304,10 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding: 0 8px;
+		padding: 0 4px;
 
 		.game-name {
-			font-size: 0.95rem;
+			font-size: 0.85rem;
 			font-weight: 700;
 			color: var(--text-main);
 			white-space: nowrap;
@@ -312,22 +316,24 @@
 			flex: 1;
 			transition: all 0.3s;
 			letter-spacing: -0.2px;
+			line-height: 1.2;
 		}
 
 		.config-btn {
 			background: var(--glass-surface);
 			border: 1px solid var(--glass-border);
 			padding: 6px;
-			border-radius: 10px;
+			border-radius: var(--radius-md);
 			cursor: pointer;
 			display: flex;
 			align-items: center;
 			justify-content: center;
 			transition: all 0.3s;
-			opacity: 0;
-			visibility: hidden;
-			transform: translateX(10px);
+			opacity: 0.6;
+			visibility: visible;
+			transform: translateX(0);
 			color: var(--text-main);
+			margin-left: 6px;
 
 			&:hover {
 				background: var(--glass-border-bright);

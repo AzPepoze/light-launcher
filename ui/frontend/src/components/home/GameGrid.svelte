@@ -78,17 +78,19 @@
 
 	.games-grid {
 		display: grid;
-		gap: 20px;
+		gap: 12px;
 		width: 100%;
+		padding: 8px;
 		padding-bottom: 40px;
 	}
 
 	.grid-view .games-grid {
-		grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
 	}
 
 	.list-view .games-grid {
 		grid-template-columns: 1fr;
+		gap: 10px;
 	}
 
 	.no-results {
@@ -100,7 +102,7 @@
 		color: var(--text-dim);
 		text-align: center;
 		background: var(--glass-surface);
-		border-radius: 24px;
+		border-radius: var(--radius-xl);
 		border: 1px dashed var(--glass-border);
 		margin-top: 20px;
 

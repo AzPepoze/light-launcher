@@ -229,7 +229,7 @@
 
 <AddGameModal
 	show={showAddModal}
-	onClose={() => (showAddModal = true)}
+	onClose={() => (showAddModal = false)}
 	onRefresh={refreshData}
 />
 
