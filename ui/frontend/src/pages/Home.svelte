@@ -1,13 +1,8 @@
 <script lang="ts">
 	import {
-		GetAllGames,
-		GetRunningSessions,
 		KillSession,
 		RunGame,
-		ListPrefixes,
 		RemoveGame,
-		SaveGameConfig,
-		GetPrefixBaseDir,
 	} from "@bindings/light-launcher/internal/app/app";
 	import { onMount, onDestroy } from "svelte";
 	import { Events } from "@wailsio/runtime";
@@ -15,6 +10,7 @@
 	import { navigationCommand } from "@stores/navigationStore";
 	import { runState } from "@stores/runState";
 	import { loadExeIcon } from "@lib/iconService";
+	import * as service from "@lib/homeService";
 
 	import GameCard from "@components/home/GameCard.svelte";
 	import GameGrid from "@components/home/GameGrid.svelte";
@@ -52,28 +48,21 @@
 	});
 
 	async function refreshData() {
-		try {
-			const fetchedGames = await GetAllGames();
-			games = fetchedGames || [];
-			const fetchedSessions = await GetRunningSessions();
-			sessions = fetchedSessions || [];
+		const data = await service.refreshHomeData();
+		games = data.games;
+		sessions = data.sessions;
+		prefixes = data.prefixes;
 
-			const fetchedPrefixes = await ListPrefixes();
-			prefixes = ["All Prefixes", ...(fetchedPrefixes || [])];
-
-			// Fetch icons for games
-			for (const game of games) {
-				const path = game.path || game.config.RunnerPath;
-				if (path && !gameIcons[path]) {
-					loadExeIcon(path).then((icon) => {
-						if (icon) {
-							gameIcons = { ...gameIcons, [path]: icon };
-						}
-					});
-				}
+		// Fetch icons for games
+		for (const game of games) {
+			const path = game.path || game.config.RunnerPath;
+			if (path && !gameIcons[path]) {
+				loadExeIcon(path).then((icon) => {
+					if (icon) {
+						gameIcons = { ...gameIcons, [path]: icon };
+					}
+				});
 			}
-		} catch (err) {
-			console.error("Failed to refresh home data:", err);
 		}
 	}
 
@@ -84,69 +73,14 @@
 
 		dropUnsubscribe = Events.On("FilesDropped", async (event) => {
 			const files = event.data as string[];
-			let added = 0;
-			const basePrefixDir = await GetPrefixBaseDir();
-			const prefixPath = basePrefixDir + "/Default";
-
-			for (const path of files) {
-				if (path.toLowerCase().endsWith(".exe")) {
-					const name =
-						path.split("/").pop()?.replace(".exe", "") || "Game";
-					const config: any = {
-						Name: name,
-						RunnerPath: path,
-						GamePath: path,
-						UseGamePath: false,
-						PrefixPath: prefixPath,
-						ProtonPath: "",
-						ProtonPattern: "GE-Proton*",
-						CustomArgs: "",
-						Extras: {
-							EnableMangoHud: false,
-							EnableGamemode: false,
-							Lsfg: {
-								Enabled: false,
-								Multiplier: "2",
-								PerfMode: false,
-								DllPath: "",
-								Gpu: "",
-								FlowScale: "0.8",
-								Pacing: "none",
-								AllowFp16: false,
-							},
-							Gamescope: {
-								Enabled: false,
-								Width: "1920",
-								Height: "1080",
-								RefreshRate: "60",
-							},
-							Memory: {
-								Enabled: false,
-								Value: "4G",
-							},
-						},
-					};
-					await SaveGameConfig(config);
-					added++;
-				}
-			}
+			const added = await service.processDroppedFiles(files);
 			if (added > 0) {
-				notifications.add(
-					`Successfully added ${added} game(s)`,
-					"success",
-				);
+				notifications.add(`Successfully added ${added} game(s)`, "success");
 				refreshData();
 			}
 		});
 
-		sessionInterval = setInterval(async () => {
-			try {
-				const fetchedSessions = await GetRunningSessions();
-				sessions = fetchedSessions || [];
-			} catch (err) {
-				console.error("Failed to fetch sessions in interval:", err);
-			}
-		}, 3000);
+		sessionInterval = setInterval(refreshData, 3000);
 	});
 
 	onDestroy(() => {
@@ -156,11 +90,10 @@
 
 	async function handleQuickLaunch(game) {
 		try {
-			notifications.add(`Launching ${game.name}...`, "info");
-			await RunGame(game.config, false); // No logs for quick launch
+			await service.quickLaunchGame(game);
 			refreshData();
 		} catch (err) {
-			notifications.add(`Launch failed: ${err}`, "error");
+			// Error handled in service
 		}
 	}
 
@@ -179,11 +112,10 @@
 
 	async function handleKillSession(pid, name) {
 		try {
-			await KillSession(pid);
-			notifications.add(`Terminated session: ${name}`, "success");
+			await service.terminateSession(pid, name);
 			refreshData();
 		} catch (err) {
-			notifications.add(`Failed to kill session: ${err}`, "error");
+			// Error handled in service
 		}
 	}
 
@@ -211,26 +143,13 @@
 	}
 
 	async function confirmBulkRemove() {
-		try {
-			let count = 0;
-			for (const path of selectedPaths) {
-				await RemoveGame(path);
-				count++;
-			}
-			notifications.add(
-				`Successfully removed ${count} games`,
-				"success",
-			);
+		const count = await service.removeGamesBulk(selectedPaths);
+		if (count > 0) {
 			selectedPaths.clear();
 			selectedPaths = selectedPaths;
 			isSelectionMode = false;
 			showBulkRemoveModal = false;
 			refreshData();
-		} catch (err) {
-			notifications.add(
-				`Failed to remove some games: ${err}`,
-				"error",
-			);
 		}
 	}
 </script>

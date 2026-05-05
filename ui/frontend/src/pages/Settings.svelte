@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { settingsStore } from "@stores/settingsStore";
-	import { PickFileCustom, GetAppSettings, SaveAppSettings, RestartApp } from "@bindings/light-launcher/internal/app/app";
-	import { notifications } from "@stores/notificationStore";
+	import * as service from "@lib/settingsService";
 	import { onMount } from "svelte";
 
 	let currentSettings = {
@@ -15,13 +14,9 @@
 	};
 
 	onMount(async () => {
-		try {
-			const settings = await GetAppSettings();
-			if (settings) {
-				appSettings = settings;
-			}
-		} catch (err) {
-			console.error("Failed to load app settings", err);
+		const settings = await service.loadAppSettings();
+		if (settings) {
+			appSettings = settings;
 		}
 	});
 
@@ -30,59 +25,24 @@
 	});
 
 	function handleThemeToggle() {
-		settingsStore.update((s) => ({
-			...s,
-			theme: s.theme === "light" ? "dark" : "light",
-		}));
+		service.toggleTheme();
 	}
 
 	function handleTransparencyChange(e: Event) {
 		const val = parseFloat((e.target as HTMLInputElement).value);
-		settingsStore.update((s) => ({
-			...s,
-			transparency: val,
-		}));
+		service.updateTransparency(val);
 	}
 
 	async function handleBrowseBackground() {
-		try {
-			const path = await PickFileCustom("Select Background Image", [
-				{
-					DisplayName: "Images",
-					Pattern: "*.png;*.jpg;*.jpeg;*.svg;*.webp",
-				},
-			]);
-			if (path) {
-				settingsStore.update((s) => ({
-					...s,
-					backgroundImagePath: path,
-				}));
-				notifications.add("Background image updated", "success");
-			}
-		} catch (err) {
-			notifications.add("Failed to pick image", "error");
-		}
+		await service.browseBackgroundImage();
 	}
 
 	function handleClearBackground() {
-		settingsStore.update((s) => ({
-			...s,
-			backgroundImagePath: "",
-		}));
-		notifications.add("Background image cleared", "info");
+		service.clearBackgroundImage();
 	}
 
 	async function toggleTransparentMode() {
-		try {
-			appSettings.TransparentMode = !appSettings.TransparentMode;
-			await SaveAppSettings(appSettings);
-			notifications.add("Restarting app to apply transparency changes...", "info");
-			setTimeout(async () => {
-				await RestartApp();
-			}, 1500);
-		} catch (err) {
-			notifications.add("Failed to save setting", "error");
-		}
+		await service.toggleTransparentMode(appSettings);
 	}
 </script>
 

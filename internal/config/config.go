@@ -114,8 +114,23 @@ func LoadGameConfig(executablePath string) (*types.LaunchOptions, error) {
 		return nil, err
 	}
 
+	cleanPath := filepath.Clean(executablePath)
+	if absPath, err := filepath.Abs(cleanPath); err == nil {
+		cleanPath = absPath
+	}
+
 	for _, cfg := range configs {
-		if cfg.GamePath == executablePath {
+		cfgGamePath := filepath.Clean(cfg.GamePath)
+		if abs, err := filepath.Abs(cfgGamePath); err == nil {
+			cfgGamePath = abs
+		}
+
+		cfgRunnerPath := filepath.Clean(cfg.RunnerPath)
+		if abs, err := filepath.Abs(cfgRunnerPath); err == nil {
+			cfgRunnerPath = abs
+		}
+
+		if cfgGamePath == cleanPath || cfgRunnerPath == cleanPath {
 			return &cfg, nil
 		}
 	}

@@ -5,6 +5,7 @@ import (
 	"light-launcher/internal/config"
 	"light-launcher/internal/types"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -48,11 +49,12 @@ func BuildCommand(options types.LaunchOptions) ([]string, []string) {
 func (builder *CommandBuilder) buildBaseEnvironment() {
 	builder.Environment = append(builder.Environment,
 		fmt.Sprintf("WINEPREFIX=%s", config.ExpandPath(builder.Options.PrefixPath)),
-		fmt.Sprintf("UMU_PROTON_PATTERN=%s", builder.Options.ProtonPattern),
 	)
 
 	if builder.Options.ProtonPath != "" {
+		protonPattern := filepath.Base(builder.Options.ProtonPath)
 		builder.Environment = append(builder.Environment,
+			fmt.Sprintf("UMU_PROTON_PATTERN=%s", protonPattern),
 			fmt.Sprintf("PROTONPATH=%s", config.ExpandPath(builder.Options.ProtonPath)),
 		)
 	}
@@ -81,7 +83,9 @@ func FormatCommandForDisplay(commandArguments []string, options types.LaunchOpti
 		builder.WriteString(fmt.Sprintf("[MemMin:%s] ", options.Extras.Memory.Value))
 	}
 	builder.WriteString("WINEPREFIX=" + options.PrefixPath + " ")
-	builder.WriteString("UMU_PROTON_PATTERN=" + options.ProtonPattern + " ")
+	if options.ProtonPath != "" {
+		builder.WriteString("UMU_PROTON_PATTERN=" + filepath.Base(options.ProtonPath) + " ")
+	}
 	if options.Extras.EnableMangoHud {
 		builder.WriteString("MANGOHUD=1 ")
 	}

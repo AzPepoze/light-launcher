@@ -81,11 +81,14 @@ export function applyConfigToOptions(
 	protonVersions: core.ProtonTool[]
 ): string {
 	let selectedProton = "";
-	const match = protonVersions.find((p) => p.Path === config.ProtonPath);
-	if (match) {
-		selectedProton = match.DisplayName;
-	} else if (config.ProtonPattern) {
-		selectedProton = config.ProtonPattern;
+	
+	// Try matching by absolute path
+	const matchByPath = protonVersions.find((p) => p.Path === config.ProtonPath);
+	if (matchByPath) {
+		selectedProton = matchByPath.DisplayName;
+	} else if (config.ProtonPath) {
+		// Fallback to full path if not found in scanned tools
+		selectedProton = config.ProtonPath;
 	}
 
 	options.Name = config.Name || options.Name;

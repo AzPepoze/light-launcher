@@ -14,6 +14,7 @@
 		GetInitialGamePath,
 		GetShouldEditLsfg,
 		GetImageBase64,
+		GetAppSettings,
 	} from "@bindings/light-launcher/internal/app/app";
 	import { onMount } from "svelte";
 	import { navigationCommand } from "@stores/navigationStore";
@@ -48,6 +49,9 @@
 
 	onMount(async () => {
 		try {
+			const appSettings = await GetAppSettings();
+			document.documentElement.dataset.transparent = appSettings.TransparentMode.toString();
+
 			const shouldEditLsfg = await GetShouldEditLsfg();
 			const launcherPath = await GetInitialLauncherPath();
 

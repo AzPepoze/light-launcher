@@ -7,7 +7,6 @@ export const DEFAULT_LAUNCH_OPTIONS: core.LaunchOptions = {
 		GamePath: "",
 		UseGamePath: false,
 		PrefixPath: "",
-		ProtonPattern: "",
 		ProtonPath: "",
 		CustomArgs: "",
 		Extras: {

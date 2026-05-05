@@ -38,7 +38,6 @@ type LaunchOptions struct {
 	GamePath      string       `json:"GamePath"`
 	UseGamePath   bool         `json:"UseGamePath"`
 	PrefixPath    string       `json:"PrefixPath"`
-	ProtonPattern string       `json:"ProtonPattern"`
 	ProtonPath    string       `json:"ProtonPath"`
 	CustomArgs    string       `json:"CustomArgs"`
 	Extras        ExtrasConfig `json:"Extras"`

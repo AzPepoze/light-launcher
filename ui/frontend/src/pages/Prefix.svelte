@@ -1,14 +1,7 @@
 <script lang="ts">
 	import {
-		CreatePrefix,
-		GetPrefixBaseDir,
 		GetSystemToolsStatus,
-		ListPrefixes,
-		LoadPrefixConfig,
 		PickFolder,
-		RunPrefixTool,
-		SavePrefixConfig,
-		RemovePrefix,
 		ScanProtonVersions,
 	} from "@bindings/light-launcher/internal/app/app";
 	import * as core from "@bindings/light-launcher/internal/types/models";
@@ -17,6 +10,7 @@
 	import PrefixList from "@components/prefix/PrefixList.svelte";
 	import PrefixTools from "@components/prefix/PrefixTools.svelte";
 	import { createLaunchOptions } from "@lib/formService";
+	import * as service from "@lib/prefixService";
 	import { notifications } from "@stores/notificationStore";
 	import { onMount } from "svelte";
 
@@ -25,9 +19,9 @@
 	let baseDir = "";
 	let prefixPath = "";
 	let selectedProton = "";
-	let protonVersions: any[] = [];
+	let protonVersions: core.ProtonTool[] = [];
 	let protonOptions: string[] = [];
-	let systemStatus: any = null;
+	let systemStatus: core.SystemToolsStatus | null = null;
 	let newPrefixName = "";
 	let isLoading = false;
 	let runningToolName = "";
@@ -35,19 +29,17 @@
 	// Config
 	let prefixOptions: core.LaunchOptions = createLaunchOptions();
 
-	async function refreshPrefixes() {
-		try {
-			const list = await ListPrefixes();
-			availablePrefixes = Array.isArray(list) ? list : [];
-			baseDir = await GetPrefixBaseDir();
+	async function refreshPrefixes(autoSelect = true) {
+		const data = await service.getPrefixData();
+		availablePrefixes = data.availablePrefixes;
+		baseDir = data.baseDir;
+		
+		if (autoSelect) {
 			if (!prefixPath && availablePrefixes.length > 0) {
 				selectPrefix(availablePrefixes[0]);
 			} else if (!prefixPath) {
 				prefixPath = baseDir + "/Default";
 			}
-		} catch (err) {
-			console.error(err);
-			availablePrefixes = [];
 		}
 	}
 
@@ -70,56 +62,20 @@
 	});
 
 	async function selectPrefix(name: string) {
-		prefixPath = baseDir + "/" + name;
-		try {
-			const config = await LoadPrefixConfig(name);
-			if (config) {
-				prefixOptions = { ...prefixOptions, ...config };
-
-				if (config.ProtonPattern) {
-					const match = protonVersions.find(
-						(p) =>
-							p.Name === config.ProtonPattern ||
-							p.DisplayName === config.ProtonPattern,
-					);
-					if (match) selectedProton = match.DisplayName;
-					else if (config.ProtonPattern)
-						selectedProton = config.ProtonPattern;
-				}
-			} else {
-				resetOptions();
+		const result = await service.getPrefixConfig(name, baseDir, protonVersions);
+		prefixPath = result.path;
+		if (result.options) {
+			prefixOptions = { ...prefixOptions, ...result.options };
+			if (result.selectedProton) {
+				selectedProton = result.selectedProton;
 			}
-		} catch (e) {
-			resetOptions();
+		} else {
+			prefixOptions = createLaunchOptions();
 		}
 	}
 
-	function resetOptions() {
-		prefixOptions = createLaunchOptions();
-	}
-
 	async function handleSaveConfig() {
-		if (!prefixPath) return;
-		const name = prefixPath.split("/").pop() || "Default";
-
-		// Update proton info in options
-		const tool = protonVersions.find(
-			(p) => p.DisplayName === selectedProton,
-		);
-		let cleanName = selectedProton;
-		if (cleanName.startsWith("(Steam) "))
-			cleanName = cleanName.substring(8);
-
-		prefixOptions.ProtonPattern = cleanName;
-		prefixOptions.ProtonPath = tool ? tool.Path : "";
-
-		await notifications.withNotification(
-			SavePrefixConfig(name, prefixOptions),
-			{
-				success: "Prefix defaults saved!",
-				error: "Failed to save configuration",
-			},
-		);
+		await service.savePrefixDefaults(prefixPath, prefixOptions, selectedProton, protonVersions);
 	}
 
 	async function handleBrowse() {
@@ -134,40 +90,20 @@
 	async function handleCreatePrefix() {
 		if (!newPrefixName) return;
 		const name = newPrefixName;
-		await notifications.withNotification(
-			(async () => {
-				await CreatePrefix(name);
-				newPrefixName = "";
-				await refreshPrefixes();
-				selectPrefix(name);
-			})(),
-			{
-				success: `Created prefix "${name}"`,
-				error: "Failed to create prefix",
-			},
-		);
+		await service.createNewPrefix(name);
+		newPrefixName = "";
+		await refreshPrefixes(false);
+		await selectPrefix(name);
 	}
 
 	async function handleRemovePrefix(name: string) {
-		if (name === "Default") {
-			notifications.add("Cannot delete Default prefix", "error");
-			return;
+		await service.deletePrefix(name);
+		await refreshPrefixes(false);
+		if (availablePrefixes.length > 0) {
+			await selectPrefix(availablePrefixes[0]);
+		} else {
+			prefixPath = baseDir + "/Default";
 		}
-		await notifications.withNotification(
-			(async () => {
-				await RemovePrefix(name);
-				await refreshPrefixes();
-				if (availablePrefixes.length > 0) {
-					await selectPrefix(availablePrefixes[0]);
-				} else {
-					prefixPath = baseDir + "/Default";
-				}
-			})(),
-			{
-				success: `Deleted prefix "${name}"`,
-				error: "Failed to delete prefix",
-			},
-		);
 	}
 
 	function handleProtonChange(value: string) {
@@ -176,22 +112,13 @@
 
 	async function runTool(tool: string) {
 		if (isLoading) return;
-		if (!prefixPath) {
-			notifications.error("Please select or create a prefix first.");
-			return;
-		}
-
 		isLoading = true;
 		runningToolName = tool;
 
-		let cleanName = selectedProton;
-		if (cleanName.startsWith("(Steam) ")) {
-			cleanName = cleanName.substring(8);
-		}
 		try {
-			await RunPrefixTool(prefixPath, tool, cleanName);
+			await service.executePrefixTool(prefixPath, tool, selectedProton, protonVersions);
 		} catch (err) {
-			notifications.error(`Failed to run ${tool}: ${err}`);
+			// Error handled in service via notification
 		} finally {
 			setTimeout(() => {
 				isLoading = false;

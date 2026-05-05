@@ -52,6 +52,11 @@
 	--text-dim: #a1a1aa;
 }
 
+[data-transparent="false"] {
+	--app-opacity: 1 !important;
+	--glass-surface: var(--solid-surface) !important;
+}
+
 * {
 	box-sizing: border-box;
 }

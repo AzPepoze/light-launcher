@@ -8,7 +8,6 @@ func buildLaunchOptions() types.LaunchOptions {
 		GamePath:      gamePath,
 		RunnerPath:    launcherPath,
 		PrefixPath:    prefixPath,
-		ProtonPattern: protonPattern,
 		ProtonPath:    protonPath,
 		Extras: types.ExtrasConfig{
 			EnableMangoHud: mango,

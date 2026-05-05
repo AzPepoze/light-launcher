@@ -2,14 +2,12 @@
 	import {
 		PickFile,
 		PickFolder,
-		SearchExecutables,
-		SaveGameConfig,
 		ListPrefixes,
 		GetPrefixBaseDir,
-		DetectLosslessDll,
 	} from "@bindings/light-launcher/internal/app/app";
 	import { notifications } from "@stores/notificationStore";
 	import { loadExeIcon } from "@lib/iconService";
+	import * as service from "@lib/gameService";
 	import SelectionView from "./SelectionView.svelte";
 	import ConfigView from "./ConfigView.svelte";
 	import ReviewView from "./ReviewView.svelte";
@@ -26,11 +24,7 @@
 	let searchDepth = "2";
 	let excludeNames = "UnityCrashHandler64, uninstall, redist";
 	let selectedFolder = "";
-	let foundExecutables: {
-		path: string;
-		name: string;
-		icon: string | null;
-	}[] = [];
+	let foundExecutables: service.ScannedExecutable[] = [];
 	let discardedExecutables = new Set<string>();
 	let isSearching = false;
 
@@ -78,9 +72,8 @@
 		try {
 			const path = await PickFile();
 			if (path) {
-				const name =
-					path.split("/").pop()?.replace(".exe", "") || "Game";
-				await saveGame(path);
+				const name = path.split("/").pop()?.replace(".exe", "") || "Game";
+				await service.registerGame(path, `${prefixBaseDir}/${selectedPrefix}`);
 				notifications.add(`Added ${name}`, "success");
 				onRefresh();
 				onClose();
@@ -104,30 +97,18 @@
 
 	async function startFolderScan() {
 		if (!selectedFolder) return;
+		isSearching = true;
 		try {
-			isSearching = true;
-			const depth = parseInt(searchDepth);
-			const validDepth = isNaN(depth) ? 2 : depth;
-			const excludes = excludeNames
-				.split(",")
-				.map((e) => e.trim())
-				.filter((e) => e !== "");
+			const depth = parseInt(searchDepth) || 2;
+			const excludes = excludeNames.split(",").map((e) => e.trim()).filter(Boolean);
 
-			const exes = await SearchExecutables(
-				selectedFolder,
-				validDepth,
-				excludes,
-			);
-			if (exes && exes.length > 0) {
-				foundExecutables = exes.map((path) => ({
-					path,
-					name:
-						path.split("/").pop()?.replace(".exe", "") ||
-						"Game",
-					icon: null,
-				}));
+			const results = await service.scanFolderForExecutables(selectedFolder, depth, excludes);
+			
+			if (results.length > 0) {
+				foundExecutables = results;
 				addMode = "folder-review";
 				discardedExecutables = new Set();
+				
 				foundExecutables.forEach((item, index) => {
 					loadExeIcon(item.path).then((icon) => {
 						if (icon) {
@@ -140,56 +121,9 @@
 				notifications.add("No executables found in folder", "info");
 				addMode = "select";
 			}
-		} catch (err) {
-			notifications.add(`Failed to search folder: ${err}`, "error");
 		} finally {
 			isSearching = false;
 		}
-	}
-
-	async function saveGame(path: string) {
-		const name = path.split("/").pop()?.replace(".exe", "") || "Game";
-		
-		let dllPath = "";
-		try {
-			dllPath = await DetectLosslessDll();
-		} catch (e) {}
-
-		const config: any = {
-			Name: name,
-			RunnerPath: path,
-			GamePath: path,
-			UseGamePath: false,
-			PrefixPath: prefixBaseDir + "/" + selectedPrefix,
-			ProtonPath: "",
-			ProtonPattern: "GE-Proton*",
-			CustomArgs: "",
-			Extras: {
-				EnableMangoHud: false,
-				EnableGamemode: false,
-				Lsfg: {
-					Enabled: false,
-					Multiplier: "2",
-					PerfMode: false,
-					DllPath: dllPath,
-					Gpu: "",
-					FlowScale: "0.8",
-					Pacing: "none",
-					AllowFp16: false
-				},
-				Gamescope: {
-					Enabled: false,
-					Width: "1920",
-					Height: "1080",
-					RefreshRate: "60"
-				},
-				Memory: {
-					Enabled: false,
-					Value: "4G"
-				}
-			}
-		};
-		await SaveGameConfig(config);
 	}
 
 	function toggleDiscard(path: string) {
@@ -199,25 +133,15 @@
 	}
 
 	async function confirmAddFolder() {
-		const toAdd = foundExecutables.filter(
-			(exe) => !discardedExecutables.has(exe.path),
-		);
-		if (toAdd.length === 0) {
+		const targetPrefixPath = `${prefixBaseDir}/${selectedPrefix}`;
+		const addedCount = await service.batchRegisterGames(foundExecutables, discardedExecutables, targetPrefixPath);
+		
+		if (addedCount > 0) {
+			onRefresh();
 			onClose();
-			return;
+		} else if (foundExecutables.length > 0) {
+			onClose();
 		}
-		let addedCount = 0;
-		for (const exe of toAdd) {
-			try {
-				await saveGame(exe.path);
-				addedCount++;
-			} catch (err) {
-				console.error(`Failed to add ${exe.name}:`, err);
-			}
-		}
-		notifications.add(`Added ${addedCount} games`, "success");
-		onRefresh();
-		onClose();
 	}
 
 	function handleKeydown(event: KeyboardEvent) {

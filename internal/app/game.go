@@ -102,7 +102,7 @@ func buildInstanceManagerArgs(options types.LaunchOptions, showLogs bool) []stri
 		"--game", options.GamePath,
 		"--launcher", options.RunnerPath,
 		"--prefix", options.PrefixPath,
-		"--proton-pattern", options.ProtonPattern,
+		"--proton-pattern", filepath.Base(options.ProtonPath),
 		"--proton-path", options.ProtonPath,
 	}
 	if options.Extras.EnableMangoHud {
@@ -247,11 +247,11 @@ func (app *App) RemoveGame(executablePath string) error {
 	return nil
 }
 
-func (app *App) RunPrefixTool(prefixPath, toolName, protonPattern string) error {
+func (app *App) RunPrefixTool(prefixPath, toolName, protonPath string) error {
 	options := types.LaunchOptions{
-		GamePath:      toolName,
-		PrefixPath:    prefixPath,
-		ProtonPattern: protonPattern,
+		GamePath:   toolName,
+		PrefixPath: prefixPath,
+		ProtonPath: protonPath,
 	}
 	commandArguments, environment := builder.BuildCommand(options)
 	command := exec.Command(commandArguments[0], commandArguments[1:]...)

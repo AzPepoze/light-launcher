@@ -3,17 +3,6 @@
 	import {
 		PickFile,
 		PickFolder,
-		ScanProtonVersions,
-		RunGame,
-		GetConfig,
-		ListPrefixes,
-		GetPrefixBaseDir,
-		GetSystemToolsStatus,
-		LoadPrefixConfig,
-		GetInitialLauncherPath,
-		DetectLosslessDll,
-		GetExeIcon,
-		GetListGpus,
 		SaveGameConfig,
 	} from "@bindings/light-launcher/internal/app/app";
 	import * as core from "@bindings/light-launcher/internal/types/models";
@@ -26,9 +15,9 @@
 	import MissingDependenciesModal from "@components/run/MissingDependenciesModal.svelte";
 	import { notifications } from "@stores/notificationStore";
 	import { runState } from "@stores/runState";
-	import { get } from "svelte/store";
-	import { Window } from "@wailsio/runtime";
 	import { createLaunchOptions, mergeOptions } from "@lib/formService";
+	import * as service from "@lib/runService";
+	import { loadConfigForGame, loadConfigForPrefix } from "@lib/runConfig";
 
 	// Component State
 	let mounted = false;
@@ -71,8 +60,6 @@
 	let gpuList: string[] = [];
 	let isSaving = false;
 
-	import { loadConfigForGame, loadConfigForPrefix } from "@lib/runConfig";
-
 	async function handleSave() {
 		isSaving = true;
 		try {
@@ -107,96 +94,21 @@
 
 	onMount(async () => {
 		try {
-			baseDir = await GetPrefixBaseDir();
+			const data = await service.initializeRunPage(options, handleConfigUpdate);
 			
-			// Load LSFG Resources
-			const [gpus, dll] = await Promise.all([
-				GetListGpus(),
-				DetectLosslessDll()
-			]);
-			gpuList = gpus || [];
-			if (dll && !options.Extras.Lsfg.DllPath) {
-				options.Extras.Lsfg.DllPath = dll;
-			}
+			baseDir = data.baseDir;
+			gpuList = data.gpuList;
+			protonVersions = data.protonVersions;
+			protonOptions = data.protonOptions;
+			availablePrefixes = data.availablePrefixes;
+			systemStatus = data.systemStatus;
+			launcherIcon = data.launcherIcon;
+			gameIcon = data.gameIcon;
+			mainExePath = data.mainExePath;
 
-			const s = get(runState);
-			if (s) {
-				if (s.mainExePath) {
-					mainExePath = s.mainExePath;
-					options.GamePath = s.mainExePath;
-				}
-				if (s.gameIcon) gameIcon = s.gameIcon;
-				if (s.launcherIcon) launcherIcon = s.launcherIcon;
-				if (s.prefixPath) prefixPath = s.prefixPath;
-				if (s.selectedPrefixName)
-					selectedPrefixName = s.selectedPrefixName;
-				if (s.selectedProton) selectedProton = s.selectedProton;
-				if (s.options) {
-					options = mergeOptions(options, s.options);
-				}
+			if (protonOptions.length > 0 && !selectedProton) {
+				selectedProton = protonOptions[0];
 			}
-
-			if (options.RunnerPath) {
-				await doLoadConfigForGame(options.RunnerPath);
-				if (!launcherIcon) {
-					const icon = await GetExeIcon(options.RunnerPath);
-					if (icon) launcherIcon = icon;
-				}
-			}
-
-			const initialPath = await GetInitialLauncherPath();
-			if (initialPath) {
-				// Only set as game/launcher if not already set, or if explicitly passed from tray
-				if (!options.RunnerPath && !options.GamePath) {
-					// No prior state - set initial path as launcher
-					options.RunnerPath = initialPath;
-					const icon = await GetExeIcon(initialPath);
-					if (icon) launcherIcon = icon;
-					// Set default name from runner filename
-					if (!options.Name || options.Name === "Launcher") {
-						options.Name = initialPath.split(/[/\\]/).pop()?.replace(/\.exe$/i, "") || "Launcher";
-					}
-				} else if (
-					!options.GamePath ||
-					options.GamePath === options.RunnerPath
-				) {
-					// Prior state has launcher but no game - set initial path as game
-					mainExePath = initialPath;
-					options.GamePath = initialPath;
-					const icon = await GetExeIcon(initialPath);
-					if (icon) gameIcon = icon;
-					await doLoadConfigForGame(initialPath);
-				}
-			}
-
-			// Load icons for any paths that don't have icons yet
-			if (options.RunnerPath && !launcherIcon) {
-				const icon = await GetExeIcon(options.RunnerPath);
-				if (icon) launcherIcon = icon;
-			}
-			if (options.GamePath && !gameIcon) {
-				const icon = await GetExeIcon(options.GamePath);
-				if (icon) gameIcon = icon;
-			}
-
-			const [tools, prefixes, base, sysStatus] = await Promise.all([
-				ScanProtonVersions(),
-				ListPrefixes(),
-				GetPrefixBaseDir(),
-				GetSystemToolsStatus(),
-			]);
-			if (tools) {
-				protonVersions = tools;
-				protonOptions = tools.map((t) => t.DisplayName);
-				if (protonOptions.length > 0 && !selectedProton) {
-					selectedProton = protonOptions[0];
-				}
-			}
-			availablePrefixes = Array.isArray(prefixes)
-				? prefixes
-				: ["Default"];
-			baseDir = base;
-			systemStatus = sysStatus;
 
 			if (!prefixPath) {
 				prefixPath = baseDir + "/Default";
@@ -248,16 +160,12 @@
 			const path = await PickFile();
 			if (path) {
 				options = { ...options, RunnerPath: path };
-				
-				// Set default name if not set
 				if (!options.Name || options.Name === "Launcher") {
 					options.Name = path.split(/[/\\]/).pop()?.replace(/\.exe$/i, "") || "Launcher";
 				}
-
 				if (!mainExePath) {
 					options = { ...options, GamePath: path };
 				}
-
 				await doLoadConfigForGame(path);
 			}
 		} catch (err) {
@@ -282,57 +190,27 @@
 	}
 
 	async function handleLaunch() {
-		if (!options.RunnerPath) {
-			notifications.add(
-				"Please select a launcher executable.",
-				"error",
-			);
-			return;
-		}
-
-		if (options.Extras.Lsfg.Enabled && !options.Extras.Lsfg.DllPath) {
-			notifications.add("LSFG-VK requires Lossless.dll.", "error");
-			return;
-		}
-
-		missingToolsList = [];
-		if (options.Extras.Gamescope.Enabled && !systemStatus.hasGamescope)
-			missingToolsList.push("Gamescope");
-		if (options.Extras.EnableMangoHud && !systemStatus.hasMangoHud)
-			missingToolsList.push("MangoHud");
-		if (options.Extras.EnableGamemode && !systemStatus.hasGameMode)
-			missingToolsList.push("GameMode");
-		if (options.Extras.Lsfg.Enabled && !systemStatus.hasVulkanInfo)
-			missingToolsList.push("Vulkan-Tools");
-		if (missingToolsList.length > 0) {
+		const shouldShowModal = await service.validateAndLaunch(
+			options, 
+			systemStatus, 
+			selectedProton, 
+			protonVersions, 
+			showLogsWindow
+		);
+		
+		if (shouldShowModal === true) {
+			missingToolsList = [];
+			if (options.Extras.Gamescope.Enabled && !systemStatus.hasGamescope) missingToolsList.push("Gamescope");
+			if (options.Extras.EnableMangoHud && !systemStatus.hasMangoHud) missingToolsList.push("MangoHud");
+			if (options.Extras.EnableGamemode && !systemStatus.hasGameMode) missingToolsList.push("GameMode");
+			if (options.Extras.Lsfg.Enabled && !systemStatus.hasVulkanInfo) missingToolsList.push("Vulkan-Tools");
 			showValidationModal = true;
-			return;
 		}
-		await proceedToLaunch();
 	}
 
 	async function proceedToLaunch() {
 		showValidationModal = false;
-
-		const tool = protonVersions.find(
-			(p) => p.DisplayName === selectedProton,
-		);
-		let cleanName = selectedProton;
-		if (cleanName.startsWith("(Steam) ")) {
-			cleanName = cleanName.substring(8);
-		}
-
-		options.PrefixPath = prefixPath;
-		options.ProtonPattern = cleanName;
-		options.ProtonPath = tool ? tool.Path : "";
-
-		try {
-			await RunGame(options, showLogsWindow);
-			Window.Close();
-		} catch (err) {
-			console.error("[EXECUTE] Launch failed:", err);
-			notifications.add(`Launch failed: ${err}`, "error");
-		}
+		await service.executeLaunch(options, selectedProton, protonVersions, showLogsWindow);
 	}
 </script>
 
