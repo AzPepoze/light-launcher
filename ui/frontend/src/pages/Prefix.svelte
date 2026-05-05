@@ -10,8 +10,8 @@
 		SavePrefixConfig,
 		RemovePrefix,
 		ScanProtonVersions,
-	} from "@bindings/light-launcher/ui/backend/app";
-	import * as core from "@bindings/light-launcher/internal/core/models";
+	} from "@bindings/light-launcher/internal/app/app";
+	import * as core from "@bindings/light-launcher/internal/types/models";
 	import ConfigForm from "@components/shared/ConfigForm.svelte";
 	import Dropdown from "@components/shared/Dropdown.svelte";
 	import PrefixList from "@components/prefix/PrefixList.svelte";
@@ -95,11 +95,7 @@
 	}
 
 	function resetOptions() {
-		prefixOptions.CustomArgs = "";
-		prefixOptions.EnableGamescope = false;
-		prefixOptions.EnableMangoHud = false;
-		prefixOptions.EnableGamemode = false;
-		prefixOptions.EnableLsfgVk = false;
+		prefixOptions = createLaunchOptions();
 	}
 
 	async function handleSaveConfig() {

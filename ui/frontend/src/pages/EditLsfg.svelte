@@ -5,12 +5,14 @@
 		GetLsfgProfileForGame,
 		GetInitialGamePath,
 		SaveLsfgProfile,
+		DisableLsfgProfile,
 		CloseWindow,
 		PickFileCustom,
-	} from "@bindings/light-launcher/ui/backend/app";
-	import * as core from "@bindings/light-launcher/internal/core/models";
+	} from "@bindings/light-launcher/internal/app/app";
+	import * as core from "@bindings/light-launcher/internal/types/models";
 	import { onMount } from "svelte";
 	import { loadLsfgResources, createLaunchOptions } from "@lib/formService";
+	import { notifications } from "@stores/notificationStore";
 
 	export let gamePath = "";
 
@@ -20,8 +22,7 @@
 	let error = "";
 	let gpuList: string[] = [];
 	let saving = false;
-	let saveSuccess = false;
-	let saveError = "";
+	let disabling = false;
 
 	onMount(async () => {
 		try {
@@ -33,24 +34,26 @@
 				return;
 			}
 
-			options.MainExecutablePath = currentGamePath;
+			options.GamePath = currentGamePath;
+			options.Name = currentGamePath.split(/[/\\]/).pop()?.replace(/\.exe$/i, "") || "Game";
 
 			// Load profile data
-			const data = await GetLsfgProfileForGame(currentGamePath);
+			const data = await GetLsfgProfileForGame(options.Name, currentGamePath);
 			if (data) {
-				options.LsfgMultiplier = String(data.multiplier || 2);
-				options.LsfgPerfMode = data.performanceMode || false;
-				options.LsfgGpu = data.gpu || "";
-				options.LsfgFlowScale = String(data.flowScale || 0.8);
-				options.LsfgPacing = data.pacing || "none";
-				options.LsfgDllPath = data.dllPath || "";
-				options.LsfgAllowFp16 = data.allowFp16 || false;
+				if (data.name) options.Name = data.name;
+				options.Extras.Lsfg.Multiplier = String(data.multiplier || 2);
+				options.Extras.Lsfg.PerfMode = data.performanceMode || false;
+				options.Extras.Lsfg.Gpu = data.gpu || "";
+				options.Extras.Lsfg.FlowScale = String(data.flowScale || 0.8);
+				options.Extras.Lsfg.Pacing = data.pacing || "none";
+				options.Extras.Lsfg.DllPath = data.dllPath || "";
+				options.Extras.Lsfg.AllowFp16 = data.allowFp16 || false;
 			}
 
 			// Auto-detect DLL and load GPUs
 			const { gpus, dll } = await loadLsfgResources();
-			if (dll && !options.LsfgDllPath) {
-				options.LsfgDllPath = dll;
+			if (dll && !options.Extras.Lsfg.DllPath) {
+				options.Extras.Lsfg.DllPath = dll;
 				console.log("Auto-detected DLL:", dll);
 			}
 			if (gpus && gpus.length > 0) {
@@ -66,32 +69,36 @@
 
 	async function handleApply() {
 		saving = true;
-		saveSuccess = false;
-		saveError = "";
 
 		try {
 			await SaveLsfgProfile(
-				options.MainExecutablePath,
-				parseInt(options.LsfgMultiplier) || 2,
-				options.LsfgPerfMode,
-				options.LsfgDllPath,
-				options.LsfgGpu,
-				options.LsfgFlowScale,
-				options.LsfgPacing,
-				options.LsfgAllowFp16,
+				options.Name,
+				options.GamePath,
+				parseInt(options.Extras.Lsfg.Multiplier) || 2,
+				options.Extras.Lsfg.PerfMode,
+				options.Extras.Lsfg.DllPath,
+				options.Extras.Lsfg.Gpu,
+				options.Extras.Lsfg.FlowScale,
+				options.Extras.Lsfg.Pacing,
+				options.Extras.Lsfg.AllowFp16,
 			);
-			saveSuccess = true;
-			saveError = "";
-
-			// Auto-dismiss success message after 2 seconds
-			setTimeout(() => {
-				saveSuccess = false;
-			}, 2000);
+			notifications.success("Configuration saved successfully!");
 		} catch (err) {
-			saveError = String(err);
-			saveSuccess = false;
+			notifications.error(`Failed to save configuration: ${err}`);
 		} finally {
 			saving = false;
+		}
+	}
+
+	async function handleDisable() {
+		disabling = true;
+		try {
+			await DisableLsfgProfile(options.Name, options.GamePath);
+			notifications.success("LSFG profile disabled in global config.");
+		} catch (err) {
+			notifications.error(`Failed to disable profile: ${err}`);
+		} finally {
+			disabling = false;
 		}
 	}
 
@@ -100,7 +107,7 @@
 			const path = await PickFileCustom("Select Lossless.dll", [
 				{ DisplayName: "Lossless.dll", Pattern: "Lossless.dll" },
 			]);
-			if (path) options.LsfgDllPath = path;
+			if (path) options.Extras.Lsfg.DllPath = path;
 		} catch (err) {
 			console.error(err);
 		}
@@ -150,7 +157,17 @@
 	>
 		<div class="modal-content">
 			<div class="profile-info">
-				<p class="game-path">{options.MainExecutablePath}</p>
+				<div class="form-group profile-name-group">
+					<label for="profileName">Profile Name</label>
+					<input
+						id="profileName"
+						type="text"
+						class="input profile-input"
+						bind:value={options.Name}
+						placeholder="Enter profile name..."
+					/>
+				</div>
+				<p class="game-path">{options.GamePath}</p>
 			</div>
 
 			<LsfgConfigForm
@@ -158,24 +175,23 @@
 				{gpuList}
 				onDllBrowse={handleBrowseDll}
 			/>
-
-			{#if saveSuccess}
-				<div class="status-message success">
-					✓ Configuration saved successfully
-				</div>
-			{:else if saveError}
-				<div class="status-message error">✗ Error: {saveError}</div>
-			{/if}
 		</div>
 
 		<div slot="footer" class="actions">
 			<button class="btn secondary" on:click={handleClose}
 				>Close</button
 			>
+			<button 
+				class="btn danger" 
+				on:click={handleDisable}
+				disabled={disabling || saving}
+			>
+				{disabling ? "Disabling..." : "Disable Profile"}
+			</button>
 			<button
 				class="btn primary"
 				on:click={handleApply}
-				disabled={saving}
+				disabled={saving || disabling}
 			>
 				{saving ? "Saving..." : "Apply"}
 			</button>
@@ -220,24 +236,6 @@
 	.actions {
 		display: flex;
 		gap: 12px;
-	}
-
-	.status-message {
-		padding: 12px 16px;
-		border-radius: 8px;
-		margin: 16px 0;
-		font-weight: 500;
-		text-align: center;
-
-		&.success {
-			background: rgba(34, 197, 94, 0.1);
-			color: #22c55e;
-		}
-
-		&.error {
-			background: rgba(239, 68, 68, 0.1);
-			color: #ef4444;
-		}
 	}
 
 	.btn {

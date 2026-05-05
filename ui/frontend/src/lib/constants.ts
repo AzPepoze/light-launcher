@@ -1,41 +1,51 @@
-import * as core from "@bindings/light-launcher/internal/core/models";
+import * as core from "@bindings/light-launcher/internal/types/models";
 
 export const DEFAULT_LAUNCH_OPTIONS: core.LaunchOptions = {
 	...({
-		MainExecutablePath: "",
-		LauncherPath: "",
-		HaveGameExe: false,
+		Name: "Launcher",
+		RunnerPath: "",
+		GamePath: "",
+		UseGamePath: false,
 		PrefixPath: "",
 		ProtonPattern: "",
 		ProtonPath: "",
 		CustomArgs: "",
-		EnableGamescope: false,
-		GamescopeW: "1920",
-		GamescopeH: "1080",
-		GamescopeR: "60",
-		EnableMangoHud: false,
-		EnableGamemode: false,
-		EnableLsfgVk: false,
-		LsfgMultiplier: "2",
-		LsfgPerfMode: false,
-		LsfgDllPath: "",
-		LsfgGpu: "",
-		LsfgFlowScale: "0.8",
-		LsfgPacing: "none",
-		LsfgAllowFp16: false,
-		EnableMemoryMin: false,
-		MemoryMinValue: "4G",
+		Extras: {
+			EnableMangoHud: false,
+			EnableGamemode: false,
+			Lsfg: {
+				Enabled: false,
+				Multiplier: "2",
+				PerfMode: false,
+				DllPath: "",
+				Gpu: "",
+				FlowScale: "0.8",
+				Pacing: "none",
+				AllowFp16: false,
+			},
+			Gamescope: {
+				Enabled: false,
+				Width: "1920",
+				Height: "1080",
+				RefreshRate: "60",
+			},
+			Memory: {
+				Enabled: false,
+				Value: "4G",
+			},
+		},
 	} as core.LaunchOptions),
 };
 
-export const LSFG_DEFAULT_OPTIONS: Partial<core.LaunchOptions> = {
-	LsfgMultiplier: "2",
-	LsfgPerfMode: false,
-	LsfgDllPath: "",
-	LsfgGpu: "",
-	LsfgFlowScale: "0.8",
-	LsfgPacing: "none",
-	LsfgAllowFp16: false,
+export const LSFG_DEFAULT_OPTIONS = {
+	Enabled: false,
+	Multiplier: "2",
+	PerfMode: false,
+	DllPath: "",
+	Gpu: "",
+	FlowScale: "0.8",
+	Pacing: "none",
+	AllowFp16: false,
 };
 
 export const GAMESCOPE_DEFAULTS = {

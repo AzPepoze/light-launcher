@@ -5,8 +5,8 @@
 		GetUtilsStatus,
 		InstallLsfg,
 		UninstallLsfg,
-	} from "@bindings/light-launcher/ui/backend/app";
-	import * as core from "@bindings/light-launcher/internal/core/models";
+	} from "@bindings/light-launcher/internal/app/app";
+	import * as core from "@bindings/light-launcher/internal/types/models";
 	import { notifications } from "@stores/notificationStore";
 	import { Events } from "@wailsio/runtime";
 	import { onDestroy, onMount } from "svelte";
@@ -20,6 +20,7 @@
 		hasGamescope: false,
 		hasMangoHud: false,
 		hasGameMode: false,
+		hasVulkanInfo: false,
 		hasLosslessDll: false,
 	};
 	let isInstalling = false;

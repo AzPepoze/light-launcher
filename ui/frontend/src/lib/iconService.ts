@@ -1,4 +1,4 @@
-import { GetExeIcon } from "@bindings/light-launcher/ui/backend/app";
+import { GetExeIcon } from "@bindings/light-launcher/internal/app/app";
 
 /**
  * Loads an executable icon asynchronously

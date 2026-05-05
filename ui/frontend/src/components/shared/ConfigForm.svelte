@@ -6,8 +6,8 @@
 	import {
 		PickFileCustom,
 		GetTotalRam,
-	} from "@bindings/light-launcher/ui/backend/app";
-	import * as core from "@bindings/light-launcher/internal/core/models";
+	} from "@bindings/light-launcher/internal/app/app";
+	import * as core from "@bindings/light-launcher/internal/types/models";
 	import { onMount } from "svelte";
 	import { loadLsfgResources, parseMemoryValue } from "@lib/formService";
 
@@ -25,16 +25,12 @@
 			const ram = await GetTotalRam();
 			if (ram > 0) systemRamTotal = ram;
 
-			if (options.MemoryMinValue) {
+			if (options.Extras.Memory.Value) {
 				const numericMatch =
-					options.MemoryMinValue.match(/([\d.]+)/);
+					options.Extras.Memory.Value.match(/([\d.]+)/);
 				if (numericMatch) {
-					const val = parseMemoryValue(options.MemoryMinValue);
-					if (options.MemoryMinValue.endsWith("M")) {
-						memorySliderValue = val;
-					} else {
-						memorySliderValue = val;
-					}
+					const val = parseMemoryValue(options.Extras.Memory.Value);
+					memorySliderValue = val;
 				}
 			}
 
@@ -43,8 +39,8 @@
 			if (gpus.length > 0) {
 				gpuList = ["Auto (Detect)", ...gpus];
 			}
-			if (dll && !options.LsfgDllPath) {
-				options.LsfgDllPath = dll;
+			if (dll && !options.Extras.Lsfg.DllPath) {
+				options.Extras.Lsfg.DllPath = dll;
 				console.log("[ConfigForm] Auto-detected DLL:", dll);
 			}
 		} catch (e) {
@@ -57,7 +53,7 @@
 			const path = await PickFileCustom("Select Lossless.dll", [
 				{ DisplayName: "Lossless.dll", Pattern: "Lossless.dll" },
 			]);
-			if (path) options.LsfgDllPath = path;
+			if (path) options.Extras.Lsfg.DllPath = path;
 		} catch (err) {
 			console.error(err);
 		}
@@ -78,31 +74,31 @@
 
 	<div class="toggles-grid">
 		<SlideButton
-			bind:checked={options.EnableMangoHud}
+			bind:checked={options.Extras.EnableMangoHud}
 			label="MangoHud"
 			subtitle="Performance overlay"
 		/>
 		<SlideButton
-			bind:checked={options.EnableGamemode}
+			bind:checked={options.Extras.EnableGamemode}
 			label="GameMode"
 			subtitle="Optimize priorities"
 		/>
 		<SlideButton
-			bind:checked={options.EnableLsfgVk}
+			bind:checked={options.Extras.Lsfg.Enabled}
 			label="LSFG-VK"
 			subtitle="Lossless Scaling Frame Generation"
 			hasConfig={true}
 			onConfig={() => (showLsfgModal = true)}
 		/>
 		<SlideButton
-			bind:checked={options.EnableGamescope}
+			bind:checked={options.Extras.Gamescope.Enabled}
 			label="Gamescope"
 			subtitle="Micro-compositor"
 			hasConfig={true}
 			onConfig={() => (showGamescopeModal = true)}
 		/>
 		<SlideButton
-			bind:checked={options.EnableMemoryMin}
+			bind:checked={options.Extras.Memory.Enabled}
 			label="Memory Protect"
 			subtitle="Prevent Swap (Min RAM)"
 			hasConfig={true}
@@ -133,7 +129,7 @@
 					id="gamescopeWidth"
 					type="text"
 					class="input"
-					bind:value={options.GamescopeW}
+					bind:value={options.Extras.Gamescope.Width}
 					placeholder="e.g. 1920"
 				/>
 			</div>
@@ -143,7 +139,7 @@
 					id="gamescopeHeight"
 					type="text"
 					class="input"
-					bind:value={options.GamescopeH}
+					bind:value={options.Extras.Gamescope.Height}
 					placeholder="e.g. 1080"
 				/>
 			</div>
@@ -153,7 +149,7 @@
 					id="gamescopeRefresh"
 					type="text"
 					class="input"
-					bind:value={options.GamescopeR}
+					bind:value={options.Extras.Gamescope.RefreshRate}
 					placeholder="e.g. 60"
 				/>
 			</div>
@@ -178,12 +174,12 @@
 					snapValues={[2, 4, 6, 8, 12, 16, 24, 32, 48, 64]}
 					onChange={(changedValue) => {
 						memorySliderValue = changedValue;
-						options.MemoryMinValue = changedValue + "G";
+						options.Extras.Memory.Value = changedValue + "G";
 					}}
 				/>
 			</div>
 			<p class="note">
-				Guarantees {options.MemoryMinValue} of physical RAM for the game
+				Guarantees {options.Extras.Memory.Value} of physical RAM for the game
 				process, preventing swapping.
 				<br />Values in Red Zone (>75%) might cause system
 				instability.

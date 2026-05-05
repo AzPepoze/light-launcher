@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { settingsStore } from "@stores/settingsStore";
-	import { PickFileCustom } from "@bindings/light-launcher/ui/backend/app";
+	import { PickFileCustom } from "@bindings/light-launcher/internal/app/app";
 	import { notifications } from "@stores/notificationStore";
 
 	let currentSettings = {

@@ -9,7 +9,7 @@ tasks:
 
      install:frontend:deps:
           summary: Install frontend dependencies
-          dir: frontend
+          dir: ui/frontend
           sources:
              - package.json
              - bun.lockb
@@ -24,7 +24,7 @@ tasks:
      build:frontend:
           label: build:frontend (DEV={{.DEV}})
           summary: Build the frontend project
-          dir: frontend
+          dir: ui/frontend
           sources:
              - "**/*"
           generates:
@@ -46,22 +46,22 @@ tasks:
           label: generate:bindings (BUILD_FLAGS={{.BUILD_FLAGS}})
           summary: Generates bindings for the frontend
           deps:
-             - task: go:mod:tidy
+               - task: go:mod:tidy
           sources:
-             - "**/*.[jt]s"
-             - exclude: frontend/**/*
-             - frontend/bindings/**/* # Rerun when switching between dev/production mode causes changes in output
-             - "**/*.go"
-             - go.mod
-             - go.sum
+               - "**/*.[jt]s"
+               - exclude: ui/frontend/**/*
+               - ui/frontend/bindings/**/* # Rerun when switching between dev/production mode causes changes in output
+               - "**/*.go"
+               - go.mod
+               - go.sum
           generates:
-             - frontend/bindings/**/*
+               - ui/frontend/bindings/**/*
           cmds:
-             - wails3 generate bindings -f '{{.BUILD_FLAGS}}' -clean=true -ts
+               - wails3 generate bindings -f '{{.BUILD_FLAGS}}' -clean=true -ts ./...
 
      dev:frontend:
           summary: Runs the frontend in development mode
-          dir: frontend
+          dir: ui/frontend
           deps:
              - task: install:frontend:deps
           cmds:

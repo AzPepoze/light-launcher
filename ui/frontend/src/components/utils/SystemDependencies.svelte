@@ -4,6 +4,7 @@
 		hasMangoHud: boolean;
 		hasGameMode: boolean;
 		hasLosslessDll: boolean;
+		hasVulkanInfo: boolean;
 	};
 </script>
 
@@ -31,6 +32,13 @@
 				{systemStatus.hasGameMode ? "Available" : "Not Found"}
 			</span>
 		</div>
+		<div class="status-item" class:ok={systemStatus.hasVulkanInfo}>
+			<span class="dot"></span>
+			<span class="label">Vulkan-Tools</span>
+			<span class="value">
+				{systemStatus.hasVulkanInfo ? "Available" : "Missing"}
+			</span>
+		</div>
 		<div class="status-item" class:ok={systemStatus.hasLosslessDll}>
 			<span class="dot"></span>
 			<span class="label">Lossless.dll</span>
@@ -39,6 +47,14 @@
 			</span>
 		</div>
 	</div>
+	
+	{#if !systemStatus.hasVulkanInfo}
+		<p class="warning-text important">
+			<span class="material-icons icon">warning</span>
+			Vulkan-Tools (vulkaninfo) is missing. This is highly recommended for accurate GPU detection and LSFG compatibility.
+		</p>
+	{/if}
+
 	{#if !systemStatus.hasGamescope || !systemStatus.hasMangoHud || !systemStatus.hasGameMode || !systemStatus.hasLosslessDll}
 		<p class="warning-text">
 			Some features may not work until you install these tools.
@@ -107,8 +123,23 @@
 
 	.warning-text {
 		font-size: 0.8rem;
-		color: var(--accent-secondary);
+		color: var(--text-muted);
 		margin: 12px 0 0 0;
 		font-style: italic;
+
+		&.important {
+			color: var(--accent-secondary, #ffaa00);
+			background: rgba(255, 170, 0, 0.1);
+			padding: 8px 12px;
+			border-radius: 8px;
+			font-style: normal;
+			display: flex;
+			align-items: center;
+			gap: 8px;
+
+			.icon {
+				font-size: 1.2rem;
+			}
+		}
 	}
 </style>

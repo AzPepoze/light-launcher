@@ -12,8 +12,9 @@ import (
 	"syscall"
 	"time"
 
-	"light-launcher/internal/core"
-	"light-launcher/internal/lsfg_utils"
+	"light-launcher/internal/executor"
+	"light-launcher/internal/executor/builder"
+	lsfgLib "light-launcher/lib/lsfg"
 
 	"github.com/getlantern/systray"
 )
@@ -63,7 +64,7 @@ func onReady(logPath string) {
 
 	// Start game
 	opts := buildLaunchOptions()
-	cmdArgs, env := core.BuildCommand(opts)
+	cmdArgs, env := builder.BuildCommand(opts)
 
 	logGameStartup(cmdArgs)
 
@@ -84,7 +85,7 @@ func onReady(logPath string) {
 	killGame := func() {
 		if gameCmd.Process != nil {
 			log.Println("Stopping game process group...")
-			core.StopProcessGroup(gameCmd.Process)
+			executor.StopProcessGroup(gameCmd.Process)
 		}
 	}
 
@@ -143,7 +144,7 @@ func setupLsfgMenu() {
 			<-mLsfgEdit.ClickedCh
 			log.Printf("LSFG menu handler: click received!")
 
-			profile, idx, err := lsfg_utils.FindProfileForGame(gamePath)
+			profile, idx, err := lsfgLib.FindProfileForGame(gamePath)
 			if err != nil {
 				log.Printf("LSFG menu handler: error finding profile: %v", err)
 				sendNotification("LSFG-VK Config", fmt.Sprintf("Could not find profile for this game: %v", err))

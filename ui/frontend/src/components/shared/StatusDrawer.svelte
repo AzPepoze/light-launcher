@@ -8,8 +8,8 @@
 		ClearShaderCache,
 		DropCaches,
 		ClearSwap,
-	} from "@bindings/light-launcher/ui/backend/app";
-	import * as core from "@bindings/light-launcher/internal/core/models";
+	} from "@bindings/light-launcher/internal/app/app";
+	import * as core from "@bindings/light-launcher/internal/types/models";
 
 	import StatusUtilityButton from "@components/shared/StatusUtilityButton.svelte";
 	import SystemResources from "@components/shared/SystemResources.svelte";

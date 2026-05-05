@@ -1,5 +1,5 @@
-import * as core from "@bindings/light-launcher/internal/core/models";
-import { GetListGpus, DetectLosslessDll } from "@bindings/light-launcher/ui/backend/app";
+import * as core from "@bindings/light-launcher/internal/types/models";
+import { GetListGpus, DetectLosslessDll } from "@bindings/light-launcher/internal/app/app";
 import { DEFAULT_LAUNCH_OPTIONS } from "@lib/constants";
 
 export interface FormState<T> {

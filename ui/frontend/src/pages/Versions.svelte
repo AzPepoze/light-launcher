@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { ScanProtonVersions } from "@bindings/light-launcher/ui/backend/app";
-	import * as core from "@bindings/light-launcher/internal/core/models";
+	import { ScanProtonVersions } from "@bindings/light-launcher/internal/app/app";
+	import * as core from "@bindings/light-launcher/internal/types/models";
 	import { notifications } from "@stores/notificationStore";
 	import { Browser } from "@wailsio/runtime";
 	import { onMount } from "svelte";

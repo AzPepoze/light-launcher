@@ -6,8 +6,11 @@
 		RunGame,
 		ListPrefixes,
 		RemoveGame,
-	} from "@bindings/light-launcher/ui/backend/app";
+		SaveGameConfig,
+		GetPrefixBaseDir,
+	} from "@bindings/light-launcher/internal/app/app";
 	import { onMount, onDestroy } from "svelte";
+	import { Events } from "@wailsio/runtime";
 	import { notifications } from "@stores/notificationStore";
 	import { navigationCommand } from "@stores/navigationStore";
 	import { runState } from "@stores/runState";
@@ -60,7 +63,7 @@
 
 			// Fetch icons for games
 			for (const game of games) {
-				const path = game.path || game.config.LauncherPath;
+				const path = game.path || game.config.RunnerPath;
 				if (path && !gameIcons[path]) {
 					loadExeIcon(path).then((icon) => {
 						if (icon) {
@@ -74,8 +77,68 @@
 		}
 	}
 
+	let dropUnsubscribe: () => void;
+
 	onMount(() => {
 		refreshData();
+
+		dropUnsubscribe = Events.On("FilesDropped", async (event) => {
+			const files = event.data as string[];
+			let added = 0;
+			const basePrefixDir = await GetPrefixBaseDir();
+			const prefixPath = basePrefixDir + "/Default";
+
+			for (const path of files) {
+				if (path.toLowerCase().endsWith(".exe")) {
+					const name =
+						path.split("/").pop()?.replace(".exe", "") || "Game";
+					const config: any = {
+						Name: name,
+						RunnerPath: path,
+						GamePath: path,
+						UseGamePath: false,
+						PrefixPath: prefixPath,
+						ProtonPath: "",
+						ProtonPattern: "GE-Proton*",
+						CustomArgs: "",
+						Extras: {
+							EnableMangoHud: false,
+							EnableGamemode: false,
+							Lsfg: {
+								Enabled: false,
+								Multiplier: "2",
+								PerfMode: false,
+								DllPath: "",
+								Gpu: "",
+								FlowScale: "0.8",
+								Pacing: "none",
+								AllowFp16: false,
+							},
+							Gamescope: {
+								Enabled: false,
+								Width: "1920",
+								Height: "1080",
+								RefreshRate: "60",
+							},
+							Memory: {
+								Enabled: false,
+								Value: "4G",
+							},
+						},
+					};
+					await SaveGameConfig(config);
+					added++;
+				}
+			}
+			if (added > 0) {
+				notifications.add(
+					`Successfully added ${added} game(s)`,
+					"success",
+				);
+				refreshData();
+			}
+		});
+
 		sessionInterval = setInterval(async () => {
 			try {
 				const fetchedSessions = await GetRunningSessions();
@@ -88,6 +151,7 @@
 
 	onDestroy(() => {
 		if (sessionInterval) clearInterval(sessionInterval);
+		if (dropUnsubscribe) dropUnsubscribe();
 	});
 
 	async function handleQuickLaunch(game) {
@@ -171,7 +235,7 @@
 	}
 </script>
 
-<div class="home-container">
+<div class="home-container" data-file-drop-target>
 	<RunningSessions {sessions} onKill={handleKillSession} />
 
 	<div class="quick-launch-section">

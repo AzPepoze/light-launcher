@@ -6,7 +6,8 @@
 		SaveGameConfig,
 		ListPrefixes,
 		GetPrefixBaseDir,
-	} from "@bindings/light-launcher/ui/backend/app";
+		DetectLosslessDll,
+	} from "@bindings/light-launcher/internal/app/app";
 	import { notifications } from "@stores/notificationStore";
 	import { loadExeIcon } from "@lib/iconService";
 	import SelectionView from "./SelectionView.svelte";
@@ -147,20 +148,48 @@
 	}
 
 	async function saveGame(path: string) {
-		const config = {
-			MainExecutablePath: path,
-			LauncherPath: "",
-			HaveGameExe: true,
+		const name = path.split("/").pop()?.replace(".exe", "") || "Game";
+		
+		// Try to auto-detect DLL path for the new game
+		let dllPath = "";
+		try {
+			dllPath = await DetectLosslessDll();
+		} catch (e) {}
+
+		const config: any = {
+			Name: name,
+			RunnerPath: path,
+			GamePath: path,
+			UseGamePath: false,
 			PrefixPath: prefixBaseDir + "/" + selectedPrefix,
 			ProtonPath: "",
 			ProtonPattern: "GE-Proton*",
-			LsfgMultiplier: "2",
-			MemoryMinValue: "4G",
-			GamescopeW: "1920",
-			GamescopeH: "1080",
-			GamescopeR: "60",
+			CustomArgs: "",
+			Extras: {
+				EnableMangoHud: false,
+				EnableGamemode: false,
+				Lsfg: {
+					Enabled: false,
+					Multiplier: "2",
+					PerfMode: false,
+					DllPath: dllPath,
+					Gpu: "",
+					FlowScale: "0.8",
+					Pacing: "none",
+					AllowFp16: false
+				},
+				Gamescope: {
+					Enabled: false,
+					Width: "1920",
+					Height: "1080",
+					RefreshRate: "60"
+				},
+				Memory: {
+					Enabled: false,
+					Value: "4G"
+				}
+			}
 		};
-		// @ts-ignore
 		await SaveGameConfig(config);
 	}
 

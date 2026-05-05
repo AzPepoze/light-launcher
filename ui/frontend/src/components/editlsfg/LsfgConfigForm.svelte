@@ -2,7 +2,7 @@
 	import Dropdown from "@components/shared/Dropdown.svelte";
 	import SlideButton from "@components/shared/SlideButton.svelte";
 	import MultiplierInput from "@components/shared/MultiplierInput.svelte";
-	import * as core from "@bindings/light-launcher/internal/core/models";
+	import * as core from "@bindings/light-launcher/internal/types/models";
 
 	export let options: core.LaunchOptions;
 	export let gpuList: string[] = [];
@@ -13,7 +13,7 @@
 
 	function handleDllInput(e: Event) {
 		const input = e.target as HTMLInputElement;
-		options.LsfgDllPath = input.value;
+		options.Extras.Lsfg.DllPath = input.value;
 	}
 </script>
 
@@ -21,7 +21,7 @@
 	<div class="form-group">
 		<label for="lsfgDll">
 			DLL Path
-			{#if options.LsfgDllPath}
+			{#if options.Extras.Lsfg.DllPath}
 				<span class="status-badge success">✓ Found</span>
 			{:else}
 				<span class="status-badge error">
@@ -37,7 +37,7 @@
 				id="lsfgDll"
 				type="text"
 				class="input sm"
-				value={options.LsfgDllPath}
+				value={options.Extras.Lsfg.DllPath}
 				on:input={handleDllInput}
 				placeholder="Path to Lossless.dll..."
 				readonly={!compact}
@@ -54,15 +54,15 @@
 		<label for="lsfgMultiplier">FPS Multiplier</label>
 		<div id="lsfgMultiplier">
 			<MultiplierInput
-				value={options.LsfgMultiplier}
-				onChange={(val) => (options.LsfgMultiplier = val)}
+				value={options.Extras.Lsfg.Multiplier}
+				onChange={(val) => (options.Extras.Lsfg.Multiplier = val)}
 			/>
 		</div>
 	</div>
 
 	<div class="form-group">
 		<SlideButton
-			bind:checked={options.LsfgPerfMode}
+			bind:checked={options.Extras.Lsfg.PerfMode}
 			label="Performance Mode"
 			subtitle="Faster frame generation, slight quality loss"
 		/>
@@ -78,9 +78,9 @@
 		<div id="lsfgGpu">
 			<Dropdown
 				options={gpuList}
-				bind:value={options.LsfgGpu}
+				bind:value={options.Extras.Lsfg.Gpu}
 				onChange={(val) =>
-					(options.LsfgGpu = val === "Auto (Detect)" ? "" : val)}
+					(options.Extras.Lsfg.Gpu = val === "Auto (Detect)" ? "" : val)}
 			/>
 		</div>
 		<p class="help-text">
@@ -95,7 +95,7 @@
 			id="lsfgFlowScale"
 			type="text"
 			class="input"
-			bind:value={options.LsfgFlowScale}
+			bind:value={options.Extras.Lsfg.FlowScale}
 			placeholder="e.g. 0.8"
 		/>
 		<p class="help-text">
@@ -109,8 +109,8 @@
 		<div id="lsfgPacing">
 			<Dropdown
 				options={["none", "monitor", "monitor_external"]}
-				bind:value={options.LsfgPacing}
-				onChange={(val) => (options.LsfgPacing = val)}
+				bind:value={options.Extras.Lsfg.Pacing}
+				onChange={(val) => (options.Extras.Lsfg.Pacing = val)}
 			/>
 		</div>
 		<p class="help-text">Frame timing strategy for LSFG-VK.</p>
@@ -118,7 +118,7 @@
 
 	<div class="form-group">
 		<SlideButton
-			bind:checked={options.LsfgAllowFp16}
+			bind:checked={options.Extras.Lsfg.AllowFp16}
 			label="Allow FP16"
 			subtitle="Use 16-bit floating point (faster but less precise)"
 		/>

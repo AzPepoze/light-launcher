@@ -1,5 +1,5 @@
-import * as core from "@bindings/light-launcher/internal/core/models";
-import { GetConfig, LoadPrefixConfig, DetectLosslessDll } from "@bindings/light-launcher/ui/backend/app";
+import * as core from "@bindings/light-launcher/internal/types/models";
+import { GetConfig, LoadPrefixConfig, DetectLosslessDll } from "@bindings/light-launcher/internal/app/app";
 
 export async function loadConfigForGame(
 	path: string,
@@ -27,11 +27,11 @@ export async function loadConfigForGame(
 		}
 
 		// Auto-detect Lossless.dll if not already set
-		if (!options.LsfgDllPath) {
+		if (!options.Extras.Lsfg.DllPath) {
 			try {
 				const dll = await DetectLosslessDll();
 				if (dll) {
-					options.LsfgDllPath = dll;
+					options.Extras.Lsfg.DllPath = dll;
 					updateOptions(options, prefixPath, selectedPrefixName, ""); // triggers reactivity
 				}
 			} catch (err) {
@@ -53,17 +53,17 @@ export async function loadConfigForPrefix(
 	try {
 		const config = await LoadPrefixConfig(name);
 		if (config) {
-			const savedMainExePath = options.MainExecutablePath;
-			const savedLauncherPath = options.LauncherPath;
-			const savedHaveGameExe = options.HaveGameExe;
+			const savedGamePath = options.GamePath;
+			const savedRunnerPath = options.RunnerPath;
+			const savedUseGamePath = options.UseGamePath;
 			const savedPrefixPath = options.PrefixPath;
 
 			const updatedProton = applyConfigToOptions(config, options, protonVersions);
 
 			// Restore Target
-			options.MainExecutablePath = savedMainExePath;
-			options.LauncherPath = savedLauncherPath;
-			options.HaveGameExe = savedHaveGameExe;
+			options.GamePath = savedGamePath;
+			options.RunnerPath = savedRunnerPath;
+			options.UseGamePath = savedUseGamePath;
 
 			let newPrefixPath = prefixPath;
 			if (savedPrefixPath) {
@@ -88,35 +88,35 @@ export function applyConfigToOptions(
 		selectedProton = config.ProtonPattern;
 	}
 
+	options.Name = config.Name || options.Name;
 	options.CustomArgs = config.CustomArgs || "";
-	options.EnableMangoHud = config.EnableMangoHud;
-	options.EnableGamemode = config.EnableGamemode;
-	options.EnableLsfgVk = config.EnableLsfgVk;
-	options.LsfgMultiplier = config.LsfgMultiplier || "2";
-	options.LsfgPerfMode = config.LsfgPerfMode;
-	options.LsfgDllPath = config.LsfgDllPath || "";
-	options.LsfgGpu = config.LsfgGpu || "";
-	options.LsfgFlowScale = config.LsfgFlowScale || "0.8";
-	options.LsfgPacing = config.LsfgPacing || "none";
-	options.LsfgAllowFp16 = config.LsfgAllowFp16 || false;
 	
-	if (!options.LauncherPath && config.LauncherPath) {
-		options.LauncherPath = config.LauncherPath;
+	// Copy Extras
+	if (config.Extras) {
+		const currentDll = options.Extras?.Lsfg?.DllPath;
+		options.Extras = {
+			EnableMangoHud: config.Extras.EnableMangoHud,
+			EnableGamemode: config.Extras.EnableGamemode,
+			Lsfg: { ...config.Extras.Lsfg },
+			Gamescope: { ...config.Extras.Gamescope },
+			Memory: { ...config.Extras.Memory }
+		};
+		
+		if (!options.Extras.Lsfg.DllPath && currentDll) {
+			options.Extras.Lsfg.DllPath = currentDll;
+		}
 	}
-	options.HaveGameExe = config.HaveGameExe === true; 
-
-	if (!options.HaveGameExe && options.LauncherPath) {
-		options.MainExecutablePath = options.LauncherPath;
-	} else if (options.HaveGameExe && config.MainExecutablePath) {
-		options.MainExecutablePath = config.MainExecutablePath;
+	
+	if (!options.RunnerPath && config.RunnerPath) {
+		options.RunnerPath = config.RunnerPath;
 	}
+	options.UseGamePath = config.UseGamePath === true; 
 
-	options.EnableGamescope = config.EnableGamescope;
-	options.GamescopeW = config.GamescopeW || "1920";
-	options.GamescopeH = config.GamescopeH || "1080";
-	options.GamescopeR = config.GamescopeR || "60";
-	options.EnableMemoryMin = config.EnableMemoryMin;
-	options.MemoryMinValue = config.MemoryMinValue || "4G";
+	if (!options.UseGamePath && options.RunnerPath) {
+		options.GamePath = options.RunnerPath;
+	} else if (options.UseGamePath && config.GamePath) {
+		options.GamePath = config.GamePath;
+	}
 
 	return selectedProton;
 }

@@ -14,7 +14,7 @@
 		GetInitialGamePath,
 		GetShouldEditLsfg,
 		GetImageBase64,
-	} from "@bindings/light-launcher/ui/backend/app";
+	} from "@bindings/light-launcher/internal/app/app";
 	import { onMount } from "svelte";
 	import { navigationCommand } from "@stores/navigationStore";
 	import { runState } from "@stores/runState";

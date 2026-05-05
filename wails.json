@@ -1,0 +1,18 @@
+{
+	"$schema": "https://wails.io/schemas/config.v3.json",
+	"name": "light-launcher",
+	"outputfilename": "light-launcher",
+	"frontend:install": "cd ui/frontend && bun install",
+	"frontend:build": "cd ui/frontend && bun run build",
+	"frontend:dev:watcher": "cd ui/frontend && bun run dev",
+	"frontend:dev:serverUrl": "auto",
+	"author": {
+		"name": "AzPepoze",
+		"email": "azpepoze@gmail.com"
+	},
+	"bindings": {
+		"typescript": {
+			"outputdir": "ui/frontend/bindings"
+		}
+	}
+}

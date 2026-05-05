@@ -133,6 +133,17 @@ body {
 		}
 	}
 
+	&.danger {
+		background: var(--danger);
+		border: 1px solid var(--danger);
+		color: white;
+
+		&:hover:not(:disabled) {
+			filter: brightness(1.2);
+			box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+		}
+	}
+
 	&.sm {
 		padding: 6px 14px;
 		font-size: 0.8rem;

@@ -1,5 +1,5 @@
 import { writable } from "svelte/store";
-import * as core from "@bindings/light-launcher/internal/core/models";
+import * as core from "@bindings/light-launcher/internal/types/models";
 import { DEFAULT_LAUNCH_OPTIONS } from "@lib/constants";
 
 export interface RunState {
