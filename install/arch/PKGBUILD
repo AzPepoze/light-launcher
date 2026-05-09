@@ -11,73 +11,73 @@ license=('MIT')
 depends=('umu-launcher' 'steam' 'webkit2gtk-4.1' 'gtk3' 'libayatana-appindicator')
 makedepends=('go' 'bun' 'git' 'nodejs')
 optdepends=('protonplus: recommended for managing Proton versions')
-source=("$pkgname::git+https://github.com/AzPepoze/light-launcher.git#branch=main"
-        "light-launcher.install::https://raw.githubusercontent.com/AzPepoze/light-launcher/main/install/arch/light-launcher.install")
-sha256sums=('SKIP' 'SKIP')
 
-# Reference external install script for post-install messages
+_wailsver='v3.0.0-alpha.87'
+
+source=(
+  "$pkgname::git+https://github.com/AzPepoze/light-launcher.git#branch=main"
+  "wails::git+https://github.com/wailsapp/wails.git#tag=${_wailsver}"
+  "light-launcher.install"
+)
+sha256sums=('SKIP' 'SKIP' 'SKIP')
+
 install=light-launcher.install
 
+_setup_go_env() {
+  local _golang_workspace_path="${srcdir}/go-path"
+  local _golang_module_cache_path="${srcdir}/go-mod-cache"
+  local _golang_build_cache_path="${srcdir}/go-build-cache"
+
+  mkdir -p \
+    "$_golang_workspace_path/bin" \
+    "$_golang_module_cache_path" \
+    "$_golang_build_cache_path"
+
+  export GOPATH="$_golang_workspace_path"
+  export GOMODCACHE="$_golang_module_cache_path"
+  export GOCACHE="$_golang_build_cache_path"
+  export PATH="${GOPATH}/bin:${PATH}"
+}
+
 pkgver() {
-	cd "$srcdir/$pkgname"
-	# Get version from git tags/commits
-	printf "r%s.g%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+  cd "$srcdir/$pkgname"
+  printf "r%s.g%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
 }
 
 prepare() {
-	cd "$srcdir/$pkgname"
-	
-	# Set up isolated Go environment
-	local _golang_workspace_path="${srcdir}/go-path"
-	local _golang_module_cache_path="${srcdir}/go-mod-cache"
-	local _golang_build_cache_path="${srcdir}/go-build-cache"
-	
-	export GOPATH="$_golang_workspace_path"
-	export GOMODCACHE="$_golang_module_cache_path"
-	export GOCACHE="$_golang_build_cache_path"
-	export PATH="${GOPATH}/bin:$PATH"
-	
-	# Install Wails v3 CLI locally for the build process
-	go install github.com/wailsapp/wails/v3/cmd/wails3@latest
+  _setup_go_env
+
+  # Install Wails v3 CLI from the checked-out Wails source.
+  # Do not use: go install github.com/wailsapp/wails/v3/cmd/wails3@latest
+  # That path can fail because Wails v3 alpha releases may contain replace directives.
+  cd "$srcdir/wails/v3"
+  GOBIN="${GOPATH}/bin" go install ./cmd/wails3
+
+  cd "$srcdir/$pkgname"
+  wails3 doctor || true
 }
 
 build() {
-	cd "$srcdir/$pkgname"
-	
-	# Set up isolated Go environment
-	local _golang_workspace_path="${srcdir}/go-path"
-	local _golang_module_cache_path="${srcdir}/go-mod-cache"
-	local _golang_build_cache_path="${srcdir}/go-build-cache"
-	local _bun_install_cache_path="${srcdir}/bun-cache"
-	
-	export GOPATH="$_golang_workspace_path"
-	export GOMODCACHE="$_golang_module_cache_path"
-	export GOCACHE="$_golang_build_cache_path"
-	export PATH="${GOPATH}/bin:$PATH"
-	
-	# Configure Bun Cache within srcdir to avoid Permission issues
-	export BUN_INSTALL_CACHE_DIR="$_bun_install_cache_path"
-	
-	# Build using Makefile and Wails v3
-	make build
+  cd "$srcdir/$pkgname"
+
+  _setup_go_env
+
+  local _bun_install_cache_path="${srcdir}/bun-cache"
+  mkdir -p "$_bun_install_cache_path"
+  export BUN_INSTALL_CACHE_DIR="$_bun_install_cache_path"
+
+  make build
 }
 
 package() {
-	cd "$srcdir/$pkgname"
-	
-	# Install Binaries
-	install -Dm755 "dist/linux/bin/light-launcher" "$pkgdir/usr/bin/light-launcher"
-	install -Dm755 "dist/linux/bin/light-launcher-instance" "$pkgdir/usr/bin/light-launcher-instance"
-	
-	# Install Desktop Entry
-	install -Dm644 "dist/linux/share/applications/light-launcher.desktop" "$pkgdir/usr/share/applications/light-launcher.desktop"
-	
-	# Install Icon
-	install -Dm644 "dist/linux/share/icons/hicolor/128x128/apps/light-launcher.png" "$pkgdir/usr/share/icons/hicolor/128x128/apps/light-launcher.png"
-	
-	# Install License
-	install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
-	
-	# Install Documentation
-	install -Dm644 README.md "$pkgdir/usr/share/doc/$pkgname/README.md"
+  cd "$srcdir/$pkgname"
+
+  install -Dm755 "dist/linux/bin/light-launcher" "$pkgdir/usr/bin/light-launcher"
+  install -Dm755 "dist/linux/bin/light-launcher-instance" "$pkgdir/usr/bin/light-launcher-instance"
+
+  install -Dm644 "dist/linux/share/applications/light-launcher.desktop" "$pkgdir/usr/share/applications/light-launcher.desktop"
+  install -Dm644 "dist/linux/share/icons/hicolor/128x128/apps/light-launcher.png" "$pkgdir/usr/share/icons/hicolor/128x128/apps/light-launcher.png"
+
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  install -Dm644 README.md "$pkgdir/usr/share/doc/$pkgname/README.md"
 }
