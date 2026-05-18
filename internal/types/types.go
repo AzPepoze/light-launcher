@@ -1,14 +1,14 @@
 package types
 
 type LsfgConfig struct {
-	Enabled    bool    `json:"Enabled"`
-	Multiplier string  `json:"Multiplier"`
-	PerfMode   bool    `json:"PerfMode"`
-	DllPath    string  `json:"DllPath"`
-	Gpu        string  `json:"Gpu"`
-	FlowScale  string  `json:"FlowScale"`
-	Pacing     string  `json:"Pacing"`
-	AllowFp16  bool    `json:"AllowFp16"`
+	Enabled    bool   `json:"Enabled"`
+	Multiplier string `json:"Multiplier"`
+	PerfMode   bool   `json:"PerfMode"`
+	DllPath    string `json:"DllPath"`
+	Gpu        string `json:"Gpu"`
+	FlowScale  string `json:"FlowScale"`
+	Pacing     string `json:"Pacing"`
+	AllowFp16  bool   `json:"AllowFp16"`
 }
 
 type GamescopeConfig struct {
@@ -32,21 +32,21 @@ type ExtrasConfig struct {
 }
 
 type LaunchOptions struct {
-	ID            string       `json:"ID"`
-	Name          string       `json:"Name"`
-	LauncherPath  string       `json:"LauncherPath"`
-	GamePath      string       `json:"GamePath"`
-	UseGamePath   bool         `json:"UseGamePath"`
-	PrefixPath    string       `json:"PrefixPath"`
-	ProtonPath    string       `json:"ProtonPath"`
-	CustomArgs    string       `json:"CustomArgs"`
-	Extras        ExtrasConfig `json:"Extras"`
+	ID           string       `json:"ID"`
+	Name         string       `json:"Name"`
+	LauncherPath string       `json:"LauncherPath"`
+	GamePath     string       `json:"GamePath"`
+	UseGamePath  bool         `json:"UseGamePath"`
+	PrefixPath   string       `json:"PrefixPath"`
+	ProtonPath   string       `json:"ProtonPath"`
+	CustomArgs   string       `json:"CustomArgs"`
+	Extras       ExtrasConfig `json:"Extras"`
 }
 
 type SystemToolsStatus struct {
 	HasGamescope  bool `json:"hasGamescope"`
 	HasMangoHud   bool `json:"hasMangoHud"`
-	HasGameMode    bool `json:"hasGameMode"`
+	HasGameMode   bool `json:"hasGameMode"`
 	HasVulkanInfo bool `json:"hasVulkanInfo"`
 }
 
@@ -100,6 +100,14 @@ type ProtonTool struct {
 	Path        string `json:"Path"`
 	IsSteam     bool   `json:"IsSteam"`
 	DisplayName string `json:"DisplayName"`
+}
+
+type PrefixConfigWithProton struct {
+	Config            LaunchOptions `json:"config"`
+	ProtonDisplayName string        `json:"protonDisplayName"`
+	ProtonName        string        `json:"protonName"`
+	ProtonPath        string        `json:"protonPath"`
+	ProtonIsSteam     bool          `json:"protonIsSteam"`
 }
 
 type AppSettings struct {

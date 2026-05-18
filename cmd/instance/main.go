@@ -4,6 +4,7 @@ import (
 	"flag"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/getlantern/systray"
 )
@@ -64,6 +65,13 @@ func main() {
 
 	if gamePath == "" {
 		os.Exit(1)
+	}
+
+	if prefixPath == "" {
+		home, err := os.UserHomeDir()
+		if err == nil {
+			prefixPath = filepath.Join(home, "LightLauncher", "prefixes", "Default")
+		}
 	}
 
 	logPath := getLogPath()

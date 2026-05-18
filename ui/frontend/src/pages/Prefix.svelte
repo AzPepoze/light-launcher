@@ -5,13 +5,12 @@
 		ScanProtonVersions,
 	} from "@bindings/light-launcher/internal/app/app";
 	import * as core from "@bindings/light-launcher/internal/types/models";
+	import PrefixTools from "@components/prefix/PrefixTools.svelte";
 	import ConfigForm from "@components/shared/ConfigForm.svelte";
 	import Dropdown from "@components/shared/Dropdown.svelte";
 	import PageHeader from "@components/shared/PageHeader.svelte";
-	import PrefixTools from "@components/prefix/PrefixTools.svelte";
 	import { createLaunchOptions } from "@lib/formService";
 	import * as service from "@lib/prefixService";
-	import { notifications } from "@stores/notificationStore";
 	import { onMount } from "svelte";
 
 	// State
@@ -34,7 +33,7 @@
 		const data = await service.getPrefixData();
 		availablePrefixes = data.availablePrefixes;
 		baseDir = data.baseDir;
-		
+
 		if (autoSelect) {
 			if (!prefixPath && availablePrefixes.length > 0) {
 				selectPrefix(availablePrefixes[0]);
@@ -53,9 +52,7 @@
 			systemStatus = status;
 			protonVersions = tools;
 			protonOptions = protonVersions.map((t) => t.DisplayName);
-			if (protonVersions.length > 0) {
-				selectedProton = protonOptions[0];
-			}
+			// Don't set default selectedProton here - let it be set when prefix is loaded
 			await refreshPrefixes();
 		} catch (err) {
 			console.error(err);
@@ -63,20 +60,32 @@
 	});
 
 	async function selectPrefix(name: string) {
-		const result = await service.getPrefixConfig(name, baseDir, protonVersions);
+		const result = await service.getPrefixConfig(name, baseDir);
 		prefixPath = result.path;
 		if (result.options) {
 			prefixOptions = { ...prefixOptions, ...result.options };
 			if (result.selectedProton) {
 				selectedProton = result.selectedProton;
+			} else if (protonOptions.length > 0) {
+				// Fallback to first proton option if none saved
+				selectedProton = protonOptions[0];
 			}
 		} else {
 			prefixOptions = createLaunchOptions();
+			// Ensure a proton is selected when creating new prefix
+			if (protonOptions.length > 0 && !selectedProton) {
+				selectedProton = protonOptions[0];
+			}
 		}
 	}
 
 	async function handleSaveConfig() {
-		await service.savePrefixDefaults(prefixPath, prefixOptions, selectedProton, protonVersions);
+		await service.savePrefixDefaults(
+			prefixPath,
+			prefixOptions,
+			selectedProton,
+			protonVersions,
+		);
 	}
 
 	async function handleBrowse() {
@@ -108,17 +117,18 @@
 		}
 	}
 
-	function handleProtonChange(value: string) {
-		selectedProton = value;
-	}
-
 	async function runTool(tool: string) {
 		if (isLoading) return;
 		isLoading = true;
 		runningToolName = tool;
 
 		try {
-			await service.executePrefixTool(prefixPath, tool, selectedProton, protonVersions);
+			await service.executePrefixTool(
+				prefixPath,
+				tool,
+				selectedProton,
+				protonVersions,
+			);
 		} catch (err) {
 			// Error handled in service via notification
 		} finally {
@@ -135,7 +145,11 @@
 </script>
 
 <div class="prefix-container">
-	<PageHeader title="Prefix Manager" icon="folder_shared" subtitle="Manage Wine/Proton prefixes" />
+	<PageHeader
+		title="Prefix Manager"
+		icon="folder_shared"
+		subtitle="Manage Wine/Proton prefixes"
+	/>
 
 	<!-- Prefix Selector Bar -->
 	<div class="prefix-selector">
@@ -145,7 +159,8 @@
 					class="prefix-tab"
 					class:active={currentPrefixName === name}
 					on:click={() => selectPrefix(name)}
-					on:keydown={(e) => e.key === 'Enter' && selectPrefix(name)}
+					on:keydown={(e) =>
+						e.key === "Enter" && selectPrefix(name)}
 					role="tab"
 					tabindex="0"
 					title={name}
@@ -158,8 +173,11 @@
 							title="Delete"
 							role="button"
 							tabindex="0"
-							on:click|stopPropagation={() => handleRemovePrefix(name)}
-							on:keydown|stopPropagation={(e) => e.key === 'Enter' && handleRemovePrefix(name)}
+							on:click|stopPropagation={() =>
+								handleRemovePrefix(name)}
+							on:keydown|stopPropagation={(e) =>
+								e.key === "Enter" &&
+								handleRemovePrefix(name)}
 						>
 							<span class="material-icons">close</span>
 						</span>
@@ -175,19 +193,31 @@
 						bind:value={newPrefixName}
 						on:keydown={(e) => {
 							if (e.key === "Enter") handleCreatePrefix();
-							if (e.key === "Escape") { showCreateInput = false; newPrefixName = ""; }
+							if (e.key === "Escape") {
+								showCreateInput = false;
+								newPrefixName = "";
+							}
 						}}
 						class="create-input"
 						autofocus
 					/>
-					<button class="create-confirm" on:click={handleCreatePrefix}>
+					<button
+						class="create-confirm"
+						on:click={handleCreatePrefix}
+					>
 						<span class="material-icons">check</span>
 					</button>
 				</div>
 			{/if}
 
-			<button class="prefix-tab add-tab" on:click={() => (showCreateInput = !showCreateInput)} title="New Prefix">
-				<span class="material-icons">{showCreateInput ? 'close' : 'add'}</span>
+			<button
+				class="prefix-tab add-tab"
+				on:click={() => (showCreateInput = !showCreateInput)}
+				title="New Prefix"
+			>
+				<span class="material-icons"
+					>{showCreateInput ? "close" : "add"}</span
+				>
 			</button>
 		</div>
 	</div>
@@ -209,11 +239,7 @@
 			<span>Runtime</span>
 		</div>
 		<div class="runtime-dropdown">
-			<Dropdown
-				options={protonOptions}
-				bind:value={selectedProton}
-				onChange={handleProtonChange}
-			/>
+			<Dropdown options={protonOptions} bind:value={selectedProton} />
 		</div>
 	</div>
 
@@ -225,7 +251,10 @@
 		<div class="config-header">
 			<h3>Default Configuration</h3>
 			<button class="btn primary sm" on:click={handleSaveConfig}>
-				<span class="material-icons" style="font-size: 16px; margin-right: 6px;">save</span>
+				<span
+					class="material-icons"
+					style="font-size: 16px; margin-right: 6px;">save</span
+				>
 				Save Defaults
 			</button>
 		</div>
@@ -264,7 +293,11 @@
 		font-size: 0.85rem;
 		font-weight: 700;
 		cursor: pointer;
-		transition: transform var(--transition-spring), background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+		transition:
+			transform var(--transition-spring),
+			background var(--transition-fast),
+			border-color var(--transition-fast),
+			color var(--transition-fast);
 		outline: none;
 		position: relative;
 
@@ -342,7 +375,10 @@
 		height: 20px;
 		border-radius: 50%;
 		opacity: 0;
-		transition: opacity var(--transition-fast), color var(--transition-fast), background var(--transition-fast);
+		transition:
+			opacity var(--transition-fast),
+			color var(--transition-fast),
+			background var(--transition-fast);
 		padding: 0;
 		margin-left: -2px;
 
@@ -392,10 +428,16 @@
 		cursor: pointer;
 		transition: transform var(--transition-spring);
 
-		.material-icons { font-size: 18px; }
+		.material-icons {
+			font-size: 18px;
+		}
 
-		&:hover { transform: scale(1.1); }
-		&:active { transform: scale(0.9); }
+		&:hover {
+			transform: scale(1.1);
+		}
+		&:active {
+			transform: scale(0.9);
+		}
 	}
 
 	/* ---- Path Bar ---- */
@@ -439,16 +481,23 @@
 			font-weight: 700;
 			cursor: pointer;
 			flex-shrink: 0;
-			transition: transform var(--transition-spring), border-color var(--transition-fast), color var(--transition-fast);
+			transition:
+				transform var(--transition-spring),
+				border-color var(--transition-fast),
+				color var(--transition-fast);
 
-			.material-icons { font-size: 16px; }
+			.material-icons {
+				font-size: 16px;
+			}
 
 			&:hover {
 				border-color: var(--accent-secondary);
 				color: var(--text-main);
 				transform: scale(1.05);
 			}
-			&:active { transform: scale(0.95); }
+			&:active {
+				transform: scale(0.95);
+			}
 		}
 	}
 
@@ -470,7 +519,9 @@
 			white-space: nowrap;
 			flex-shrink: 0;
 
-			.material-icons { font-size: 20px; }
+			.material-icons {
+				font-size: 20px;
+			}
 		}
 
 		.runtime-dropdown {

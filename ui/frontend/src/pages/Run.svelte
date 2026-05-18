@@ -125,6 +125,7 @@
 	});
 
 	$: if (mounted) {
+		options.PrefixPath = prefixPath;
 		runState.set({
 			mainExePath,
 			gameIcon,

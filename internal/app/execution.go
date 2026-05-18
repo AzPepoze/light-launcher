@@ -5,12 +5,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strconv"
-	"strings"
 
 	"light-launcher/internal/config"
 	"light-launcher/internal/executor"
-	"light-launcher/internal/executor/builder"
 	"light-launcher/internal/system"
 	"light-launcher/internal/types"
 	"light-launcher/lib/lsfg"
@@ -21,6 +18,10 @@ func (app *App) RunGame(options types.LaunchOptions, showLogs bool) error {
 
 	if !options.UseGamePath && options.LauncherPath != "" {
 		options.GamePath = options.LauncherPath
+	}
+
+	if options.PrefixPath == "" {
+		options.PrefixPath = filepath.Join(config.GetPrefixBaseDirectory(), "Default")
 	}
 
 	if _, err := os.Stat(options.GamePath); os.IsNotExist(err) {
@@ -136,143 +137,6 @@ func buildInstanceManagerArgs(options types.LaunchOptions, showLogs bool) []stri
 		arguments = append(arguments, "--logs=false")
 	}
 	return arguments
-}
-
-func (app *App) GetAllGames() ([]types.GameInfo, error) {
-	configs, err := config.ListGameConfigs()
-	if err != nil {
-		return nil, err
-	}
-
-	games := make([]types.GameInfo, 0)
-	for _, gameConfig := range configs {
-		name := gameConfig.Name
-		if name == "" {
-			name = filepath.Base(gameConfig.GamePath)
-			name = strings.TrimSuffix(name, filepath.Ext(name))
-		}
-
-		cleanedPath := filepath.Clean(gameConfig.LauncherPath)
-		if cleanedPath == "" {
-			cleanedPath = filepath.Clean(gameConfig.GamePath)
-		}
-		if absolutePath, err := filepath.Abs(cleanedPath); err == nil {
-			cleanedPath = absolutePath
-		}
-
-		games = append(games, types.GameInfo{
-			Name:   name,
-			Path:   cleanedPath,
-			Config: gameConfig,
-		})
-	}
-	return games, nil
-}
-
-func (app *App) GetRunningSessions() ([]types.RunningSession, error) {
-	output, _ := exec.Command("pgrep", "light-launcher-instance").Output()
-	if len(output) == 0 {
-		output, _ = exec.Command("pgrep", "light-launcher-instan").Output()
-	}
-
-	pids := strings.Split(strings.TrimSpace(string(output)), "\n")
-	sessions := make([]types.RunningSession, 0)
-
-	for _, pidString := range pids {
-		if pidString == "" {
-			continue
-		}
-		pid, err := strconv.Atoi(pidString)
-		if err != nil {
-			continue
-		}
-
-		cmdlinePath := fmt.Sprintf("/proc/%d/cmdline", pid)
-		content, err := os.ReadFile(cmdlinePath)
-		if err != nil {
-			continue
-		}
-
-		arguments := strings.Split(string(content), "\x00")
-		gamePath := ""
-		for index, argument := range arguments {
-			if argument == "--game" && index+1 < len(arguments) {
-				gamePath = arguments[index+1]
-				break
-			}
-		}
-
-		if gamePath != "" {
-			name := filepath.Base(gamePath)
-			name = strings.TrimSuffix(name, filepath.Ext(name))
-
-			cleanedPath := filepath.Clean(gamePath)
-			if absolutePath, err := filepath.Abs(cleanedPath); err == nil {
-				cleanedPath = absolutePath
-			}
-
-			sessions = append(sessions, types.RunningSession{
-				Pid:      pid,
-				GamePath: cleanedPath,
-				GameName: name,
-			})
-		}
-	}
-	return sessions, nil
-}
-
-func (app *App) KillSession(pid int) error {
-	process, err := os.FindProcess(pid)
-	if err != nil {
-		return err
-	}
-	return process.Signal(os.Interrupt)
-}
-
-func (app *App) RemoveGame(executablePath string) error {
-	cfg, err := app.GetConfig(executablePath)
-	if err != nil {
-		return fmt.Errorf("could not find game to remove: %w", err)
-	}
-
-	configDirectory := config.GetExecutableConfigPath(cfg.Name, cfg.ID)
-
-	if _, err := os.Stat(configDirectory); err == nil {
-		if err := os.RemoveAll(configDirectory); err != nil {
-			return fmt.Errorf("failed to remove game config: %w", err)
-		}
-	}
-
-	_ = lsfg.DisableProfileInConfig(cfg.Name, executablePath)
-	return nil
-}
-
-func (app *App) RunPrefixTool(prefixPath, toolName, protonPath string) error {
-	options := types.LaunchOptions{
-		GamePath:   toolName,
-		PrefixPath: prefixPath,
-		ProtonPath: protonPath,
-	}
-	commandArguments, environment := builder.BuildCommand(options)
-	command := exec.Command(commandArguments[0], commandArguments[1:]...)
-	command.Env = environment
-	return command.Start()
-}
-
-func (app *App) GetConfig(executablePath string) (*types.LaunchOptions, error) {
-	return config.LoadGameConfig(executablePath)
-}
-
-func (app *App) SavePrefixConfig(prefixName string, options types.LaunchOptions) error {
-	return config.SavePrefixConfig(prefixName, options)
-}
-
-func (app *App) LoadPrefixConfig(prefixName string) (*types.LaunchOptions, error) {
-	return config.LoadPrefixConfig(prefixName)
-}
-
-func (app *App) SaveGameConfig(options types.LaunchOptions) error {
-	return config.SaveGameConfig(options)
 }
 
 func parseMultiplier(multiplier string) int {
