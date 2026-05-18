@@ -144,8 +144,45 @@ func DropCaches() error {
 	return command.Run()
 }
 
+func getActiveSwaps() ([]string, error) {
+	file, err := os.Open("/proc/swaps")
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	var swaps []string
+	scanner := bufio.NewScanner(file)
+	// Skip header
+	if scanner.Scan() {
+		_ = scanner.Text()
+	}
+	for scanner.Scan() {
+		line := scanner.Text()
+		fields := strings.Fields(line)
+		if len(fields) > 0 {
+			swaps = append(swaps, fields[0])
+		}
+	}
+	return swaps, scanner.Err()
+}
+
 func ClearSwap() error {
-	command := exec.Command("pkexec", "sh", "-c", "swapoff -a && swapon -a")
+	swaps, err := getActiveSwaps()
+	if err != nil {
+		return err
+	}
+	if len(swaps) == 0 {
+		return nil
+	}
+
+	var swaponCmds []string
+	for _, swap := range swaps {
+		swaponCmds = append(swaponCmds, fmt.Sprintf("swapon %s", swap))
+	}
+
+	cmdStr := fmt.Sprintf("swapoff -a ; %s", strings.Join(swaponCmds, " ; "))
+	command := exec.Command("pkexec", "sh", "-c", cmdStr)
 	return command.Run()
 }
 
