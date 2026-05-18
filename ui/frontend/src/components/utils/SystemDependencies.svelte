@@ -65,16 +65,17 @@
 
 <style lang="scss">
 	.section-container {
-		padding: 20px 24px;
-		border-radius: 16px;
-		border: 1px solid var(--glass-border);
-		background: var(--glass-surface);
+		padding: 24px 28px;
+		border-radius: var(--radius-lg);
+		border: 2px solid rgba(255, 255, 255, 0.05);
+		background: var(--bg-surface);
 		margin-bottom: 32px;
 
 		h3 {
-			margin: 0 0 16px 0;
-			font-size: 1rem;
-			color: var(--text-dim);
+			margin: 0 0 20px 0;
+			font-size: 1.15rem;
+			font-weight: 800;
+			color: var(--text-main);
 			text-transform: uppercase;
 			letter-spacing: 1px;
 		}
@@ -82,63 +83,74 @@
 
 	.system-status-grid {
 		display: flex;
-		gap: 24px;
+		gap: 16px;
 		flex-wrap: wrap;
 	}
 
 	.status-item {
 		display: flex;
 		align-items: center;
-		gap: 10px;
+		gap: 12px;
 		font-size: 0.9rem;
-		padding: 8px 16px;
-		background: var(--glass-bg);
-		border: 1px solid var(--glass-border);
-		border-radius: 10px;
+		padding: 10px 20px;
+		background: var(--bg-base);
+		border: 2px solid rgba(255, 255, 255, 0.03);
+		border-radius: var(--radius-pill);
 		color: var(--text-muted);
+		transition: transform var(--transition-spring), border-color var(--transition-fast);
+
+		&:hover {
+			transform: translateY(-2px);
+			border-color: rgba(255, 255, 255, 0.1);
+		}
 
 		.dot {
-			width: 8px;
-			height: 8px;
+			width: 10px;
+			height: 10px;
 			border-radius: 50%;
-			background: #ef4444;
-			box-shadow: 0 0 8px #ef4444;
+			background: var(--danger);
+			box-shadow: 0 0 10px var(--danger);
 		}
 		.label {
-			font-weight: 600;
+			font-weight: 800;
 			color: var(--text-main);
+			text-transform: uppercase;
+			font-size: 0.85rem;
+			letter-spacing: 0.5px;
 		}
 		.value {
 			font-size: 0.8rem;
+			font-weight: 700;
 			opacity: 0.8;
 		}
 
 		&.ok {
 			.dot {
-				background: #10b981;
-				box-shadow: 0 0 8px #10b981;
+				background: var(--accent-secondary);
+				box-shadow: 0 0 10px var(--accent-secondary);
 			}
 		}
 	}
 
 	.warning-text {
-		font-size: 0.8rem;
+		font-size: 0.85rem;
+		font-weight: 600;
 		color: var(--text-muted);
-		margin: 12px 0 0 0;
-		font-style: italic;
+		margin: 16px 0 0 0;
 
 		&.important {
-			color: var(--accent-secondary, #ffaa00);
-			background: rgba(255, 170, 0, 0.1);
-			padding: 8px 12px;
-			border-radius: 8px;
+			color: var(--danger);
+			background: rgba(255, 74, 122, 0.1);
+			border: 2px solid rgba(255, 74, 122, 0.15);
+			padding: 12px 18px;
+			border-radius: var(--radius-md);
 			font-style: normal;
 			display: flex;
 			align-items: center;
-			gap: 8px;
+			gap: 10px;
 
 			.icon {
-				font-size: 1.2rem;
+				font-size: 1.3rem;
 			}
 		}
 	}

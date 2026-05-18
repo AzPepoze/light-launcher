@@ -85,29 +85,28 @@
 	.game-card {
 		display: flex;
 		flex-direction: column;
-		gap: 8px;
-		transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+		gap: 12px;
+		transition: transform var(--transition-spring), filter var(--transition-fast);
 		position: relative;
 		width: 100%;
-		max-width: 160px;
-		margin: 4px;
+		max-width: 200px;
+		margin: 6px;
 
 		&.selected {
 			.game-icon-container {
 				border-color: var(--accent-primary);
-				box-shadow: 0 0 20px
-					rgba(var(--accent-primary-rgb, 255, 255, 255), 0.3);
+				box-shadow: 0 0 24px var(--accent-glow);
 			}
 
 			.checkbox {
 				background: var(--accent-primary) !important;
 				border-color: var(--accent-primary) !important;
-				color: #000;
+				color: #ffffff;
 			}
 		}
 
 		&:hover {
-			transform: scale(1.05);
+			transform: scale(1.08) translateY(-6px);
 
 			.rainbow-glow {
 				opacity: 0.8;
@@ -115,8 +114,8 @@
 			}
 
 			.game-icon-container {
-				border-color: var(--glass-border-bright);
-				box-shadow: var(--glass-shadow);
+				border-color: var(--accent-primary);
+				box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 
 				.play-overlay {
 					opacity: 1;
@@ -129,13 +128,12 @@
 
 			.game-footer .game-name {
 				color: var(--text-main);
-				text-shadow: 0 0 10px var(--glass-surface);
 			}
 
 			.config-btn {
 				opacity: 1;
 				visibility: visible;
-				transform: translateX(0);
+				transform: scale(1);
 			}
 
 			.game-footer .game-name {
@@ -143,6 +141,10 @@
 				overflow: visible;
 				word-break: break-all;
 			}
+		}
+
+		&:active {
+			transform: scale(0.97);
 		}
 
 		&.selection-mode:hover {
@@ -158,30 +160,30 @@
 			}
 
 			.game-icon-container {
-				border-color: var(--success, #22c55e);
-				box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+				border-color: var(--success, #44ffaa);
+				box-shadow: 0 0 24px rgba(68, 255, 170, 0.35);
 			}
 		}
 	}
 
 	.game-icon-container {
 		aspect-ratio: 1;
-		background: var(--glass-surface);
-		border: 1px solid var(--glass-border);
+		background: var(--bg-surface);
+		border: 2px solid rgba(255, 255, 255, 0.05);
 		border-radius: var(--radius-lg);
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		position: relative;
 		cursor: pointer;
-		transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+		transition: transform var(--transition-spring), border-color var(--transition-fast), box-shadow var(--transition-fast);
 		z-index: 1;
 	}
 
 	.icon-wrapper {
 		position: absolute;
 		inset: 2px;
-		background: var(--glass-bg);
+		background: var(--bg-base);
 		border-radius: calc(var(--radius-lg) - 2px);
 		z-index: 2;
 		overflow: hidden;
@@ -214,33 +216,34 @@
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
-		transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+		transition: transform 0.6s var(--ease-spring);
 	}
 
 	.system-icon {
 		font-size: 64px;
-		color: var(--text-dim);
-		opacity: 0.4;
+		color: var(--text-muted);
+		opacity: 0.3;
 	}
 
 	.play-overlay {
 		position: absolute;
 		inset: 0;
-		background: transparent;
+		background: rgba(16, 16, 28, 0.6);
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		opacity: 0;
-		transition: opacity 0.3s;
+		transition: opacity var(--transition-fast);
 		z-index: 3;
+		border-radius: calc(var(--radius-lg) - 2px);
 
 		.launch-icon-large {
-			font-size: 60px;
+			font-size: 64px;
 			color: #fff;
 			filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.8))
-				drop-shadow(0 0 20px rgba(0, 0, 0, 0.4));
+				drop-shadow(0 0 20px var(--accent-glow));
 			transform: scale(0.8);
-			transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+			transition: transform var(--transition-spring);
 		}
 	}
 
@@ -252,19 +255,19 @@
 		justify-content: flex-end;
 		padding: 12px;
 		z-index: 5;
-		background: var(--glass-low-alpha);
+		background: rgba(10, 10, 20, 0.4);
 		border-radius: calc(var(--radius-lg) - 2px);
 
 		.checkbox {
 			width: 24px;
 			height: 24px;
-			border: 2px solid var(--glass-border-bright);
+			border: 2px solid rgba(255, 255, 255, 0.15);
 			border-radius: var(--radius-sm);
-			background: var(--glass-surface);
+			background: var(--bg-surface);
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			transition: all 0.2s;
+			transition: all var(--transition-fast);
 			color: transparent;
 		}
 	}
@@ -277,10 +280,10 @@
 		position: absolute;
 		top: 12px;
 		right: 12px;
-		background: var(--success, #22c55e);
-		color: #fff;
-		padding: 4px 10px;
-		border-radius: var(--radius-xl);
+		background: var(--success, #44ffaa);
+		color: #000;
+		padding: 4px 12px;
+		border-radius: var(--radius-pill);
 		font-size: 0.65rem;
 		font-weight: 900;
 		display: flex;
@@ -293,7 +296,7 @@
 		.pulse {
 			width: 6px;
 			height: 6px;
-			background: #fff;
+			background: #000;
 			border-radius: 50%;
 			display: inline-block;
 			animation: blink 1s infinite;
@@ -307,38 +310,35 @@
 		padding: 0 4px;
 
 		.game-name {
-			font-size: 0.85rem;
-			font-weight: 700;
-			color: var(--text-main);
+			font-size: 0.95rem;
+			font-weight: 800;
+			color: var(--text-muted);
 			white-space: nowrap;
 			overflow: hidden;
 			text-overflow: ellipsis;
 			flex: 1;
-			transition: all 0.3s;
+			transition: color var(--transition-fast);
 			letter-spacing: -0.2px;
 			line-height: 1.2;
 		}
 
 		.config-btn {
-			background: var(--glass-surface);
-			border: 1px solid var(--glass-border);
-			padding: 6px;
-			border-radius: var(--radius-md);
+			background: var(--bg-surface);
+			border: 2px solid rgba(255, 255, 255, 0.05);
+			padding: 8px;
+			border-radius: var(--radius-pill);
 			cursor: pointer;
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			transition: all 0.3s;
-			opacity: 0.6;
-			visibility: visible;
-			transform: translateX(0);
+			transition: transform var(--transition-spring), background var(--transition-fast), border-color var(--transition-fast);
 			color: var(--text-main);
 			margin-left: 6px;
 
 			&:hover {
-				background: var(--glass-border-bright);
-				transform: rotate(45deg) !important;
-				border-color: var(--glass-border-bright);
+				background: var(--bg-elevated);
+				transform: rotate(90deg) scale(1.1);
+				border-color: var(--accent-secondary);
 			}
 
 			.material-icons {

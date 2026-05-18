@@ -189,34 +189,50 @@
 <style lang="scss">
 	.toggles-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-		gap: 16px;
-		margin-top: 8px;
+		grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+		gap: 20px;
+		margin-top: 12px;
 	}
 	.modal-form {
 		display: flex;
 		flex-direction: column;
-		gap: 16px;
+		gap: 20px;
 	}
-	.form-group label {
-		display: block;
-		font-size: 0.875rem;
-		font-weight: 600;
-		color: var(--text-muted);
-		margin-bottom: 8px;
-	}
+	.form-group {
+		label {
+			display: block;
+			font-size: 0.9rem;
+			font-weight: 800;
+			color: var(--accent-primary);
+			text-transform: uppercase;
+			letter-spacing: 1px;
+			margin-bottom: 10px;
+		}
 
-	.form-group .input {
-		width: 100%;
-		display: block;
-		background: var(--glass-surface);
-		border: 1px solid var(--glass-border);
-		color: var(--text-main);
+		.input {
+			width: 100%;
+			box-sizing: border-box;
+			display: block;
+			background: var(--bg-input);
+			border: 2px solid transparent;
+			padding: 12px 16px;
+			border-radius: var(--radius-md);
+			color: var(--text-main);
+			font-weight: 600;
+			outline: none;
+			transition: border-color var(--transition-fast), transform var(--transition-fast);
+
+			&:focus {
+				border-color: var(--accent-primary);
+				transform: scale(1.005);
+			}
+		}
 	}
 	.note {
-		font-size: 0.75rem;
+		font-size: 0.8rem;
+		font-weight: 600;
 		color: var(--text-muted);
-		font-style: italic;
+		line-height: 1.5;
 		margin-top: 8px;
 	}
 </style>

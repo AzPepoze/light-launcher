@@ -59,20 +59,21 @@
 	.sidebar-section {
 		display: flex;
 		flex-direction: column;
-		border-radius: 16px;
+		border-radius: var(--radius-lg);
 		overflow: hidden;
-		border: 1px solid var(--glass-border);
-		background: var(--glass-surface);
+		border: 2px solid rgba(255, 255, 255, 0.05);
+		background: var(--bg-surface);
 		height: 100%;
 		box-sizing: border-box;
 
 		.section-header {
-			padding: 16px;
-			border-bottom: 1px solid var(--glass-border);
+			padding: 20px;
+			border-bottom: 2px solid rgba(255, 255, 255, 0.05);
 			h2 {
-				font-size: 0.9rem;
+				font-size: 0.95rem;
+				font-weight: 800;
 				margin: 0;
-				color: var(--text-dim);
+				color: var(--text-main);
 				text-transform: uppercase;
 				letter-spacing: 1px;
 			}
@@ -82,22 +83,34 @@
 	.prefix-list {
 		flex: 1;
 		overflow-y: auto;
-		padding: 8px;
+		padding: 12px;
 		display: flex;
 		flex-direction: column;
-		gap: 4px;
+		gap: 6px;
+
+		&::-webkit-scrollbar {
+			width: 6px;
+		}
+		&::-webkit-scrollbar-track {
+			background: transparent;
+		}
+		&::-webkit-scrollbar-thumb {
+			background: rgba(255, 102, 171, 0.2);
+			border-radius: 10px;
+		}
 	}
 
 	.prefix-item-wrapper {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		border-radius: 8px;
-		transition: all 0.2s;
+		border-radius: var(--radius-md);
+		transition: transform var(--transition-spring), background var(--transition-fast), color var(--transition-fast);
 		padding-right: 8px;
 
 		&:hover {
-			background: var(--glass-hover);
+			background: var(--bg-elevated);
+			transform: scale(1.02);
 			
 			.remove-btn {
 				opacity: 1;
@@ -106,17 +119,17 @@
 
 		&.active {
 			background: var(--accent-primary);
-			color: var(--glass-bg);
-			font-weight: 600;
+			color: #ffffff;
+			font-weight: 800;
 
 			.folder-icon .material-icons {
-				color: var(--glass-bg);
+				color: #ffffff;
 			}
 			
 			.remove-btn {
-				color: var(--glass-bg);
+				color: #ffffff;
 				&:hover {
-					background: rgba(0, 0, 0, 0.1);
+					background: rgba(0, 0, 0, 0.15);
 				}
 			}
 		}
@@ -155,25 +168,28 @@
 			overflow: hidden;
 			text-overflow: ellipsis;
 			white-space: nowrap;
+			text-transform: uppercase;
+			font-size: 0.85rem;
+			letter-spacing: 0.5px;
 		}
 	}
 
 	.remove-btn {
 		background: transparent;
 		border: none;
-		color: var(--text-dim);
+		color: var(--text-muted);
 		cursor: pointer;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		width: 28px;
 		height: 28px;
-		border-radius: 6px;
+		border-radius: var(--radius-sm);
 		opacity: 0;
-		transition: all 0.2s;
+		transition: opacity var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
 
 		&:hover {
-			background: rgba(255, 0, 0, 0.1);
+			background: rgba(255, 74, 122, 0.15);
 			color: var(--danger);
 		}
 
@@ -182,27 +198,58 @@
 		}
 	}
 
-
 	.add-prefix-area {
-		padding: 16px;
-		border-top: 1px solid var(--glass-border);
+		padding: 20px;
+		border-top: 2px solid rgba(255, 255, 255, 0.05);
 		display: flex;
 		flex-direction: column;
-		gap: 8px;
-		background: var(--glass-surface);
+		gap: 12px;
+		background: var(--bg-surface);
 	}
+	
 	.empty-state {
 		padding: 32px;
 		text-align: center;
-		color: var(--text-dim);
-		font-size: 0.8rem;
+		color: var(--text-muted);
+		font-size: 0.85rem;
+		font-weight: 700;
 	}
+	
 	.input.sm {
-		padding: 8px 12px;
+		padding: 10px 14px;
 		font-size: 0.85rem;
+		background: var(--bg-input);
+		border: 2px solid transparent;
+		border-radius: var(--radius-md);
+		color: var(--text-main);
+		font-weight: 600;
+		outline: none;
+		transition: border-color var(--transition-fast);
+
+		&:focus {
+			border-color: var(--accent-primary);
+		}
 	}
+	
 	.btn.sm {
-		padding: 8px;
+		padding: 10px;
 		font-size: 0.85rem;
+		border-radius: var(--radius-pill);
+		font-weight: 800;
+		background: var(--accent-primary);
+		color: #ffffff;
+		border: none;
+		cursor: pointer;
+		box-shadow: 0 4px 10px var(--accent-glow);
+		transition: transform var(--transition-spring), background var(--transition-fast);
+
+		&:hover {
+			background: var(--accent-hover);
+			transform: scale(1.03);
+		}
+
+		&:active {
+			transform: scale(0.97);
+		}
 	}
 </style>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PageHeader from "@components/shared/PageHeader.svelte";
 	import {
 		DetectLosslessDll,
 		GetSystemToolsStatus,
@@ -83,7 +84,7 @@
 </script>
 
 <div class="utils-container">
-	<h1 class="page-title">Utilities & Extras</h1>
+	<PageHeader title="Utilities & Extras" icon="handyman" />
 
 	<SystemDependencies {systemStatus} />
 
@@ -103,18 +104,22 @@
 
 <style lang="scss">
 	.utils-container {
-		padding: 32px;
+		padding: 40px 48px;
 		height: 100%;
 		display: flex;
 		flex-direction: column;
 		overflow-y: auto;
-	}
 
-	.page-title {
-		font-size: 2rem;
-		font-weight: 800;
-		color: var(--text-main);
-		margin: 0 0 32px 0;
+		&::-webkit-scrollbar {
+			width: 8px;
+		}
+		&::-webkit-scrollbar-track {
+			background: transparent;
+		}
+		&::-webkit-scrollbar-thumb {
+			background: rgba(255, 102, 171, 0.2);
+			border-radius: 10px;
+		}
 	}
 
 

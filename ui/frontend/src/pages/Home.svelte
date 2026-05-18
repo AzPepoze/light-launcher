@@ -225,9 +225,9 @@
 		flex-direction: column;
 		height: 100%;
 		width: 100%;
-		padding: 0;
+		padding: 10px 0;
 		background-color: transparent;
-		gap: 20px;
+		gap: 36px;
 		box-sizing: border-box;
 		min-height: 0;
 		overflow-x: hidden;

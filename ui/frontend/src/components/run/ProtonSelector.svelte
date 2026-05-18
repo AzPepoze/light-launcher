@@ -23,9 +23,11 @@
 <style lang="scss">
 	.form-group label {
 		display: block;
-		font-size: 0.875rem;
-		font-weight: 600;
-		color: var(--text-muted);
-		margin-bottom: 8px;
+		font-size: 0.9rem;
+		font-weight: 800;
+		color: var(--accent-primary);
+		text-transform: uppercase;
+		letter-spacing: 1px;
+		margin-bottom: 10px;
 	}
 </style>

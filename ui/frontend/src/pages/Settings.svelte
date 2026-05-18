@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PageHeader from "@components/shared/PageHeader.svelte";
 	import { settingsStore } from "@stores/settingsStore";
 	import * as service from "@lib/settingsService";
 	import { onMount } from "svelte";
@@ -47,7 +48,7 @@
 </script>
 
 <div class="settings-container">
-	<h1 class="page-title">Appearance & Settings</h1>
+	<PageHeader title="Appearance & Settings" icon="settings" />
 
 	<div class="settings-grid">
 		<div class="settings-card glass">
@@ -67,9 +68,9 @@
 
 		<div class="settings-card glass">
 			<div class="settings-section">
-				<h3>Window Transparency</h3>
+				<h3>Background Opacity</h3>
 				<p class="desc">
-					Adjust OS window transparency.
+					Adjust the background opacity. Lower values make the background more see-through while keeping text and UI elements fully visible.
 				</p>
 				<div class="slider-row">
 					<input
@@ -88,7 +89,7 @@
 				<div style="margin-top: 16px;">
 					<button class="btn {appSettings.TransparentMode ? 'primary' : 'secondary'}" on:click={toggleTransparentMode}>
 						<span class="material-icons mini-icon">{appSettings.TransparentMode ? 'visibility' : 'visibility_off'}</span>
-						<span>{appSettings.TransparentMode ? 'Transparent Window: ON' : 'Transparent Window: OFF'} (Restarts App)</span>
+						<span>{appSettings.TransparentMode ? 'Transparent Background: ON' : 'Transparent Background: OFF'} (Restarts App)</span>
 					</button>
 				</div>
 			</div>
@@ -131,40 +132,47 @@
 
 <style lang="scss">
 	.settings-container {
-		padding: 32px;
+		padding: 40px 48px;
 		height: 100%;
 		display: flex;
 		flex-direction: column;
 		overflow-y: auto;
+
+		&::-webkit-scrollbar {
+			width: 8px;
+		}
+		&::-webkit-scrollbar-track {
+			background: transparent;
+		}
+		&::-webkit-scrollbar-thumb {
+			background: rgba(255, 102, 171, 0.2);
+			border-radius: 10px;
+		}
 	}
 
-	.page-title {
-		font-size: 2rem;
-		font-weight: 800;
-		color: var(--text-main);
-		margin: 0 0 32px 0;
-	}
+
 
 	.settings-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-		gap: 24px;
+		grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+		gap: 28px;
 		width: 100%;
 	}
 
 	.settings-card {
 		padding: 32px;
-		border-radius: 20px;
-		border: 1px solid var(--glass-border);
-		background: var(--glass-surface);
+		border-radius: var(--radius-lg);
+		border: 2px solid rgba(255, 255, 255, 0.05);
+		background: var(--bg-surface);
 		display: flex;
 		flex-direction: column;
 		gap: 28px;
-		transition: all 0.2s ease;
+		transition: transform var(--transition-spring), border-color var(--transition-fast), box-shadow var(--transition-fast);
 
 		&:hover {
-			background: var(--glass-hover);
-			border-color: var(--glass-border-bright);
+			border-color: var(--accent-primary);
+			transform: scale(1.01);
+			box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 		}
 	}
 
@@ -175,15 +183,18 @@
 
 		h3 {
 			margin: 0;
-			font-size: 1.1rem;
-			font-weight: 700;
+			font-size: 1.2rem;
+			font-weight: 800;
 			color: var(--text-main);
+			text-transform: uppercase;
+			letter-spacing: 0.5px;
 		}
 
 		.desc {
-			margin: 0 0 8px 0;
-			font-size: 0.85rem;
-			color: var(--text-dim);
+			margin: 0 0 12px 0;
+			font-size: 0.9rem;
+			font-weight: 600;
+			color: var(--text-muted);
 		}
 
 		.mini-icon {
@@ -192,7 +203,53 @@
 		}
 	}
 
+	.btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 12px 24px;
+		border-radius: var(--radius-pill);
+		font-weight: 700;
+		font-size: 0.9rem;
+		cursor: pointer;
+		transition: transform var(--transition-spring), background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+		border: 2px solid rgba(255, 255, 255, 0.05);
+		background: var(--bg-surface);
+		color: var(--text-main);
 
+		&:hover {
+			background: var(--bg-elevated);
+			border-color: var(--accent-secondary);
+			transform: scale(1.05);
+		}
+
+		&:active {
+			transform: scale(0.95);
+		}
+
+		&.primary {
+			background: var(--accent-primary);
+			color: #ffffff;
+			border: none;
+			box-shadow: 0 4px 12px var(--accent-glow);
+
+			&:hover {
+				background: var(--accent-hover);
+				transform: scale(1.05);
+			}
+		}
+
+		&.danger {
+			background: var(--danger);
+			color: #ffffff;
+			border: none;
+
+			&:hover {
+				background: #ff2e63;
+				transform: scale(1.05);
+			}
+		}
+	}
 
 	.slider-row {
 		display: flex;
@@ -202,13 +259,17 @@
 		.transparency-slider {
 			flex: 1;
 			accent-color: var(--accent-primary);
+			height: 6px;
+			border-radius: var(--radius-pill);
+			background: var(--bg-input);
+			outline: none;
 		}
 
 		.pct-display {
-			font-size: 0.9rem;
-			font-weight: 700;
+			font-size: 1rem;
+			font-weight: 800;
 			color: var(--accent-primary);
-			width: 40px;
+			width: 45px;
 			text-align: right;
 		}
 	}
@@ -216,15 +277,16 @@
 	.bg-path-display {
 		display: flex;
 		align-items: center;
-		padding: 10px 14px;
-		background: var(--glass-bg);
-		border: 1px solid var(--glass-border);
-		border-radius: 10px;
-		margin-bottom: 12px;
+		padding: 12px 16px;
+		background: var(--bg-base);
+		border: 2px solid rgba(255, 255, 255, 0.03);
+		border-radius: var(--radius-md);
+		margin-bottom: 16px;
 		color: var(--text-muted);
 
 		.path-text {
-			font-size: 0.8rem;
+			font-size: 0.85rem;
+			font-weight: 600;
 			white-space: nowrap;
 			overflow: hidden;
 			text-overflow: ellipsis;

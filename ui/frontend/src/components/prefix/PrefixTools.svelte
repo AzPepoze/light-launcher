@@ -54,7 +54,7 @@
 	.tools-grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-		gap: 16px;
+		gap: 20px;
 		margin-bottom: 8px;
 		flex-shrink: 0;
 	}

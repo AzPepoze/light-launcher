@@ -64,8 +64,8 @@
 <style lang="scss">
 	.utilities-row {
 		display: grid;
-		grid-template-columns: repeat(4, 1fr);
-		gap: 16px;
+		grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+		gap: 20px;
 		align-items: stretch;
 	}
 </style>

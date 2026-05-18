@@ -202,11 +202,12 @@
 		p {
 			color: var(--text-muted);
 			font-size: 1.1rem;
+			font-weight: 700;
 		}
 	}
 
 	.error-container p {
-		color: #ef4444;
+		color: var(--danger);
 	}
 
 	.modal-content {
@@ -215,24 +216,25 @@
 
 	.profile-header {
 		margin-bottom: 32px;
-		padding-bottom: 16px;
-		border-bottom: 1px solid var(--glass-border);
+		padding-bottom: 20px;
+		border-bottom: 2px solid rgba(255, 255, 255, 0.05);
 
 		.profile-title {
 			margin: 0 0 8px 0;
-			font-size: 1.75rem;
+			font-size: 1.85rem;
 			font-weight: 800;
 			color: var(--text-main);
-			letter-spacing: -0.5px;
+			text-transform: uppercase;
+			letter-spacing: 1px;
 		}
 
 		.game-path {
 			margin: 0;
-			color: var(--text-dim);
-			font-size: 0.85rem;
+			color: var(--text-muted);
+			font-size: 0.9rem;
 			word-break: break-all;
 			font-family: monospace;
-			opacity: 0.7;
+			font-weight: 600;
 		}
 	}
 
@@ -242,14 +244,14 @@
 	}
 
 	.btn {
-		padding: 10px 20px;
-		border: 1px solid var(--glass-border);
-		border-radius: 10px;
+		padding: 12px 24px;
+		border: 2px solid rgba(255, 255, 255, 0.05);
+		border-radius: var(--radius-pill);
 		font-weight: 800;
 		cursor: pointer;
-		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+		transition: transform var(--transition-spring), background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
 		font-size: 0.9rem;
-		background: var(--glass-hover);
+		background: var(--bg-surface);
 		color: var(--text-main);
 
 		&:disabled {
@@ -259,22 +261,48 @@
 
 		&.primary {
 			background: var(--accent-primary);
-			border: 1px solid var(--accent-primary);
-			color: var(--glass-bg);
+			border: none;
+			color: #ffffff;
+			box-shadow: 0 4px 12px var(--accent-glow);
 
 			&:hover:not(:disabled) {
-				filter: brightness(1.2);
+				background: var(--accent-hover);
+				transform: scale(1.05);
+			}
+
+			&:active:not(:disabled) {
+				transform: scale(0.95);
 			}
 		}
 
 		&.secondary {
-			background: var(--glass-hover);
+			background: var(--bg-surface);
 			color: var(--text-muted);
 
 			&:hover:not(:disabled) {
-				background: var(--glass-border);
+				background: var(--bg-elevated);
 				color: var(--text-main);
-				border-color: var(--glass-border-bright);
+				border-color: var(--accent-secondary);
+				transform: scale(1.05);
+			}
+
+			&:active:not(:disabled) {
+				transform: scale(0.95);
+			}
+		}
+
+		&.danger {
+			background: var(--danger);
+			border: none;
+			color: #ffffff;
+
+			&:hover:not(:disabled) {
+				background: #ff2e63;
+				transform: scale(1.05);
+			}
+
+			&:active:not(:disabled) {
+				transform: scale(0.95);
 			}
 		}
 	}

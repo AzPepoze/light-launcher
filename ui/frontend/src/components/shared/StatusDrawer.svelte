@@ -192,20 +192,22 @@
 	.status-drawer-wrapper {
 		position: fixed;
 		bottom: 20px;
-		background: var(--glass-bg);
-		border: 1px solid var(--glass-border);
-		border-radius: 20px;
-		transform: translateY(calc(100% - 55px));
-		transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+		background: var(--bg-surface);
+		border: 2px solid rgba(255, 255, 255, 0.05);
+		border-radius: var(--radius-lg);
+		transform: translateY(calc(100% - 78px));
+		transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
 		z-index: 100;
-		padding: 0 20px 20px 20px;
-		box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+		padding: 0 24px 24px 24px;
+		box-shadow: 0 10px 50px rgba(0, 0, 0, 0.4);
 		overflow: hidden;
-		margin-right: 20px;
+		margin-right: 24px;
 		width: -webkit-fill-available;
+		box-sizing: border-box;
 
 		&.expanded {
 			transform: translateY(0);
+			box-shadow: 0 10px 60px rgba(255, 102, 171, 0.1);
 		}
 	}
 
@@ -216,23 +218,23 @@
 		align-items: center;
 		justify-content: center;
 		cursor: pointer;
-		background: var(--glass-surface);
-		border: 1px solid var(--glass-border);
-		border-radius: 12px;
-		margin: 10px 0;
-		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+		background: var(--bg-base);
+		border: 2px solid rgba(255, 255, 255, 0.03);
+		border-radius: var(--radius-pill);
+		margin: 12px 0;
+		transition: transform var(--transition-spring), border-color var(--transition-fast), background var(--transition-fast);
 
 		.trigger-text {
-			font-size: 0.8rem;
+			font-size: 0.85rem;
 			font-weight: 800;
-			color: var(--text-dim);
+			color: var(--text-muted);
 			letter-spacing: 1.5px;
 			text-transform: uppercase;
 		}
 
 		&:hover {
-			background: var(--glass-border);
-			border-color: var(--glass-border-bright);
+			background: var(--bg-elevated);
+			border-color: var(--accent-primary);
 
 			.trigger-text {
 				color: var(--text-main);
@@ -240,8 +242,7 @@
 		}
 
 		&:active {
-			background: var(--glass-hover);
-			transform: scale(0.995);
+			transform: scale(0.98);
 		}
 	}
 
@@ -249,7 +250,7 @@
 		padding-top: 10px;
 		display: flex;
 		flex-direction: column;
-		gap: 20px;
+		gap: 24px;
 	}
 
 

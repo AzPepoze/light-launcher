@@ -92,54 +92,62 @@
 <style lang="scss">
 	.status-grid {
 		display: grid;
-		grid-template-columns: repeat(4, 1fr);
-		gap: 16px;
+		grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+		gap: 20px;
 	}
 
 	.status-box {
-		background: var(--glass-surface);
-		padding: 12px;
-		border-radius: 12px;
-		border: 1px solid var(--glass-border);
+		background: var(--bg-base);
+		padding: 16px;
+		border-radius: var(--radius-md);
+		border: 2px solid rgba(255, 255, 255, 0.03);
 		display: flex;
 		flex-direction: column;
 		min-width: 0;
+		transition: transform var(--transition-spring), border-color var(--transition-fast);
+
+		&:hover {
+			border-color: rgba(255, 255, 255, 0.08);
+			transform: translateY(-2px);
+		}
 
 		.box-header {
 			display: flex;
 			justify-content: space-between;
 			align-items: center;
-			margin-bottom: 8px;
+			margin-bottom: 12px;
 
 			.icon-label {
 				display: flex;
 				align-items: center;
 				gap: 6px;
-				color: var(--text-dim);
+				color: var(--text-muted);
 
 				.mini-icon {
-					font-size: 14px;
-					opacity: 0.8;
+					font-size: 16px;
 				}
 
 				.label {
-					font-size: 0.7rem;
-					font-weight: 900;
+					font-size: 0.75rem;
+					font-weight: 800;
+					text-transform: uppercase;
+					letter-spacing: 0.5px;
 				}
 			}
 
 			.usage {
-				font-size: 0.9rem;
-				font-weight: 700;
+				font-size: 0.95rem;
+				font-weight: 800;
 				color: var(--accent-primary);
 			}
 		}
 
 		.info-text {
 			display: block;
-			font-size: 0.7rem;
+			font-size: 0.75rem;
+			font-weight: 700;
 			color: var(--text-muted);
-			margin-top: 8px;
+			margin-top: 10px;
 			white-space: nowrap;
 			overflow: hidden;
 			text-overflow: ellipsis;
@@ -148,12 +156,12 @@
 		.system-info {
 			display: flex;
 			flex-direction: column;
-			gap: 2px;
+			gap: 4px;
 			overflow: hidden;
 
 			.os-text {
-				font-size: 0.8rem;
-				font-weight: 700;
+				font-size: 0.85rem;
+				font-weight: 800;
 				color: var(--text-main);
 				white-space: nowrap;
 				overflow: hidden;
@@ -161,7 +169,8 @@
 			}
 
 			.kernel-text {
-				font-size: 0.65rem;
+				font-size: 0.7rem;
+				font-weight: 600;
 				color: var(--text-muted);
 				white-space: nowrap;
 				overflow: hidden;
@@ -171,14 +180,15 @@
 	}
 
 	.progress-bg {
-		height: 4px;
-		background: var(--glass-hover);
-		border-radius: 2px;
+		height: 6px;
+		background: var(--bg-input);
+		border-radius: var(--radius-pill);
 		overflow: hidden;
 
 		.progress-fill {
 			height: 100%;
 			background: var(--accent-primary);
+			box-shadow: 0 0 8px var(--accent-primary);
 			transition: width 0.3s ease;
 		}
 	}

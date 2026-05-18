@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PageHeader from "@components/shared/PageHeader.svelte";
 	import { onMount } from "svelte";
 	import {
 		PickFile,
@@ -215,9 +216,7 @@
 </script>
 
 <div class="run-container">
-	<div class="header-row">
-		<h1 class="page-title">Launch Configuration</h1>
-	</div>
+	<PageHeader title="Launch Configuration" icon="rocket_launch" />
 
 	<div class="form-group profile-name-group">
 		<label for="profileName">Profile Name</label>
@@ -291,50 +290,49 @@
 	.run-container {
 		display: flex;
 		flex-direction: column;
-		padding: 32px;
+		padding: 40px 48px;
 	}
 	.form-container {
 		width: 100%;
 		display: flex;
 		flex-direction: column;
-		gap: 24px;
+		gap: 28px;
 	}
 
 
-
-
-	.page-title {
-		font-size: 2rem;
-		font-weight: bold;
-		color: var(--text-main);
-		margin: 0 0 24px 0;
-	}
 
 	.profile-name-group {
-		margin-bottom: 24px;
-		padding: 16px;
-		background: var(--glass-surface);
-		border-radius: 12px;
-		border: 1px solid var(--glass-border);
+		margin-bottom: 28px;
+		padding: 20px;
+		background: var(--bg-surface);
+		border-radius: var(--radius-lg);
+		border: 2px solid rgba(255, 255, 255, 0.05);
 
 		label {
 			display: block;
-			font-size: 0.875rem;
-			font-weight: 700;
-			color: var(--text-muted);
-			margin-bottom: 8px;
+			font-size: 0.9rem;
+			font-weight: 800;
+			color: var(--accent-primary);
+			text-transform: uppercase;
+			letter-spacing: 1px;
+			margin-bottom: 10px;
 		}
 
 		.profile-input {
 			width: 100%;
-			font-size: 1.1rem;
-			font-weight: 600;
-			background: var(--glass-hover);
-			border-color: var(--glass-border-bright);
+			font-size: 1.15rem;
+			font-weight: 700;
+			background: var(--bg-input);
+			border: 2px solid transparent;
+			padding: 12px 20px;
+			border-radius: var(--radius-md);
+			color: var(--text-main);
+			outline: none;
+			transition: border-color var(--transition-fast), transform var(--transition-fast);
 
 			&:focus {
 				border-color: var(--accent-primary);
-				background: var(--glass-surface);
+				transform: scale(1.005);
 			}
 		}
 	}
@@ -345,7 +343,7 @@
 		margin: 48px -32px -32px -32px;
 		padding: 32px;
 		z-index: 10;
-		background: linear-gradient(to top, var(--glass-bg) 80%, transparent);
+		background: linear-gradient(to top, var(--bg-base) 80%, transparent);
 		display: flex;
 		align-items: center;
 		gap: 16px;
@@ -364,18 +362,22 @@
 		justify-content: center;
 		width: 60px;
 		height: 60px;
-		border-radius: 14px;
-		background: var(--glass-surface);
+		border-radius: var(--radius-pill);
+		background: var(--bg-surface);
 		color: var(--text-muted);
-		border: 1px solid var(--glass-border);
+		border: 2px solid rgba(255, 255, 255, 0.05);
 		cursor: pointer;
-		transition: all 0.2s;
+		transition: transform var(--transition-spring), background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
 
 		&:hover:not(:disabled) {
-			background: var(--glass-border);
+			background: var(--bg-elevated);
 			color: var(--text-main);
-			border-color: var(--glass-border-bright);
-			transform: scale(1.05);
+			border-color: var(--accent-secondary);
+			transform: scale(1.1);
+		}
+
+		&:active {
+			transform: scale(0.95);
 		}
 
 		&:disabled {

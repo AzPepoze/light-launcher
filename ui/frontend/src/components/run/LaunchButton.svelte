@@ -12,43 +12,43 @@
 		width: 100%;
 		height: 60px;
 		padding: 0 32px;
-		border-radius: 14px;
+		border-radius: var(--radius-pill);
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		gap: 12px;
 		background: var(--accent-primary) !important;
-		color: var(--glass-bg) !important;
+		color: #ffffff !important;
 		border: none;
-		box-shadow: var(--glass-shadow);
+		box-shadow: 0 4px 14px var(--accent-glow);
 		cursor: pointer;
-		transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+		transition: transform var(--transition-spring), background var(--transition-fast), box-shadow var(--transition-fast);
 		font-weight: 800;
-		font-size: 1.1rem;
+		font-size: 1.15rem;
 		text-transform: uppercase;
-		letter-spacing: 1.5px;
+		letter-spacing: 2px;
 
 		span {
 			display: block;
 		}
 
 		&:hover {
-			background: var(--accent-secondary) !important;
-			transform: translateY(-4px) scale(1.01);
-			box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+			background: var(--accent-hover) !important;
+			transform: scale(1.03) translateY(-2px);
+			box-shadow: 0 8px 24px var(--accent-glow);
 
 			.run-icon {
-				transform: rotate(-10deg) scale(1.1);
+				transform: rotate(-15deg) scale(1.2);
 			}
 		}
 
 		&:active {
-			transform: translateY(-2px) scale(0.99);
+			transform: scale(0.96);
 		}
 
 		.run-icon {
 			font-size: 28px;
-			transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+			transition: transform var(--transition-spring);
 		}
 	}
 </style>

@@ -26,24 +26,28 @@
 
 <style lang="scss">
 	.tool-card {
-		background: var(--glass-surface);
-		border: 1px solid var(--glass-border);
-		border-radius: 16px;
-		padding: 16px;
+		background: var(--bg-surface);
+		border: 2px solid rgba(255, 255, 255, 0.05);
+		border-radius: var(--radius-md);
+		padding: 16px 20px;
 		display: flex;
 		align-items: center;
 		gap: 16px;
 		cursor: pointer;
-		transition: all 0.2s;
+		transition: transform var(--transition-spring), border-color var(--transition-fast), background var(--transition-fast);
 		color: var(--text-main);
 		text-align: left;
 		position: relative;
 		overflow: hidden;
 
 		&:hover {
-			background: var(--glass-border-bright);
+			background: var(--bg-elevated);
 			border-color: var(--accent-primary);
-			transform: translateY(-2px);
+			transform: scale(1.03);
+		}
+
+		&:active {
+			transform: scale(0.97);
 		}
 
 		&.loading {
@@ -53,36 +57,38 @@
 		}
 
 		.icon {
-			font-size: 1.75rem;
+			font-size: 2rem;
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			width: 32px;
-			height: 32px;
+			width: 36px;
+			height: 36px;
 			color: var(--accent-primary);
 
 			.svg-icon {
 				width: 100%;
 				height: 100%;
-				opacity: 0.8;
 			}
 		}
 		h3 {
-			font-size: 1rem;
+			font-size: 0.95rem;
 			margin: 0;
-			font-weight: 700;
+			font-weight: 800;
+			text-transform: uppercase;
+			letter-spacing: 0.5px;
 		}
 		p {
 			font-size: 0.75rem;
-			margin: 2px 0 0 0;
-			color: var(--text-dim);
+			margin: 4px 0 0 0;
+			color: var(--text-muted);
+			font-weight: 600;
 		}
 	}
 
 	.spinner {
 		width: 28px;
 		height: 28px;
-		border: 3px solid var(--glass-border);
+		border: 3px solid rgba(255, 255, 255, 0.05);
 		border-radius: 50%;
 		border-top-color: var(--accent-primary);
 		animation: spin 1s ease-in-out infinite;

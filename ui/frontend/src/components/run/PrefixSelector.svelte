@@ -29,10 +29,12 @@
 <style lang="scss">
 	.form-group label {
 		display: block;
-		font-size: 0.875rem;
-		font-weight: 600;
-		color: var(--text-muted);
-		margin-bottom: 8px;
+		font-size: 0.9rem;
+		font-weight: 800;
+		color: var(--accent-primary);
+		text-transform: uppercase;
+		letter-spacing: 1px;
+		margin-bottom: 10px;
 	}
 	.input-group {
 		display: flex;
@@ -43,31 +45,37 @@
 		}
 	}
 	.path-display {
-		margin-top: 8px;
-		font-size: 0.75rem;
-		color: var(--text-dim);
+		margin-top: 10px;
+		font-size: 0.8rem;
+		color: var(--text-muted);
 		word-break: break-all;
-		padding: 8px;
-		background: var(--glass-surface);
-		border: 1px solid var(--glass-border);
-		border-radius: 6px;
+		padding: 10px 16px;
+		background: var(--bg-surface);
+		border: 2px solid rgba(255, 255, 255, 0.05);
+		border-radius: var(--radius-md);
 	}
 	.btn {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		padding: 10px 20px;
-		border-radius: 10px;
-		font-weight: 600;
+		padding: 12px 24px;
+		border-radius: var(--radius-pill);
+		font-weight: 700;
 		font-size: 0.9rem;
 		cursor: pointer;
-		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-		border: 1px solid var(--glass-border);
-		background: var(--glass-hover);
+		transition: transform var(--transition-spring), background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+		border: 2px solid rgba(255, 255, 255, 0.05);
+		background: var(--bg-surface);
 		color: var(--text-main);
+
 		&:hover {
-			background: var(--glass-border);
-			border-color: var(--glass-border-bright);
+			background: var(--bg-elevated);
+			border-color: var(--accent-secondary);
+			transform: scale(1.05);
+		}
+
+		&:active {
+			transform: scale(0.95);
 		}
 	}
 </style>

@@ -18,5 +18,24 @@ export default defineConfig({
 	server: {
 		port: 9245,
 		strictPort: true,
-	}
+	},
+	esbuild: {
+		drop: ['console', 'debugger'],
+	},
+	build: {
+		target: 'esnext',
+		minify: 'esbuild',
+		sourcemap: false,
+		cssMinify: true,
+		cssCodeSplit: true,
+		modulePreload: {
+			polyfill: false,
+		},
+		rollupOptions: {
+			treeshake: {
+				preset: 'smallest',
+				moduleSideEffects: 'no-external',
+			},
+		},
+	},
 })

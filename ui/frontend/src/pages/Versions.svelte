@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PageHeader from "@components/shared/PageHeader.svelte";
 	import { ScanProtonVersions } from "@bindings/light-launcher/internal/app/app";
 	import * as core from "@bindings/light-launcher/internal/types/models";
 	import { notifications } from "@stores/notificationStore";
@@ -33,37 +34,30 @@
 </script>
 
 <div class="versions-container">
-	<div class="header">
-		<div class="title-group">
-			<h1 class="page-title">Proton Versions</h1>
-			<div class="count-badge">{protonVersions.length} Installed</div>
-		</div>
-
-		<div class="actions">
-			<button
-				class="btn secondary"
-				on:click={() => openExternal("https://protondb.com")}
-			>
-				ProtonDB
-			</button>
-			<button
-				class="btn secondary"
-				on:click={() =>
-					openExternal("https://github.com/Vysp3r/ProtonPlus")}
-			>
-				ProtonPlus
-			</button>
-			<button
-				class="btn secondary"
-				on:click={() =>
-					openExternal(
-						"https://github.com/DavidoTek/ProtonUp-Qt",
-					)}
-			>
-				ProtonUp
-			</button>
-		</div>
-	</div>
+	<PageHeader title="Proton Versions" icon="history" subtitle="{protonVersions.length} installed">
+		<button
+			class="btn secondary"
+			on:click={() => openExternal("https://protondb.com")}
+		>
+			ProtonDB
+		</button>
+		<button
+			class="btn secondary"
+			on:click={() =>
+				openExternal("https://github.com/Vysp3r/ProtonPlus")}
+		>
+			ProtonPlus
+		</button>
+		<button
+			class="btn secondary"
+			on:click={() =>
+				openExternal(
+					"https://github.com/DavidoTek/ProtonUp-Qt",
+				)}
+		>
+			ProtonUp
+		</button>
+	</PageHeader>
 
 	<div class="versions-list">
 		{#if isLoading}
@@ -95,53 +89,31 @@
 
 <style lang="scss">
 	.versions-container {
-		padding: 32px;
+		padding: 40px 48px;
 		height: 100%;
 		display: flex;
 		flex-direction: column;
 	}
 
-	.header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		margin-bottom: 32px;
-	}
-
-	.title-group {
-		display: flex;
-		align-items: center;
-		gap: 16px;
-	}
-
-	.actions {
-		display: flex;
-		gap: 12px;
-	}
-
-	.page-title {
-		font-size: 2rem;
-		font-weight: 800;
-		color: var(--text-main);
-		margin: 0;
-	}
-
-	.count-badge {
-		background: var(--glass-surface);
-		padding: 4px 12px;
-		border-radius: 20px;
-		font-size: 0.8rem;
-		color: var(--text-dim);
-		border: 1px solid var(--glass-border);
-	}
 
 	.versions-list {
 		display: flex;
 		flex-direction: column;
-		gap: 16px;
+		gap: 18px;
 		overflow-y: auto;
 		padding-right: 8px;
 		flex: 1;
+
+		&::-webkit-scrollbar {
+			width: 8px;
+		}
+		&::-webkit-scrollbar-track {
+			background: transparent;
+		}
+		&::-webkit-scrollbar-thumb {
+			background: rgba(255, 102, 171, 0.2);
+			border-radius: 10px;
+		}
 	}
 
 	.version-card {
@@ -149,39 +121,35 @@
 		align-items: center;
 		gap: 20px;
 		padding: 20px;
-		background: var(--glass-surface);
-		border: 1px solid var(--glass-border);
-		border-radius: 16px;
-		transition: all 0.2s;
+		background: var(--bg-surface);
+		border: 2px solid rgba(255, 255, 255, 0.05);
+		border-radius: var(--radius-lg);
+		transition: transform var(--transition-spring), border-color var(--transition-fast), box-shadow var(--transition-fast);
 
 		&:hover {
-			background: var(--glass-border-bright);
+			background: var(--bg-surface);
 			border-color: var(--accent-primary);
-			transform: translateX(4px);
+			transform: translateX(8px);
+			box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 		}
 
 		.icon {
 			font-size: 1.5rem;
-			background: var(--glass-surface);
-			border: 1px solid var(--glass-border);
+			background: var(--bg-base);
+			border: 2px solid rgba(255, 255, 255, 0.05);
 			width: 52px;
 			height: 52px;
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			border-radius: 12px;
-			box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+			border-radius: var(--radius-md);
 
 			.tool-icon {
 				width: 32px;
 				height: 32px;
 				opacity: 0.9;
 				object-fit: contain;
-				filter: brightness(0);
-
-				:global([data-theme="dark"]) & {
-					filter: brightness(0) invert(1);
-				}
+				filter: brightness(0) invert(1);
 			}
 		}
 
@@ -200,40 +168,59 @@
 
 		.path {
 			font-size: 0.8rem;
-			color: var(--text-dim);
+			color: var(--text-muted);
 			white-space: nowrap;
 			overflow: hidden;
 			text-overflow: ellipsis;
-			opacity: 0.8;
 		}
 
 		.type-badge {
 			font-size: 0.7rem;
 			padding: 6px 14px;
-			border-radius: 8px;
-			background: var(--glass-hover);
-			border: 1px solid var(--glass-border);
-			color: var(--text-muted);
-			font-weight: 800;
+			border-radius: var(--radius-sm);
+			background: var(--accent-primary);
+			border: none;
+			color: #ffffff;
+			font-weight: 900;
 			text-transform: uppercase;
 			letter-spacing: 1px;
 
 			&.steam {
-				background: rgba(14, 165, 233, 0.1);
-				color: #0284c7; /* Solid blue for readability in both modes */
-				border: 1px solid rgba(14, 165, 233, 0.3);
-
-				:global([data-theme="dark"]) & {
-					color: #38bdf8;
-					background: rgba(14, 165, 233, 0.2);
-				}
+				background: var(--accent-secondary);
+				color: #000000;
 			}
+		}
+	}
+
+	.btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 10px 20px;
+		border-radius: var(--radius-pill);
+		font-weight: 700;
+		font-size: 0.9rem;
+		cursor: pointer;
+		transition: transform var(--transition-spring), background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+		border: 2px solid rgba(255, 255, 255, 0.05);
+		background: var(--bg-surface);
+		color: var(--text-main);
+
+		&:hover {
+			background: var(--bg-elevated);
+			border-color: var(--accent-secondary);
+			transform: scale(1.05);
+		}
+
+		&:active {
+			transform: scale(0.95);
 		}
 	}
 
 	.loading {
 		text-align: center;
-		color: var(--text-dim);
+		color: var(--text-muted);
 		margin-top: 48px;
+		font-weight: 700;
 	}
 </style>

@@ -9,6 +9,7 @@
 	import EditLsfg from "./pages/EditLsfg.svelte";
 	import NotificationHost from "@components/shared/NotificationHost.svelte";
 	import { fade, fly } from "svelte/transition";
+	import { backOut } from "svelte/easing";
 	import {
 		GetInitialLauncherPath,
 		GetInitialGamePath,
@@ -23,9 +24,15 @@
 
 	let bgBase64 = "";
 	let transparency = 1.0;
+	let theme: "light" | "dark" = "dark";
+
+	$: bgColor = theme === "light"
+		? `rgba(240, 242, 251, ${transparency})`
+		: `rgba(16, 16, 28, ${transparency})`;
 
 	settingsStore.subscribe(async (val) => {
 		transparency = val.transparency;
+		theme = val.theme;
 		if (val.backgroundImagePath) {
 			try {
 				bgBase64 = await GetImageBase64(val.backgroundImagePath);
@@ -94,7 +101,7 @@
 	}
 </script>
 
-<main style="background-image: {bgBase64 ? `url(${bgBase64})` : 'none'}; background-size: cover; background-position: center; background-repeat: no-repeat;">
+<main style="background-image: {bgBase64 ? `url(${bgBase64})` : 'none'}; background-size: cover; background-position: center; background-repeat: no-repeat; background-color: {bgColor};">
 	<div class="app-layout" class:fullscreen={activePage === "editlsfg"}>
 		{#if activePage !== "editlsfg"}
 			<div class="navbar-container">
@@ -110,7 +117,7 @@
 			{#key activePage}
 				<div
 					class="page-wrapper"
-					in:fly={{ y: 10, duration: 300, delay: 150 }}
+					in:fly={{ y: 30, duration: 400, delay: 100, easing: backOut }}
 					out:fade={{ duration: 150 }}
 				>
 					{#if activePage === "home"}
@@ -145,7 +152,6 @@
 		position: relative;
 		height: 100vh;
 		width: 100vw;
-		background-color: var(--glass-bg);
 		color: var(--text-main);
 		user-select: none;
 		overflow: hidden; /* Prevent scrollbar flicker during transition */
@@ -168,20 +174,26 @@
 	}
 
 	.navbar-container {
-		order: 0 !important; /* Absolute first position */
-		width: 80px; /* Thinner sidebar area */
-		padding: 24px 0;
+		position: fixed;
+		left: 0;
+		top: 0;
+		width: 68px;
+		height: 100vh;
 		flex-shrink: 0;
 		display: flex;
 		flex-direction: column;
-		justify-content: center;
-		align-items: center;
-		z-index: 10;
+		justify-content: flex-start;
+		align-items: stretch;
+		z-index: 100;
 		background: transparent;
+		pointer-events: none;
+
+		:global(*) {
+			pointer-events: auto;
+		}
 	}
 
 	.content-container {
-		order: 1 !important; /* Absolute second position */
 		flex: 1;
 		min-width: 0;
 		height: 100%;
@@ -197,7 +209,7 @@
 		width: 100%;
 		height: 100%;
 		overflow-y: auto; /* Allow scrolling inside the page */
-		padding: 24px;
+		padding: 40px 48px 40px 84px; /* left padding offsets floating navbar */
 		box-sizing: border-box;
 	}
 

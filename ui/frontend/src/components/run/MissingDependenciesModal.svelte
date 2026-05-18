@@ -41,65 +41,78 @@
 		text-align: center;
 		.warning-icon {
 			font-size: 3rem;
-			margin-bottom: 16px;
+			margin-bottom: 20px;
 			display: flex;
 			justify-content: center;
 		}
 		p {
 			color: var(--text-main);
-			line-height: 1.5;
+			line-height: 1.6;
+			font-size: 1rem;
 		}
 		.missing-list {
-			margin: 16px 0;
+			margin: 20px 0;
 			display: flex;
 			flex-wrap: wrap;
 			justify-content: center;
 			gap: 12px;
 			.tool-tag {
-				background: rgba(239, 68, 68, 0.1);
-				color: #ef4444;
-				padding: 6px 16px;
-				border-radius: 20px;
+				background: var(--danger);
+				color: #ffffff;
+				padding: 8px 18px;
+				border-radius: var(--radius-pill);
 				font-size: 0.9rem;
-				border: 1px solid rgba(239, 68, 68, 0.2);
-				font-weight: bold;
+				font-weight: 800;
+				box-shadow: 0 4px 10px rgba(255, 74, 122, 0.2);
 			}
 		}
 		.question {
-			margin-top: 24px;
-			font-weight: 600;
+			margin-top: 28px;
+			font-weight: 800;
 			color: var(--accent-secondary);
+			text-transform: uppercase;
+			letter-spacing: 0.5px;
 		}
 	}
 	.modal-actions {
 		display: flex;
-		gap: 12px;
-		margin-top: 32px;
+		gap: 16px;
+		margin-top: 36px;
 		button {
 			flex: 1;
-			padding: 12px;
-			font-weight: 600;
-			border-radius: 10px;
+			padding: 14px 28px;
+			font-weight: 800;
+			border-radius: var(--radius-pill);
 			cursor: pointer;
-			transition: all 0.2s;
+			transition: transform var(--transition-spring), background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
 		}
 
 		.btn.primary {
 			background: var(--accent-primary);
-			color: var(--glass-bg);
+			color: #ffffff;
 			border: none;
+			box-shadow: 0 4px 12px var(--accent-glow);
 			&:hover {
-				filter: brightness(1.2);
+				background: var(--accent-hover);
+				transform: scale(1.05);
+			}
+			&:active {
+				transform: scale(0.95);
 			}
 		}
 
 		.btn.secondary {
-			background: var(--glass-surface);
+			background: var(--bg-surface);
 			color: var(--text-muted);
-			border: 1px solid var(--glass-border);
+			border: 2px solid rgba(255, 255, 255, 0.05);
 			&:hover {
-				background: var(--glass-border);
+				background: var(--bg-elevated);
 				color: var(--text-main);
+				border-color: var(--accent-secondary);
+				transform: scale(1.05);
+			}
+			&:active {
+				transform: scale(0.95);
 			}
 		}
 	}

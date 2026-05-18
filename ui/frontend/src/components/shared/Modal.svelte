@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { fade, scale } from "svelte/transition";
+	import { backOut } from "svelte/easing";
 
 	export let show = false;
 	export let title = "Settings";
@@ -26,15 +27,15 @@
 		class="modal-backdrop"
 		on:click={close}
 		on:keydown={(e) => e.key === "Escape" && close()}
-		transition:fade={{ duration: 200 }}
+		transition:fade={{ duration: 250 }}
 		role="presentation"
 	>
 		<div
-			class="modal-content glass {contentClass}"
+			class="modal-content {contentClass}"
 			class:fullscreen
 			on:click|stopPropagation
 			on:keydown|stopPropagation={handleKeydown}
-			transition:scale={{ duration: 200, start: 0.95 }}
+			transition:scale={{ duration: 400, start: 0.85, easing: backOut }}
 			role="dialog"
 			tabindex="0"
 			aria-modal="true"
@@ -72,7 +73,7 @@
 		left: 0;
 		width: 100%;
 		height: 100%;
-		background: rgba(0, 0, 0, 0.4);
+		background: rgba(8, 8, 14, 0.7);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -82,10 +83,10 @@
 	.modal-content {
 		width: 90%;
 		max-width: 600px;
-		background: var(--glass-bg);
-		border: 1px solid var(--glass-border);
-		border-radius: 16px;
-		box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+		background: var(--bg-surface);
+		border: 2px solid rgba(255, 255, 255, 0.05);
+		border-radius: var(--radius-lg);
+		box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 		display: flex;
 		flex-direction: column;
 		max-height: 90vh; /* Default max height */
@@ -97,13 +98,13 @@
 			max-height: none;
 			border-radius: 0;
 			border: none;
-			background: var(--glass-bg); /* Match app bg */
+			background: var(--bg-base);
 		}
 	}
 
 	.modal-header {
-		padding: 20px 32px;
-		border-bottom: 1px solid var(--glass-border);
+		padding: 24px 32px;
+		border-bottom: 2px solid rgba(255, 255, 255, 0.05);
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
@@ -112,26 +113,34 @@
 		h3 {
 			margin: 0;
 			font-size: 1.5rem;
+			font-weight: 800;
 			color: var(--text-main);
+			text-transform: uppercase;
+			letter-spacing: 1px;
 		}
 
 		.close-btn {
-			background: var(--glass-surface);
-			border: 1px solid var(--glass-border);
-			color: var(--text-dim);
-			width: 32px;
-			height: 32px;
-			border-radius: 10px;
+			background: var(--bg-base);
+			border: 2px solid rgba(255, 255, 255, 0.05);
+			color: var(--text-muted);
+			width: 36px;
+			height: 36px;
+			border-radius: var(--radius-pill);
 			display: flex;
 			align-items: center;
 			justify-content: center;
 			cursor: pointer;
-			transition: all 0.2s;
+			transition: transform var(--transition-spring), background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
 
 			&:hover {
 				color: var(--text-main);
-				background: var(--glass-border-bright);
+				background: var(--bg-elevated);
+				border-color: var(--accent-secondary);
 				transform: scale(1.1);
+			}
+
+			&:active {
+				transform: scale(0.9);
 			}
 		}
 	}
@@ -142,13 +151,46 @@
 		flex: 1; /* Take remaining space */
 		display: flex;
 		flex-direction: column;
+
+		&::-webkit-scrollbar {
+			width: 8px;
+		}
+		&::-webkit-scrollbar-track {
+			background: transparent;
+		}
+		&::-webkit-scrollbar-thumb {
+			background: rgba(255, 102, 171, 0.2);
+			border-radius: 10px;
+		}
 	}
 
 	.modal-footer {
-		padding: 20px 32px;
-		border-top: 1px solid var(--glass-border);
+		padding: 24px 32px;
+		border-top: 2px solid rgba(255, 255, 255, 0.05);
 		display: flex;
 		justify-content: flex-end;
 		flex-shrink: 0;
+
+		.btn.primary {
+			padding: 12px 24px;
+			border-radius: var(--radius-pill);
+			font-weight: 800;
+			font-size: 0.9rem;
+			background: var(--accent-primary);
+			color: #ffffff;
+			border: none;
+			cursor: pointer;
+			box-shadow: 0 4px 10px var(--accent-glow);
+			transition: transform var(--transition-spring), background var(--transition-fast);
+
+			&:hover {
+				background: var(--accent-hover);
+				transform: scale(1.05);
+			}
+
+			&:active {
+				transform: scale(0.95);
+			}
+		}
 	}
 </style>

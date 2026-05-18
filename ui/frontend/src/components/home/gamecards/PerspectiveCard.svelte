@@ -60,7 +60,7 @@
 		width: 220px;
 		height: 310px;
 		cursor: pointer;
-		transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+		transition: transform var(--transition-spring), filter var(--transition-fast);
 		position: relative;
 		perspective: 1000px;
 		flex-shrink: 0;
@@ -73,8 +73,8 @@
 			.card-inner {
 				box-shadow:
 					0 30px 60px rgba(0, 0, 0, 0.8),
-					0 0 20px rgba(255, 255, 255, 0.1);
-				border-color: rgba(255, 255, 255, 0.4);
+					0 0 24px var(--accent-glow);
+				border-color: var(--accent-primary);
 			}
 
 			.glow {
@@ -89,11 +89,11 @@
 
 		&.running {
 			.card-inner {
-				border-color: var(--success, #22c55e);
-				box-shadow: 0 0 30px rgba(34, 197, 94, 0.2);
+				border-color: var(--success, #44ffaa);
+				box-shadow: 0 0 30px rgba(68, 255, 170, 0.35);
 			}
 			.status {
-				color: var(--success, #22c55e);
+				color: var(--success, #44ffaa);
 			}
 		}
 	}
@@ -101,13 +101,13 @@
 	.card-inner {
 		width: 100%;
 		height: 100%;
-		background: var(--glass-surface);
-		border: 1px solid var(--glass-border);
-		border-radius: 20px;
+		background: var(--bg-surface);
+		border: 2px solid rgba(255, 255, 255, 0.05);
+		border-radius: var(--radius-lg);
 		overflow: hidden;
 		position: relative;
-		transition: all 0.4s;
-		box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+		transition: transform var(--transition-spring), border-color var(--transition-fast), box-shadow var(--transition-fast);
+		box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
 	}
 
 	.glow {
@@ -115,7 +115,7 @@
 		inset: 0;
 		background: radial-gradient(
 			circle at 50% 0%,
-			rgba(255, 255, 255, 0.2),
+			rgba(255, 102, 171, 0.2),
 			transparent
 		);
 		opacity: 0.2;
@@ -139,12 +139,12 @@
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			background: var(--glass-bg);
+			background: var(--bg-base);
 
 			.material-icons {
 				font-size: 48px;
-				opacity: 0.1;
-				color: var(--text-main);
+				opacity: 0.15;
+				color: var(--text-muted);
 			}
 		}
 	}
@@ -155,7 +155,7 @@
 		left: 0;
 		right: 0;
 		padding: 20px;
-		background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
+		background: linear-gradient(transparent, rgba(16, 16, 28, 0.95));
 		display: flex;
 		flex-direction: column;
 		gap: 4px;
@@ -166,8 +166,8 @@
 		.name {
 			font-weight: 800;
 			color: var(--text-main);
-			font-size: 1rem;
-			text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+			font-size: 1.05rem;
+			text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
 			white-space: nowrap;
 			overflow: hidden;
 			text-overflow: ellipsis;
@@ -181,19 +181,19 @@
 		}
 
 		.config-btn-small {
-			background: var(--glass-bg);
-			border: 1px solid var(--glass-border);
+			background: var(--bg-base);
+			border: 2px solid rgba(255, 255, 255, 0.05);
 			color: var(--text-main);
 			padding: 4px;
-			border-radius: 6px;
+			border-radius: var(--radius-pill);
 			cursor: pointer;
 			display: flex;
-			transition: all 0.2s;
+			transition: transform var(--transition-spring), background var(--transition-fast), border-color var(--transition-fast);
 
 			&:hover {
-				background: var(--glass-border-bright);
-				border-color: var(--accent-primary);
-				transform: rotate(45deg);
+				background: var(--bg-elevated);
+				border-color: var(--accent-secondary);
+				transform: rotate(90deg) scale(1.1);
 			}
 		}
 

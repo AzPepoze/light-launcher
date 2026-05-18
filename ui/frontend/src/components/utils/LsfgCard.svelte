@@ -74,17 +74,18 @@
 <style lang="scss">
 	.util-card {
 		padding: 24px;
-		border-radius: 20px;
-		border: 1px solid var(--glass-border);
-		background: var(--glass-surface);
+		border-radius: var(--radius-lg);
+		border: 2px solid rgba(255, 255, 255, 0.05);
+		background: var(--bg-surface);
 		display: flex;
 		flex-direction: column;
 		gap: 20px;
-		transition: all 0.2s;
+		transition: transform var(--transition-spring), border-color var(--transition-fast), box-shadow var(--transition-fast);
 
 		&:hover {
-			background: var(--glass-border-bright);
-			border-color: var(--glass-border-bright);
+			border-color: var(--accent-primary);
+			transform: scale(1.01);
+			box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 		}
 	}
 
@@ -96,9 +97,9 @@
 		.icon-bg {
 			width: 56px;
 			height: 56px;
-			background: var(--glass-bg);
-			border: 1px solid var(--glass-border);
-			border-radius: 14px;
+			background: var(--bg-base);
+			border: 2px solid rgba(255, 255, 255, 0.05);
+			border-radius: var(--radius-md);
 			display: flex;
 			align-items: center;
 			justify-content: center;
@@ -107,46 +108,48 @@
 			.lsfg-logo {
 				width: 32px;
 				height: 32px;
-				color: var(--accent-primary);
 				opacity: 0.9;
 				object-fit: contain;
-				filter: saturate(0) brightness(2);
+				filter: brightness(0) invert(1);
 			}
 		}
 
 		.title-area {
 			display: flex;
 			flex-direction: column;
-			gap: 4px;
+			gap: 6px;
 
 			h3 {
 				margin: 0;
 				font-size: 1.25rem;
-				font-weight: 700;
+				font-weight: 800;
+				text-transform: uppercase;
+				letter-spacing: 0.5px;
 			}
 		}
 	}
 
 	.badge {
 		display: inline-block;
-		padding: 2px 10px;
-		border-radius: 20px;
+		padding: 4px 10px;
+		border-radius: var(--radius-pill);
 		font-size: 0.7rem;
-		font-weight: 700;
+		font-weight: 900;
 		text-transform: uppercase;
-		background: var(--glass-high-alpha);
+		background: var(--bg-elevated);
 		color: var(--text-muted);
+		width: max-content;
 
 		&.installed {
-			background: rgba(16, 185, 129, 0.2);
-			color: #10b981;
+			background: var(--accent-secondary);
+			color: #000000;
 		}
 	}
 
 	.description {
 		font-size: 0.9rem;
 		color: var(--text-muted);
-		line-height: 1.5;
+		line-height: 1.6;
 		margin: 0;
 		flex: 1;
 		display: flex;
@@ -158,13 +161,14 @@
 		}
 		strong {
 			color: var(--text-main);
+			font-weight: 800;
 		}
 		.note {
 			font-size: 0.8rem;
-			color: var(--accent-secondary);
+			color: var(--accent-primary);
 			font-style: italic;
-			padding-top: 8px;
-			border-top: 1px solid var(--glass-border);
+			padding-top: 12px;
+			border-top: 2px solid rgba(255, 255, 255, 0.05);
 		}
 	}
 
@@ -179,16 +183,16 @@
 		flex-direction: column;
 		gap: 8px;
 		padding: 16px;
-		background: var(--glass-bg);
-		border-radius: 12px;
-		border: 1px solid var(--glass-border);
+		background: var(--bg-base);
+		border-radius: var(--radius-md);
+		border: 2px solid rgba(255, 255, 255, 0.05);
 	}
 
 	.progress-header {
 		display: flex;
 		justify-content: space-between;
 		font-size: 0.85rem;
-		font-weight: 600;
+		font-weight: 800;
 
 		.msg {
 			color: var(--text-muted);
@@ -200,27 +204,59 @@
 
 	.progress-bar-container {
 		height: 8px;
-		background: var(--glass-low-alpha);
-		border-radius: 10px;
+		background: var(--bg-input);
+		border-radius: var(--radius-pill);
 		overflow: hidden;
-		border: 1px solid var(--glass-border);
 	}
 
 	.progress-fill {
 		height: 100%;
 		background: var(--accent-primary);
 		transition: width 0.3s ease;
-		box-shadow: 0 0 10px var(--glass-border-bright);
+		box-shadow: 0 0 10px var(--accent-primary);
 	}
 
 	.action-area {
 		margin-top: 8px;
 
-		button {
+		.btn {
 			width: 100%;
-			padding: 12px;
-			font-weight: 600;
-			letter-spacing: 0.5px;
+			padding: 12px 24px;
+			border-radius: var(--radius-pill);
+			font-weight: 800;
+			cursor: pointer;
+			transition: transform var(--transition-spring), background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+
+			&.primary {
+				background: var(--accent-primary);
+				color: #ffffff;
+				border: none;
+				box-shadow: 0 4px 12px var(--accent-glow);
+
+				&:hover {
+					background: var(--accent-hover);
+					transform: scale(1.03);
+				}
+
+				&:active {
+					transform: scale(0.97);
+				}
+			}
+
+			&.danger {
+				background: var(--danger);
+				color: #ffffff;
+				border: none;
+
+				&:hover {
+					background: #ff2e63;
+					transform: scale(1.03);
+				}
+
+				&:active {
+					transform: scale(0.97);
+				}
+			}
 		}
 	}
 </style>

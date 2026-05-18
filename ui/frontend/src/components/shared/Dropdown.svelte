@@ -72,70 +72,91 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding: 12px 16px;
+		padding: 12px 20px;
 		font-family: inherit;
 		font-size: 0.9rem;
+		font-weight: 700;
 		color: var(--text-main);
 		cursor: pointer;
 		text-align: left;
-		background: var(--solid-surface);
-		border: 1px solid var(--glass-border);
-		border-radius: 10px;
-		transition: all 0.2s;
+		background: var(--bg-input);
+		border: 2px solid transparent;
+		border-radius: var(--radius-pill);
+		transition: border-color var(--transition-fast), transform var(--transition-spring);
 
 		&:hover,
 		&.open {
-			border-color: var(--accent-secondary);
+			border-color: var(--accent-primary);
+			transform: scale(1.005);
 		}
 	}
 
 	.arrow {
-		font-size: 0.6rem;
-		color: var(--text-dim);
-		transition: transform 0.2s;
+		font-size: 1.2rem;
+		color: var(--text-muted);
+		transition: transform var(--transition-spring);
 	}
 
 	.open .arrow {
 		transform: rotate(180deg);
+		color: var(--accent-primary);
 	}
 
 	.dropdown-menu {
 		position: absolute;
-		top: calc(100% + 6px);
+		top: calc(100% + 8px);
 		left: 0;
 		width: 100%;
 		max-height: 220px;
 		overflow-y: auto;
 		z-index: 100;
-		background: var(--solid-surface);
-		border: 1px solid var(--glass-border-bright);
-		border-radius: 12px;
-		box-shadow: var(--glass-shadow);
-		padding: 6px;
+		background: var(--bg-surface);
+		border: 2px solid rgba(255, 255, 255, 0.05);
+		border-radius: var(--radius-md);
+		box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+		padding: 8px;
+		box-sizing: border-box;
+
+		&::-webkit-scrollbar {
+			width: 6px;
+		}
+		&::-webkit-scrollbar-track {
+			background: transparent;
+		}
+		&::-webkit-scrollbar-thumb {
+			background: rgba(255, 102, 171, 0.2);
+			border-radius: 10px;
+		}
 	}
 
 	.dropdown-item {
 		width: 100%;
 		text-align: left;
-		padding: 10px 14px;
+		padding: 10px 16px;
 		background: transparent;
 		border: none;
 		color: var(--text-muted);
 		font-family: inherit;
 		font-size: 0.85rem;
-		border-radius: 8px;
+		font-weight: 700;
+		border-radius: var(--radius-pill);
 		cursor: pointer;
-		transition: all 0.2s ease-out;
+		transition: background var(--transition-fast), color var(--transition-fast);
+		margin-bottom: 2px;
+
+		&:last-child {
+			margin-bottom: 0;
+		}
 
 		&:hover {
-			background: var(--glass-hover);
+			background: var(--bg-elevated);
 			color: var(--text-main);
 		}
 
 		&.selected {
 			background: var(--accent-primary);
-			color: var(--glass-bg);
-			font-weight: 700;
+			color: #ffffff;
+			font-weight: 800;
 		}
 	}
 </style>

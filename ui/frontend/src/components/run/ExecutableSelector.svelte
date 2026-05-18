@@ -196,90 +196,71 @@
 	.exe-selector {
 		display: flex;
 		flex-direction: column;
-		gap: 12px;
-		margin-bottom: 16px;
+		gap: 18px;
+		margin-bottom: 24px;
 	}
 
 	.launcher-exe-section,
 	.game-exe-section {
-		padding: 16px;
-		background: var(--glass-surface);
-		border-radius: 10px;
-		border: 1px solid var(--glass-border);
+		padding: 20px;
+		background: var(--bg-surface);
+		border-radius: var(--radius-lg);
+		border: 2px solid rgba(255, 255, 255, 0.05);
 	}
 
 	.launcher-exe-section {
-		padding: 20px 16px;
-		background: var(--glass-surface);
-		border-radius: 10px;
-		border: 1px solid rgba(96, 165, 250, 0.3);
+		border: 2px solid rgba(255, 102, 171, 0.2);
 	}
 
 	.game-exe-section {
-		padding: 16px;
-		background: var(--glass-surface);
-		border-radius: 10px;
-		border: 1px solid rgba(192, 132, 252, 0.3);
+		border: 2px solid rgba(0, 240, 255, 0.2);
 	}
 
 	label {
 		display: flex;
 		align-items: center;
-		font-size: 0.875rem;
-		font-weight: 700;
-		color: var(--text-muted);
-		margin-bottom: 12px;
+		font-size: 0.9rem;
+		font-weight: 800;
+		text-transform: uppercase;
+		letter-spacing: 1px;
+		margin-bottom: 14px;
 	}
 
 	.launcher-exe-section label {
-		color: #2563eb; /* Darker blue for light mode */
-		:global([data-theme="dark"]) & {
-			color: #60a5fa;
-		}
+		color: var(--accent-primary);
 	}
 
 	.game-exe-section label {
-		color: #9333ea; /* Darker purple for light mode */
-		:global([data-theme="dark"]) & {
-			color: #c084fc;
-		}
+		color: var(--accent-secondary);
 	}
 
 	.required-tag {
-		font-size: 0.75rem;
-		padding: 4px 10px;
-		border-radius: 4px;
-		margin-left: 8px;
+		font-size: 0.7rem;
+		padding: 4px 8px;
+		border-radius: var(--radius-sm);
+		margin-left: 10px;
 		text-transform: uppercase;
 		font-weight: 900;
-		background: rgba(37, 99, 235, 0.1);
-		color: #2563eb;
-		:global([data-theme="dark"]) & {
-			background: rgba(96, 165, 250, 0.25);
-			color: #60a5fa;
-		}
+		background: var(--accent-primary);
+		color: #ffffff;
 	}
 
 	.optional-tag {
-		font-size: 0.75rem;
-		padding: 4px 10px;
-		border-radius: 4px;
-		margin-left: 8px;
+		font-size: 0.7rem;
+		padding: 4px 8px;
+		border-radius: var(--radius-sm);
+		margin-left: 10px;
 		text-transform: uppercase;
 		font-weight: 900;
-		background: rgba(147, 51, 234, 0.1);
-		color: #9333ea;
-		:global([data-theme="dark"]) & {
-			background: rgba(192, 132, 252, 0.25);
-			color: #c084fc;
-		}
+		background: var(--accent-secondary);
+		color: #000000;
 	}
 
 	.launcher-exe-wrapper,
 	.game-exe-wrapper {
 		display: flex;
-		gap: 12px;
-		align-items: flex-start;
+		gap: 16px;
+		align-items: center;
 	}
 
 	.exe-icon-display {
@@ -289,19 +270,22 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		border-radius: 8px;
-		background: var(--glass-bg);
-		border: 1px solid var(--glass-border);
+		border-radius: var(--radius-md);
+		background: var(--bg-base);
+		border: 2px solid rgba(255, 255, 255, 0.05);
 		overflow: hidden;
+		transition: transform var(--transition-spring), border-color var(--transition-fast);
+
+		&:hover {
+			transform: scale(1.1);
+		}
 
 		&.launcher-icon {
-			background: rgba(59, 130, 246, 0.12);
-			border-color: rgba(59, 130, 246, 0.3);
+			border-color: rgba(255, 102, 171, 0.3);
 		}
 
 		&.game-icon {
-			background: rgba(168, 85, 247, 0.12);
-			border-color: rgba(168, 85, 247, 0.3);
+			border-color: rgba(0, 240, 255, 0.3);
 		}
 	}
 
@@ -315,7 +299,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		color: var(--text-dim);
+		color: var(--text-muted);
 		width: 100%;
 		height: 100%;
 	}
@@ -324,65 +308,83 @@
 	.game-input-group {
 		flex: 1;
 		display: flex;
-		gap: 10px;
+		gap: 12px;
 	}
 
 	.input {
 		flex: 1;
-		padding: 10px 12px;
-		background: var(--glass-bg);
-		border: 1px solid var(--glass-border);
-		border-radius: 6px;
+		padding: 12px 16px;
+		background: var(--bg-input);
+		border: 2px solid transparent;
+		border-radius: var(--radius-md);
 		color: var(--text-main);
-		font-size: 0.875rem;
+		font-size: 0.95rem;
+		font-weight: 600;
 		font-family: inherit;
+		outline: none;
+		transition: border-color var(--transition-fast), transform var(--transition-fast);
 
 		&::placeholder {
 			color: var(--text-dim);
 		}
 
 		&:focus {
-			outline: none;
-			border-color: var(--accent-primary);
-			background: var(--glass-surface);
-			box-shadow: 0 0 0 2px var(--glass-low-alpha);
+			transform: scale(1.005);
 		}
+	}
+
+	.launcher-exe-section .input:focus {
+		border-color: var(--accent-primary);
+	}
+
+	.game-exe-section .input:focus {
+		border-color: var(--accent-secondary);
 	}
 
 	.btn {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		padding: 8px 16px;
-		border-radius: 6px;
-		font-weight: 800;
-		font-size: 0.8rem;
+		padding: 12px 24px;
+		border-radius: var(--radius-pill);
+		font-weight: 700;
+		font-size: 0.9rem;
 		cursor: pointer;
-		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-		border: 1px solid var(--glass-border);
-		background: var(--glass-hover);
+		transition: transform var(--transition-spring), background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+		border: 2px solid rgba(255, 255, 255, 0.05);
+		background: var(--bg-surface);
 		color: var(--text-main);
 		white-space: nowrap;
 
 		&:hover {
-			background: var(--glass-border);
-			border-color: var(--glass-border-bright);
+			background: var(--bg-elevated);
+			transform: scale(1.05);
 		}
+
+		&:active {
+			transform: scale(0.95);
+		}
+	}
+
+	.launcher-exe-section .btn:hover {
+		border-color: var(--accent-primary);
+	}
+
+	.game-exe-section .btn:hover {
+		border-color: var(--accent-secondary);
 	}
 
 	.exe-note {
 		font-size: 0.85rem;
-		font-weight: 600;
-		color: var(--text-dim);
-		margin-top: 10px;
-		font-style: italic;
+		font-weight: 700;
+		margin-top: 12px;
 	}
 
 	.launcher-note {
-		color: rgba(96, 165, 250, 0.9);
+		color: var(--text-muted);
 	}
 
 	.game-note {
-		color: rgba(192, 132, 252, 0.9);
+		color: var(--text-muted);
 	}
 </style>

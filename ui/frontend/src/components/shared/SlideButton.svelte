@@ -61,16 +61,16 @@
 		justify-content: space-between;
 		gap: 16px;
 		padding: 16px 20px;
-		background: var(--glass-surface);
-		border: 1px solid var(--glass-border);
-		border-radius: 12px;
+		background: var(--bg-surface);
+		border: 2px solid rgba(255, 255, 255, 0.05);
+		border-radius: var(--radius-md);
 		cursor: pointer;
-		transition: all 0.2s;
+		transition: transform var(--transition-spring), border-color var(--transition-fast), background var(--transition-fast);
 		user-select: none;
 
 		&:hover {
-			background: var(--glass-border-bright);
-			border-color: var(--accent-primary);
+			border-color: var(--accent-secondary);
+			transform: scale(1.02);
 
 			.config-btn {
 				opacity: 1;
@@ -79,7 +79,7 @@
 
 		&.active {
 			border-color: var(--accent-primary);
-			background: var(--glass-surface);
+			background: var(--bg-elevated);
 		}
 	}
 
@@ -94,25 +94,25 @@
 		border: none;
 		color: var(--text-muted);
 		padding: 6px;
-		border-radius: 6px;
+		border-radius: var(--radius-sm);
 		cursor: pointer;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		opacity: 0.8;
-		transition: all 0.2s;
+		transition: transform var(--transition-spring), color var(--transition-fast), opacity var(--transition-fast);
 
 		&:hover {
-			background: var(--glass-hover);
-			color: var(--text-main);
+			color: var(--accent-primary);
 			opacity: 1;
+			transform: rotate(45deg);
 		}
 	}
 
 	.switch-container {
 		position: relative;
-		width: 38px;
-		height: 20px;
+		width: 44px;
+		height: 24px;
 		flex-shrink: 0;
 
 		input {
@@ -125,8 +125,8 @@
 			}
 
 			&:checked + .slider:before {
-				transform: translateX(18px);
-				background-color: var(--glass-bg);
+				transform: translateX(20px);
+				background-color: #ffffff;
 			}
 		}
 	}
@@ -138,10 +138,10 @@
 		left: 0;
 		right: 0;
 		bottom: 0;
-		background-color: var(--glass-bg);
-		border: 1px solid var(--glass-border);
-		transition: 0.3s;
-		border-radius: 34px;
+		background-color: var(--bg-input);
+		border: 2px solid rgba(255, 255, 255, 0.03);
+		transition: background-color var(--transition-fast);
+		border-radius: var(--radius-pill);
 
 		&:before {
 			position: absolute;
@@ -150,22 +150,25 @@
 			width: 14px;
 			left: 3px;
 			bottom: 3px;
-			background-color: var(--text-dim);
-			transition: 0.3s;
+			background-color: var(--text-muted);
+			transition: transform var(--transition-spring), background-color var(--transition-fast);
 			border-radius: 50%;
 		}
 	}
 
 	.info {
 		.title {
-			font-weight: 600;
+			font-weight: 800;
 			color: var(--text-main);
-			font-size: 0.9rem;
+			text-transform: uppercase;
+			font-size: 0.85rem;
+			letter-spacing: 0.5px;
 		}
 		.subtitle {
-			font-size: 0.7rem;
-			color: var(--text-dim);
-			margin-top: 2px;
+			font-size: 0.75rem;
+			font-weight: 600;
+			color: var(--text-muted);
+			margin-top: 4px;
 		}
 	}
 </style>

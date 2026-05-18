@@ -90,46 +90,47 @@
 	.list-card {
 		display: flex;
 		align-items: center;
-		background: var(--glass-surface);
-		border: 1px solid var(--glass-border);
+		background: var(--bg-surface);
+		border: 2px solid rgba(255, 255, 255, 0.05);
 		border-radius: var(--radius-lg);
-		padding: 12px 20px;
+		padding: 14px 24px;
 		gap: 20px;
 		cursor: pointer;
-		transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+		transition: transform var(--transition-spring), background var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
 		max-width: 100%;
 
 		&:hover {
-			background: var(--glass-border-bright);
-			border-color: var(--glass-border-bright);
-			transform: translateX(8px);
+			border-color: var(--accent-primary);
+			transform: translateX(10px) scale(1.01);
+			box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 
 			.game-icon {
 				transform: scale(1.1);
 			}
 
 			.play .material-icons {
-				transform: scale(1.2);
+				transform: scale(1.15);
 			}
 		}
 
+		&:active {
+			transform: scale(0.995) translateX(5px);
+		}
+
 		&.running {
-			border-color: var(--success, #22c55e);
-			background: linear-gradient(
-				90deg,
-				rgba(34, 197, 94, 0.1) 0%,
-				rgba(34, 197, 94, 0.02) 100%
-			);
+			border-color: var(--success, #44ffaa);
+			background: var(--bg-surface);
+			box-shadow: 0 0 16px rgba(68, 255, 170, 0.15);
 		}
 
 		&.selected {
 			border-color: var(--accent-primary);
-			background: rgba(var(--accent-primary-rgb, 255, 255, 255), 0.05);
+			background: var(--bg-elevated);
 
 			.checkbox {
 				background: var(--accent-primary) !important;
 				border-color: var(--accent-primary) !important;
-				color: #000;
+				color: #ffffff;
 			}
 		}
 	}
@@ -140,13 +141,13 @@
 		.checkbox {
 			width: 24px;
 			height: 24px;
-			border: 2px solid var(--glass-border);
+			border: 2px solid rgba(255, 255, 255, 0.15);
 			border-radius: var(--radius-sm);
-			background: var(--glass-bg);
+			background: var(--bg-base);
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			transition: all 0.2s;
+			transition: all var(--transition-fast);
 			color: transparent;
 		}
 	}
@@ -158,14 +159,14 @@
 		overflow: hidden;
 		position: relative;
 		flex-shrink: 0;
-		background: var(--glass-bg);
-		border: 1px solid var(--glass-border);
+		background: var(--bg-base);
+		border: 2px solid rgba(255, 255, 255, 0.05);
 
 		.game-icon {
 			width: 100%;
 			height: 100%;
 			object-fit: cover;
-			transition: transform 0.4s;
+			transition: transform 0.4s var(--ease-spring);
 		}
 
 		.fallback-wrapper {
@@ -183,9 +184,9 @@
 			right: 4px;
 			width: 8px;
 			height: 8px;
-			background: var(--success, #22c55e);
+			background: var(--success, #44ffaa);
 			border-radius: var(--radius-xl);
-			box-shadow: 0 0 8px var(--success, #22c55e);
+			box-shadow: 0 0 8px var(--success, #44ffaa);
 
 			.pulse {
 				position: absolute;
@@ -208,21 +209,22 @@
 	.info {
 		display: flex;
 		flex-direction: column;
-		gap: 2px;
+		gap: 4px;
 		min-width: 0;
 
 		.game-name {
-			font-weight: 700;
+			font-weight: 800;
 			color: var(--text-main);
-			font-size: 1.1rem;
+			font-size: 1.15rem;
 			white-space: nowrap;
 			overflow: hidden;
 			text-overflow: ellipsis;
+			letter-spacing: -0.3px;
 		}
 
 		.game-path {
 			font-size: 0.8rem;
-			color: var(--text-dim);
+			color: var(--text-muted);
 			white-space: nowrap;
 			overflow: hidden;
 			text-overflow: ellipsis;
@@ -232,25 +234,43 @@
 
 	.actions {
 		display: flex;
-		gap: 8px;
+		gap: 10px;
 	}
+
 	.action-btn {
+		background: var(--bg-elevated);
+		border: 2px solid rgba(255, 255, 255, 0.05);
+		color: var(--text-main);
+		padding: 10px;
+		border-radius: var(--radius-pill);
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: transform var(--transition-spring), background var(--transition-fast), border-color var(--transition-fast);
+
 		.material-icons {
 			font-size: 20px;
-			transition: transform 0.2s;
 			display: flex;
 			align-items: center;
 			justify-content: center;
 		}
 
 		&:hover {
-			background: var(--glass-border-bright);
-			border-color: var(--glass-border-bright);
+			background: var(--bg-surface);
+			border-color: var(--accent-secondary);
+			transform: scale(1.15);
+		}
+
+		&:active {
+			transform: scale(0.9);
 		}
 
 		&.play:hover {
-			background: var(--success, #22c55e);
-			border-color: transparent;
+			background: var(--accent-primary);
+			border-color: var(--accent-primary);
+			color: #ffffff;
+			box-shadow: 0 4px 10px var(--accent-glow);
 		}
 	}
 

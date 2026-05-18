@@ -59,36 +59,37 @@
 	.numeric-input-container {
 		display: flex;
 		flex-direction: column;
-		gap: 8px;
+		gap: 10px;
 
 		label {
-			font-size: 0.75rem;
-			font-weight: 600;
-			color: var(--text-dim);
+			font-size: 0.85rem;
+			font-weight: 800;
+			color: var(--accent-primary);
 			text-transform: uppercase;
-			letter-spacing: 0.5px;
+			letter-spacing: 1px;
 		}
 	}
 
 	.input-wrapper {
 		display: flex;
 		align-items: center;
-		gap: 8px;
+		gap: 12px;
 
 		.input {
 			max-width: 140px;
-			padding: 8px 12px;
-			background: var(--glass-surface);
-			border: 1px solid var(--glass-border);
-			border-radius: 6px;
+			padding: 10px 16px;
+			background: var(--bg-input);
+			border: 2px solid transparent;
+			border-radius: var(--radius-md);
 			color: var(--text-main);
 			font-size: 0.95rem;
-			font-weight: 600;
+			font-weight: 700;
+			outline: none;
+			transition: border-color var(--transition-fast), transform var(--transition-fast);
 
 			&:focus {
-				outline: none;
 				border-color: var(--accent-primary);
-				box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+				transform: scale(1.005);
 			}
 
 			/* Remove number input spinner */
@@ -100,9 +101,10 @@
 		}
 
 		.range-hint {
-			font-size: 0.7rem;
-			color: var(--text-dim);
-			opacity: 0.7;
+			font-size: 0.75rem;
+			font-weight: 700;
+			text-transform: uppercase;
+			color: var(--text-muted);
 		}
 	}
 </style>
