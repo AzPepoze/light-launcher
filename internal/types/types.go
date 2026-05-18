@@ -37,10 +37,11 @@ type LaunchOptions struct {
 	LauncherPath string       `json:"LauncherPath"`
 	GamePath     string       `json:"GamePath"`
 	UseGamePath  bool         `json:"UseGamePath"`
-	PrefixPath   string       `json:"PrefixPath"`
-	ProtonPath   string       `json:"ProtonPath"`
-	CustomArgs   string       `json:"CustomArgs"`
-	Extras       ExtrasConfig `json:"Extras"`
+	PrefixPath      string       `json:"PrefixPath"`
+	ProtonPath      string       `json:"ProtonPath"`
+	UseCustomProton bool         `json:"UseCustomProton"`
+	CustomArgs      string       `json:"CustomArgs"`
+	Extras          ExtrasConfig `json:"Extras"`
 }
 
 type SystemToolsStatus struct {

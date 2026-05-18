@@ -60,6 +60,11 @@ func (app *App) RunGame(options types.LaunchOptions, showLogs bool) error {
 		return fmt.Errorf("instance manager not found")
 	}
 
+	protonTools, _ := system.GetProtonTools()
+	if match := app.findProtonMatch(options.ProtonPath, protonTools); match != nil {
+		options.ProtonPath = match.Path
+	}
+
 	arguments := buildInstanceManagerArgs(options, showLogs)
 	command := exec.Command(instanceManagerPath, arguments...)
 	if err := command.Start(); err != nil {

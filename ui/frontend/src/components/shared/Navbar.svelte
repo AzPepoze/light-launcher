@@ -3,7 +3,6 @@
 
 	export let activePage: string = "home";
 	export let onNavigate: (page: string) => void = () => {};
-	export let toggleTheme: () => void = () => {};
 
 	const navItems = [
 		{ id: "home", label: "Home", icon: "home" },
@@ -114,7 +113,10 @@
 		background: var(--accent-primary);
 		box-shadow: 0 0 12px var(--accent-glow);
 		opacity: 0;
-		transition: top 400ms var(--ease-spring), height 300ms var(--ease-out), opacity 200ms ease;
+		transition:
+			top 400ms var(--ease-spring),
+			height 300ms var(--ease-out),
+			opacity 200ms ease;
 		z-index: 2;
 	}
 
@@ -129,7 +131,9 @@
 		color: var(--text-muted);
 		cursor: pointer;
 		border-radius: var(--radius-md);
-		transition: transform var(--transition-spring), color var(--transition-fast);
+		transition:
+			transform var(--transition-spring),
+			color var(--transition-fast);
 		outline: none;
 		position: relative;
 		z-index: 3;
@@ -137,7 +141,9 @@
 		.icon {
 			font-size: 22px;
 			color: inherit;
-			transition: color var(--transition-fast), transform var(--transition-spring);
+			transition:
+				color var(--transition-fast),
+				transform var(--transition-spring);
 		}
 
 		&:hover {

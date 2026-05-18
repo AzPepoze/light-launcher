@@ -10,16 +10,20 @@
 	import Dropdown from "@components/shared/Dropdown.svelte";
 	import PageHeader from "@components/shared/PageHeader.svelte";
 	import { createLaunchOptions } from "@lib/formService";
+	import { createLogger } from "@lib/logger";
 	import * as service from "@lib/prefixService";
 	import { onMount } from "svelte";
+
+	const log = createLogger("Prefix");
 
 	// State
 	let availablePrefixes: string[] = [];
 	let baseDir = "";
 	let prefixPath = "";
-	let selectedProton = "";
+	let chosenProton: core.ProtonTool | null = null; // The actual ProtonTool object
+	let chosenProtonName = ""; // Display name for dropdown
 	let protonVersions: core.ProtonTool[] = [];
-	let protonOptions: string[] = [];
+	let protonDisplayNames: string[] = []; // Display names for dropdown
 	let systemStatus: core.SystemToolsStatus | null = null;
 	let newPrefixName = "";
 	let isLoading = false;
@@ -28,6 +32,13 @@
 
 	// Config
 	let prefixOptions: core.LaunchOptions = createLaunchOptions();
+
+	// Reactively sync DisplayName changes to ProtonTool object
+	$: if (chosenProtonName) {
+		chosenProton =
+			protonVersions.find((t) => t.DisplayName === chosenProtonName) ||
+			null;
+	}
 
 	async function refreshPrefixes(autoSelect = true) {
 		const data = await service.getPrefixData();
@@ -44,48 +55,72 @@
 	}
 
 	onMount(async () => {
+		log.info("onMount starting");
 		try {
 			const [tools, status] = await Promise.all([
 				ScanProtonVersions(),
 				GetSystemToolsStatus(),
 			]);
+			log.debug("Scanned proton versions", {
+				count: tools.length,
+				tools,
+			});
+			log.debug("System status", status);
 			systemStatus = status;
 			protonVersions = tools;
-			protonOptions = protonVersions.map((t) => t.DisplayName);
+			protonDisplayNames = protonVersions.map((t) => t.DisplayName);
+			log.debug("Available proton displays", protonDisplayNames);
 			// Don't set default selectedProton here - let it be set when prefix is loaded
 			await refreshPrefixes();
 		} catch (err) {
-			console.error(err);
+			log.error("onMount error", err);
 		}
 	});
 
 	async function selectPrefix(name: string) {
+		log.info("selectPrefix called", { name });
 		const result = await service.getPrefixConfig(name, baseDir);
+		log.debug("getPrefixConfig result", result);
 		prefixPath = result.path;
 		if (result.options) {
 			prefixOptions = { ...prefixOptions, ...result.options };
+			log.debug("Loaded proton name", result.selectedProton);
 			if (result.selectedProton) {
-				selectedProton = result.selectedProton;
-			} else if (protonOptions.length > 0) {
-				// Fallback to first proton option if none saved
-				selectedProton = protonOptions[0];
+				// Set the DisplayName so it syncs to ProtonTool object via reactive statement
+				chosenProtonName = result.selectedProton;
+				log.info("Set chosenProtonName", { chosenProtonName });
+			} else if (protonVersions.length > 0) {
+				// Fallback to first proton if none saved
+				chosenProtonName = protonVersions[0].DisplayName;
+				log.info("No saved proton, using first", {
+					chosenProtonName,
+				});
 			}
 		} else {
 			prefixOptions = createLaunchOptions();
 			// Ensure a proton is selected when creating new prefix
-			if (protonOptions.length > 0 && !selectedProton) {
-				selectedProton = protonOptions[0];
+			if (protonVersions.length > 0 && !chosenProton) {
+				chosenProtonName = protonVersions[0].DisplayName;
+				log.info("New prefix, setting first proton", {
+					chosenProtonName,
+				});
 			}
 		}
 	}
 
 	async function handleSaveConfig() {
+		log.info("handleSaveConfig called");
+		log.debug("Current state", {
+			chosenProton,
+			chosenProtonName,
+			protonPath: prefixOptions.ProtonPath,
+		});
 		await service.savePrefixDefaults(
 			prefixPath,
 			prefixOptions,
-			selectedProton,
-			protonVersions,
+			chosenProton,
 		);
+		log.info("Config saved successfully");
 	}
 
 	async function handleBrowse() {
@@ -93,7 +128,7 @@
 			const path = await PickFolder();
 			if (path) prefixPath = path;
 		} catch (err) {
-			console.error(err);
+			log.error("Browse folder error", err);
 		}
 	}
 
@@ -126,8 +161,7 @@
 			await service.executePrefixTool(
 				prefixPath,
 				tool,
-				selectedProton,
-				protonVersions,
+				chosenProton?.Path || "",
 			);
 		} catch (err) {
 			// Error handled in service via notification
@@ -199,7 +233,6 @@
 							}
 						}}
 						class="create-input"
-						autofocus
 					/>
 					<button
 						class="create-confirm"
@@ -239,7 +272,10 @@
 			<span>Runtime</span>
 		</div>
 		<div class="runtime-dropdown">
-			<Dropdown options={protonOptions} bind:value={selectedProton} />
+			<Dropdown
+				options={protonDisplayNames}
+				bind:value={chosenProtonName}
+			/>
 		</div>
 	</div>
 

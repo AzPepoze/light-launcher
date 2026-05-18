@@ -9,6 +9,9 @@ import {
 } from "@bindings/light-launcher/internal/app/app";
 import * as core from "@bindings/light-launcher/internal/types/models";
 import { notifications } from "@stores/notificationStore";
+import { createLogger } from "./logger";
+
+const log = createLogger("prefixService");
 
 export interface PrefixData {
 	availablePrefixes: string[];
@@ -24,12 +27,16 @@ export async function getPrefixData(): Promise<PrefixData> {
 			ListPrefixes(),
 			GetPrefixBaseDir(),
 		]);
+		log.debug("Fetched prefix data", {
+			count: list?.length || 0,
+			baseDir: base,
+		});
 		return {
 			availablePrefixes: Array.isArray(list) ? list : [],
 			baseDir: base || "",
 		};
 	} catch (err) {
-		console.error("Failed to fetch prefix data:", err);
+		log.error("Failed to fetch prefix data", err);
 		return { availablePrefixes: [], baseDir: "" };
 	}
 }
@@ -48,16 +55,24 @@ export async function getPrefixConfig(
 }> {
 	const path = `${baseDir}/${name}`;
 	try {
+		log.info("getPrefixConfig for prefix", { name });
 		const result = await LoadPrefixConfigWithProton(name);
-		if (!result) return { path, options: null, selectedProton: "" };
+		log.debug("Backend returned config", result);
+		if (!result) {
+			log.info("No config found");
+			return { path, options: null, selectedProton: "" };
+		}
 
+		log.info("Returning config with proton", {
+			proton: result.protonDisplayName,
+		});
 		return {
 			path,
 			options: result.config,
 			selectedProton: result.protonDisplayName,
 		};
 	} catch (e) {
-		console.error(`Failed to load config for prefix ${name}:`, e);
+		log.error("Failed to load config", { prefix: name, error: e });
 		return { path, options: null, selectedProton: "" };
 	}
 }
@@ -68,23 +83,31 @@ export async function getPrefixConfig(
 export async function savePrefixDefaults(
 	prefixPath: string,
 	options: core.LaunchOptions,
-	selectedProton: string,
-	protonVersions: core.ProtonTool[],
+	protonTool: core.ProtonTool | null,
 ): Promise<void> {
 	if (!prefixPath) return;
 	const name = prefixPath.split("/").pop() || "Default";
 
-	const tool = protonVersions.find((p) => p.DisplayName === selectedProton);
-	options.ProtonPath = tool
-		? tool.Path
-		: selectedProton.includes("/")
-			? selectedProton
-			: "";
+	log.info("Saving prefix defaults", { name, protonTool });
 
+	// Set ProtonPath from the selected tool
+	if (protonTool) {
+		options.ProtonPath = protonTool.Path;
+		log.debug("Set proton path", { path: protonTool.Path });
+	} else {
+		options.ProtonPath = "";
+		log.debug("Cleared proton path");
+	}
+
+	log.debug("Calling SavePrefixConfig", {
+		name,
+		protonPath: options.ProtonPath,
+	});
 	await notifications.withNotification(SavePrefixConfig(name, options), {
 		success: "Prefix defaults saved!",
 		error: "Failed to save configuration",
 	});
+	log.info("Prefix defaults saved");
 }
 
 /**
@@ -118,22 +141,12 @@ export async function deletePrefix(name: string): Promise<void> {
 export async function executePrefixTool(
 	prefixPath: string,
 	toolName: string,
-	selectedProton: string,
-	protonVersions: core.ProtonTool[],
+	protonPath: string,
 ): Promise<void> {
 	if (!prefixPath) {
 		notifications.error("Please select or create a prefix first.");
 		return;
 	}
-
-	const selectedTool = protonVersions.find(
-		(p) => p.DisplayName === selectedProton,
-	);
-	const protonPath = selectedTool
-		? selectedTool.Path
-		: selectedProton.includes("/")
-			? selectedProton
-			: "";
 
 	try {
 		await RunPrefixTool(prefixPath, toolName, protonPath);

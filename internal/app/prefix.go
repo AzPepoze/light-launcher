@@ -67,6 +67,13 @@ func (app *App) LoadPrefixConfigWithProton(prefixName string) (*types.PrefixConf
 }
 
 func (app *App) findProtonMatch(savedPath string, protonVersions []types.ProtonTool) *types.ProtonTool {
+	// Try matching by DisplayName
+	for i := range protonVersions {
+		if protonVersions[i].DisplayName == savedPath {
+			return &protonVersions[i]
+		}
+	}
+
 	// Try exact path match
 	for i := range protonVersions {
 		if protonVersions[i].Path == savedPath {

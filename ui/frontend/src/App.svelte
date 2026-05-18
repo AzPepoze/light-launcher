@@ -1,34 +1,35 @@
 <script lang="ts">
-	import Navbar from "@components/shared/Navbar.svelte";
-	import Home from "./pages/Home.svelte";
-	import Run from "./pages/Run.svelte";
-	import Versions from "./pages/Versions.svelte";
-	import Prefix from "./pages/Prefix.svelte";
-	import Utils from "./pages/Utils.svelte";
-	import Settings from "./pages/Settings.svelte";
-	import EditLsfg from "./pages/EditLsfg.svelte";
-	import NotificationHost from "@components/shared/NotificationHost.svelte";
-	import { fade, fly } from "svelte/transition";
-	import { backOut } from "svelte/easing";
 	import {
-		GetInitialLauncherPath,
-		GetInitialGamePath,
-		GetShouldEditLsfg,
-		GetImageBase64,
 		GetAppSettings,
+		GetImageBase64,
+		GetInitialGamePath,
+		GetInitialLauncherPath,
+		GetShouldEditLsfg,
 	} from "@bindings/light-launcher/internal/app/app";
-	import { onMount } from "svelte";
+	import Navbar from "@components/shared/Navbar.svelte";
+	import NotificationHost from "@components/shared/NotificationHost.svelte";
 	import { navigationCommand } from "@stores/navigationStore";
 	import { runState } from "@stores/runState";
 	import { settingsStore } from "@stores/settingsStore";
+	import { onMount } from "svelte";
+	import { backOut } from "svelte/easing";
+	import { fade, fly } from "svelte/transition";
+	import EditLsfg from "./pages/EditLsfg.svelte";
+	import Home from "./pages/Home.svelte";
+	import Prefix from "./pages/Prefix.svelte";
+	import Run from "./pages/Run.svelte";
+	import Settings from "./pages/Settings.svelte";
+	import Utils from "./pages/Utils.svelte";
+	import Versions from "./pages/Versions.svelte";
 
 	let bgBase64 = "";
 	let transparency = 1.0;
 	let theme: "light" | "dark" = "dark";
 
-	$: bgColor = theme === "light"
-		? `rgba(240, 242, 251, ${transparency})`
-		: `rgba(16, 16, 28, ${transparency})`;
+	$: bgColor =
+		theme === "light"
+			? `rgba(240, 242, 251, ${transparency})`
+			: `rgba(16, 16, 28, ${transparency})`;
 
 	settingsStore.subscribe(async (val) => {
 		transparency = val.transparency;
@@ -57,7 +58,8 @@
 	onMount(async () => {
 		try {
 			const appSettings = await GetAppSettings();
-			document.documentElement.dataset.transparent = appSettings.TransparentMode.toString();
+			document.documentElement.dataset.transparent =
+				appSettings.TransparentMode.toString();
 
 			const shouldEditLsfg = await GetShouldEditLsfg();
 			const launcherPath = await GetInitialLauncherPath();
@@ -101,15 +103,15 @@
 	}
 </script>
 
-<main style="background-image: {bgBase64 ? `url(${bgBase64})` : 'none'}; background-size: cover; background-position: center; background-repeat: no-repeat; background-color: {bgColor};">
+<main
+	style="background-image: {bgBase64
+		? `url(${bgBase64})`
+		: 'none'}; background-size: cover; background-position: center; background-repeat: no-repeat; background-color: {bgColor};"
+>
 	<div class="app-layout" class:fullscreen={activePage === "editlsfg"}>
 		{#if activePage !== "editlsfg"}
 			<div class="navbar-container">
-				<Navbar
-					{activePage}
-					onNavigate={handleNavigate}
-					{toggleTheme}
-				/>
+				<Navbar {activePage} onNavigate={handleNavigate} />
 			</div>
 		{/if}
 
@@ -117,7 +119,12 @@
 			{#key activePage}
 				<div
 					class="page-wrapper"
-					in:fly={{ y: 30, duration: 400, delay: 100, easing: backOut }}
+					in:fly={{
+						y: 30,
+						duration: 400,
+						delay: 100,
+						easing: backOut,
+					}}
 					out:fade={{ duration: 150 }}
 				>
 					{#if activePage === "home"}

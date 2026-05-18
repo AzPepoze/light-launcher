@@ -57,12 +57,20 @@ export async function loadConfigForPrefix(
 			const savedLauncherPath = options.LauncherPath;
 			const savedUseGamePath = options.UseGamePath;
 			const savedPrefixPath = options.PrefixPath;
+			const savedUseCustomProton = options.UseCustomProton;
+			const savedProtonPath = options.ProtonPath;
 
-			const updatedProton = applyConfigToOptions(config, options, protonVersions);
+			let updatedProton = applyConfigToOptions(config, options, protonVersions);
 
 			if (savedGamePath) options.GamePath = savedGamePath;
 			if (savedLauncherPath) options.LauncherPath = savedLauncherPath;
 			options.UseGamePath = savedUseGamePath;
+			options.UseCustomProton = savedUseCustomProton;
+			
+			if (savedUseCustomProton && savedProtonPath) {
+				options.ProtonPath = savedProtonPath;
+				updatedProton = savedProtonPath;
+			}
 
 			let newPrefixPath = prefixPath;
 			if (savedPrefixPath) {
@@ -90,8 +98,10 @@ export function applyConfigToOptions(
 		selectedProton = config.ProtonPath;
 	}
 
+	options.ID = config.ID || options.ID;
 	options.Name = config.Name || options.Name;
 	options.CustomArgs = config.CustomArgs || "";
+	options.UseCustomProton = config.UseCustomProton || false;
 	
 	// Copy Extras
 	if (config.Extras) {

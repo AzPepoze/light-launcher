@@ -65,12 +65,11 @@
 		border: 2px solid rgba(255, 255, 255, 0.05);
 		border-radius: var(--radius-md);
 		cursor: pointer;
-		transition: transform var(--transition-spring), border-color var(--transition-fast), background var(--transition-fast);
+		transition: border-color var(--transition-fast), background var(--transition-fast);
 		user-select: none;
 
 		&:hover {
 			border-color: var(--accent-secondary);
-			transform: scale(1.02);
 
 			.config-btn {
 				opacity: 1;

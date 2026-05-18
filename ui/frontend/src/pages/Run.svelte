@@ -5,6 +5,7 @@
 		PickFile,
 		PickFolder,
 		SaveGameConfig,
+		LoadPrefixConfig,
 	} from "@bindings/light-launcher/internal/app/app";
 	import * as core from "@bindings/light-launcher/internal/types/models";
 	import ConfigForm from "@components/shared/ConfigForm.svelte";
@@ -124,8 +125,41 @@
 		}
 	});
 
+	let prefixDefaultProton = "";
+
+	async function updatePrefixDefaultProton(prefixName: string) {
+		if (!prefixName || prefixName === "Custom...") return;
+		try {
+			const cfg = await LoadPrefixConfig(prefixName);
+			if (cfg && cfg.ProtonPath) {
+				const match = protonVersions.find((p) => p.Path === cfg.ProtonPath);
+				prefixDefaultProton = match ? match.DisplayName : cfg.ProtonPath;
+			} else {
+				if (protonVersions.length > 0) {
+					prefixDefaultProton = protonVersions[0].DisplayName;
+				}
+			}
+		} catch (e) {
+			console.error("Failed to load prefix config for default proton:", e);
+			if (protonVersions.length > 0) {
+				prefixDefaultProton = protonVersions[0].DisplayName;
+			}
+		}
+	}
+
+	$: if (mounted && selectedPrefixName && protonVersions.length > 0) {
+		updatePrefixDefaultProton(selectedPrefixName);
+	}
+
+	$: if (mounted && !options.UseCustomProton && prefixDefaultProton) {
+		selectedProton = prefixDefaultProton;
+	}
+
 	$: if (mounted) {
 		options.PrefixPath = prefixPath;
+		
+		options.ProtonPath = selectedProton;
+		
 		runState.set({
 			mainExePath,
 			gameIcon,
@@ -252,12 +286,23 @@
 			onBrowsePrefix={handleBrowsePrefix}
 		/>
 
+		<div class="form-group" style="margin-bottom: 20px;">
+			<SlideButton
+				bind:checked={options.UseCustomProton}
+				label="Use Custom Proton"
+				subtitle="Prevent prefix changes from overwriting your proton selection"
+			/>
+		</div>
+
 		<ProtonSelector
 			bind:protonOptions
 			bind:selectedProton
 			bind:isLoadingProton
 			onProtonChange={handleProtonChange}
+			disabled={!options.UseCustomProton}
 		/>
+
+		<div class="divider"></div>
 
 		<ConfigForm bind:options />
 
@@ -397,5 +442,12 @@
 	@keyframes spin {
 		from { transform: rotate(0deg); }
 		to { transform: rotate(360deg); }
+	}
+
+	.divider {
+		height: 2px;
+		background: rgba(255, 255, 255, 0.05);
+		margin: 12px 0;
+		border-radius: var(--radius-pill);
 	}
 </style>

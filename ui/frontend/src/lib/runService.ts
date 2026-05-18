@@ -188,8 +188,7 @@ export async function executeLaunch(
 	protonVersions: core.ProtonTool[],
 	showLogsWindow: boolean
 ): Promise<void> {
-	const matchedProton = protonVersions.find((tool) => tool.DisplayName === selectedProtonName);
-	launchOptions.ProtonPath = matchedProton ? matchedProton.Path : (selectedProtonName.includes("/") ? selectedProtonName : "");
+	launchOptions.ProtonPath = selectedProtonName;
 
 	try {
 		await RunGame(launchOptions, showLogsWindow);
