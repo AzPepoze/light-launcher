@@ -80,7 +80,7 @@
 		cursor: pointer;
 		text-align: left;
 		background: var(--bg-input);
-		border: 2px solid transparent;
+		border: 2px solid var(--glass-border);
 		border-radius: var(--radius-pill);
 		transition: border-color var(--transition-fast), transform var(--transition-spring);
 
@@ -111,7 +111,7 @@
 		overflow-y: auto;
 		z-index: 100;
 		background: var(--bg-surface);
-		border: 2px solid rgba(255, 255, 255, 0.05);
+		border: 2px solid var(--glass-border);
 		border-radius: var(--radius-md);
 		box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
 		padding: 8px;
@@ -124,7 +124,7 @@
 			background: transparent;
 		}
 		&::-webkit-scrollbar-thumb {
-			background: rgba(255, 102, 171, 0.2);
+			background: var(--glass-border-bright);
 			border-radius: 10px;
 		}
 	}
@@ -155,7 +155,7 @@
 
 		&.selected {
 			background: var(--accent-primary);
-			color: #ffffff;
+			color: var(--bg-base);
 			font-weight: 800;
 		}
 	}

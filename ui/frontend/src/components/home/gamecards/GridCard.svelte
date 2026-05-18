@@ -195,20 +195,11 @@
 	.rainbow-glow {
 		position: absolute;
 		inset: -2px;
-		background: conic-gradient(
-			from 0deg,
-			#ff0000,
-			#ffff00,
-			#00ff00,
-			#00ffff,
-			#0000ff,
-			#ff00ff,
-			#ff0000
-		);
+		background: var(--accent-primary);
 		opacity: 0;
 		transition: opacity 0.4s;
 		z-index: 1;
-		filter: blur(3px) brightness(1.5);
+		filter: blur(4px) brightness(1.2);
 		border-radius: calc(var(--radius-lg) + 4px);
 	}
 
@@ -228,7 +219,7 @@
 	.play-overlay {
 		position: absolute;
 		inset: 0;
-		background: rgba(16, 16, 28, 0.6);
+		background: rgba(var(--bg-base-rgb), 0.6);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -255,7 +246,7 @@
 		justify-content: flex-end;
 		padding: 12px;
 		z-index: 5;
-		background: rgba(10, 10, 20, 0.4);
+		background: rgba(var(--bg-input-rgb), 0.4);
 		border-radius: calc(var(--radius-lg) - 2px);
 
 		.checkbox {

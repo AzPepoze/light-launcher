@@ -322,7 +322,7 @@
 		align-items: center;
 		gap: 8px;
 		padding: 10px 18px;
-		border: 2px solid rgba(255, 255, 255, 0.05);
+		border: 2px solid var(--glass-border);
 		border-radius: var(--radius-pill);
 		background: var(--bg-surface);
 		color: var(--text-muted);
@@ -364,17 +364,17 @@
 		&.active {
 			background: var(--accent-primary);
 			border-color: var(--accent-primary);
-			color: #ffffff;
+			color: var(--bg-base);
 			box-shadow: 0 4px 14px var(--accent-glow);
 
 			.tab-icon {
-				color: #ffffff;
+				color: var(--bg-base);
 			}
 
 			.tab-delete {
-				color: rgba(255, 255, 255, 0.7);
+				color: rgba(var(--bg-base-rgb), 0.7);
 				&:hover {
-					color: #ffffff;
+					color: var(--bg-base);
 					background: rgba(0, 0, 0, 0.15);
 				}
 			}
@@ -460,7 +460,7 @@
 		border: none;
 		border-radius: 50%;
 		background: var(--accent-primary);
-		color: #ffffff;
+		color: var(--bg-base);
 		cursor: pointer;
 		transition: transform var(--transition-spring);
 
@@ -483,7 +483,7 @@
 		gap: 12px;
 		padding: 12px 20px;
 		background: var(--bg-surface);
-		border: 2px solid rgba(255, 255, 255, 0.05);
+		border: 2px solid var(--glass-border);
 		border-radius: var(--radius-md);
 		overflow: hidden;
 
@@ -510,7 +510,7 @@
 			gap: 6px;
 			padding: 6px 14px;
 			background: var(--bg-elevated);
-			border: 2px solid rgba(255, 255, 255, 0.05);
+			border: 2px solid var(--glass-border);
 			border-radius: var(--radius-pill);
 			color: var(--text-muted);
 			font-size: 0.8rem;
@@ -570,7 +570,7 @@
 	.config-section {
 		padding: 24px;
 		background: var(--bg-surface);
-		border: 2px solid rgba(255, 255, 255, 0.05);
+		border: 2px solid var(--glass-border);
 		border-radius: var(--radius-lg);
 		display: flex;
 		flex-direction: column;

@@ -26,10 +26,7 @@
 	let transparency = 1.0;
 	let theme: "light" | "dark" = "dark";
 
-	$: bgColor =
-		theme === "light"
-			? `rgba(240, 242, 251, ${transparency})`
-			: `rgba(16, 16, 28, ${transparency})`;
+	$: bgColor = `rgba(var(--bg-base-rgb), ${transparency})`;
 
 	settingsStore.subscribe(async (val) => {
 		transparency = val.transparency;

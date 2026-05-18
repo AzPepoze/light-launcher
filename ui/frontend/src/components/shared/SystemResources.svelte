@@ -100,15 +100,14 @@
 		background: var(--bg-base);
 		padding: 16px;
 		border-radius: var(--radius-md);
-		border: 2px solid rgba(255, 255, 255, 0.03);
+		border: 2px solid var(--glass-border);
 		display: flex;
 		flex-direction: column;
 		min-width: 0;
-		transition: transform var(--transition-spring), border-color var(--transition-fast);
+		transition: border-color var(--transition-fast);
 
 		&:hover {
-			border-color: rgba(255, 255, 255, 0.08);
-			transform: translateY(-2px);
+			border-color: var(--glass-border-bright);
 		}
 
 		.box-header {

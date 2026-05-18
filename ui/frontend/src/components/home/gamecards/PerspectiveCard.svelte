@@ -115,7 +115,7 @@
 		inset: 0;
 		background: radial-gradient(
 			circle at 50% 0%,
-			rgba(255, 102, 171, 0.2),
+			var(--accent-glow),
 			transparent
 		);
 		opacity: 0.2;
@@ -155,7 +155,7 @@
 		left: 0;
 		right: 0;
 		padding: 20px;
-		background: linear-gradient(transparent, rgba(16, 16, 28, 0.95));
+		background: linear-gradient(transparent, var(--bg-base));
 		display: flex;
 		flex-direction: column;
 		gap: 4px;

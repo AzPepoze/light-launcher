@@ -92,3 +92,5 @@ export function updateTransparency(value: number): void {
 		transparency: value,
 	}));
 }
+
+

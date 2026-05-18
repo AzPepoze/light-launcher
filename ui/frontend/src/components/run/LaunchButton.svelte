@@ -18,7 +18,7 @@
 		justify-content: center;
 		gap: 12px;
 		background: var(--accent-primary) !important;
-		color: #ffffff !important;
+		color: var(--bg-base) !important;
 		border: none;
 		box-shadow: 0 4px 14px var(--accent-glow);
 		cursor: pointer;

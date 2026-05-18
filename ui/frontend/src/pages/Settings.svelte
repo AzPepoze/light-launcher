@@ -34,6 +34,8 @@
 		service.updateTransparency(val);
 	}
 
+
+
 	async function handleBrowseBackground() {
 		await service.browseBackgroundImage();
 	}
@@ -94,6 +96,8 @@
 				</div>
 			</div>
 		</div>
+
+
 
 		<div class="settings-card glass">
 			<div class="settings-section">

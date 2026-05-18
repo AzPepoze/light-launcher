@@ -167,7 +167,7 @@
 			}
 
 			&.active {
-				color: #ffffff;
+				color: var(--bg-base);
 				background: var(--accent-primary);
 				box-shadow: 0 4px 10px var(--accent-glow);
 			}
@@ -221,7 +221,7 @@
 
 		&.active {
 			background: var(--accent-primary);
-			color: #ffffff;
+			color: var(--bg-base);
 			border-color: var(--accent-primary);
 			box-shadow: 0 4px 12px var(--accent-glow);
 		}
@@ -293,7 +293,7 @@
 	.add-btn {
 		background: var(--accent-primary);
 		border: none;
-		color: #ffffff;
+		color: var(--bg-base);
 		cursor: pointer;
 		padding: 10px;
 		display: flex;
@@ -322,7 +322,7 @@
 		display: flex;
 		align-items: center;
 		background: var(--bg-input);
-		border: 2px solid transparent;
+		border: 2px solid var(--glass-border);
 		border-radius: var(--radius-pill);
 		padding: 10px 20px;
 		gap: 10px;

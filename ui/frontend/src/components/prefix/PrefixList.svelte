@@ -61,14 +61,14 @@
 		flex-direction: column;
 		border-radius: var(--radius-lg);
 		overflow: hidden;
-		border: 2px solid rgba(255, 255, 255, 0.05);
+		border: 2px solid var(--glass-border);
 		background: var(--bg-surface);
 		height: 100%;
 		box-sizing: border-box;
 
 		.section-header {
 			padding: 20px;
-			border-bottom: 2px solid rgba(255, 255, 255, 0.05);
+			border-bottom: 2px solid var(--glass-border);
 			h2 {
 				font-size: 0.95rem;
 				font-weight: 800;
@@ -95,7 +95,7 @@
 			background: transparent;
 		}
 		&::-webkit-scrollbar-thumb {
-			background: rgba(255, 102, 171, 0.2);
+			background: var(--glass-border-bright);
 			border-radius: 10px;
 		}
 	}
@@ -119,15 +119,15 @@
 
 		&.active {
 			background: var(--accent-primary);
-			color: #ffffff;
+			color: var(--bg-base);
 			font-weight: 800;
 
 			.folder-icon .material-icons {
-				color: #ffffff;
+				color: var(--bg-base);
 			}
 			
 			.remove-btn {
-				color: #ffffff;
+				color: var(--bg-base);
 				&:hover {
 					background: rgba(0, 0, 0, 0.15);
 				}
@@ -200,7 +200,7 @@
 
 	.add-prefix-area {
 		padding: 20px;
-		border-top: 2px solid rgba(255, 255, 255, 0.05);
+		border-top: 2px solid var(--glass-border);
 		display: flex;
 		flex-direction: column;
 		gap: 12px;
@@ -219,7 +219,7 @@
 		padding: 10px 14px;
 		font-size: 0.85rem;
 		background: var(--bg-input);
-		border: 2px solid transparent;
+		border: 2px solid var(--glass-border);
 		border-radius: var(--radius-md);
 		color: var(--text-main);
 		font-weight: 600;
@@ -237,7 +237,7 @@
 		border-radius: var(--radius-pill);
 		font-weight: 800;
 		background: var(--accent-primary);
-		color: #ffffff;
+		color: var(--bg-base);
 		border: none;
 		cursor: pointer;
 		box-shadow: 0 4px 10px var(--accent-glow);

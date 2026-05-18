@@ -18,7 +18,7 @@
 	<div class="content-left">
 		<span class="material-icons util-icon">{icon}</span>
 		<div class="btn-stack">
-			<span>{title}</span>
+			<span class="btn-title">{title}</span>
 			<small>{subtitle}</small>
 		</div>
 	</div>
@@ -72,7 +72,7 @@
 			z-index: 2;
 		}
 
-		span {
+		.btn-title {
 			font-size: 0.9rem;
 			font-weight: 800;
 			text-transform: uppercase;
@@ -95,104 +95,104 @@
 		}
 
 		&.cleanup {
-			background: rgba(255, 102, 171, 0.05);
-			border-color: rgba(255, 102, 171, 0.2);
+			background: rgba(var(--color-cleanup-rgb), 0.05);
+			border-color: rgba(var(--color-cleanup-rgb), 0.2);
 
-			.util-icon, span {
-				color: var(--accent-primary);
+			.util-icon, .btn-title {
+				color: var(--color-cleanup);
 			}
 			small {
-				color: rgba(255, 102, 171, 0.8);
+				color: rgba(var(--color-cleanup-rgb), 0.8);
 			}
 
 			&:hover {
-				background: rgba(255, 102, 171, 0.1);
-				border-color: var(--accent-primary);
-				box-shadow: 0 4px 15px rgba(255, 102, 171, 0.2);
+				background: rgba(var(--color-cleanup-rgb), 0.1);
+				border-color: var(--color-cleanup);
+				box-shadow: 0 4px 15px rgba(var(--color-cleanup-rgb), 0.2);
 			}
 			&.pulsing::after {
 				background: linear-gradient(
 					90deg,
 					transparent,
-					rgba(255, 102, 171, 0.4),
+					rgba(var(--color-cleanup-rgb), 0.4),
 					transparent
 				);
 			}
 		}
 
 		&.cache {
-			background: rgba(0, 240, 255, 0.05);
-			border-color: rgba(0, 240, 255, 0.2);
+			background: rgba(var(--color-cache-rgb), 0.05);
+			border-color: rgba(var(--color-cache-rgb), 0.2);
 
-			.util-icon, span {
-				color: var(--accent-secondary);
+			.util-icon, .btn-title {
+				color: var(--color-cache);
 			}
 			small {
-				color: rgba(0, 240, 255, 0.8);
+				color: rgba(var(--color-cache-rgb), 0.8);
 			}
 
 			&:hover {
-				background: rgba(0, 240, 255, 0.1);
-				border-color: var(--accent-secondary);
-				box-shadow: 0 4px 15px rgba(0, 240, 255, 0.2);
+				background: rgba(var(--color-cache-rgb), 0.1);
+				border-color: var(--color-cache);
+				box-shadow: 0 4px 15px rgba(var(--color-cache-rgb), 0.2);
 			}
 			&.pulsing::after {
 				background: linear-gradient(
 					90deg,
 					transparent,
-					rgba(0, 240, 255, 0.4),
+					rgba(var(--color-cache-rgb), 0.4),
 					transparent
 				);
 			}
 		}
 
 		&.drop-caches {
-			background: rgba(177, 151, 252, 0.05);
-			border-color: rgba(177, 151, 252, 0.2);
+			background: rgba(var(--color-drop-caches-rgb), 0.05);
+			border-color: rgba(var(--color-drop-caches-rgb), 0.2);
 
-			.util-icon, span {
-				color: #b197fc;
+			.util-icon, .btn-title {
+				color: var(--color-drop-caches);
 			}
 			small {
-				color: rgba(177, 151, 252, 0.8);
+				color: rgba(var(--color-drop-caches-rgb), 0.8);
 			}
 
 			&:hover {
-				background: rgba(177, 151, 252, 0.1);
-				border-color: #b197fc;
-				box-shadow: 0 4px 15px rgba(177, 151, 252, 0.2);
+				background: rgba(var(--color-drop-caches-rgb), 0.1);
+				border-color: var(--color-drop-caches);
+				box-shadow: 0 4px 15px rgba(var(--color-drop-caches-rgb), 0.2);
 			}
 			&.pulsing::after {
 				background: linear-gradient(
 					90deg,
 					transparent,
-					rgba(177, 151, 252, 0.4),
+					rgba(var(--color-drop-caches-rgb), 0.4),
 					transparent
 				);
 			}
 		}
 
 		&.clear-swap {
-			background: rgba(16, 185, 129, 0.05);
-			border-color: rgba(16, 185, 129, 0.2);
+			background: rgba(var(--color-clear-swap-rgb), 0.05);
+			border-color: rgba(var(--color-clear-swap-rgb), 0.2);
 
-			.util-icon, span {
-				color: #10b981;
+			.util-icon, .btn-title {
+				color: var(--color-clear-swap);
 			}
 			small {
-				color: rgba(16, 185, 129, 0.8);
+				color: rgba(var(--color-clear-swap-rgb), 0.8);
 			}
 
 			&:hover {
-				background: rgba(16, 185, 129, 0.1);
-				border-color: #10b981;
-				box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);
+				background: rgba(var(--color-clear-swap-rgb), 0.1);
+				border-color: var(--color-clear-swap);
+				box-shadow: 0 4px 15px rgba(var(--color-clear-swap-rgb), 0.2);
 			}
 			&.pulsing::after {
 				background: linear-gradient(
 					90deg,
 					transparent,
-					rgba(16, 185, 129, 0.4),
+					rgba(var(--color-clear-swap-rgb), 0.4),
 					transparent
 				);
 			}

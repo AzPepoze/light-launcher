@@ -205,15 +205,7 @@
 		padding: 20px;
 		background: var(--bg-surface);
 		border-radius: var(--radius-lg);
-		border: 2px solid rgba(255, 255, 255, 0.05);
-	}
-
-	.launcher-exe-section {
-		border: 2px solid rgba(255, 102, 171, 0.2);
-	}
-
-	.game-exe-section {
-		border: 2px solid rgba(0, 240, 255, 0.2);
+		border: 2px solid var(--glass-border);
 	}
 
 	label {
@@ -242,7 +234,7 @@
 		text-transform: uppercase;
 		font-weight: 900;
 		background: var(--accent-primary);
-		color: #ffffff;
+		color: var(--bg-base);
 	}
 
 	.optional-tag {
@@ -272,20 +264,13 @@
 		justify-content: center;
 		border-radius: var(--radius-md);
 		background: var(--bg-base);
-		border: 2px solid rgba(255, 255, 255, 0.05);
+		border: 2px solid var(--glass-border);
 		overflow: hidden;
 		transition: transform var(--transition-spring), border-color var(--transition-fast);
 
 		&:hover {
 			transform: scale(1.1);
-		}
-
-		&.launcher-icon {
-			border-color: rgba(255, 102, 171, 0.3);
-		}
-
-		&.game-icon {
-			border-color: rgba(0, 240, 255, 0.3);
+			border-color: var(--glass-border-bright);
 		}
 	}
 
@@ -315,7 +300,7 @@
 		flex: 1;
 		padding: 12px 16px;
 		background: var(--bg-input);
-		border: 2px solid transparent;
+		border: 2px solid var(--glass-border);
 		border-radius: var(--radius-md);
 		color: var(--text-main);
 		font-size: 0.95rem;
@@ -351,7 +336,7 @@
 		font-size: 0.9rem;
 		cursor: pointer;
 		transition: transform var(--transition-spring), background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
-		border: 2px solid rgba(255, 255, 255, 0.05);
+		border: 2px solid var(--glass-border);
 		background: var(--bg-surface);
 		color: var(--text-main);
 		white-space: nowrap;
