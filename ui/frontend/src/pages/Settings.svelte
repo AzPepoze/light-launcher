@@ -52,8 +52,14 @@
 <div class="settings-container">
 	<PageHeader title="Appearance & Settings" icon="settings" />
 
-	<div class="settings-grid">
-		<div class="settings-card glass">
+	<div class="zones-stack">
+		<!-- Zone 1: Theme & Opacity -->
+		<div class="zone-card">
+			<div class="zone-header">
+				<span class="material-icons">palette</span>
+				<h2>Theme & Opacity</h2>
+			</div>
+
 			<div class="settings-section">
 				<h3>Theme Mode</h3>
 				<p class="desc">Switch between dark and light themes.</p>
@@ -66,9 +72,9 @@
 					>
 				</button>
 			</div>
-		</div>
 
-		<div class="settings-card glass">
+			<div class="divider"></div>
+
 			<div class="settings-section">
 				<h3>Background Opacity</h3>
 				<p class="desc">
@@ -97,13 +103,16 @@
 			</div>
 		</div>
 
+		<!-- Zone 2: Wallpaper Background -->
+		<div class="zone-card">
+			<div class="zone-header">
+				<span class="material-icons">wallpaper</span>
+				<h2>Wallpaper Background</h2>
+			</div>
 
-
-		<div class="settings-card glass">
 			<div class="settings-section">
-				<h3>Background Image</h3>
 				<p class="desc">
-					Set a custom image background.
+					Set a custom image background for the launcher that bleeds through the translucent glass surfaces.
 				</p>
 
 				{#if currentSettings.backgroundImagePath}
@@ -125,7 +134,7 @@
 					{#if currentSettings.backgroundImagePath}
 						<button class="btn danger" on:click={handleClearBackground}>
 							<span class="material-icons mini-icon">delete</span>
-							Clear
+							Clear Image
 						</button>
 					{/if}
 				</div>
@@ -154,29 +163,49 @@
 		}
 	}
 
-
-
-	.settings-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-		gap: 28px;
-		width: 100%;
+	.zones-stack {
+		display: flex;
+		flex-direction: column;
+		gap: 32px;
+		margin-top: 24px;
 	}
 
-	.settings-card {
-		padding: 32px;
+	.zone-card {
+		background: var(--bg-surface);
 		border-radius: var(--radius-lg);
 		border: 2px solid rgba(255, 255, 255, 0.05);
-		background: var(--bg-surface);
+		padding: 32px;
 		display: flex;
 		flex-direction: column;
 		gap: 28px;
-		transition: transform var(--transition-spring), border-color var(--transition-fast), box-shadow var(--transition-fast);
+		transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 
 		&:hover {
-			border-color: var(--accent-primary);
-			transform: scale(1.01);
-			box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+			border-color: rgba(255, 255, 255, 0.08);
+			box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+		}
+
+		.zone-header {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			border-bottom: 2px solid rgba(255, 255, 255, 0.05);
+			padding-bottom: 16px;
+			margin-bottom: 4px;
+
+			.material-icons {
+				font-size: 24px;
+				color: var(--accent-primary);
+			}
+
+			h2 {
+				margin: 0;
+				font-size: 1.15rem;
+				font-weight: 800;
+				color: var(--text-main);
+				text-transform: uppercase;
+				letter-spacing: 1px;
+			}
 		}
 	}
 
@@ -206,8 +235,6 @@
 			margin-right: 6px;
 		}
 	}
-
-
 
 	.slider-row {
 		display: flex;
@@ -260,5 +287,12 @@
 			align-items: center;
 			justify-content: center;
 		}
+	}
+
+	.divider {
+		height: 2px;
+		background: rgba(255, 255, 255, 0.05);
+		margin: 12px 0;
+		border-radius: var(--radius-pill);
 	}
 </style>

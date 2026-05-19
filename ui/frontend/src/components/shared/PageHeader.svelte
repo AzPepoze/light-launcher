@@ -2,11 +2,14 @@
 	export let title: string;
 	export let subtitle: string = "";
 	export let icon: string = "";
+	export let isCustomIcon: boolean = false;
 </script>
 
 <div class="page-header">
 	<div class="header-content">
-		{#if icon}
+		{#if icon && isCustomIcon}
+			<img src={icon} class="header-custom-icon" alt="" />
+		{:else if icon}
 			<span class="material-icons header-icon">{icon}</span>
 		{/if}
 		<div class="header-text">
@@ -41,6 +44,13 @@
 		font-size: 2rem;
 		color: var(--accent-primary);
 		opacity: 0.8;
+	}
+
+	.header-custom-icon {
+		width: 32px;
+		height: 32px;
+		object-fit: contain;
+		filter: drop-shadow(0 0 4px var(--accent-glow));
 	}
 
 	.header-text {

@@ -114,7 +114,7 @@ export class HomePageState {
 	toggleSelectionMode() {
 		this.isSelectionMode = !this.isSelectionMode;
 		if (!this.isSelectionMode) {
-			this.selectedPaths = new Set<string>(); // Change reference to trigger Svelte 5 reactivity
+			this.selectedPaths = new Set<string>();
 		}
 	}
 
@@ -125,7 +125,7 @@ export class HomePageState {
 		} else {
 			this.selectedPaths.add(path);
 		}
-		this.selectedPaths = new Set(this.selectedPaths); // Change reference to trigger Svelte 5 reactivity
+		this.selectedPaths = new Set(this.selectedPaths);
 	}
 
 	async handleBulkRemove() {
@@ -136,7 +136,7 @@ export class HomePageState {
 	async confirmBulkRemove() {
 		const count = await service.removeGamesBulk(this.selectedPaths);
 		if (count > 0) {
-			this.selectedPaths = new Set<string>(); // Change reference to trigger Svelte 5 reactivity
+			this.selectedPaths = new Set<string>();
 			this.isSelectionMode = false;
 			this.showBulkRemoveModal = false;
 			this.refreshData();

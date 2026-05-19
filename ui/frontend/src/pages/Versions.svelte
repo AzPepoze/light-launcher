@@ -34,7 +34,7 @@
 </script>
 
 <div class="versions-container">
-	<PageHeader title="Proton Versions" icon="history" subtitle="{protonVersions.length} installed">
+	<PageHeader title="Proton Versions" icon={externalIcon} isCustomIcon={true} subtitle="{protonVersions.length} installed">
 		<button
 			class="btn secondary"
 			on:click={() => openExternal("https://protondb.com")}

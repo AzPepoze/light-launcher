@@ -1,5 +1,6 @@
 <script lang="ts">
 	import appIcon from "@icons/appicon.png";
+	import protonIcon from "@icons/protron_forked.png";
 
 	export let activePage: string = "home";
 	export let onNavigate: (page: string) => void = () => {};
@@ -7,7 +8,7 @@
 	const navItems = [
 		{ id: "home", label: "Home", icon: "home" },
 		{ id: "run", label: "Run", icon: "rocket_launch" },
-		{ id: "versions", label: "Versions", icon: "history" },
+		{ id: "versions", label: "Versions", icon: protonIcon, isCustomIcon: true },
 		{ id: "prefix", label: "Prefix", icon: "folder_shared" },
 		{ id: "utils", label: "Utils", icon: "handyman" },
 		{ id: "settings", label: "Settings", icon: "settings" },
@@ -55,7 +56,11 @@
 				on:click={() => setActive(item.id)}
 				title={item.label}
 			>
-				<span class="material-icons icon">{item.icon}</span>
+				{#if item.isCustomIcon}
+					<img src={item.icon} class="custom-icon" alt="" />
+				{:else}
+					<span class="material-icons icon">{item.icon}</span>
+				{/if}
 			</button>
 		{/each}
 	</nav>
@@ -146,9 +151,22 @@
 				transform var(--transition-spring);
 		}
 
+		.custom-icon {
+			width: 22px;
+			height: 22px;
+			object-fit: contain;
+			filter: grayscale(100%) opacity(0.6);
+			transition:
+				filter var(--transition-fast),
+				transform var(--transition-spring);
+		}
+
 		&:hover {
 			color: var(--text-main);
 			transform: scale(1.15);
+			.custom-icon {
+				filter: grayscale(0%) opacity(0.9);
+			}
 		}
 
 		&:active {
@@ -160,6 +178,10 @@
 
 			.icon {
 				color: var(--accent-primary);
+			}
+
+			.custom-icon {
+				filter: grayscale(0%) opacity(1) drop-shadow(0 0 4px var(--accent-glow));
 			}
 		}
 	}

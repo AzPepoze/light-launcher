@@ -40,15 +40,20 @@
 		/>
 
 		{#if state.games.length === 0}
-			<div class="empty-state">
-				<p>
-					No games configured yet. Go to <button
-						class="link-btn"
-						on:click={() =>
-							navigationCommand.set({ page: "run" })}
-						>Run</button
-					> to add one.
-				</p>
+			<div class="empty-state glass">
+				<div class="empty-icon-bg">
+					<span class="material-icons empty-icon">sports_esports</span>
+				</div>
+				<h2>Your Library is Empty</h2>
+				<p>Import your existing game profiles or create custom configurations to start launching with LSFG frame generation.</p>
+				<div class="empty-actions">
+					<button class="btn primary" on:click={() => (state.showAddModal = true)}>
+						<span class="material-icons">add</span> Add Game Profile
+					</button>
+					<button class="btn secondary" on:click={() => navigationCommand.set({ page: "run" })}>
+						<span class="material-icons">settings</span> Create Custom Config
+					</button>
+				</div>
 			</div>
 		{:else}
 			<GameGrid
@@ -108,18 +113,67 @@
 		min-height: 0;
 	}
 
-	.link-btn {
-		background: none;
-		border: none;
-		color: var(--accent-primary);
-		font-weight: 800;
-		text-decoration: underline;
-		cursor: pointer;
-		padding: 0;
-		font-size: inherit;
+	.empty-state {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		text-align: center;
+		padding: 60px 40px;
+		background: var(--bg-surface);
+		border: 2px solid rgba(255, 255, 255, 0.05);
+		border-radius: var(--radius-lg);
+		max-width: 600px;
+		margin: 80px auto;
+		gap: 20px;
+		box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
 
-		&:hover {
-			filter: brightness(1.2);
+		.empty-icon-bg {
+			width: 88px;
+			height: 88px;
+			background: rgba(255, 255, 255, 0.03);
+			border: 2px solid rgba(255, 255, 255, 0.08);
+			border-radius: 50%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			margin-bottom: 8px;
+			box-shadow: 0 0 24px rgba(255, 255, 255, 0.02);
+
+			.empty-icon {
+				font-size: 44px;
+				color: var(--text-main);
+			}
+		}
+
+		h2 {
+			margin: 0;
+			font-size: 1.5rem;
+			font-weight: 800;
+			color: var(--text-main);
+			text-transform: uppercase;
+			letter-spacing: 1px;
+		}
+
+		p {
+			margin: 0;
+			font-size: 0.95rem;
+			color: var(--text-muted);
+			max-width: 440px;
+			line-height: 1.6;
+		}
+
+		.empty-actions {
+			display: flex;
+			gap: 16px;
+			margin-top: 12px;
+
+			.btn {
+				display: inline-flex;
+				align-items: center;
+				gap: 8px;
+				padding: 12px 24px;
+			}
 		}
 	}
 </style>

@@ -21,6 +21,7 @@
 	import Settings from "./pages/Settings.svelte";
 	import Utils from "./pages/Utils.svelte";
 	import Versions from "./pages/Versions.svelte";
+	import CommandPalette from "@components/shared/CommandPalette.svelte";
 
 	let bgBase64 = "";
 	let transparency = 1.0;
@@ -95,10 +96,21 @@
 		}
 	});
 
+	let showCommandPalette = false;
+
+	function handleGlobalKeydown(e: KeyboardEvent) {
+		if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+			showCommandPalette = !showCommandPalette;
+			e.preventDefault();
+		}
+	}
+
 	function handleNavigate(page: string) {
 		activePage = page;
 	}
 </script>
+
+<svelte:window on:keydown={handleGlobalKeydown} />
 
 <main
 	style="background-image: {bgBase64
@@ -113,6 +125,16 @@
 		{/if}
 
 		<div class="content-container">
+			{#if activePage !== "editlsfg"}
+				<div class="topbar-container">
+					<button class="global-search-trigger" on:click={() => showCommandPalette = true} aria-label="Search games and actions">
+						<span class="material-icons">search</span>
+						<span class="placeholder-text">Search...</span>
+						<span class="shortcut-kbd">Ctrl K</span>
+					</button>
+				</div>
+			{/if}
+
 			{#key activePage}
 				<div
 					class="page-wrapper"
@@ -149,6 +171,7 @@
 	</div>
 
 	<NotificationHost />
+	<CommandPalette bind:show={showCommandPalette} onClose={() => showCommandPalette = false} />
 </main>
 
 <style lang="scss">
@@ -205,6 +228,64 @@
 		background: transparent;
 	}
 
+	.topbar-container {
+		position: absolute;
+		top: 24px;
+		left: 50%;
+		transform: translateX(-50%);
+		width: 100%;
+		max-width: 480px;
+		display: flex;
+		justify-content: center;
+		z-index: 150;
+		pointer-events: none;
+	}
+
+	.global-search-trigger {
+		pointer-events: auto;
+		display: inline-flex;
+		align-items: center;
+		width: 100%;
+		gap: 8px;
+		background: var(--bg-surface);
+		border: 2px solid rgba(255, 255, 255, 0.05);
+		border-radius: var(--radius-md);
+		padding: 8px 16px;
+		color: var(--text-muted);
+		cursor: pointer;
+		font-size: 0.85rem;
+		font-weight: 600;
+		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+		transition: border-color var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
+
+		&:hover {
+			border-color: rgba(255, 255, 255, 0.15);
+			background: var(--bg-elevated);
+			color: var(--text-main);
+		}
+
+		.material-icons {
+			font-size: 18px;
+			color: var(--text-dim);
+		}
+
+		.placeholder-text {
+			flex: 1;
+			text-align: left;
+		}
+
+		.shortcut-kbd {
+			font-size: 0.7rem;
+			font-family: monospace;
+			background: rgba(255, 255, 255, 0.05);
+			border: 1px solid rgba(255, 255, 255, 0.1);
+			padding: 2px 6px;
+			border-radius: var(--radius-sm);
+			color: var(--text-dim);
+			margin-left: 12px;
+		}
+	}
+
 	/* Wrapper to handle transition positioning */
 	.page-wrapper {
 		position: absolute;
@@ -213,7 +294,7 @@
 		width: 100%;
 		height: 100%;
 		overflow-y: auto; /* Allow scrolling inside the page */
-		padding: 40px 48px 40px 84px; /* left padding offsets floating navbar */
+		padding: 76px 48px 40px 84px; /* left padding offsets floating navbar, top padding offsets topbar */
 		box-sizing: border-box;
 	}
 
