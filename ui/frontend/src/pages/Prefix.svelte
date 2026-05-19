@@ -1,13 +1,10 @@
 <script lang="ts">
-	import {
-		GetSystemToolsStatus,
-		PickFolder,
-		ScanProtonVersions,
-	} from "@bindings/light-launcher/internal/app/app";
+	import { ScanProtonVersions } from "@bindings/light-launcher/internal/app/app";
 	import * as core from "@bindings/light-launcher/internal/types/models";
+	import PrefixList from "@components/prefix/PrefixList.svelte";
 	import PrefixTools from "@components/prefix/PrefixTools.svelte";
+	import PrefixHeroPanel from "@components/prefix/PrefixHeroPanel.svelte";
 	import ConfigForm from "@components/shared/ConfigForm.svelte";
-	import Dropdown from "@components/shared/Dropdown.svelte";
 	import PageHeader from "@components/shared/PageHeader.svelte";
 	import { createLaunchOptions } from "@lib/formService";
 	import { createLogger } from "@lib/logger";
@@ -16,29 +13,30 @@
 
 	const log = createLogger("Prefix");
 
-	// State
 	let availablePrefixes: string[] = [];
 	let baseDir = "";
 	let prefixPath = "";
-	let chosenProton: core.ProtonTool | null = null; // The actual ProtonTool object
-	let chosenProtonName = ""; // Display name for dropdown
+	let chosenProton: core.ProtonTool | null = null;
+	let chosenProtonName = "";
 	let protonVersions: core.ProtonTool[] = [];
-	let protonDisplayNames: string[] = []; // Display names for dropdown
-	let systemStatus: core.SystemToolsStatus | null = null;
+	let protonDisplayNames: string[] = [];
 	let newPrefixName = "";
-	let isLoading = false;
+	let isPageLoading = true;
+	let isSaving = false;
 	let runningToolName = "";
-	let showCreateInput = false;
+	let isToolRunning = false;
 
-	// Config
 	let prefixOptions: core.LaunchOptions = createLaunchOptions();
 
-	// Reactively sync DisplayName changes to ProtonTool object
 	$: if (chosenProtonName) {
 		chosenProton =
 			protonVersions.find((t) => t.DisplayName === chosenProtonName) ||
 			null;
 	}
+
+	$: currentPrefixName = prefixPath.startsWith(baseDir)
+		? prefixPath.replace(baseDir + "/", "")
+		: prefixPath.split("/").filter(Boolean).pop() || "Custom";
 
 	async function refreshPrefixes(autoSelect = true) {
 		const data = await service.getPrefixData();
@@ -47,7 +45,7 @@
 
 		if (autoSelect) {
 			if (!prefixPath && availablePrefixes.length > 0) {
-				selectPrefix(availablePrefixes[0]);
+				await selectPrefix(availablePrefixes[0]);
 			} else if (!prefixPath) {
 				prefixPath = baseDir + "/Default";
 			}
@@ -57,87 +55,55 @@
 	onMount(async () => {
 		log.info("onMount starting");
 		try {
-			const [tools, status] = await Promise.all([
-				ScanProtonVersions(),
-				GetSystemToolsStatus(),
-			]);
-			log.debug("Scanned proton versions", {
-				count: tools.length,
-				tools,
-			});
-			log.debug("System status", status);
-			systemStatus = status;
+			const tools = await ScanProtonVersions();
 			protonVersions = tools;
 			protonDisplayNames = protonVersions.map((t) => t.DisplayName);
-			log.debug("Available proton displays", protonDisplayNames);
-			// Don't set default selectedProton here - let it be set when prefix is loaded
 			await refreshPrefixes();
 		} catch (err) {
 			log.error("onMount error", err);
+		} finally {
+			isPageLoading = false;
 		}
 	});
 
 	async function selectPrefix(name: string) {
 		log.info("selectPrefix called", { name });
 		const result = await service.getPrefixConfig(name, baseDir);
-		log.debug("getPrefixConfig result", result);
 		prefixPath = result.path;
 		if (result.options) {
 			prefixOptions = { ...prefixOptions, ...result.options };
-			log.debug("Loaded proton name", result.selectedProton);
 			if (result.selectedProton) {
-				// Set the DisplayName so it syncs to ProtonTool object via reactive statement
 				chosenProtonName = result.selectedProton;
-				log.info("Set chosenProtonName", { chosenProtonName });
 			} else if (protonVersions.length > 0) {
-				// Fallback to first proton if none saved
 				chosenProtonName = protonVersions[0].DisplayName;
-				log.info("No saved proton, using first", {
-					chosenProtonName,
-				});
 			}
 		} else {
 			prefixOptions = createLaunchOptions();
-			// Ensure a proton is selected when creating new prefix
 			if (protonVersions.length > 0 && !chosenProton) {
 				chosenProtonName = protonVersions[0].DisplayName;
-				log.info("New prefix, setting first proton", {
-					chosenProtonName,
-				});
 			}
 		}
 	}
 
 	async function handleSaveConfig() {
-		log.info("handleSaveConfig called");
-		log.debug("Current state", {
-			chosenProton,
-			chosenProtonName,
-			protonPath: prefixOptions.ProtonPath,
-		});
-		await service.savePrefixDefaults(
-			prefixPath,
-			prefixOptions,
-			chosenProton,
-		);
-		log.info("Config saved successfully");
-	}
-
-	async function handleBrowse() {
+		if (isSaving) return;
+		isSaving = true;
 		try {
-			const path = await PickFolder();
-			if (path) prefixPath = path;
-		} catch (err) {
-			log.error("Browse folder error", err);
+			await service.savePrefixDefaults(
+				prefixPath,
+				prefixOptions,
+				chosenProton,
+			);
+		} finally {
+			isSaving = false;
 		}
 	}
 
 	async function handleCreatePrefix() {
-		if (!newPrefixName) return;
-		const name = newPrefixName;
+		if (!newPrefixName.trim()) return;
+		const name = newPrefixName.trim();
 		await service.createNewPrefix(name);
 		newPrefixName = "";
-		showCreateInput = false;
 		await refreshPrefixes(false);
 		await selectPrefix(name);
 	}
@@ -153,8 +119,8 @@
 	}
 
 	async function runTool(tool: string) {
-		if (isLoading) return;
-		isLoading = true;
+		if (isToolRunning) return;
+		isToolRunning = true;
 		runningToolName = tool;
 
 		try {
@@ -163,432 +129,229 @@
 				tool,
 				chosenProton?.Path || "",
 			);
-		} catch (err) {
-			// Error handled in service via notification
 		} finally {
 			setTimeout(() => {
-				isLoading = false;
+				isToolRunning = false;
 				runningToolName = "";
 			}, 500);
 		}
 	}
-
-	$: currentPrefixName = prefixPath.startsWith(baseDir)
-		? prefixPath.replace(baseDir + "/", "")
-		: prefixPath;
 </script>
 
-<div class="prefix-container">
+<div class="prefix-page">
 	<PageHeader
 		title="Prefix Manager"
 		icon="folder_shared"
-		subtitle="Manage Wine/Proton prefixes"
+		subtitle="Wine/Proton prefixes, runtime, and default launch options"
 	/>
 
-	<!-- Prefix Selector Bar -->
-	<div class="prefix-selector">
-		<div class="prefix-tabs">
-			{#each availablePrefixes as name}
-				<div
-					class="prefix-tab"
-					class:active={currentPrefixName === name}
-					on:click={() => selectPrefix(name)}
-					on:keydown={(e) =>
-						e.key === "Enter" && selectPrefix(name)}
-					role="tab"
-					tabindex="0"
-					title={name}
-				>
-					<span class="material-icons tab-icon">folder</span>
-					<span class="tab-name">{name}</span>
-					{#if name !== "Default"}
-						<span
-							class="tab-delete"
-							title="Delete"
-							role="button"
-							tabindex="0"
-							on:click|stopPropagation={() =>
-								handleRemovePrefix(name)}
-							on:keydown|stopPropagation={(e) =>
-								e.key === "Enter" &&
-								handleRemovePrefix(name)}
-						>
-							<span class="material-icons">close</span>
-						</span>
-					{/if}
-				</div>
-			{/each}
+	{#if isPageLoading}
+		<div class="loading-state">
+			<span class="material-icons spin">progress_activity</span>
+			<span>Loading prefixes…</span>
+		</div>
+	{:else}
+		<div class="prefix-layout">
+			<aside class="prefix-sidebar">
+				<PrefixList
+					{availablePrefixes}
+					{currentPrefixName}
+					bind:newPrefixName
+					onSelectPrefix={selectPrefix}
+					onCreatePrefix={handleCreatePrefix}
+					onRemovePrefix={handleRemovePrefix}
+				/>
+			</aside>
 
-			{#if showCreateInput}
-				<div class="create-inline">
-					<input
-						type="text"
-						placeholder="Name..."
-						bind:value={newPrefixName}
-						on:keydown={(e) => {
-							if (e.key === "Enter") handleCreatePrefix();
-							if (e.key === "Escape") {
-								showCreateInput = false;
-								newPrefixName = "";
-							}
-						}}
-						class="create-input"
-					/>
+			<main class="prefix-main">
+				<PrefixHeroPanel
+					{currentPrefixName}
+					{protonDisplayNames}
+					bind:chosenProtonName
+					bind:prefixPath
+				/>
+
+				<section class="panel tools-panel">
+					<header class="panel-header">
+						<span class="material-icons panel-icon">build</span>
+						<div>
+							<h3>Wine tools</h3>
+							<p>Launch utilities inside the selected prefix</p>
+						</div>
+					</header>
+					<PrefixTools {runningToolName} onRunTool={runTool} />
+				</section>
+
+				<section class="panel config-panel">
+					<header class="panel-header">
+						<span class="material-icons panel-icon">tune</span>
+						<div>
+							<h3>Default configuration</h3>
+							<p>Applied when launching games with this prefix</p>
+						</div>
+					</header>
+					<ConfigForm bind:options={prefixOptions} />
+				</section>
+
+				<div class="save-bar">
 					<button
-						class="create-confirm"
-						on:click={handleCreatePrefix}
+						class="btn primary save-btn"
+						type="button"
+						on:click={handleSaveConfig}
+						disabled={isSaving}
 					>
-						<span class="material-icons">check</span>
+						<span class="material-icons btn-icon" class:spin={isSaving}
+							>{isSaving ? "sync" : "save"}</span
+						>
+						{isSaving ? "Saving…" : "Save Defaults"}
 					</button>
 				</div>
-			{/if}
-
-			<button
-				class="prefix-tab add-tab"
-				on:click={() => (showCreateInput = !showCreateInput)}
-				title="New Prefix"
-			>
-				<span class="material-icons"
-					>{showCreateInput ? "close" : "add"}</span
-				>
-			</button>
+			</main>
 		</div>
-	</div>
-
-	<!-- Active Prefix Info -->
-	<div class="prefix-path-bar">
-		<span class="material-icons path-icon">terminal</span>
-		<span class="path-text" title={prefixPath}>{prefixPath}</span>
-		<button class="browse-btn" on:click={handleBrowse}>
-			<span class="material-icons">folder_open</span>
-			Browse
-		</button>
-	</div>
-
-	<!-- Runtime Selector -->
-	<div class="runtime-row">
-		<div class="runtime-label">
-			<span class="material-icons">science</span>
-			<span>Runtime</span>
-		</div>
-		<div class="runtime-dropdown">
-			<Dropdown
-				options={protonDisplayNames}
-				bind:value={chosenProtonName}
-			/>
-		</div>
-	</div>
-
-	<!-- Tools Row -->
-	<PrefixTools {runningToolName} onRunTool={runTool} />
-
-	<!-- Default Config -->
-	<div class="config-section">
-		<div class="config-header">
-			<h3>Default Configuration</h3>
-			<button class="btn primary sm" on:click={handleSaveConfig}>
-				<span
-					class="material-icons"
-					style="font-size: 16px; margin-right: 6px;">save</span
-				>
-				Save Defaults
-			</button>
-		</div>
-		<ConfigForm bind:options={prefixOptions} />
-	</div>
+	{/if}
 </div>
 
 <style lang="scss">
-	.prefix-container {
+	.prefix-page {
 		display: flex;
 		flex-direction: column;
-		gap: 24px;
+		gap: 0;
+		min-height: 0;
 	}
 
-	/* ---- Prefix Tab Bar ---- */
-	.prefix-selector {
-		width: 100%;
+	.btn-icon {
+		font-size: 18px;
+		margin-right: 6px;
+		vertical-align: middle;
 	}
 
-	.prefix-tabs {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 8px;
-		align-items: center;
+	.btn.primary .btn-icon {
+		margin-right: 8px;
 	}
 
-	.prefix-tab {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		padding: 10px 18px;
-		border: 2px solid var(--glass-border);
-		border-radius: var(--radius-pill);
-		background: var(--bg-surface);
-		color: var(--text-muted);
-		font-size: 0.85rem;
-		font-weight: 700;
-		cursor: pointer;
-		transition:
-			transform var(--transition-spring),
-			background var(--transition-fast),
-			border-color var(--transition-fast),
-			color var(--transition-fast);
-		outline: none;
-		position: relative;
+	.btn.primary:disabled .material-icons.spin,
+	.loading-state .spin {
+		animation: spin 1.2s linear infinite;
+	}
 
-		.tab-icon {
-			font-size: 16px;
+	@keyframes spin {
+		from {
+			transform: rotate(0deg);
 		}
-
-		.tab-name {
-			text-transform: uppercase;
-			letter-spacing: 0.5px;
-		}
-
-		&:hover {
-			background: var(--bg-elevated);
-			border-color: var(--accent-secondary);
-			color: var(--text-main);
-			transform: scale(1.03);
-
-			.tab-delete {
-				opacity: 1;
-			}
-		}
-
-		&:active {
-			transform: scale(0.96);
-		}
-
-		&.active {
-			background: var(--accent-primary);
-			border-color: var(--accent-primary);
-			color: var(--bg-base);
-			box-shadow: 0 4px 14px var(--accent-glow);
-
-			.tab-icon {
-				color: var(--bg-base);
-			}
-
-			.tab-delete {
-				color: rgba(var(--bg-base-rgb), 0.7);
-				&:hover {
-					color: var(--bg-base);
-					background: rgba(0, 0, 0, 0.15);
-				}
-			}
-		}
-
-		&.add-tab {
-			width: 40px;
-			height: 40px;
-			padding: 0;
-			justify-content: center;
-			border-style: dashed;
-
-			.material-icons {
-				font-size: 20px;
-			}
-
-			&:hover {
-				border-color: var(--accent-primary);
-				color: var(--accent-primary);
-				border-style: solid;
-			}
+		to {
+			transform: rotate(360deg);
 		}
 	}
 
-	.tab-delete {
-		background: transparent;
-		border: none;
-		color: var(--text-muted);
-		cursor: pointer;
+	.loading-state {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 20px;
-		height: 20px;
-		border-radius: 50%;
-		opacity: 0;
-		transition:
-			opacity var(--transition-fast),
-			color var(--transition-fast),
-			background var(--transition-fast);
-		padding: 0;
-		margin-left: -2px;
-
-		.material-icons {
-			font-size: 14px;
-		}
-
-		&:hover {
-			background: rgba(255, 74, 122, 0.2);
-			color: var(--danger);
-		}
-	}
-
-	.create-inline {
-		display: flex;
-		align-items: center;
-		gap: 4px;
-	}
-
-	.create-input {
-		padding: 8px 14px;
-		background: var(--bg-input);
-		border: 2px solid var(--accent-primary);
-		border-radius: var(--radius-pill);
-		color: var(--text-main);
-		font-size: 0.85rem;
-		font-weight: 700;
-		outline: none;
-		width: 140px;
-		transition: transform var(--transition-fast);
-
-		&:focus {
-			transform: scale(1.01);
-		}
-	}
-
-	.create-confirm {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 36px;
-		height: 36px;
-		border: none;
-		border-radius: 50%;
-		background: var(--accent-primary);
-		color: var(--bg-base);
-		cursor: pointer;
-		transition: transform var(--transition-spring);
-
-		.material-icons {
-			font-size: 18px;
-		}
-
-		&:hover {
-			transform: scale(1.1);
-		}
-		&:active {
-			transform: scale(0.9);
-		}
-	}
-
-	/* ---- Path Bar ---- */
-	.prefix-path-bar {
-		display: flex;
-		align-items: center;
 		gap: 12px;
-		padding: 12px 20px;
-		background: var(--bg-surface);
-		border: 2px solid var(--glass-border);
-		border-radius: var(--radius-md);
-		overflow: hidden;
+		padding: 80px 24px;
+		color: var(--text-muted);
+		font-size: 0.95rem;
+		font-weight: 700;
 
-		.path-icon {
-			font-size: 18px;
-			color: var(--accent-secondary);
-			flex-shrink: 0;
-		}
-
-		.path-text {
-			flex: 1;
-			font-size: 0.85rem;
-			font-weight: 600;
-			color: var(--text-muted);
-			white-space: nowrap;
-			overflow: hidden;
-			text-overflow: ellipsis;
-			font-family: monospace;
-		}
-
-		.browse-btn {
-			display: flex;
-			align-items: center;
-			gap: 6px;
-			padding: 6px 14px;
-			background: var(--bg-elevated);
-			border: 2px solid var(--glass-border);
-			border-radius: var(--radius-pill);
-			color: var(--text-muted);
-			font-size: 0.8rem;
-			font-weight: 700;
-			cursor: pointer;
-			flex-shrink: 0;
-			transition:
-				transform var(--transition-spring),
-				border-color var(--transition-fast),
-				color var(--transition-fast);
-
-			.material-icons {
-				font-size: 16px;
-			}
-
-			&:hover {
-				border-color: var(--accent-secondary);
-				color: var(--text-main);
-				transform: scale(1.05);
-			}
-			&:active {
-				transform: scale(0.95);
-			}
-		}
-	}
-
-	/* ---- Runtime Row ---- */
-	.runtime-row {
-		display: flex;
-		align-items: center;
-		gap: 16px;
-
-		.runtime-label {
-			display: flex;
-			align-items: center;
-			gap: 8px;
-			font-size: 0.9rem;
-			font-weight: 800;
+		.material-icons {
+			font-size: 28px;
 			color: var(--accent-primary);
-			text-transform: uppercase;
-			letter-spacing: 0.5px;
-			white-space: nowrap;
-			flex-shrink: 0;
-
-			.material-icons {
-				font-size: 20px;
-			}
-		}
-
-		.runtime-dropdown {
-			flex: 1;
-			max-width: 400px;
 		}
 	}
 
-	/* ---- Config Section ---- */
-	.config-section {
-		padding: 24px;
-		background: var(--bg-surface);
-		border: 2px solid var(--glass-border);
-		border-radius: var(--radius-lg);
+	.prefix-layout {
+		display: grid;
+		grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
+		gap: 24px;
+		align-items: stretch;
+	}
+
+	.prefix-sidebar {
+		height: 100%;
+	}
+
+	.prefix-main {
 		display: flex;
 		flex-direction: column;
 		gap: 20px;
+		min-width: 0;
 	}
 
-	.config-header {
+	.panel {
+		background: var(--bg-surface);
+		border: 2px solid var(--glass-border);
+		border-radius: var(--radius-lg);
+		padding: 22px 24px;
+	}
+
+	.panel-header {
 		display: flex;
-		justify-content: space-between;
-		align-items: center;
+		align-items: flex-start;
+		gap: 14px;
+		margin-bottom: 20px;
+
+		.panel-icon {
+			font-size: 22px;
+			color: var(--accent-primary);
+			margin-top: 2px;
+		}
 
 		h3 {
-			margin: 0;
-			font-size: 1.1rem;
+			margin: 0 0 4px;
+			font-size: 1rem;
 			font-weight: 800;
 			color: var(--text-main);
 			text-transform: uppercase;
 			letter-spacing: 0.5px;
 		}
+
+		p {
+			margin: 0;
+			font-size: 0.8rem;
+			font-weight: 600;
+			color: var(--text-muted);
+		}
+	}
+
+
+
+	.tools-panel :global(.tools-grid) {
+		margin-bottom: 0;
+	}
+
+	.config-panel :global(.config-form) {
+		margin-top: 0;
+	}
+
+	.save-bar {
+		position: sticky;
+		bottom: 0;
+		display: flex;
+		justify-content: flex-end;
+		padding: 24px 0 8px;
+		margin-top: 8px;
+		z-index: 10;
+		background: transparent;
+		pointer-events: none;
+	}
+
+	.save-btn {
+		pointer-events: auto;
+		min-width: 200px;
+	}
+
+	@media (max-width: 900px) {
+		.prefix-layout {
+			grid-template-columns: 1fr;
+		}
+
+		.prefix-sidebar {
+			position: static;
+			height: auto;
+			max-height: 320px;
+			min-height: 0;
+		}
+
+
 	}
 </style>

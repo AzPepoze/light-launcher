@@ -158,11 +158,15 @@
 
 <div class="status-drawer-wrapper" class:expanded={isExpanded}>
 	<button class="toggle-btn" on:click={() => (isExpanded = !isExpanded)}>
+		<span class="material-icons">tune</span>
 		<span class="trigger-text"
 			>{isExpanded
 				? "CLOSE DRAWER"
 				: "SYSTEM STATUS & UTILITIES"}</span
 		>
+		<span class="material-icons">
+			{isExpanded ? "keyboard_arrow_down" : "keyboard_arrow_up"}
+		</span>
 	</button>
 
 	<div class="drawer-content">
@@ -217,32 +221,37 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		gap: 12px;
 		cursor: pointer;
-		background: var(--bg-base);
-		border: 2px solid rgba(255, 255, 255, 0.03);
+		background: var(--bg-elevated);
+		border: 2px solid var(--glass-border);
 		border-radius: var(--radius-pill);
 		margin: 12px 0;
-		transition: transform var(--transition-spring), border-color var(--transition-fast), background var(--transition-fast);
+		color: var(--accent-primary);
+		transition: transform var(--transition-spring), border-color var(--transition-fast), background var(--transition-fast), box-shadow var(--transition-fast);
 
 		.trigger-text {
 			font-size: 0.85rem;
 			font-weight: 800;
-			color: var(--text-muted);
+			color: inherit;
 			letter-spacing: 1.5px;
 			text-transform: uppercase;
 		}
 
-		&:hover {
-			background: var(--bg-elevated);
-			border-color: var(--accent-primary);
+		.material-icons {
+			font-size: 20px;
+			color: inherit;
+		}
 
-			.trigger-text {
-				color: var(--text-main);
-			}
+		&:hover {
+			background: var(--accent-primary);
+			border-color: var(--accent-primary);
+			color: var(--bg-base);
+			box-shadow: 0 4px 15px var(--accent-glow);
 		}
 
 		&:active {
-			transform: scale(0.98);
+			transform: scale(0.97);
 		}
 	}
 

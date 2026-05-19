@@ -79,7 +79,7 @@
 			max-width: 140px;
 			padding: 10px 16px;
 			background: var(--bg-input);
-			border: 2px solid transparent;
+			border: 2px solid var(--glass-border);
 			border-radius: var(--radius-md);
 			color: var(--text-main);
 			font-size: 0.95rem;

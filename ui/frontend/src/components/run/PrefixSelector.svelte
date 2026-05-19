@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Dropdown from "@components/shared/Dropdown.svelte";
+	import BrowseInput from "@components/shared/BrowseInput.svelte";
 	
 	export let availablePrefixes: string[] = [];
 	export let selectedPrefixName: string = "Default";
@@ -22,7 +23,14 @@
 		<button on:click={onBrowsePrefix} class="btn">Browse</button>
 	</div>
 	{#if selectedPrefixName === "Custom..." || !prefixPath.startsWith(baseDir)}
-		<div class="path-display">{prefixPath}</div>
+		<div style="margin-top: 12px;">
+			<BrowseInput
+				bind:value={prefixPath}
+				type="folder"
+				placeholder="Custom WINEPREFIX path..."
+				browseHandler={onBrowsePrefix}
+			/>
+		</div>
 	{/if}
 </div>
 
@@ -44,16 +52,7 @@
 			flex: 1;
 		}
 	}
-	.path-display {
-		margin-top: 10px;
-		font-size: 0.8rem;
-		color: var(--text-muted);
-		word-break: break-all;
-		padding: 10px 16px;
-		background: var(--bg-surface);
-		border: 2px solid rgba(255, 255, 255, 0.05);
-		border-radius: var(--radius-md);
-	}
+
 	.btn {
 		display: inline-flex;
 		align-items: center;

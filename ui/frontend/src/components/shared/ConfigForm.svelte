@@ -214,7 +214,7 @@
 			box-sizing: border-box;
 			display: block;
 			background: var(--bg-input);
-			border: 2px solid transparent;
+			border: 2px solid var(--glass-border);
 			padding: 12px 16px;
 			border-radius: var(--radius-md);
 			color: var(--text-main);

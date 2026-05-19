@@ -27,12 +27,12 @@
 <style lang="scss">
 	.tool-card {
 		background: var(--bg-surface);
-		border: 2px solid rgba(255, 255, 255, 0.05);
+		border: 2px solid var(--glass-border);
 		border-radius: var(--radius-md);
-		padding: 16px 20px;
+		padding: 12px 14px;
 		display: flex;
 		align-items: center;
-		gap: 16px;
+		gap: 12px;
 		cursor: pointer;
 		transition: transform var(--transition-spring), border-color var(--transition-fast), background var(--transition-fast);
 		color: var(--text-main);
@@ -57,38 +57,51 @@
 		}
 
 		.icon {
-			font-size: 2rem;
+			font-size: 1.5rem;
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			width: 36px;
-			height: 36px;
+			width: 28px;
+			height: 28px;
 			color: var(--accent-primary);
+			flex-shrink: 0;
 
 			.svg-icon {
 				width: 100%;
 				height: 100%;
 			}
 		}
+
+		.text {
+			min-width: 0;
+			flex: 1;
+		}
+
 		h3 {
-			font-size: 0.95rem;
+			font-size: 0.9rem;
 			margin: 0;
 			font-weight: 800;
 			text-transform: uppercase;
 			letter-spacing: 0.5px;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
 		}
 		p {
 			font-size: 0.75rem;
-			margin: 4px 0 0 0;
+			margin: 2px 0 0 0;
 			color: var(--text-muted);
 			font-weight: 600;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
 		}
 	}
 
 	.spinner {
 		width: 28px;
 		height: 28px;
-		border: 3px solid rgba(255, 255, 255, 0.05);
+		border: 3px solid var(--glass-border);
 		border-radius: 50%;
 		border-top-color: var(--accent-primary);
 		animation: spin 1s ease-in-out infinite;

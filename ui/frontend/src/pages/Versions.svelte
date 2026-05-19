@@ -150,6 +150,10 @@
 				opacity: 0.9;
 				object-fit: contain;
 				filter: brightness(0) invert(1);
+
+				:global([data-theme="light"]) & {
+					filter: brightness(0);
+				}
 			}
 		}
 

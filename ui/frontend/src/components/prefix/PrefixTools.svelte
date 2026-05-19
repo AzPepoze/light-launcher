@@ -53,9 +53,9 @@
 <style lang="scss">
 	.tools-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-		gap: 20px;
-		margin-bottom: 8px;
+		grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+		gap: 14px;
+		margin-bottom: 0;
 		flex-shrink: 0;
 	}
 </style>

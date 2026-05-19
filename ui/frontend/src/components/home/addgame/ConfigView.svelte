@@ -2,6 +2,7 @@
 	import { fade } from "svelte/transition";
 	import NumericInput from "@components/shared/NumericInput.svelte";
 	import Dropdown from "@components/shared/Dropdown.svelte";
+	import BrowseInput from "@components/shared/BrowseInput.svelte";
 
 	export let selectedFolder: string;
 	export let searchDepth: string;
@@ -11,10 +12,12 @@
 </script>
 
 <div class="config-view" transition:fade={{ duration: 200 }}>
-	<div class="selected-path">
-		<span class="label">Scanning Target:</span>
-		<span class="path" title={selectedFolder}>{selectedFolder}</span>
-	</div>
+	<BrowseInput
+		bind:value={selectedFolder}
+		type="folder"
+		label="Scanning Target"
+		placeholder="Target folder path..."
+	/>
 
 	<div class="settings-grid">
 		<div class="setting-item">
@@ -65,42 +68,6 @@
 		display: flex;
 		flex-direction: column;
 		gap: 20px;
-
-		.selected-path {
-			padding: 12px 16px;
-			background: var(--glass-surface);
-			border: 1px solid var(--glass-border);
-			border-radius: 12px;
-			position: relative;
-			overflow: hidden;
-
-			&::before {
-				content: "";
-				position: absolute;
-				left: 0;
-				top: 0;
-				bottom: 0;
-				width: 2px;
-				background: var(--accent-primary);
-				opacity: 0.5;
-			}
-
-			.label {
-				display: block;
-				font-size: 0.65rem;
-				font-weight: 800;
-				color: var(--text-dim);
-				text-transform: uppercase;
-				margin-bottom: 2px;
-			}
-
-			.path {
-				font-family: "JetBrains Mono", monospace;
-				font-size: 0.8rem;
-				color: var(--accent-primary);
-				word-break: break-all;
-			}
-		}
 
 		.settings-grid {
 			display: grid;

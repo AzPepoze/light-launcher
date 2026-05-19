@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { loadExeIcon } from "@lib/iconService";
 	import SlideButton from "@components/shared/SlideButton.svelte";
+	import BrowseInput from "@components/shared/BrowseInput.svelte";
 
 	export let launcherPath = "";
 	export let gamePath = "";
@@ -112,17 +113,15 @@
 				{/if}
 			</div>
 
-			<div class="input-group launcher-input-group">
-				<input
+			<div class="launcher-input-group" style="flex: 1;">
+				<BrowseInput
 					id="launcherExe"
-					type="text"
 					bind:value={internalLauncherPath}
 					placeholder="Path to launcher.exe (main executable to run)..."
-					class="input"
+					type="file"
+					focusBorderColor="var(--accent-primary)"
+					browseHandler={handleBrowseLauncherClick}
 				/>
-				<button on:click={handleBrowseLauncherClick} class="btn"
-					>Browse</button
-				>
 			</div>
 		</div>
 
@@ -171,17 +170,15 @@
 					{/if}
 				</div>
 
-				<div class="input-group game-input-group">
-					<input
+				<div class="game-input-group" style="flex: 1;">
+					<BrowseInput
 						id="gameExe"
-						type="text"
 						bind:value={internalGamePath}
 						placeholder="Select game .exe file..."
-						class="input"
+						type="file"
+						focusBorderColor="var(--accent-secondary)"
+						browseHandler={handleBrowseGameClick}
 					/>
-					<button on:click={handleBrowseGameClick} class="btn"
-						>Browse</button
-					>
 				</div>
 			</div>
 
@@ -296,68 +293,7 @@
 		gap: 12px;
 	}
 
-	.input {
-		flex: 1;
-		padding: 12px 16px;
-		background: var(--bg-input);
-		border: 2px solid var(--glass-border);
-		border-radius: var(--radius-md);
-		color: var(--text-main);
-		font-size: 0.95rem;
-		font-weight: 600;
-		font-family: inherit;
-		outline: none;
-		transition: border-color var(--transition-fast), transform var(--transition-fast);
 
-		&::placeholder {
-			color: var(--text-dim);
-		}
-
-		&:focus {
-			transform: scale(1.005);
-		}
-	}
-
-	.launcher-exe-section .input:focus {
-		border-color: var(--accent-primary);
-	}
-
-	.game-exe-section .input:focus {
-		border-color: var(--accent-secondary);
-	}
-
-	.btn {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		padding: 12px 24px;
-		border-radius: var(--radius-pill);
-		font-weight: 700;
-		font-size: 0.9rem;
-		cursor: pointer;
-		transition: transform var(--transition-spring), background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
-		border: 2px solid var(--glass-border);
-		background: var(--bg-surface);
-		color: var(--text-main);
-		white-space: nowrap;
-
-		&:hover {
-			background: var(--bg-elevated);
-			transform: scale(1.05);
-		}
-
-		&:active {
-			transform: scale(0.95);
-		}
-	}
-
-	.launcher-exe-section .btn:hover {
-		border-color: var(--accent-primary);
-	}
-
-	.game-exe-section .btn:hover {
-		border-color: var(--accent-secondary);
-	}
 
 	.exe-note {
 		font-size: 0.85rem;

@@ -62,7 +62,7 @@
 		gap: 16px;
 		padding: 16px 20px;
 		background: var(--bg-surface);
-		border: 2px solid rgba(255, 255, 255, 0.05);
+		border: 2px solid var(--glass-border);
 		border-radius: var(--radius-md);
 		cursor: pointer;
 		transition: border-color var(--transition-fast), background var(--transition-fast);
@@ -71,6 +71,10 @@
 		&:hover {
 			border-color: var(--accent-secondary);
 
+			.slider {
+				border-color: var(--accent-secondary);
+			}
+
 			.config-btn {
 				opacity: 1;
 			}
@@ -78,7 +82,14 @@
 
 		&.active {
 			border-color: var(--accent-primary);
-			background: var(--bg-elevated);
+
+			.slider {
+				border-color: var(--accent-primary);
+			}
+
+			.subtitle {
+				color: var(--text-main);
+			}
 		}
 	}
 
@@ -121,11 +132,12 @@
 
 			&:checked + .slider {
 				background-color: var(--accent-primary);
+				border-color: var(--accent-primary);
 			}
 
 			&:checked + .slider:before {
 				transform: translateX(20px);
-				background-color: #ffffff;
+				background-color: var(--bg-base);
 			}
 		}
 	}
@@ -138,8 +150,8 @@
 		right: 0;
 		bottom: 0;
 		background-color: var(--bg-input);
-		border: 2px solid rgba(255, 255, 255, 0.03);
-		transition: background-color var(--transition-fast);
+		border: 2px solid var(--glass-border);
+		transition: background-color var(--transition-fast), border-color var(--transition-fast);
 		border-radius: var(--radius-pill);
 
 		&:before {
@@ -162,12 +174,14 @@
 			text-transform: uppercase;
 			font-size: 0.85rem;
 			letter-spacing: 0.5px;
+			transition: color var(--transition-fast);
 		}
 		.subtitle {
 			font-size: 0.75rem;
 			font-weight: 600;
 			color: var(--text-muted);
 			margin-top: 4px;
+			transition: color var(--transition-fast);
 		}
 	}
 </style>

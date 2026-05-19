@@ -212,14 +212,21 @@ body {
 	&.primary {
 		background: var(--accent-primary);
 		border: 2px solid var(--accent-primary);
-		color: #ffffff;
+		color: var(--bg-base);
 		box-shadow: 0 4px 14px var(--accent-glow);
 
 		&:hover {
 			background: var(--accent-hover);
 			border-color: var(--accent-hover);
+			color: var(--bg-base);
 			box-shadow: 0 6px 20px var(--accent-glow);
 			transform: scale(1.05);
+		}
+
+		&:disabled {
+			opacity: 0.55;
+			cursor: not-allowed;
+			transform: none;
 		}
 	}
 

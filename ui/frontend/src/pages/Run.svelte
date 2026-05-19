@@ -300,6 +300,7 @@
 			bind:isLoadingProton
 			onProtonChange={handleProtonChange}
 			disabled={!options.UseCustomProton}
+			disabledMessage="Enable 'Use Custom Proton' to change version"
 		/>
 
 		<div class="divider"></div>
@@ -369,7 +370,7 @@
 			font-size: 1.15rem;
 			font-weight: 700;
 			background: var(--bg-input);
-			border: 2px solid transparent;
+			border: 2px solid var(--glass-border);
 			padding: 12px 20px;
 			border-radius: var(--radius-md);
 			color: var(--text-main);

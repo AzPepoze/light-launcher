@@ -6,6 +6,7 @@
 	export let isLoadingProton: boolean = true;
 	export let onProtonChange: (value: string) => void;
 	export let disabled: boolean = false;
+	export let disabledMessage: string = "";
 </script>
 
 <div class="form-group" class:disabled>
@@ -16,6 +17,7 @@
 			bind:value={selectedProton}
 			placeholder={isLoadingProton ? "Scanning..." : "Select Version"}
 			disabled={isLoadingProton || disabled}
+			{disabledMessage}
 			onChange={onProtonChange}
 		/>
 	</div>

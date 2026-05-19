@@ -176,7 +176,7 @@
 		background: var(--bg-input);
 		border-radius: var(--radius-pill);
 		padding: 6px 14px;
-		border: 2px solid transparent;
+		border: 2px solid var(--glass-border);
 		transition: border-color var(--transition-fast);
 
 		&:focus-within {
