@@ -2,8 +2,7 @@ package builder
 
 func (builder *CommandBuilder) applyLsfg() {
 	if !builder.Options.Extras.Lsfg.Enabled {
+		builder.Environment = append(builder.Environment, "DISABLE_LSFGVK=1")
 		return
 	}
-	// Currently LSFG logic is handled by the launcher environment, 
-	// but we can add specific LSFG env vars here if needed in the future.
 }

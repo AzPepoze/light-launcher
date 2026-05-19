@@ -3,6 +3,7 @@
 	import Modal from "@components/shared/Modal.svelte";
 	import RangeSlider from "@components/shared/RangeSlider.svelte";
 	import LsfgConfigForm from "@components/editlsfg/LsfgConfigForm.svelte";
+	import GamescopeConfigForm from "@components/editgamescope/GamescopeConfigForm.svelte";
 	import {
 		PickFileCustom,
 		GetTotalRam,
@@ -124,43 +125,10 @@
 	<Modal
 		show={showGamescopeModal}
 		title="Gamescope Configuration"
+		fullscreen={true}
 		onClose={() => (showGamescopeModal = false)}
 	>
-		<div class="modal-form">
-			<div class="form-group">
-				<label for="gamescopeWidth">Width (px)</label>
-				<input
-					id="gamescopeWidth"
-					type="text"
-					class="input"
-					bind:value={options.Extras.Gamescope.Width}
-					placeholder="e.g. 1920"
-				/>
-			</div>
-			<div class="form-group">
-				<label for="gamescopeHeight">Height (px)</label>
-				<input
-					id="gamescopeHeight"
-					type="text"
-					class="input"
-					bind:value={options.Extras.Gamescope.Height}
-					placeholder="e.g. 1080"
-				/>
-			</div>
-			<div class="form-group">
-				<label for="gamescopeRefresh">Refresh Rate (Hz)</label>
-				<input
-					id="gamescopeRefresh"
-					type="text"
-					class="input"
-					bind:value={options.Extras.Gamescope.RefreshRate}
-					placeholder="e.g. 60"
-				/>
-			</div>
-			<p class="note">
-				Note: Mouse visibility fix enabled automatically.
-			</p>
-		</div>
+		<GamescopeConfigForm {options} />
 	</Modal>
 
 	<!-- Memory Settings Modal -->

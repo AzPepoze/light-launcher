@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"sort"
@@ -63,32 +62,57 @@ func cleanupLogs(dir string, keep int) {
 	}
 }
 
+const banner = `
+   __    _       __    __    __                      __           
+  / /   (_)___ _/ /_  / /_  / /   ____ ___  ______  / /_  ___  _____
+ / /   / / __ '/ __ \/ __/ / /   / __ '/ / / / __ \/ __ \/ _ \/ ___/
+/ /___/ / /_/ / / / / /_  / /___/ /_/ / /_/ / / / / / / /  __/ /    
+\____/_/\__, /_/ /_/\__/ /_____/\__,_/\__,_/_/ /_/_/ /_/\___/_/     
+       /____/                                                       
+`
+
 // logGameStartup logs the command and enabled features
 func logGameStartup(cmdArgs []string) {
-	log.Printf("--- EXECUTION START ---")
-	log.Printf("COMMAND: %s", strings.Join(cmdArgs, " "))
-	log.Printf("ENABLED FEATURES:")
+	var sb strings.Builder
+	sb.WriteString(banner)
+	sb.WriteString("\n======================================================================\n")
+	sb.WriteString("                         EXECUTION CONTEXT                            \n")
+	sb.WriteString("======================================================================\n\n")
 
+	sb.WriteString("[ ENABLED FEATURES ]\n")
+	hasFeatures := false
 	if mango {
-		log.Printf("  [+] MangoHud")
+		sb.WriteString("  ✓ MangoHud\n")
+		hasFeatures = true
 	}
 	if gamemode {
-		log.Printf("  [+] GameMode")
+		sb.WriteString("  ✓ GameMode\n")
+		hasFeatures = true
 	}
 	if gamescope {
-		log.Printf("  [+] Gamescope (%sx%s@%s)", gsW, gsH, gsR)
+		sb.WriteString(fmt.Sprintf("  ✓ Gamescope (%sx%s@%s)\n", gsW, gsH, gsR))
+		hasFeatures = true
 	}
 	if lsfg {
-		log.Printf("  [+] LSFG-VK (x%s, PerfMode:%v)", lsfgMult, lsfgPerf)
+		sb.WriteString(fmt.Sprintf("  ✓ LSFG-VK (x%s, PerfMode:%v)\n", lsfgMult, lsfgPerf))
+		hasFeatures = true
 	}
 	if memoryMin {
-		log.Printf("  [+] Memory Protection (Min: %s)", memoryMinValue)
+		sb.WriteString(fmt.Sprintf("  ✓ Memory Protection (Min: %s)\n", memoryMinValue))
+		hasFeatures = true
+	}
+	if !hasFeatures {
+		sb.WriteString("  None\n")
 	}
 
-	log.Printf("-----------------------")
+	sb.WriteString("\n[ COMMAND ]\n")
+	sb.WriteString("  " + strings.Join(cmdArgs, " ") + "\n")
+	sb.WriteString("\n======================================================================\n\n")
 
-	// Sync to disk so terminal sees output immediately
 	if logFileHandle != nil {
+		_, _ = fmt.Fprint(logFileHandle, sb.String())
 		_ = logFileHandle.Sync()
+	} else {
+		fmt.Print(sb.String())
 	}
 }

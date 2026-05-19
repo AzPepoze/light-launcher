@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"light-launcher/internal/app/instancebuilder"
 	"light-launcher/internal/config"
 	"light-launcher/internal/executor"
 	"light-launcher/internal/system"
@@ -33,7 +34,6 @@ func (app *App) RunGame(options types.LaunchOptions, showLogs bool) error {
 	if options.Extras.Lsfg.Enabled {
 		configPath, err := lsfg.GetConfigPath()
 		if err == nil {
-			// Always update/save profile during launch if enabled
 			gpu := options.Extras.Lsfg.Gpu
 			if gpu == "" {
 				gpuList := system.GetListGpus()
@@ -65,7 +65,7 @@ func (app *App) RunGame(options types.LaunchOptions, showLogs bool) error {
 		options.ProtonPath = match.Path
 	}
 
-	arguments := buildInstanceManagerArgs(options, showLogs)
+	arguments := instancebuilder.NewBuilder(options, showLogs).Build()
 	command := exec.Command(instanceManagerPath, arguments...)
 	if err := command.Start(); err != nil {
 		return fmt.Errorf("failed to start instance manager: %w", err)
@@ -103,46 +103,7 @@ func findInstanceManager() string {
 	return ""
 }
 
-func buildInstanceManagerArgs(options types.LaunchOptions, showLogs bool) []string {
-	arguments := []string{
-		"--game", options.GamePath,
-		"--launcher", options.LauncherPath,
-		"--prefix", options.PrefixPath,
-		"--proton-pattern", filepath.Base(options.ProtonPath),
-		"--proton-path", options.ProtonPath,
-	}
-	if options.Extras.EnableMangoHud {
-		arguments = append(arguments, "--mango")
-	}
-	if options.Extras.EnableGamemode {
-		arguments = append(arguments, "--gamemode")
-	}
-	if options.Extras.Lsfg.Enabled {
-		arguments = append(arguments, "--lsfg", "--lsfg-mult", options.Extras.Lsfg.Multiplier)
-		if options.Extras.Lsfg.PerfMode {
-			arguments = append(arguments, "--lsfg-perf")
-		}
-		if options.Extras.Lsfg.DllPath != "" {
-			arguments = append(arguments, "--lsfg-dll-path", options.Extras.Lsfg.DllPath)
-		}
-	}
-	if options.Extras.Memory.Enabled {
-		arguments = append(arguments, "--memory-min")
-		if options.Extras.Memory.Value != "" {
-			arguments = append(arguments, "--memory-min-value", options.Extras.Memory.Value)
-		}
-	}
-	if options.Extras.Gamescope.Enabled {
-		arguments = append(arguments, "--gamescope",
-			"--gs-w", options.Extras.Gamescope.Width,
-			"--gs-h", options.Extras.Gamescope.Height,
-			"--gs-r", options.Extras.Gamescope.RefreshRate)
-	}
-	if !showLogs {
-		arguments = append(arguments, "--logs=false")
-	}
-	return arguments
-}
+
 
 func parseMultiplier(multiplier string) int {
 	value := 2

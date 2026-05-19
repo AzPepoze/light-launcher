@@ -152,7 +152,8 @@ export async function validateAndLaunch(
 	systemStatus: core.SystemToolsStatus,
 	selectedProtonName: string,
 	protonVersions: core.ProtonTool[],
-	showLogsWindow: boolean
+	showLogsWindow: boolean,
+	closeLauncher = true
 ): Promise<boolean> {
 	if (!launchOptions.LauncherPath) {
 		notifications.add("Please select a launcher executable.", "error");
@@ -175,7 +176,7 @@ export async function validateAndLaunch(
 		return true; // Show modal
 	}
 
-	await executeLaunch(launchOptions, selectedProtonName, protonVersions, showLogsWindow);
+	await executeLaunch(launchOptions, selectedProtonName, protonVersions, showLogsWindow, closeLauncher);
 	return false;
 }
 
@@ -186,13 +187,16 @@ export async function executeLaunch(
 	launchOptions: core.LaunchOptions,
 	selectedProtonName: string,
 	protonVersions: core.ProtonTool[],
-	showLogsWindow: boolean
+	showLogsWindow: boolean,
+	closeLauncher = true
 ): Promise<void> {
 	launchOptions.ProtonPath = selectedProtonName;
 
 	try {
 		await RunGame(launchOptions, showLogsWindow);
-		Window.Close();
+		if (closeLauncher) {
+			Window.Close();
+		}
 	} catch (error) {
 		console.error("[EXECUTE] Launch failed:", error);
 		const message = (error as any)?.message || String(error);

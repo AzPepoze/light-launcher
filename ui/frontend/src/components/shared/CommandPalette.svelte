@@ -170,6 +170,7 @@
 	}
 
 	.results-list {
+		position: relative;
 		max-height: 360px;
 		overflow-y: auto;
 		padding: 8px;
@@ -199,8 +200,9 @@
 		outline: none;
 		transition: background var(--transition-fast), transform var(--transition-fast);
 
-		&.active {
+		&:hover, &.active {
 			background: rgba(255, 255, 255, 0.06);
+			transform: translateX(4px);
 		}
 
 		.item-icon {
@@ -215,7 +217,7 @@
 			border-radius: var(--radius-sm);
 		}
 
-		&.active .item-icon {
+		&:hover .item-icon, &.active .item-icon {
 			color: var(--text-main);
 		}
 
@@ -227,7 +229,7 @@
 			text-align: left;
 		}
 
-		&.active .item-name {
+		&:hover .item-name, &.active .item-name {
 			color: var(--text-main);
 		}
 

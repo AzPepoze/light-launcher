@@ -1,14 +1,14 @@
 <script lang="ts">
-	import PageHeader from "@components/shared/PageHeader.svelte";
-	import { onMount } from "svelte";
-	import ConfigForm from "@components/shared/ConfigForm.svelte";
-	import SlideButton from "@components/shared/SlideButton.svelte";
 	import ExecutableSelector from "@components/run/ExecutableSelector.svelte";
-	import PrefixSelector from "@components/run/PrefixSelector.svelte";
-	import ProtonSelector from "@components/run/ProtonSelector.svelte";
 	import LaunchButton from "@components/run/LaunchButton.svelte";
 	import MissingDependenciesModal from "@components/run/MissingDependenciesModal.svelte";
+	import PrefixSelector from "@components/run/PrefixSelector.svelte";
+	import ProtonSelector from "@components/run/ProtonSelector.svelte";
+	import ConfigForm from "@components/shared/ConfigForm.svelte";
+	import PageHeader from "@components/shared/PageHeader.svelte";
+	import SlideButton from "@components/shared/SlideButton.svelte";
 	import { RunPageState } from "@lib/RunPageState.svelte";
+	import { onMount } from "svelte";
 
 	const state = new RunPageState();
 
@@ -90,7 +90,10 @@
 				<span class="material-icons">tune</span>
 				<h2>Advanced Integrations</h2>
 			</div>
-			<ConfigForm bind:options={state.options} bind:showLogsWindow={state.showLogsWindow} />
+			<ConfigForm
+				bind:options={state.options}
+				bind:showLogsWindow={state.showLogsWindow}
+			/>
 		</div>
 	</div>
 
@@ -102,11 +105,25 @@
 	/>
 
 	<div class="actions-row">
+		<button
+			class="btn secondary bg-launch-btn"
+			on:click={() => state.handleLaunch(false)}
+			title="Run in Background (Keep Launcher Open)"
+		>
+			<span class="material-icons">play_arrow</span>
+		</button>
 		<div class="launch-wrapper">
-			<LaunchButton onLaunch={() => state.handleLaunch()} />
+			<LaunchButton onLaunch={() => state.handleLaunch(true)} />
 		</div>
-		<button class="btn secondary save-btn" on:click={() => state.handleSave()} disabled={state.isSaving} title="Save Configuration">
-			<span class="material-icons">{state.isSaving ? "sync" : "save"}</span>
+		<button
+			class="btn secondary save-btn"
+			on:click={() => state.handleSave()}
+			disabled={state.isSaving}
+			title="Save Configuration"
+		>
+			<span class="material-icons"
+				>{state.isSaving ? "sync" : "save"}</span
+			>
 		</button>
 	</div>
 </div>
@@ -133,7 +150,9 @@
 		display: flex;
 		flex-direction: column;
 		gap: 28px;
-		transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+		transition:
+			border-color var(--transition-fast),
+			box-shadow var(--transition-fast);
 
 		&:hover {
 			border-color: rgba(255, 255, 255, 0.08);
@@ -188,7 +207,9 @@
 			border-radius: var(--radius-md);
 			color: var(--text-main);
 			outline: none;
-			transition: border-color var(--transition-fast), transform var(--transition-fast);
+			transition:
+				border-color var(--transition-fast),
+				transform var(--transition-fast);
 
 			&:focus {
 				border-color: var(--accent-primary);
@@ -213,6 +234,30 @@
 	.launch-wrapper {
 		flex: 1;
 		pointer-events: auto;
+	}
+
+	.bg-launch-btn {
+		pointer-events: auto;
+		width: 60px;
+		height: 60px;
+		padding: 0;
+		flex-shrink: 0;
+		transform: none !important;
+		transition: color var(--transition-fast), border-color var(--transition-fast) !important;
+
+		&:hover:not(:disabled) {
+			color: var(--accent-primary);
+			border-color: var(--accent-primary);
+			transform: none !important;
+		}
+
+		&:active:not(:disabled) {
+			transform: none !important;
+		}
+
+		.material-icons {
+			font-size: 24px;
+		}
 	}
 
 	.save-btn {
@@ -244,7 +289,11 @@
 	}
 
 	@keyframes spin {
-		from { transform: rotate(0deg); }
-		to { transform: rotate(360deg); }
+		from {
+			transform: rotate(0deg);
+		}
+		to {
+			transform: rotate(360deg);
+		}
 	}
 </style>

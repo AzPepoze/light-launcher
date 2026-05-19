@@ -25,7 +25,7 @@ func findTerminal() string {
 	return ""
 }
 
-// startLogTerminal opens a terminal window to display game logs
+// startLogTerminal opens a terminal window to display game logs/
 func startLogTerminal(logPath string, gamePID int) {
 	term := findTerminal()
 	if term == "" {

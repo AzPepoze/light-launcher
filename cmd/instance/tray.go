@@ -61,6 +61,7 @@ func onReady(logPath string) {
 	}
 
 	mKill := systray.AddMenuItem("End Process", "Stop this game")
+	mLogs := systray.AddMenuItem("Show Logs", "Open terminal to view running logs")
 
 	// Start game
 	opts := buildLaunchOptions()
@@ -103,6 +104,17 @@ func onReady(logPath string) {
 		<-mKill.ClickedCh
 		log.Println("Kill button clicked in tray")
 		killGame()
+	}()
+
+	// Setup tray show logs handler
+	go func() {
+		for {
+			<-mLogs.ClickedCh
+			log.Println("Show Logs button clicked in tray")
+			if gameCmd.Process != nil {
+				startLogTerminal(logPath, gameCmd.Process.Pid)
+			}
+		}
 	}()
 
 	// Show logs in terminal if enabled

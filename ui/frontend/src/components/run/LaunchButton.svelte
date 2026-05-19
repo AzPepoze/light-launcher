@@ -22,7 +22,8 @@
 		border: none;
 		box-shadow: 0 4px 14px var(--accent-glow);
 		cursor: pointer;
-		transition: transform var(--transition-spring), background var(--transition-fast), box-shadow var(--transition-fast);
+		transition: background var(--transition-fast), box-shadow var(--transition-fast) !important;
+		transform: none !important;
 		font-weight: 800;
 		font-size: 1.15rem;
 		text-transform: uppercase;
@@ -34,16 +35,16 @@
 
 		&:hover {
 			background: var(--accent-hover) !important;
-			transform: scale(1.03) translateY(-2px);
 			box-shadow: 0 8px 24px var(--accent-glow);
+			transform: none !important;
 
 			.run-icon {
-				transform: rotate(-15deg) scale(1.2);
+				transform: rotate(-15deg);
 			}
 		}
 
 		&:active {
-			transform: scale(0.96);
+			transform: none !important;
 		}
 
 		.run-icon {

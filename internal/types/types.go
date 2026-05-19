@@ -12,10 +12,21 @@ type LsfgConfig struct {
 }
 
 type GamescopeConfig struct {
-	Enabled     bool   `json:"Enabled"`
-	Width       string `json:"Width"`
-	Height      string `json:"Height"`
-	RefreshRate string `json:"RefreshRate"`
+	Enabled        bool   `json:"Enabled"`
+	Width          string `json:"Width"`          // Nested width (-w)
+	Height         string `json:"Height"`         // Nested height (-h)
+	OutputWidth    string `json:"OutputWidth"`    // Output width (-W)
+	OutputHeight   string `json:"OutputHeight"`   // Output height (-H)
+	RefreshRate    string `json:"RefreshRate"`    // Nested refresh (-r)
+	FramerateLimit string `json:"FramerateLimit"` // Frame limit (--framerate-limit)
+	WindowMode     string `json:"WindowMode"`     // "fullscreen", "borderless", "windowed"
+	Scaler         string `json:"Scaler"`         // auto, integer, fit, fill, stretch
+	Filter         string `json:"Filter"`         // linear, nearest, fsr, nis, pixel
+	Sharpness      string `json:"Sharpness"`      // 0-20
+	HDR            bool   `json:"HDR"`
+	AdaptiveSync   bool   `json:"AdaptiveSync"`
+	Mangoapp       bool   `json:"Mangoapp"`
+	CustomArgs     string `json:"CustomArgs"`
 }
 
 type MemoryConfig struct {

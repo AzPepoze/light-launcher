@@ -228,16 +228,20 @@ export class RunPageState {
 		this.selectedProton = value;
 	}
 
-	async handleLaunch() {
+	closeLauncherOnConfirm = true;
+
+	async handleLaunch(closeLauncher = true) {
 		const shouldShowModal = await service.validateAndLaunch(
 			this.options, 
 			this.systemStatus, 
 			this.selectedProton, 
 			this.protonVersions, 
-			this.showLogsWindow
+			this.showLogsWindow,
+			closeLauncher
 		);
 		
 		if (shouldShowModal === true) {
+			this.closeLauncherOnConfirm = closeLauncher;
 			this.missingToolsList = [];
 			if (this.options.Extras.Gamescope.Enabled && !this.systemStatus.hasGamescope) this.missingToolsList.push("Gamescope");
 			if (this.options.Extras.EnableMangoHud && !this.systemStatus.hasMangoHud) this.missingToolsList.push("MangoHud");
@@ -249,6 +253,6 @@ export class RunPageState {
 
 	async proceedToLaunch() {
 		this.showValidationModal = false;
-		await service.executeLaunch(this.options, this.selectedProton, this.protonVersions, this.showLogsWindow);
+		await service.executeLaunch(this.options, this.selectedProton, this.protonVersions, this.showLogsWindow, this.closeLauncherOnConfirm);
 	}
 }

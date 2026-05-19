@@ -27,9 +27,20 @@ var (
 	showLogs  bool
 
 	// Gamescope configuration
-	gsW string
-	gsH string
-	gsR string
+	gsW            string
+	gsH            string
+	gsOutW         string
+	gsOutH         string
+	gsR            string
+	gsFRLimit      string
+	gsWindowMode   string
+	gsScaler       string
+	gsFilter       string
+	gsSharpness    string
+	gsHDR          bool
+	gsAdaptiveSync bool
+	gsMangoapp     bool
+	gsCustomArgs   string
 
 	// LSFG configuration
 	lsfgMult    string
@@ -57,9 +68,20 @@ func main() {
 	flag.StringVar(&lsfgDllPath, "lsfg-dll-path", "", "Path to Lossless.dll")
 	flag.BoolVar(&memoryMin, "memory-min", false, "Enable Memory Protection (min RAM)")
 	flag.StringVar(&memoryMinValue, "memory-min-value", "", "Memory Protection Value (e.g. 4G)")
-	flag.StringVar(&gsW, "gs-w", "1920", "Width")
-	flag.StringVar(&gsH, "gs-h", "1080", "Height")
-	flag.StringVar(&gsR, "gs-r", "60", "Refresh Rate")
+	flag.StringVar(&gsW, "gs-w", "", "Width")
+	flag.StringVar(&gsH, "gs-h", "", "Height")
+	flag.StringVar(&gsOutW, "gs-out-w", "", "Output Width")
+	flag.StringVar(&gsOutH, "gs-out-h", "", "Output Height")
+	flag.StringVar(&gsR, "gs-r", "", "Refresh Rate")
+	flag.StringVar(&gsFRLimit, "gs-fr-limit", "", "Framerate Limit")
+	flag.StringVar(&gsWindowMode, "gs-window-mode", "", "Window Mode")
+	flag.StringVar(&gsScaler, "gs-scaler", "", "Scaler")
+	flag.StringVar(&gsFilter, "gs-filter", "", "Filter")
+	flag.StringVar(&gsSharpness, "gs-sharpness", "", "Sharpness")
+	flag.BoolVar(&gsHDR, "gs-hdr", false, "Enable HDR")
+	flag.BoolVar(&gsAdaptiveSync, "gs-adaptive-sync", false, "Enable Adaptive Sync")
+	flag.BoolVar(&gsMangoapp, "gs-mangoapp", false, "Enable Mangoapp")
+	flag.StringVar(&gsCustomArgs, "gs-custom-args", "", "Custom Gamescope Arguments")
 	flag.BoolVar(&showLogs, "logs", true, "Show terminal logs")
 	flag.Parse()
 
