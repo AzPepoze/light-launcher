@@ -86,11 +86,11 @@
 		{:else}
 			{#if state.addMode === "folder-config"}
 				<button
-					class="secondary-btn"
+					class="btn secondary"
 					onclick={() => (state.addMode = "select")}>Back</button
 				>
 				<button
-					class="primary-btn"
+					class="btn primary"
 					onclick={() => state.startFolderScan()}
 					disabled={state.isSearching}
 				>
@@ -104,10 +104,10 @@
 			{:else}
 				{#if state.addMode === "folder-review"}
 					<button
-						class="secondary-btn"
+						class="btn secondary"
 						onclick={() => (state.addMode = "folder-config")}>Back</button
 					>
-					<button class="primary-btn" onclick={() => state.confirmAddFolder(onRefresh, onClose)}>
+					<button class="btn primary" onclick={() => state.confirmAddFolder(onRefresh, onClose)}>
 						Add {state.foundExecutables.length - state.discardedExecutables.size} Games
 					</button>
 				{/if}
@@ -202,54 +202,6 @@
 		flex-direction: column;
 	}
 
-	.primary-btn {
-		background: var(--accent-primary);
-		color: var(--glass-bg);
-		border: none;
-		border-radius: 12px;
-		padding: 12px 28px;
-		font-weight: 900;
-		text-transform: uppercase;
-		letter-spacing: 1px;
-		cursor: pointer;
-		transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-		display: flex;
-		align-items: center;
-		gap: 10px;
-		box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-
-		&:hover {
-			transform: scale(1.05) translateY(-2px);
-			box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-			opacity: 0.9;
-		}
-
-		&:active {
-			transform: scale(0.98);
-		}
-
-		&:disabled {
-			opacity: 0.5;
-			cursor: not-allowed;
-			transform: none;
-			box-shadow: none;
-		}
-	}
-
-	.secondary-btn {
-		background: var(--glass-surface);
-		color: var(--text-main);
-		border: 1px solid var(--glass-border);
-		border-radius: 12px;
-		padding: 12px 24px;
-		font-weight: 800;
-		cursor: pointer;
-		transition: all 0.2s;
-		&:hover {
-			background: var(--glass-border-bright);
-			border-color: var(--glass-border-bright);
-		}
-	}
 
 	.spinner {
 		width: 18px;

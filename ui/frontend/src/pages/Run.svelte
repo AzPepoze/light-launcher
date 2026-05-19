@@ -93,7 +93,7 @@
 			<div class="launch-wrapper">
 				<LaunchButton onLaunch={() => state.handleLaunch()} />
 			</div>
-			<button class="icon-btn save-btn" on:click={() => state.handleSave()} disabled={state.isSaving} title="Save Configuration">
+			<button class="btn secondary save-btn" on:click={() => state.handleSave()} disabled={state.isSaving} title="Save Configuration">
 				<span class="material-icons">{state.isSaving ? "sync" : "save"}</span>
 			</button>
 		</div>
@@ -169,26 +169,16 @@
 
 	.save-btn {
 		pointer-events: auto;
-		display: flex;
-		align-items: center;
-		justify-content: center;
 		width: 60px;
 		height: 60px;
-		border-radius: var(--radius-pill);
-		background: var(--bg-surface);
-		color: var(--text-muted);
-		border: 2px solid rgba(255, 255, 255, 0.05);
-		cursor: pointer;
-		transition: transform var(--transition-spring), background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+		padding: 0;
+		flex-shrink: 0;
 
 		&:hover:not(:disabled) {
-			background: var(--bg-elevated);
-			color: var(--text-main);
-			border-color: var(--accent-secondary);
 			transform: scale(1.1);
 		}
 
-		&:active {
+		&:active:not(:disabled) {
 			transform: scale(0.95);
 		}
 

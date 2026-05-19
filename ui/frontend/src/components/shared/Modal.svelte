@@ -170,27 +170,5 @@
 		display: flex;
 		justify-content: flex-end;
 		flex-shrink: 0;
-
-		.btn.primary {
-			padding: 12px 24px;
-			border-radius: var(--radius-pill);
-			font-weight: 800;
-			font-size: 0.9rem;
-			background: var(--accent-primary);
-			color: #ffffff;
-			border: none;
-			cursor: pointer;
-			box-shadow: 0 4px 10px var(--accent-glow);
-			transition: transform var(--transition-spring), background var(--transition-fast);
-
-			&:hover {
-				background: var(--accent-hover);
-				transform: scale(1.05);
-			}
-
-			&:active {
-				transform: scale(0.95);
-			}
-		}
 	}
 </style>

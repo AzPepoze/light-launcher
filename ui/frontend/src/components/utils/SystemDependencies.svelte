@@ -6,48 +6,68 @@
 		hasLosslessDll: boolean;
 		hasVulkanInfo: boolean;
 	};
+
+	$: items = [
+		{
+			name: "Gamescope",
+			ok: systemStatus.hasGamescope,
+			statusText: systemStatus.hasGamescope ? "Available" : "Not Found",
+			description: "Provides custom resolution sandbox, upscaling, and HDR support."
+		},
+		{
+			name: "MangoHud",
+			ok: systemStatus.hasMangoHud,
+			statusText: systemStatus.hasMangoHud ? "Available" : "Not Found",
+			description: "Monitors FPS, frame times, CPU/GPU temperatures, and resource usage."
+		},
+		{
+			name: "GameMode",
+			ok: systemStatus.hasGameMode,
+			statusText: systemStatus.hasGameMode ? "Available" : "Not Found",
+			description: "Optimizes CPU governor and scheduler settings for maximum performance."
+		},
+		{
+			name: "Vulkan-Tools",
+			ok: systemStatus.hasVulkanInfo,
+			statusText: systemStatus.hasVulkanInfo ? "Available" : "Missing",
+			description: "Enables GPU auto-detection and Vulkan capabilities verification."
+		},
+		{
+			name: "Lossless.dll",
+			ok: systemStatus.hasLosslessDll,
+			statusText: systemStatus.hasLosslessDll ? "Found" : "Not Found",
+			description: "Lossless Scaling binary libraries required for LSFG-VK frame generation."
+		}
+	];
 </script>
 
 <div class="section-container glass">
 	<h3>System Dependencies</h3>
-	<div class="system-status-grid">
-		<div class="status-item" class:ok={systemStatus.hasGamescope}>
-			<span class="dot"></span>
-			<span class="label">Gamescope</span>
-			<span class="value">
-				{systemStatus.hasGamescope ? "Available" : "Not Found"}
-			</span>
-		</div>
-		<div class="status-item" class:ok={systemStatus.hasMangoHud}>
-			<span class="dot"></span>
-			<span class="label">MangoHud</span>
-			<span class="value">
-				{systemStatus.hasMangoHud ? "Available" : "Not Found"}
-			</span>
-		</div>
-		<div class="status-item" class:ok={systemStatus.hasGameMode}>
-			<span class="dot"></span>
-			<span class="label">GameMode</span>
-			<span class="value">
-				{systemStatus.hasGameMode ? "Available" : "Not Found"}
-			</span>
-		</div>
-		<div class="status-item" class:ok={systemStatus.hasVulkanInfo}>
-			<span class="dot"></span>
-			<span class="label">Vulkan-Tools</span>
-			<span class="value">
-				{systemStatus.hasVulkanInfo ? "Available" : "Missing"}
-			</span>
-		</div>
-		<div class="status-item" class:ok={systemStatus.hasLosslessDll}>
-			<span class="dot"></span>
-			<span class="label">Lossless.dll</span>
-			<span class="value">
-				{systemStatus.hasLosslessDll ? "Found" : "Not Found"}
-			</span>
-		</div>
-	</div>
 	
+	<table class="status-table">
+		<thead>
+			<tr>
+				<th>Dependency</th>
+				<th>Status</th>
+				<th>Description</th>
+			</tr>
+		</thead>
+		<tbody>
+			{#each items as item}
+				<tr>
+					<td><strong>{item.name}</strong></td>
+					<td>
+						<span class="status-badge" class:ok={item.ok}>
+							<span class="dot"></span>
+							{item.statusText}
+						</span>
+					</td>
+					<td class="desc">{item.description}</td>
+				</tr>
+			{/each}
+		</tbody>
+	</table>
+
 	{#if !systemStatus.hasVulkanInfo}
 		<p class="warning-text important">
 			<span class="material-icons icon">warning</span>
@@ -81,53 +101,74 @@
 		}
 	}
 
-	.system-status-grid {
-		display: flex;
-		gap: 16px;
-		flex-wrap: wrap;
+	.status-table {
+		width: 100%;
+		border-collapse: collapse;
+		margin-top: 12px;
+		text-align: left;
+
+		th, td {
+			padding: 14px 18px;
+			font-size: 0.9rem;
+			border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+		}
+
+		th {
+			font-weight: 800;
+			text-transform: uppercase;
+			color: var(--text-muted);
+			font-size: 0.8rem;
+			letter-spacing: 0.5px;
+			background: rgba(0, 0, 0, 0.15);
+		}
+
+		tr {
+			transition: background-color var(--transition-fast);
+			&:hover {
+				background: rgba(255, 255, 255, 0.02);
+			}
+		}
+
+		td strong {
+			color: var(--text-main);
+			font-weight: 700;
+		}
+
+		td.desc {
+			color: var(--text-muted);
+			font-size: 0.85rem;
+			font-weight: 500;
+		}
 	}
 
-	.status-item {
-		display: flex;
+	.status-badge {
+		display: inline-flex;
 		align-items: center;
-		gap: 12px;
-		font-size: 0.9rem;
-		padding: 10px 20px;
-		background: var(--bg-base);
-		border: 2px solid rgba(255, 255, 255, 0.03);
+		gap: 8px;
+		font-size: 0.8rem;
+		font-weight: 700;
+		color: var(--danger);
+		padding: 6px 14px;
+		background: rgba(255, 59, 48, 0.1);
+		border: 1px solid rgba(255, 59, 48, 0.2);
 		border-radius: var(--radius-pill);
-		color: var(--text-muted);
-		transition: transform var(--transition-spring), border-color var(--transition-fast);
-
-		&:hover {
-			transform: translateY(-2px);
-			border-color: rgba(255, 255, 255, 0.1);
-		}
 
 		.dot {
-			width: 10px;
-			height: 10px;
+			width: 6px;
+			height: 6px;
 			border-radius: 50%;
 			background: var(--danger);
-			box-shadow: 0 0 10px var(--danger);
-		}
-		.label {
-			font-weight: 800;
-			color: var(--text-main);
-			text-transform: uppercase;
-			font-size: 0.85rem;
-			letter-spacing: 0.5px;
-		}
-		.value {
-			font-size: 0.8rem;
-			font-weight: 700;
-			opacity: 0.8;
+			box-shadow: 0 0 6px var(--danger);
 		}
 
 		&.ok {
+			color: var(--success);
+			background: rgba(52, 199, 89, 0.1);
+			border-color: rgba(52, 199, 89, 0.2);
+
 			.dot {
-				background: var(--accent-secondary);
-				box-shadow: 0 0 10px var(--accent-secondary);
+				background: var(--success);
+				box-shadow: 0 0 6px var(--success);
 			}
 		}
 	}

@@ -122,5 +122,11 @@
 		}
 	}
 
-
+	.utils-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, 400px), 520px));
+		gap: 24px;
+		width: 100%;
+		margin-top: 8px;
+	}
 </style>

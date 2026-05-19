@@ -130,7 +130,7 @@
 			.checkbox {
 				background: var(--accent-primary) !important;
 				border-color: var(--accent-primary) !important;
-				color: #ffffff;
+				color: var(--bg-base);
 			}
 		}
 	}

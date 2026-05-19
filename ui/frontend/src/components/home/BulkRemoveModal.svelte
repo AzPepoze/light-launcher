@@ -26,8 +26,8 @@
 	</div>
 
 	<div slot="footer" class="modal-footer-actions">
-		<button class="cancel-btn" on:click={onClose}> Cancel </button>
-		<button class="confirm-remove-btn" on:click={onConfirm}>
+		<button class="btn secondary" on:click={onClose}> Cancel </button>
+		<button class="btn danger" on:click={onConfirm}>
 			Remove Games
 		</button>
 	</div>
@@ -72,36 +72,8 @@
 		gap: 12px;
 		width: 100%;
 
-		button {
+		:global(.btn) {
 			flex: 1;
-			padding: 12px;
-			border-radius: 12px;
-			font-weight: 800;
-			cursor: pointer;
-			transition: all 0.2s;
-		}
-
-		.cancel-btn {
-			background: var(--glass-surface);
-			color: var(--text-main);
-			border: 1px solid var(--glass-border);
-
-			&:hover {
-				background: var(--glass-border);
-			}
-		}
-
-		.confirm-remove-btn {
-			background: #ef4444;
-			color: #fff;
-			border: none;
-			box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-
-			&:hover {
-				filter: brightness(1.2);
-				transform: translateY(-2px);
-				box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
-			}
 		}
 	}
 </style>

@@ -43,8 +43,7 @@
 				readonly={!compact}
 			/>
 			{#if onDllBrowse && showDllSection}
-				<button class="btn sm" on:click={onDllBrowse}>Browse</button
-				>
+				<button class="btn primary sm" on:click={onDllBrowse}>Browse</button>
 			{/if}
 		</div>
 		<p class="help-text">Lossless Scaling DLL path for LSFG-VK</p>
@@ -188,28 +187,7 @@
 		}
 	}
 
-	.btn {
-		padding: 8px 16px;
-		background: var(--accent-primary);
-		border: none;
-		border-radius: 6px;
-		color: var(--glass-bg);
-		font-weight: 600;
-		cursor: pointer;
-		transition: background 0.2s;
 
-		&:hover {
-			background: var(
-				--accent-primary-hover,
-				color-mix(in srgb, var(--accent-primary) 80%, black)
-			);
-		}
-
-		&.sm {
-			padding: 6px 12px;
-			font-size: 0.8rem;
-		}
-	}
 
 	.status-badge {
 		font-size: 0.65rem;
