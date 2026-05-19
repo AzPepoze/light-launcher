@@ -1,15 +1,10 @@
-import {
-	KillSession,
-	RunGame,
-	RemoveGame,
-	GetAutoScannedGames,
-} from "@bindings/light-launcher/internal/app/app";
-import { Events } from "@wailsio/runtime";
-import { notifications } from "@stores/notificationStore";
-import { navigationCommand } from "@stores/navigationStore";
-import { runState } from "@stores/runState";
-import { loadExeIcon } from "@lib/iconService";
+import { GetAutoScannedGames } from "@bindings/light-launcher/internal/app/app";
 import * as service from "@lib/homeService";
+import { loadExeIcon } from "@lib/iconService";
+import { navigationCommand } from "@stores/navigationStore";
+import { notifications } from "@stores/notificationStore";
+import { runState } from "@stores/runState";
+import { Events } from "@wailsio/runtime";
 
 export class HomePageState {
 	games = $state<any[]>([]);
@@ -36,31 +31,38 @@ export class HomePageState {
 				.includes(this.searchQuery.toLowerCase());
 			const matchesPrefix =
 				this.selectedPrefixFilter === "All Prefixes" ||
-				game.config.PrefixPath.endsWith("/" + this.selectedPrefixFilter) ||
-				game.config.PrefixPath.endsWith("\\" + this.selectedPrefixFilter);
+				game.config.PrefixPath.endsWith(
+					"/" + this.selectedPrefixFilter,
+				) ||
+				game.config.PrefixPath.endsWith(
+					"\\" + this.selectedPrefixFilter,
+				);
 			return matchesSearch && matchesPrefix;
 		});
 	});
 
 	filteredScannedFolderGroups = $derived.by(() => {
-		return this.scannedFolderGroups.map(group => {
-			const filteredGames = group.games.filter((game: any) => {
-				const matchesSearch = game.name
-					.toLowerCase()
-					.includes(this.searchQuery.toLowerCase());
-				const matchesPrefix = this.selectedPrefixFilter === "All Prefixes";
-				return matchesSearch && matchesPrefix;
+		return this.scannedFolderGroups
+			.map((group) => {
+				const filteredGames = group.games.filter((game: any) => {
+					const matchesSearch = game.name
+						.toLowerCase()
+						.includes(this.searchQuery.toLowerCase());
+					const matchesPrefix =
+						this.selectedPrefixFilter === "All Prefixes";
+					return matchesSearch && matchesPrefix;
+				});
+				return {
+					...group,
+					games: filteredGames,
+				};
+			})
+			.filter((group) => {
+				if (this.searchQuery) {
+					return group.games.length > 0;
+				}
+				return true;
 			});
-			return {
-				...group,
-				games: filteredGames
-			};
-		}).filter(group => {
-			if (this.searchQuery) {
-				return group.games.length > 0;
-			}
-			return true;
-		});
 	});
 
 	dropUnsubscribe: (() => void) | null = null;
@@ -107,7 +109,9 @@ export class HomePageState {
 
 		const [data, scannedGroups] = await Promise.all([
 			service.refreshHomeData(),
-			shouldScan ? GetAutoScannedGames() : Promise.resolve(this.scannedFolderGroups)
+			shouldScan
+				? GetAutoScannedGames()
+				: Promise.resolve(this.scannedFolderGroups),
 		]);
 
 		this.games = data.games;
@@ -141,12 +145,18 @@ export class HomePageState {
 			const files = event.data as string[];
 			const added = await service.processDroppedFiles(files);
 			if (added > 0) {
-				notifications.add(`Successfully added ${added} game(s)`, "success");
+				notifications.add(
+					`Successfully added ${added} game(s)`,
+					"success",
+				);
 				this.refreshData(true);
 			}
 		});
 
-		this.sessionInterval = setInterval(() => this.refreshData(false), 3000);
+		this.sessionInterval = setInterval(
+			() => this.refreshData(false),
+			3000,
+		);
 	}
 
 	destroy() {
@@ -206,16 +216,25 @@ export class HomePageState {
 
 		if (shiftKey && this.lastSelectedPath) {
 			const visible = this.getVisibleGames();
-			const lastIdx = visible.findIndex((g) => (g.path || g.config.LauncherPath) === this.lastSelectedPath);
-			const currentIdx = visible.findIndex((g) => (g.path || g.config.LauncherPath) === path);
+			const lastIdx = visible.findIndex(
+				(g) =>
+					(g.path || g.config.LauncherPath) ===
+					this.lastSelectedPath,
+			);
+			const currentIdx = visible.findIndex(
+				(g) => (g.path || g.config.LauncherPath) === path,
+			);
 
 			if (lastIdx !== -1 && currentIdx !== -1) {
 				const start = Math.min(lastIdx, currentIdx);
 				const end = Math.max(lastIdx, currentIdx);
-				const shouldSelect = this.selectedPaths.has(this.lastSelectedPath);
+				const shouldSelect = this.selectedPaths.has(
+					this.lastSelectedPath,
+				);
 
 				for (let i = start; i <= end; i++) {
-					const p = visible[i].path || visible[i].config.LauncherPath;
+					const p =
+						visible[i].path || visible[i].config.LauncherPath;
 					if (shouldSelect) {
 						this.selectedPaths.add(p);
 					} else {
