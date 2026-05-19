@@ -1,44 +1,44 @@
 <script lang="ts">
-	export let status: { isLsfgInstalled: boolean; lsfgVersion: string };
-	export let isInstalling: boolean;
-	export let isUninstalling: boolean;
-	export let progressMessage: string;
-	export let progressPercent: number;
-	export let handleInstall: () => Promise<void>;
-	export let handleUninstall: () => Promise<void>;
-	export let lsfgPng: string;
+	export let name: string;
+	export let isInstalled: boolean;
+	export let isInstalling: boolean = false;
+	export let isUninstalling: boolean = false;
+	export let progressMessage: string = "";
+	export let progressPercent: number = 0;
+	export let description: string[] = [];
+	export let note: string = "";
+	export let icon: string;
+	export let onInstall: () => Promise<void>;
+	export let onUninstall: () => Promise<void>;
 </script>
 
 <div class="util-card glass">
 	<div class="util-header">
 		<div class="icon-bg">
-			<img src={lsfgPng} alt="lsfg" class="lsfg-logo" />
+			<img src={icon} alt={name} class="util-logo" />
 		</div>
 		<div class="title-area">
-			<h3>LSFG-VK</h3>
-			<span class="badge" class:installed={status.isLsfgInstalled}>
-				{status.isLsfgInstalled ? "Installed" : "Not Installed"}
+			<h3>{name}</h3>
+			<span class="badge" class:installed={isInstalled}>
+				{isInstalled ? "Installed" : "Not Installed"}
 			</span>
 		</div>
 	</div>
 
 	<div class="description">
-		<p>
-			Lossless Scaling is a Windows-exclusive program featuring various algorithms for scaling and interpolating programs.
-		</p>
-		<p>
-			<strong>lsfg-vk</strong> is a Vulkan layer that hooks into Vulkan applications and generates additional frames using Lossless Scaling's frame generation algorithm.
-		</p>
-		<p class="note">
-			Note: Requires Lossless Scaling downloaded on Steam.
-		</p>
+		{#each description as paragraph}
+			<p>{@html paragraph}</p>
+		{/each}
+		{#if note}
+			<p class="note">{note}</p>
+		{/if}
 	</div>
 
 	<div class="action-area">
-		{#if status.isLsfgInstalled}
+		{#if isInstalled}
 			<button
 				class="btn danger"
-				on:click={handleUninstall}
+				on:click={onUninstall}
 				disabled={isUninstalling}
 			>
 				{isUninstalling ? "Removing..." : "Remove Utility"}
@@ -47,10 +47,10 @@
 			<div class="install-controls">
 				<button
 					class="btn primary"
-					on:click={handleInstall}
+					on:click={onInstall}
 					disabled={isInstalling}
 				>
-					{isInstalling ? "Installing..." : "Install LSFG-VK"}
+					{isInstalling ? "Installing..." : `Install ${name}`}
 				</button>
 				{#if isInstalling}
 					<div class="install-progress-area">
@@ -83,8 +83,7 @@
 		transition: transform var(--transition-spring), border-color var(--transition-fast), box-shadow var(--transition-fast);
 
 		&:hover {
-			border-color: var(--accent-primary);
-			transform: scale(1.01);
+			border-color: var(--accent-secondary);
 			box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 		}
 	}
@@ -105,7 +104,7 @@
 			justify-content: center;
 			font-size: 1.75rem;
 
-			.lsfg-logo {
+			.util-logo {
 				width: 32px;
 				height: 32px;
 				opacity: 0.9;
@@ -141,8 +140,9 @@
 		width: max-content;
 
 		&.installed {
-			background: var(--accent-secondary);
-			color: #000000;
+			background: rgba(52, 199, 89, 0.15);
+			color: var(--success);
+			border: 1px solid rgba(52, 199, 89, 0.25);
 		}
 	}
 
@@ -159,7 +159,7 @@
 		p {
 			margin: 0;
 		}
-		strong {
+		:global(strong) {
 			color: var(--text-main);
 			font-weight: 800;
 		}
@@ -221,42 +221,6 @@
 
 		.btn {
 			width: 100%;
-			padding: 12px 24px;
-			border-radius: var(--radius-pill);
-			font-weight: 800;
-			cursor: pointer;
-			transition: transform var(--transition-spring), background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
-
-			&.primary {
-				background: var(--accent-primary);
-				color: #ffffff;
-				border: none;
-				box-shadow: 0 4px 12px var(--accent-glow);
-
-				&:hover {
-					background: var(--accent-hover);
-					transform: scale(1.03);
-				}
-
-				&:active {
-					transform: scale(0.97);
-				}
-			}
-
-			&.danger {
-				background: var(--danger);
-				color: #ffffff;
-				border: none;
-
-				&:hover {
-					background: #ff2e63;
-					transform: scale(1.03);
-				}
-
-				&:active {
-					transform: scale(0.97);
-				}
-			}
 		}
 	}
 </style>

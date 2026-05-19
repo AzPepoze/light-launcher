@@ -101,7 +101,6 @@
 
 		&:hover {
 			border-color: var(--accent-primary);
-			transform: translateX(10px) scale(1.01);
 			box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 
 			.game-icon {
@@ -111,10 +110,6 @@
 			.play .material-icons {
 				transform: scale(1.15);
 			}
-		}
-
-		&:active {
-			transform: scale(0.995) translateX(5px);
 		}
 
 		&.running {

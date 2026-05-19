@@ -14,20 +14,40 @@
 
 	import lsfgPng from "@icons/lsfg.png";
 	import SystemDependencies from "@components/utils/SystemDependencies.svelte";
-	import LsfgCard from "@components/utils/LsfgCard.svelte";
+	import UtilityCard from "@components/utils/UtilityCard.svelte";
 
-	let status: core.UtilsStatus = { isLsfgInstalled: false, lsfgVersion: "" };
-	let systemStatus: core.SystemToolsStatus & { hasLosslessDll: boolean } = {
+	let status = $state<core.UtilsStatus>({ isLsfgInstalled: false, lsfgVersion: "" });
+	let systemStatus = $state<core.SystemToolsStatus & { hasLosslessDll: boolean }>({
 		hasGamescope: false,
 		hasMangoHud: false,
 		hasGameMode: false,
 		hasVulkanInfo: false,
 		hasLosslessDll: false,
-	};
-	let isInstalling = false;
-	let isUninstalling = false;
-	let progressMessage = "";
-	let progressPercent = 0;
+	});
+	let isInstalling = $state(false);
+	let isUninstalling = $state(false);
+	let progressMessage = $state("");
+	let progressPercent = $state(0);
+
+	const utilities = $derived([
+		{
+			id: "lsfg",
+			name: "LSFG-VK",
+			isInstalled: status.isLsfgInstalled,
+			isInstalling,
+			isUninstalling,
+			progressMessage,
+			progressPercent,
+			description: [
+				"Lossless Scaling is a Windows-exclusive program featuring various algorithms for scaling and interpolating programs.",
+				"<strong>lsfg-vk</strong> is a Vulkan layer that hooks into Vulkan applications and generates additional frames using Lossless Scaling's frame generation algorithm."
+			],
+			note: "Note: Requires Lossless Scaling downloaded on Steam.",
+			icon: lsfgPng,
+			onInstall: handleInstall,
+			onUninstall: handleUninstall,
+		}
+	]);
 
 	async function loadStatus() {
 		const [utilStatus, sysTools, dllPath] = await Promise.all([
@@ -89,16 +109,9 @@
 	<SystemDependencies {systemStatus} />
 
 	<div class="utils-grid">
-		<LsfgCard
-			{status}
-			{isInstalling}
-			{isUninstalling}
-			{progressMessage}
-			{progressPercent}
-			handleInstall={handleInstall}
-			handleUninstall={handleUninstall}
-			{lsfgPng}
-		/>
+		{#each utilities as util (util.id)}
+			<UtilityCard {...util} />
+		{/each}
 	</div>
 </div>
 
