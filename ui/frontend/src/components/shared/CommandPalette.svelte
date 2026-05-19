@@ -1,176 +1,72 @@
 <script lang="ts">
-	import { GetAllGames, RunGame } from "@bindings/light-launcher/internal/app/app";
-	import { navigationCommand } from "@stores/navigationStore";
-	import { notifications } from "@stores/notificationStore";
 	import { fade } from "svelte/transition";
-	import { loadExeIcon } from "@lib/iconService";
-	import protonIcon from "@icons/protron_forked.png";
+	import { commandPaletteState as state } from "@lib/CommandPaletteState.svelte";
 
 	export let show = false;
 	export let onClose: () => void = () => {};
 
-	let searchQuery = "";
-	let games: any[] = [];
-	let gameIcons: Record<string, string> = {};
-	let filteredItems: any[] = [];
-	let selectedIndex = 0;
-	let inputElement: HTMLInputElement;
-
-	const PAGES = [
-		{ name: "Go to Home", icon: "home", action: () => navigateTo("home") },
-		{ name: "Go to Launch Configuration", icon: "play_arrow", action: () => navigateTo("run") },
-		{ name: "Go to Utilities", icon: "handyman", action: () => navigateTo("utils") },
-		{ name: "Go to Appearance & Settings", icon: "settings", action: () => navigateTo("settings") },
-		{ name: "Go to Proton Versions", icon: protonIcon, isCustomIcon: true, action: () => navigateTo("versions") },
-		{ name: "Go to WINE Prefixes", icon: "folder", action: () => navigateTo("prefix") }
-	];
-
-	async function loadGames() {
-		try {
-			const fetched = await GetAllGames();
-			games = fetched || [];
-			
-			for (const game of games) {
-				const path = game.path || game.config?.LauncherPath;
-				if (path && !gameIcons[path]) {
-					loadExeIcon(path).then((icon) => {
-						if (icon) {
-							gameIcons[path] = icon;
-							gameIcons = gameIcons; // trigger reactivity
-						}
-					});
-				}
-			}
-
-			filterItems();
-		} catch (e) {
-			console.error("Failed to load games for command palette", e);
-		}
+	$: if (show) {
+		state.onShowChange(true);
+	} else {
+		state.onShowChange(false);
 	}
 
-	function filterItems() {
-		const query = searchQuery.trim().toLowerCase();
-		
-		// If empty, show pages first, then some games
-		if (!query) {
-			filteredItems = [
-				...PAGES.map(p => ({ ...p, type: "page" })),
-				...games.slice(0, 5).map(g => ({ name: `Launch ${g.name}`, icon: "sports_esports", type: "game", game: g }))
-			];
-			selectedIndex = 0;
-			return;
-		}
-
-		// Otherwise filter
-		const matchedPages = PAGES.filter(p => p.name.toLowerCase().includes(query)).map(p => ({ ...p, type: "page" }));
-		const matchedGames = games.filter(g => g.name.toLowerCase().includes(query)).map(g => ({ name: `Launch ${g.name}`, icon: "sports_esports", type: "game", game: g }));
-		
-		filteredItems = [...matchedPages, ...matchedGames];
-		selectedIndex = 0;
-	}
-
-	function navigateTo(page: string) {
-		navigationCommand.set({ page });
-		close();
-	}
-
-	async function executeItem(item: any) {
-		if (item.type === "page") {
-			item.action();
-		} else if (item.type === "game") {
-			try {
-				notifications.add(`Launching ${item.game.name}...`, "info");
-				close();
-				await RunGame(item.game.config, false);
-			} catch (err) {
-				notifications.add(`Launch failed: ${err}`, "error");
-			}
-		}
-	}
-
-	function close() {
+	$: if (!state.show && show) {
 		onClose();
 	}
 
-	function handleKeyDown(e: KeyboardEvent) {
-		if (e.key === "Escape") {
-			close();
-			e.preventDefault();
-		} else if (e.key === "ArrowDown") {
-			selectedIndex = (selectedIndex + 1) % Math.max(1, filteredItems.length);
-			e.preventDefault();
-			scrollToSelected();
-		} else if (e.key === "ArrowUp") {
-			selectedIndex = (selectedIndex - 1 + filteredItems.length) % Math.max(1, filteredItems.length);
-			e.preventDefault();
-			scrollToSelected();
-		} else if (e.key === "Enter") {
-			if (filteredItems[selectedIndex]) {
-				executeItem(filteredItems[selectedIndex]);
-			}
-			e.preventDefault();
-		}
-	}
-
-	let resultsContainer: HTMLDivElement;
-	function scrollToSelected() {
-		if (!resultsContainer) return;
-		const selectedEl = resultsContainer.children[selectedIndex] as HTMLElement;
-		if (!selectedEl) return;
-
-		const containerHeight = resultsContainer.clientHeight;
-		const elTop = selectedEl.offsetTop;
-		const elHeight = selectedEl.clientHeight;
-
-		if (elTop < resultsContainer.scrollTop) {
-			resultsContainer.scrollTop = elTop;
-		} else if (elTop + elHeight > resultsContainer.scrollTop + containerHeight) {
-			resultsContainer.scrollTop = elTop + elHeight - containerHeight;
-		}
-	}
-
-	$: if (show) {
-		searchQuery = "";
-		selectedIndex = 0;
-		loadGames();
-		setTimeout(() => {
-			if (inputElement) inputElement.focus();
-		}, 50);
-	}
-
-	$: if (searchQuery !== undefined) {
-		filterItems();
+	$: if (state.searchQuery !== undefined) {
+		state.filterItems();
 	}
 </script>
 
 {#if show}
-	<button class="palette-backdrop" on:click={close} on:keydown={(e) => e.key === "Escape" && close()} transition:fade={{ duration: 150 }} aria-label="Close palette">
-		<div class="palette-container" on:click|stopPropagation on:keydown|stopPropagation={() => {}} role="dialog" aria-modal="true" tabindex="-1">
-			<div class="search-row">
+	<div
+		class="palette-backdrop"
+		role="button"
+		tabindex="-1"
+		on:click={() => state.close()}
+		on:keydown={(e) => {
+			if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
+				e.stopPropagation();
+				state.close();
+			}
+		}}
+		transition:fade={{ duration: 100 }}
+	>
+		<div
+			class="command-palette"
+			role="dialog"
+			tabindex="-1"
+			on:click|stopPropagation
+			on:keydown|stopPropagation={(e) => state.handleKeyDown(e)}
+		>
+			<div class="search-header">
 				<span class="material-icons search-icon">search</span>
 				<input
-					bind:this={inputElement}
-					bind:value={searchQuery}
-					on:keydown={handleKeyDown}
-					placeholder="Search games, pages, and actions..."
+					bind:this={state.inputElement}
+					bind:value={state.searchQuery}
 					type="text"
+					placeholder="Search games, pages, and actions..."
+					spellcheck="false"
+					autocomplete="off"
 				/>
-				<span class="esc-badge">ESC</span>
+				<button class="kbd-hint" on:click={() => state.close()}>ESC</button>
 			</div>
 
-			<div class="results-list" bind:this={resultsContainer}>
-				{#each filteredItems as item, i}
+			<div class="results-list" bind:this={state.resultsContainer}>
+				{#each state.filteredItems as item, i}
 					<div
 						class="result-item"
-						class:active={i === selectedIndex}
-						on:click={() => executeItem(item)}
-						on:mouseenter={() => selectedIndex = i}
+						class:active={i === state.selectedIndex}
+						on:click={() => state.executeItem(item)}
+						on:mouseenter={() => (state.selectedIndex = i)}
 						role="button"
 						tabindex="0"
-						on:keydown={(e) => e.key === "Enter" && executeItem(item)}
+						on:keydown={(e) => e.key === "Enter" && state.executeItem(item)}
 					>
-						{#if item.type === "game" && gameIcons[item.game.path || item.game.config?.LauncherPath]}
-							<img src={gameIcons[item.game.path || item.game.config?.LauncherPath]} class="item-img-icon" alt="" />
+						{#if item.type === "game" && state.gameIcons[item.game.path || item.game.config?.LauncherPath]}
+							<img src={state.gameIcons[item.game.path || item.game.config?.LauncherPath]} class="item-img-icon" alt="" />
 						{:else if item.isCustomIcon}
 							<img src={item.icon} class="item-img-icon" alt="" />
 						{:else}
@@ -186,7 +82,7 @@
 				{:else}
 					<div class="no-results">
 						<span class="material-icons">search_off</span>
-						<p>No results found for "{searchQuery}"</p>
+						<p>No results found for "{state.searchQuery}"</p>
 					</div>
 				{/each}
 			</div>
@@ -197,7 +93,7 @@
 				<span class="tip"><span class="kbd">Esc</span> Close</span>
 			</div>
 		</div>
-	</button>
+	</div>
 {/if}
 
 <style lang="scss">
@@ -218,7 +114,7 @@
 		cursor: default;
 	}
 
-	.palette-container {
+	.command-palette {
 		width: 90%;
 		max-width: 640px;
 		background: var(--bg-surface);
@@ -230,7 +126,7 @@
 		flex-direction: column;
 	}
 
-	.search-row {
+	.search-header {
 		display: flex;
 		align-items: center;
 		padding: 16px 20px;
@@ -256,7 +152,7 @@
 			}
 		}
 
-		.esc-badge {
+		.kbd-hint {
 			font-size: 0.75rem;
 			font-weight: 800;
 			color: var(--text-dim);
@@ -264,6 +160,13 @@
 			border: 1px solid rgba(255, 255, 255, 0.1);
 			padding: 4px 8px;
 			border-radius: var(--radius-sm);
+			cursor: pointer;
+			transition: background var(--transition-fast), color var(--transition-fast);
+
+			&:hover {
+				background: rgba(255, 255, 255, 0.1);
+				color: var(--text-main);
+			}
 		}
 	}
 
