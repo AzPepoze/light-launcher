@@ -89,11 +89,18 @@ type LsfgProfileData struct {
 }
 
 type GameInfo struct {
-	Name     string        `json:"name"`
-	Path     string        `json:"path"`
-	Icon     string        `json:"icon"`
-	Config   LaunchOptions `json:"config"`
-	IsRecent bool          `json:"isRecent"`
+	Name          string        `json:"name"`
+	Path          string        `json:"path"`
+	Icon          string        `json:"icon"`
+	Config        LaunchOptions `json:"config"`
+	IsRecent      bool          `json:"isRecent"`
+	IsAutoScanned bool          `json:"isAutoScanned"`
+}
+
+type ScannedFolderGroup struct {
+	FolderPath string     `json:"folderPath"`
+	FolderName string     `json:"folderName"`
+	Games      []GameInfo `json:"games"`
 }
 
 type RunningSession struct {
@@ -123,5 +130,7 @@ type PrefixConfigWithProton struct {
 }
 
 type AppSettings struct {
-	TransparentMode bool `json:"TransparentMode"`
+	TransparentMode bool     `json:"TransparentMode"`
+	ScanFolders     []string `json:"ScanFolders"`
+	Blacklist       []string `json:"Blacklist"`
 }

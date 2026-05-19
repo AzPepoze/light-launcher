@@ -3,6 +3,8 @@
 	import { settingsStore } from "@stores/settingsStore";
 	import * as service from "@lib/settingsService";
 	import { onMount } from "svelte";
+	import ScanFoldersSetting from "@components/settings/ScanFoldersSetting.svelte";
+	import BlacklistSetting from "@components/settings/BlacklistSetting.svelte";
 
 	let currentSettings = {
 		theme: "light",
@@ -12,13 +14,19 @@
 
 	let appSettings = {
 		TransparentMode: true,
+		ScanFolders: [] as string[],
+		Blacklist: [] as string[],
 	};
 
-	onMount(async () => {
+	async function refreshAppSettings() {
 		const settings = await service.loadAppSettings();
 		if (settings) {
 			appSettings = settings;
 		}
+	}
+
+	onMount(async () => {
+		await refreshAppSettings();
 	});
 
 	settingsStore.subscribe((val) => {
@@ -140,6 +148,12 @@
 				</div>
 			</div>
 		</div>
+
+		<!-- Zone 3: Automatic Scan Folders -->
+		<ScanFoldersSetting {appSettings} onRefresh={refreshAppSettings} />
+
+		<!-- Zone 4: Hidden / Blacklisted Games -->
+		<BlacklistSetting {appSettings} onRefresh={refreshAppSettings} />
 	</div>
 </div>
 

@@ -7,7 +7,7 @@
 	export let prefixes: string[];
 	export let selectedPrefixFilter: string;
 	export let searchQuery: string;
-	export let currentView: "grid" | "list-grid";
+	export let currentView: "grid" | "list-grid" | "sidebar-grid";
 
 	export let onBulkRemove: () => void;
 	export let onToggleSelectionMode: () => void;
@@ -113,6 +113,16 @@
 		>
 			<span class="material-icons" style="font-size: 18px;"
 				>view_list</span
+			>
+		</button>
+		<button
+			class="view-btn"
+			class:active={currentView === "sidebar-grid"}
+			on:click={() => (currentView = "sidebar-grid")}
+			title="Sidebar View"
+		>
+			<span class="material-icons" style="font-size: 18px;"
+				>view_sidebar</span
 			>
 		</button>
 	</div>

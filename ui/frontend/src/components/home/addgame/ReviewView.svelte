@@ -5,6 +5,7 @@
 		path: string;
 		name: string;
 		icon: string | null;
+		alreadyExists?: boolean;
 	}[];
 	export let discardedExecutables: Set<string>;
 	export let onToggleDiscard: (path: string) => void;
@@ -21,7 +22,11 @@
 				tabindex="0"
 				on:keydown={(e) =>
 					e.key === "Enter" && onToggleDiscard(exe.path)}
+				title={exe.path}
 			>
+				{#if exe.alreadyExists}
+					<div class="library-badge">In Library</div>
+				{/if}
 				<div class="card-content">
 					<div class="icon-container">
 						{#if exe.icon}
@@ -87,6 +92,23 @@
 			);
 			opacity: 0;
 			transition: opacity 0.3s;
+		}
+
+		.library-badge {
+			position: absolute;
+			top: 6px;
+			right: 8px;
+			background: rgba(255, 255, 255, 0.05);
+			color: var(--text-dim);
+			font-size: 0.6rem;
+			font-weight: 800;
+			text-transform: uppercase;
+			padding: 2px 6px;
+			border-radius: var(--radius-sm);
+			letter-spacing: 0.5px;
+			border: 1px solid var(--glass-border);
+			pointer-events: none;
+			z-index: 2;
 		}
 
 		.discard-overlay {

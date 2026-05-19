@@ -10,6 +10,7 @@ export interface ScannedExecutable {
 	path: string;
 	name: string;
 	icon: string | null;
+	alreadyExists?: boolean;
 }
 
 /**

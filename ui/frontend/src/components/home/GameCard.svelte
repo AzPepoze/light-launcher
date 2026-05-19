@@ -12,7 +12,7 @@
 	export let isSelected: boolean = false;
 	export let onLaunch: (game: any) => void = () => {};
 	export let onConfigure: (game: any) => void = () => {};
-	export let onSelect: (game: any) => void = () => {};
+	export let onSelect: (game: any, shiftKey: boolean) => void = () => {};
 </script>
 
 {#if view === "grid"}

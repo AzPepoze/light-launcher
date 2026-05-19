@@ -79,42 +79,43 @@ func (app *App) SearchExecutables(folderPath string, maxDepth int, excludeNames 
 		}
 	}
 
-	err := filepath.WalkDir(cleanPath, func(path string, entry os.DirEntry, err error) error {
+	var scanDir func(dir string, currentDepth int)
+	scanDir = func(dir string, currentDepth int) {
+		if maxDepth != -1 && currentDepth > maxDepth {
+			return
+		}
+
+		entries, err := os.ReadDir(dir)
 		if err != nil {
-			return err
+			return
 		}
 
-		relative, err := filepath.Rel(cleanPath, path)
-		if err != nil {
-			return err
-		}
-
-		if entry.IsDir() {
-			if relative == "." {
-				return nil
+		for _, entry := range entries {
+			name := entry.Name()
+			
+			// Check exclusions
+			excluded := false
+			for _, regex := range excludeRegex {
+				if regex.MatchString(name) {
+					excluded = true
+					break
+				}
 			}
-			depth := len(strings.Split(relative, string(os.PathSeparator)))
-			if maxDepth != -1 && depth > maxDepth {
-				return filepath.SkipDir
+			if excluded {
+				continue
 			}
-			return nil
-		}
 
-		fileName := filepath.Base(path)
-		for _, regex := range excludeRegex {
-			if regex.MatchString(fileName) {
-				return nil
+			fullPath := filepath.Join(dir, name)
+			if entry.IsDir() {
+				scanDir(fullPath, currentDepth+1)
+			} else if strings.EqualFold(filepath.Ext(name), ".exe") {
+				executables = append(executables, fullPath)
 			}
 		}
+	}
 
-		if strings.EqualFold(filepath.Ext(path), ".exe") {
-			executables = append(executables, path)
-		}
-
-		return nil
-	})
-
-	return executables, err
+	scanDir(cleanPath, 0)
+	return executables, nil
 }
 
 func (app *App) PickFile() (string, error) {

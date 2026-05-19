@@ -27,7 +27,7 @@
 
 		<div class="image-container">
 			{#if icon}
-				<img src={icon} alt={game.name} class="game-icon" />
+				<img src={icon} alt={game.name} class="game-icon" loading="lazy" />
 			{:else}
 				<div class="fallback">
 					<span class="material-icons">rocket_launch</span>

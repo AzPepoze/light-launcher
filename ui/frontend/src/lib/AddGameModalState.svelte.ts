@@ -3,6 +3,9 @@ import {
 	PickFolder,
 	ListPrefixes,
 	GetPrefixBaseDir,
+	GetAllGames,
+	AddScanFolder,
+	BlacklistGame,
 } from "@bindings/light-launcher/internal/app/app";
 import { notifications } from "@stores/notificationStore";
 import { loadExeIcon } from "@lib/iconService";
@@ -52,6 +55,17 @@ export class AddGameModalState {
 		try {
 			const path = await PickFile();
 			if (path) {
+				const existingGames = await GetAllGames();
+				const normalizedPath = path.replace(/\\/g, '/').toLowerCase().trim();
+				const alreadyExists = (existingGames || []).some(
+					g => g.path.replace(/\\/g, '/').toLowerCase().trim() === normalizedPath
+				);
+
+				if (alreadyExists) {
+					notifications.add("This game is already in your library", "info");
+					return;
+				}
+
 				const name = path.split("/").pop()?.replace(".exe", "") || "Game";
 				await service.registerGame(path, `${this.prefixBaseDir}/${this.selectedPrefix}`);
 				notifications.add(`Added ${name}`, "success");
@@ -85,9 +99,25 @@ export class AddGameModalState {
 			const results = await service.scanFolderForExecutables(this.selectedFolder, depth, excludes);
 			
 			if (results.length > 0) {
-				this.foundExecutables = results;
+				const existingGames = await GetAllGames();
+				const normalizedExisting = new Set(
+					(existingGames || []).map(g => g.path.replace(/\\/g, '/').toLowerCase().trim())
+				);
+
+				this.foundExecutables = results.map((item) => {
+					const normPath = item.path.replace(/\\/g, '/').toLowerCase().trim();
+					const alreadyExists = normalizedExisting.has(normPath);
+					if (alreadyExists) {
+						this.discardedExecutables.add(item.path);
+					}
+					return {
+						...item,
+						alreadyExists
+					};
+				});
+
 				this.addMode = "folder-review";
-				this.discardedExecutables = new Set<string>();
+				this.discardedExecutables = new Set(this.discardedExecutables);
 				
 				this.foundExecutables.forEach((item, index) => {
 					loadExeIcon(item.path).then((icon) => {
@@ -116,14 +146,20 @@ export class AddGameModalState {
 	}
 
 	async confirmAddFolder(onRefresh: () => void, onClose: () => void) {
-		const targetPrefixPath = `${this.prefixBaseDir}/${this.selectedPrefix}`;
-		const addedCount = await service.batchRegisterGames(this.foundExecutables, this.discardedExecutables, targetPrefixPath);
-		
-		if (addedCount > 0) {
+		try {
+			// Add folder to watched folders config so it groups games dynamically on the Home page under a folder container with options dropdown
+			await AddScanFolder(this.selectedFolder);
+
+			// Blacklist any executables the user has chosen to discard/ignore
+			for (const path of this.discardedExecutables) {
+				await BlacklistGame(path);
+			}
+
+			notifications.add("Successfully added folder to watched library", "success");
 			onRefresh();
 			onClose();
-		} else if (this.foundExecutables.length > 0) {
-			onClose();
+		} catch (err) {
+			notifications.add(`Failed to add folder: ${err}`, "error");
 		}
 	}
 }

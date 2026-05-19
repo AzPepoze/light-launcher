@@ -7,6 +7,8 @@ import {
 	RemoveGame,
 	GetPrefixBaseDir,
 	SaveGameConfig,
+	IsDir,
+	AddScanFolder,
 } from "@bindings/light-launcher/internal/app/app";
 import { notifications } from "@stores/notificationStore";
 import { createLaunchOptions } from "./formService";
@@ -92,7 +94,11 @@ export async function processDroppedFiles(filePaths: string[]): Promise<number> 
 		const defaultPrefixPath = `${basePrefixDirectory}/Default`;
 
 		for (const filePath of filePaths) {
-			if (filePath.toLowerCase().endsWith(".exe")) {
+			const isFolder = await IsDir(filePath);
+			if (isFolder) {
+				await AddScanFolder(filePath);
+				addedCount++;
+			} else if (filePath.toLowerCase().endsWith(".exe")) {
 				const gameName = filePath.split("/").pop()?.replace(".exe", "") || "Game";
 				
 				const gameConfig = createLaunchOptions();

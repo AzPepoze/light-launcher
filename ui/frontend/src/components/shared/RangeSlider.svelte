@@ -222,7 +222,9 @@
 		position: relative;
 		width: 100%;
 		height: 8px;
-		background: var(--bg-input);
+		background: var(--bg-elevated);
+		border: 1px solid var(--glass-border);
+		box-sizing: border-box;
 		border-radius: var(--radius-pill);
 		overflow: visible; // Allow thumb to overflow
 	}

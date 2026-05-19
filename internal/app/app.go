@@ -44,6 +44,14 @@ func (app *App) CloseWindow() {
 	application.Get().Quit()
 }
 
+func (app *App) IsDir(path string) bool {
+	info, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	return info.IsDir()
+}
+
 func (app *App) GetExeIcon(executablePath string) string {
 	if _, err := os.Stat(executablePath); os.IsNotExist(err) {
 		return ""

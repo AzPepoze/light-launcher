@@ -39,7 +39,7 @@
 			onShowHelpModal={() => (state.showHelpModal = true)}
 		/>
 
-		{#if state.games.length === 0}
+		{#if state.games.length === 0 && state.scannedFolderGroups.length === 0}
 			<div class="empty-state glass">
 				<div class="empty-icon-bg">
 					<span class="material-icons empty-icon">sports_esports</span>
@@ -60,6 +60,7 @@
 				currentView={state.currentView}
 				games={state.games}
 				filteredGames={state.filteredGames}
+				scannedFolderGroups={state.filteredScannedFolderGroups}
 				gameIcons={state.gameIcons}
 				searchQuery={state.searchQuery}
 				selectedPrefixFilter={state.selectedPrefixFilter}
@@ -69,7 +70,8 @@
 				isGameRunning={state.isGameRunning}
 				handleQuickLaunch={(game) => state.handleQuickLaunch(game)}
 				handleConfigure={(game) => state.handleConfigure(game)}
-				toggleGameSelection={(game) => state.toggleGameSelection(game)}
+				toggleGameSelection={(game, shiftKey) => state.toggleGameSelection(game, shiftKey)}
+				onRefresh={() => state.refreshData(true)}
 			/>
 		{/if}
 	</div>
