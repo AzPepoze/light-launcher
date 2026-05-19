@@ -199,10 +199,9 @@
 
 	.launcher-exe-section,
 	.game-exe-section {
-		padding: 20px;
-		background: var(--bg-surface);
-		border-radius: var(--radius-lg);
-		border: 2px solid var(--glass-border);
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
 	}
 
 	label {

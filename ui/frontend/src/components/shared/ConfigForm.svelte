@@ -12,6 +12,7 @@
 	import { loadLsfgResources, parseMemoryValue } from "@lib/formService";
 
 	export let options: core.LaunchOptions;
+	export let showLogsWindow = false;
 	let showLsfgModal = false;
 	let showGamescopeModal = false;
 	let showMemoryModal = false;
@@ -101,6 +102,11 @@
 			subtitle="Prevent Swap (Min RAM)"
 			hasConfig={true}
 			onConfig={() => (showMemoryModal = true)}
+		/>
+		<SlideButton
+			bind:checked={showLogsWindow}
+			label="Show Logs"
+			subtitle="Open logs in terminal"
 		/>
 	</div>
 
