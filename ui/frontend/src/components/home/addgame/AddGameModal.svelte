@@ -1,13 +1,5 @@
 <script lang="ts">
-	import {
-		PickFile,
-		PickFolder,
-		ListPrefixes,
-		GetPrefixBaseDir,
-	} from "@bindings/light-launcher/internal/app/app";
 	import { notifications } from "@stores/notificationStore";
-	import { loadExeIcon } from "@lib/iconService";
-	import * as service from "@lib/gameService";
 	import SelectionView from "./SelectionView.svelte";
 	import ConfigView from "./ConfigView.svelte";
 	import ReviewView from "./ReviewView.svelte";
@@ -15,134 +7,25 @@
 	import Dropdown from "@components/shared/Dropdown.svelte";
 	import { onMount } from "svelte";
 	import { fade } from "svelte/transition";
+	import { AddGameModalState } from "@lib/AddGameModalState.svelte";
 
-	export let show: boolean = false;
-	export let onClose: () => void;
-	export let onRefresh: () => void;
+	let { show = false, onClose, onRefresh } = $props<{
+		show?: boolean;
+		onClose: () => void;
+		onRefresh: () => void;
+	}>();
 
-	let addMode: "select" | "folder-config" | "folder-review" = "select";
-	let searchDepth = "2";
-	let excludeNames = "UnityCrashHandler64, uninstall, redist";
-	let selectedFolder = "";
-	let foundExecutables: service.ScannedExecutable[] = [];
-	let discardedExecutables = new Set<string>();
-	let isSearching = false;
-
-	let prefixes: string[] = [];
-	let selectedPrefix = "default";
-	let prefixBaseDir = "";
-
-	async function loadPrefixes() {
-		try {
-			const list = await ListPrefixes();
-			prefixes = list || [];
-			prefixBaseDir = await GetPrefixBaseDir();
-
-			// If "Default" or "default" is in the list, select it
-			if (prefixes.includes("Default")) {
-				selectedPrefix = "Default";
-			} else if (prefixes.includes("default")) {
-				selectedPrefix = "default";
-			} else if (prefixes.length > 0) {
-				selectedPrefix = prefixes[0];
-			}
-		} catch (err) {
-			console.error("Failed to load prefixes:", err);
-		}
-	}
+	const state = new AddGameModalState();
 
 	onMount(() => {
-		loadPrefixes();
+		state.initialize();
 	});
 
-	function resetState() {
-		addMode = "select";
-		selectedFolder = "";
-		foundExecutables = [];
-		discardedExecutables = new Set();
-		searchDepth = "2";
-		excludeNames = "UnityCrashHandler64, uninstall, redist";
-		isSearching = false;
-		loadPrefixes();
-	}
-
-	$: if (!show) resetState();
-
-	async function handleAddFile() {
-		try {
-			const path = await PickFile();
-			if (path) {
-				const name = path.split("/").pop()?.replace(".exe", "") || "Game";
-				await service.registerGame(path, `${prefixBaseDir}/${selectedPrefix}`);
-				notifications.add(`Added ${name}`, "success");
-				onRefresh();
-				onClose();
-			}
-		} catch (err) {
-			notifications.add(`Failed to add game: ${err}`, "error");
+	$effect(() => {
+		if (!show) {
+			state.resetState();
 		}
-	}
-
-	async function handleAddFolder() {
-		try {
-			const folder = await PickFolder();
-			if (folder) {
-				selectedFolder = folder;
-				addMode = "folder-config";
-			}
-		} catch (err) {
-			notifications.add(`Failed to select folder: ${err}`, "error");
-		}
-	}
-
-	async function startFolderScan() {
-		if (!selectedFolder) return;
-		isSearching = true;
-		try {
-			const depth = parseInt(searchDepth) || 2;
-			const excludes = excludeNames.split(",").map((e) => e.trim()).filter(Boolean);
-
-			const results = await service.scanFolderForExecutables(selectedFolder, depth, excludes);
-			
-			if (results.length > 0) {
-				foundExecutables = results;
-				addMode = "folder-review";
-				discardedExecutables = new Set();
-				
-				foundExecutables.forEach((item, index) => {
-					loadExeIcon(item.path).then((icon) => {
-						if (icon) {
-							foundExecutables[index].icon = icon;
-							foundExecutables = [...foundExecutables];
-						}
-					});
-				});
-			} else {
-				notifications.add("No executables found in folder", "info");
-				addMode = "select";
-			}
-		} finally {
-			isSearching = false;
-		}
-	}
-
-	function toggleDiscard(path: string) {
-		if (discardedExecutables.has(path)) discardedExecutables.delete(path);
-		else discardedExecutables.add(path);
-		discardedExecutables = discardedExecutables;
-	}
-
-	async function confirmAddFolder() {
-		const targetPrefixPath = `${prefixBaseDir}/${selectedPrefix}`;
-		const addedCount = await service.batchRegisterGames(foundExecutables, discardedExecutables, targetPrefixPath);
-		
-		if (addedCount > 0) {
-			onRefresh();
-			onClose();
-		} else if (foundExecutables.length > 0) {
-			onClose();
-		}
-	}
+	});
 
 	function handleKeydown(event: KeyboardEvent) {
 		if (event.key === "Escape" && show) onClose();
@@ -153,76 +36,82 @@
 
 <Modal
 	{show}
-	title={addMode === "select"
+	title={state.addMode === "select"
 		? "Add Game"
-		: addMode === "folder-config"
+		: state.addMode === "folder-config"
 			? "Search Configuration"
 			: "Found Executables"}
 	onClose={() => onClose()}
 	showDone={false}
-	contentClass={addMode === "select" ? "selection-modal-style" : ""}
+	contentClass={state.addMode === "select" ? "selection-modal-style" : ""}
 >
 	<div class="add-container">
-		{#if addMode === "select"}
+		{#if state.addMode === "select"}
 			<div class="prefix-selection-quick" transition:fade>
 				<label for="quick-prefix">Target Prefix</label>
 				<Dropdown
-					options={prefixes}
-					bind:value={selectedPrefix}
+					options={state.prefixes}
+					bind:value={state.selectedPrefix}
 					placeholder="Select WINE Prefix"
 				/>
 			</div>
 			<SelectionView
-				onAddFile={handleAddFile}
-				onAddFolder={handleAddFolder}
-			/>
-		{:else if addMode === "folder-config"}
-			<ConfigView
-				{selectedFolder}
-				bind:searchDepth
-				bind:excludeNames
-				{prefixes}
-				bind:selectedPrefix
+				onAddFile={() => state.handleAddFile(onRefresh, onClose)}
+				onAddFolder={() => state.handleAddFolder()}
 			/>
 		{:else}
-			<ReviewView
-				{foundExecutables}
-				{discardedExecutables}
-				onToggleDiscard={toggleDiscard}
-			/>
+			{#if state.addMode === "folder-config"}
+				<ConfigView
+					selectedFolder={state.selectedFolder}
+					bind:searchDepth={state.searchDepth}
+					bind:excludeNames={state.excludeNames}
+					prefixes={state.prefixes}
+					bind:selectedPrefix={state.selectedPrefix}
+				/>
+			{:else}
+				<ReviewView
+					foundExecutables={state.foundExecutables}
+					discardedExecutables={state.discardedExecutables}
+					onToggleDiscard={(path) => state.toggleDiscard(path)}
+				/>
+			{/if}
 		{/if}
 	</div>
 
 	<div slot="footer" class="modal-footer-wizard">
-		{#if addMode === "select"}
+		{#if state.addMode === "select"}
 			<p class="selection-footer-text">
 				Select how you want to add games to your library
 			</p>
-		{:else if addMode === "folder-config"}
-			<button
-				class="secondary-btn"
-				on:click={() => (addMode = "select")}>Back</button
-			>
-			<button
-				class="primary-btn"
-				on:click={startFolderScan}
-				disabled={isSearching}
-			>
-				{#if isSearching}
-					<div class="spinner small"></div>
-					Scanning...
-				{:else}
-					Start Search
+		{:else}
+			{#if state.addMode === "folder-config"}
+				<button
+					class="secondary-btn"
+					onclick={() => (state.addMode = "select")}>Back</button
+				>
+				<button
+					class="primary-btn"
+					onclick={() => state.startFolderScan()}
+					disabled={state.isSearching}
+				>
+					{#if state.isSearching}
+						<div class="spinner small"></div>
+						Scanning...
+					{:else}
+						Start Search
+					{/if}
+				</button>
+			{:else}
+				{#if state.addMode === "folder-review"}
+					<button
+						class="secondary-btn"
+						onclick={() => (state.addMode = "folder-config")}>Back</button
+					>
+					<button class="primary-btn" onclick={() => state.confirmAddFolder(onRefresh, onClose)}>
+						Add {state.foundExecutables.length - state.discardedExecutables.size} Games
+					</button>
 				{/if}
-			</button>
-		{:else if addMode === "folder-review"}
-			<button
-				class="secondary-btn"
-				on:click={() => (addMode = "folder-config")}>Back</button
-			>
-			<button class="primary-btn" on:click={confirmAddFolder}>
-				Add {foundExecutables.length - discardedExecutables.size} Games
-			</button>
+			{/if}
 		{/if}
 	</div>
 </Modal>

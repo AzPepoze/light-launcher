@@ -19,6 +19,16 @@ export interface PrefixData {
 }
 
 /**
+ * Resolves the default prefix name from a list of prefixes
+ */
+export function getDefaultPrefixName(prefixes: string[]): string {
+	if (!prefixes || prefixes.length === 0) return "Default";
+	if (prefixes.includes("Default")) return "Default";
+	if (prefixes.includes("default")) return "default";
+	return prefixes[0];
+}
+
+/**
  * Fetches available prefixes and the base directory
  */
 export async function getPrefixData(): Promise<PrefixData> {
