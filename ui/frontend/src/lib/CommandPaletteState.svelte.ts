@@ -11,6 +11,7 @@ export class CommandPaletteState {
 	gameIcons = $state<Record<string, string>>({});
 	filteredItems = $state<any[]>([]);
 	selectedIndex = $state(0);
+	onCloseCallback: () => void = () => {};
 
 	inputElement = $state<HTMLInputElement | null>(null);
 	resultsContainer = $state<HTMLDivElement | null>(null);
@@ -86,6 +87,7 @@ export class CommandPaletteState {
 
 	close() {
 		this.show = false;
+		this.onCloseCallback();
 	}
 
 	handleKeyDown(e: KeyboardEvent) {

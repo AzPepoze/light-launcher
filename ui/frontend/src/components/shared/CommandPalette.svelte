@@ -11,9 +11,8 @@
 		state.onShowChange(false);
 	}
 
-	$: if (!state.show && show) {
-		onClose();
-	}
+	// Tell state how to close the UI layer
+	$: state.onCloseCallback = onClose;
 
 	$: if (state.searchQuery !== undefined) {
 		state.filterItems();
