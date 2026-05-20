@@ -197,9 +197,50 @@ func LoadAppSettings() *types.AppSettings {
 	
 	if err := LoadConfig(path, &settings); err != nil {
 		return &types.AppSettings{
-			TransparentMode: true,
+			TransparentMode:   true,
+			ScanFolderConfigs: make([]types.ScanFolderConfig, 0),
+			ScanFolders:       make([]string, 0),
 		}
 	}
+
+	modified := false
+	if settings.ScanFolderConfigs == nil {
+		settings.ScanFolderConfigs = make([]types.ScanFolderConfig, 0)
+	}
+
+	// 1. Convert legacy string scan folders to config entries if they are missing
+	for _, sf := range settings.ScanFolders {
+		cleaned := filepath.Clean(sf)
+		found := false
+		for _, cfg := range settings.ScanFolderConfigs {
+			if filepath.Clean(cfg.Path) == cleaned {
+				found = true
+				break
+			}
+		}
+		if !found {
+			settings.ScanFolderConfigs = append(settings.ScanFolderConfigs, types.ScanFolderConfig{
+				Path:         cleaned,
+				Depth:        2,
+				ExcludeNames: []string{"UnityCrashHandler64", "uninstall", "redist", "vc_redist", "dxsetup"},
+			})
+			modified = true
+		}
+	}
+
+	// 2. Keep the legacy ScanFolders slice in sync with ScanFolderConfigs
+	if len(settings.ScanFolders) != len(settings.ScanFolderConfigs) {
+		settings.ScanFolders = make([]string, 0)
+		for _, cfg := range settings.ScanFolderConfigs {
+			settings.ScanFolders = append(settings.ScanFolders, cfg.Path)
+		}
+		modified = true
+	}
+
+	if modified {
+		_ = SaveAppSettings(settings)
+	}
+
 	return &settings
 }
 

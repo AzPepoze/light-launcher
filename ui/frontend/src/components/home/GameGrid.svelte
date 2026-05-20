@@ -4,8 +4,10 @@
 	import ContextMenu from "@components/shared/ContextMenu.svelte";
 	import SidebarPanel from "@components/home/SidebarPanel.svelte";
 	import FolderGroup from "@components/home/FolderGroup.svelte";
+	import FolderSettingsModal from "@components/home/FolderSettingsModal.svelte";
 	import { BlacklistGame, RemoveGame, RemoveScanFolder } from "@bindings/light-launcher/internal/app/app";
 	import { notifications } from "@stores/notificationStore";
+	import SidebarProfilesSection from "@components/home/SidebarProfilesSection.svelte";
 
 	export let currentView: "grid" | "list-grid" | "sidebar-grid" = "grid";
 	export let games: any[] = [];
@@ -54,6 +56,15 @@
 		notifications.add("Rescanning watched folders...", "info");
 		activeFolderMenu = null;
 		onRefresh();
+	}
+
+	let showFolderSettings = false;
+	let folderSettingsPath = "";
+
+	function handleConfigureFolder(folderPath: string) {
+		folderSettingsPath = folderPath;
+		showFolderSettings = true;
+		activeFolderMenu = null;
 	}
 
 	onMount(() => {
@@ -130,20 +141,22 @@
 					<span class="material-icons">library_books</span>
 					Custom Profiles <span class="badge">{filteredGames.length}</span>
 				</h2>
-			{:else if currentView === "sidebar-grid"}
-				<div class="folder-group-header">
-					<div class="folder-title">
-						<span class="material-icons folder-icon-main">sports_esports</span>
-						<div class="folder-metadata">
-							<span class="folder-name">No Folder</span>
-							<span class="folder-path">Manually registered custom profiles</span>
-						</div>
-						<span class="badge">{filteredGames.length}</span>
-					</div>
-				</div>
 			{/if}
 
-			{#if filteredGames.length > 0}
+			{#if currentView === "sidebar-grid"}
+				<SidebarProfilesSection
+					{filteredGames}
+					{gameIcons}
+					{isGameRunning}
+					{sessions}
+					{isSelectionMode}
+					{selectedPaths}
+					{handleRightClick}
+					{handleQuickLaunch}
+					{handleConfigure}
+					{toggleGameSelection}
+				/>
+			{:else if filteredGames.length > 0}
 				<div class="games-grid">
 					{#each filteredGames as game}
 						<div on:contextmenu|preventDefault|stopPropagation={(e) => handleRightClick(e, game)}>
@@ -153,19 +166,13 @@
 								isRunning={isGameRunning(game, sessions)}
 								{isSelectionMode}
 								isSelected={selectedPaths.has(game.path || game.config.LauncherPath)}
-								view={currentView === "sidebar-grid" ? "grid" : currentView}
+								view={currentView}
 								onLaunch={() => handleQuickLaunch(game)}
 								onConfigure={() => handleConfigure(game)}
 								onSelect={toggleGameSelection}
 							/>
 						</div>
 					{/each}
-				</div>
-			{:else if currentView === "sidebar-grid"}
-				<div class="folder-empty-placeholder">
-					<span class="material-icons placeholder-icon">sports_esports</span>
-					<span class="placeholder-text">No custom profiles in this section.</span>
-					<span class="placeholder-subtext">Add specific games or configure monitored watched directories to list games.</span>
 				</div>
 			{/if}
 		{/if}
@@ -184,6 +191,7 @@
 				{toggleFolderMenu}
 				{handleRescan}
 				{handleRemoveFolder}
+				{handleConfigureFolder}
 				{handleRightClick}
 				{handleQuickLaunch}
 				{handleConfigure}
@@ -226,6 +234,13 @@
 		onClose={() => { menuVisible = false; activeMenuGame = null; }}
 	/>
 {/if}
+
+<FolderSettingsModal
+	show={showFolderSettings}
+	folderPath={folderSettingsPath}
+	onClose={() => { showFolderSettings = false; }}
+	onSave={onRefresh}
+/>
 
 <style lang="scss">
 	.games-container {
@@ -317,99 +332,7 @@
 		}
 	}
 
-	// Folder header inside custom profiles in sidebar mode
-	.folder-group-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: 20px;
-		padding-bottom: 16px;
-		border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-	}
 
-	.folder-title {
-		display: flex;
-		align-items: center;
-		gap: 14px;
-		min-width: 0;
-		flex: 1;
-	}
-
-	.folder-icon-main {
-		font-size: 28px;
-		color: var(--accent-secondary);
-		filter: drop-shadow(0 0 8px rgba(255, 102, 171, 0.3));
-	}
-
-	.folder-metadata {
-		display: flex;
-		flex-direction: column;
-		gap: 2px;
-		min-width: 0;
-	}
-
-	.folder-name {
-		font-size: 1.15rem;
-		font-weight: 900;
-		color: var(--text-main);
-		letter-spacing: -0.3px;
-	}
-
-	.folder-path {
-		font-size: 0.75rem;
-		color: var(--text-muted);
-		opacity: 0.6;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-
-	.folder-group-header .badge {
-		background: rgba(255, 255, 255, 0.05);
-		border: 1px solid rgba(255, 255, 255, 0.08);
-		border-radius: var(--radius-sm);
-		padding: 2px 8px;
-		font-size: 0.75rem;
-		font-weight: 700;
-		color: var(--text-muted);
-		flex-shrink: 0;
-	}
-
-	.folder-empty-placeholder {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		padding: 48px 24px;
-		color: var(--text-muted);
-		text-align: center;
-		background: rgba(0, 0, 0, 0.15);
-		border-radius: var(--radius-md);
-		border: 2px dashed rgba(255, 255, 255, 0.04);
-		margin: 8px 12px;
-		width: calc(100% - 24px);
-
-		.placeholder-icon {
-			font-size: 36px;
-			color: var(--text-muted);
-			opacity: 0.3;
-			margin-bottom: 12px;
-		}
-
-		.placeholder-text {
-			font-size: 0.95rem;
-			font-weight: 700;
-			color: var(--text-muted);
-			margin-bottom: 4px;
-		}
-
-		.placeholder-subtext {
-			font-size: 0.75rem;
-			opacity: 0.6;
-			max-width: 400px;
-			line-height: 1.4;
-		}
-	}
 
 	.games-container.sidebar-layout-view {
 		overflow: hidden;

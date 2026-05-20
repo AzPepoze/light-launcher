@@ -1,10 +1,11 @@
 import { GetAutoScannedGames } from "@bindings/light-launcher/internal/app/app";
 import * as service from "@lib/homeService";
-import { loadExeIcon } from "@lib/iconService";
 import { navigationCommand } from "@stores/navigationStore";
 import { notifications } from "@stores/notificationStore";
 import { runState } from "@stores/runState";
 import { Events } from "@wailsio/runtime";
+import { IconLoaderState } from "./IconLoaderState.svelte";
+import { SelectionState } from "./SelectionState.svelte";
 
 export class HomePageState {
 	games = $state<any[]>([]);
@@ -13,19 +14,18 @@ export class HomePageState {
 	prefixes = $state<string[]>(["All Prefixes"]);
 	selectedPrefixFilter = $state("All Prefixes");
 	sessionInterval: any = null;
-	gameIcons = $state<Record<string, string>>({});
 	showHelpModal = $state(false);
 	showAddModal = $state(false);
-	showBulkRemoveModal = $state(false);
 	currentView = $state<"grid" | "list-grid" | "sidebar-grid">("grid");
 	searchQuery = $state("");
 
-	isSelectionMode = $state(false);
-	selectedPaths = $state(new Set<string>());
-	lastSelectedPath = $state("");
+	// Sub-states
+	icons = new IconLoaderState();
+	selection = new SelectionState(() => this.getVisibleGames());
 
 	filteredGames = $derived.by(() => {
 		return this.games.filter((game) => {
+			if (game.isAutoScanned) return false;
 			const matchesSearch = game.name
 				.toLowerCase()
 				.includes(this.searchQuery.toLowerCase());
@@ -66,43 +66,6 @@ export class HomePageState {
 	});
 
 	dropUnsubscribe: (() => void) | null = null;
-	loadingIcons = new Set<string>();
-	iconQueue: string[] = [];
-	isProcessingIconQueue = false;
-
-	enqueueIconLoad(path: string) {
-		if (this.gameIcons[path] || this.loadingIcons.has(path)) {
-			return;
-		}
-		this.loadingIcons.add(path);
-		this.iconQueue.push(path);
-		this.processIconQueue();
-	}
-
-	async processIconQueue() {
-		if (this.isProcessingIconQueue) return;
-		this.isProcessingIconQueue = true;
-
-		while (this.iconQueue.length > 0) {
-			const path = this.iconQueue.shift();
-			if (!path) continue;
-
-			try {
-				const icon = await loadExeIcon(path);
-				if (icon) {
-					this.gameIcons[path] = icon;
-				}
-			} catch (err) {
-				console.error("Queue icon load error:", err);
-			} finally {
-				this.loadingIcons.delete(path);
-			}
-			// Small delay between icon loads to keep the system responsive
-			await new Promise((resolve) => setTimeout(resolve, 50));
-		}
-
-		this.isProcessingIconQueue = false;
-	}
 
 	async refreshData(forceScan = false) {
 		const shouldScan = forceScan || this.scannedFolderGroups.length === 0;
@@ -123,7 +86,7 @@ export class HomePageState {
 		for (const game of this.games) {
 			const path = game.path || game.config.LauncherPath;
 			if (path) {
-				this.enqueueIconLoad(path);
+				this.icons.enqueueIconLoad(path);
 			}
 		}
 
@@ -132,7 +95,7 @@ export class HomePageState {
 			for (const game of group.games) {
 				const path = game.path || game.config.LauncherPath;
 				if (path) {
-					this.enqueueIconLoad(path);
+					this.icons.enqueueIconLoad(path);
 				}
 			}
 		}
@@ -195,79 +158,11 @@ export class HomePageState {
 		}
 	}
 
-	toggleSelectionMode() {
-		this.isSelectionMode = !this.isSelectionMode;
-		if (!this.isSelectionMode) {
-			this.selectedPaths = new Set<string>();
-			this.lastSelectedPath = "";
-		}
-	}
-
 	getVisibleGames() {
 		const visible: any[] = [...this.filteredGames];
 		for (const group of this.filteredScannedFolderGroups) {
 			visible.push(...group.games);
 		}
 		return visible;
-	}
-
-	toggleGameSelection(game: any, shiftKey: boolean = false) {
-		const path = game.path || game.config.LauncherPath;
-
-		if (shiftKey && this.lastSelectedPath) {
-			const visible = this.getVisibleGames();
-			const lastIdx = visible.findIndex(
-				(g) =>
-					(g.path || g.config.LauncherPath) ===
-					this.lastSelectedPath,
-			);
-			const currentIdx = visible.findIndex(
-				(g) => (g.path || g.config.LauncherPath) === path,
-			);
-
-			if (lastIdx !== -1 && currentIdx !== -1) {
-				const start = Math.min(lastIdx, currentIdx);
-				const end = Math.max(lastIdx, currentIdx);
-				const shouldSelect = this.selectedPaths.has(
-					this.lastSelectedPath,
-				);
-
-				for (let i = start; i <= end; i++) {
-					const p =
-						visible[i].path || visible[i].config.LauncherPath;
-					if (shouldSelect) {
-						this.selectedPaths.add(p);
-					} else {
-						this.selectedPaths.delete(p);
-					}
-				}
-				this.selectedPaths = new Set(this.selectedPaths);
-				this.lastSelectedPath = path;
-				return;
-			}
-		}
-
-		if (this.selectedPaths.has(path)) {
-			this.selectedPaths.delete(path);
-		} else {
-			this.selectedPaths.add(path);
-		}
-		this.selectedPaths = new Set(this.selectedPaths);
-		this.lastSelectedPath = path;
-	}
-
-	async handleBulkRemove() {
-		if (this.selectedPaths.size === 0) return;
-		this.showBulkRemoveModal = true;
-	}
-
-	async confirmBulkRemove() {
-		const count = await service.removeGamesBulk(this.selectedPaths);
-		if (count > 0) {
-			this.selectedPaths = new Set<string>();
-			this.isSelectionMode = false;
-			this.showBulkRemoveModal = false;
-			this.refreshData();
-		}
 	}
 }

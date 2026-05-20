@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { fade } from "svelte/transition";
-	import { commandPaletteState as state } from "@lib/CommandPaletteState.svelte";
+	import { commandPaletteState as state } from "./CommandPaletteState.svelte";
 
 	export let show = false;
 	export let onClose: () => void = () => {};

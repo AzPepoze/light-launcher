@@ -3,7 +3,7 @@
 	import StatusUtilityButton from "@components/shared/StatusUtilityButton.svelte";
 	import SystemResources from "@components/shared/SystemResources.svelte";
 	import CleanupActions from "@components/shared/CleanupActions.svelte";
-	import { StatusDrawerState } from "@lib/StatusDrawerState.svelte";
+	import { StatusDrawerState } from "./StatusDrawerState.svelte";
 
 	const state = new StatusDrawerState();
 

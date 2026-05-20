@@ -7,7 +7,7 @@
 	import ConfigForm from "@components/shared/ConfigForm.svelte";
 	import PageHeader from "@components/shared/PageHeader.svelte";
 	import SlideButton from "@components/shared/SlideButton.svelte";
-	import { RunPageState } from "@lib/RunPageState.svelte";
+	import { RunPageState } from "@components/run/RunPageState.svelte";
 	import { onMount } from "svelte";
 
 	const state = new RunPageState();
@@ -75,10 +75,10 @@
 			</div>
 
 			<ProtonSelector
-				bind:protonOptions={state.protonOptions}
-				bind:selectedProton={state.selectedProton}
-				bind:isLoadingProton={state.isLoadingProton}
-				onProtonChange={(val) => state.handleProtonChange(val)}
+				bind:protonOptions={state.proton.protonOptions}
+				bind:selectedProton={state.proton.selectedProton}
+				bind:isLoadingProton={state.proton.isLoadingProton}
+				onProtonChange={(val) => state.proton.handleProtonChange(val)}
 				disabled={!state.options.UseCustomProton}
 				disabledMessage="Enable 'Use Custom Proton' to change version"
 			/>

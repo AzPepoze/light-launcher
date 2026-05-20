@@ -8,31 +8,42 @@
 	export let searchDepth: string;
 	export let excludeNames: string;
 	export let prefixes: string[] = [];
-	export let selectedPrefix: string;
+	export let selectedPrefix: string = "";
+	export let showFolderInput = true;
+	export let showPrefixInput = true;
 </script>
 
 <div class="config-view" transition:fade={{ duration: 200 }}>
-	<BrowseInput
-		bind:value={selectedFolder}
-		type="folder"
-		label="Scanning Target"
-		placeholder="Target folder path..."
-	/>
+	{#if showFolderInput}
+		<BrowseInput
+			bind:value={selectedFolder}
+			type="folder"
+			label="Scanning Target"
+			placeholder="Target folder path..."
+		/>
+	{:else}
+		<div class="folder-info">
+			<span class="info-label">Folder Path</span>
+			<span class="info-value">{selectedFolder}</span>
+		</div>
+	{/if}
 
 	<div class="settings-grid">
-		<div class="setting-item">
-			<label class="item-label" for="prefix-select"
-				>Target Prefix</label
-			>
-			<Dropdown
-				options={prefixes}
-				bind:value={selectedPrefix}
-				placeholder="Select WINE Prefix"
-			/>
-			<p class="setting-hint">
-				Games will be assigned to this prefix.
-			</p>
-		</div>
+		{#if showPrefixInput}
+			<div class="setting-item">
+				<label class="item-label" for="prefix-select"
+					>Target Prefix</label
+				>
+				<Dropdown
+					options={prefixes}
+					bind:value={selectedPrefix}
+					placeholder="Select WINE Prefix"
+				/>
+				<p class="setting-hint">
+					Games will be assigned to this prefix.
+				</p>
+			</div>
+		{/if}
 
 		<div class="setting-item">
 			<NumericInput
@@ -48,9 +59,9 @@
 
 		<div class="setting-item">
 			<div class="exclude-input">
-				<label for="exclude-names">Exclusion Rules</label>
+				<label for="exclude-names-settings">Exclusion Rules</label>
 				<input
-					id="exclude-names"
+					id="exclude-names-settings"
 					type="text"
 					bind:value={excludeNames}
 					placeholder="e.g. Unity.*, *64, redist"
@@ -94,6 +105,31 @@
 			font-size: 0.75rem;
 			color: var(--text-dim);
 			opacity: 0.6;
+		}
+	}
+
+	.folder-info {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		background: rgba(255, 255, 255, 0.02);
+		border: 1px solid var(--glass-border);
+		border-radius: 8px;
+		padding: 12px 16px;
+
+		.info-label {
+			font-size: 0.7rem;
+			font-weight: 800;
+			color: var(--text-dim);
+			text-transform: uppercase;
+			letter-spacing: 0.5px;
+		}
+
+		.info-value {
+			font-size: 0.9rem;
+			color: var(--text-main);
+			word-break: break-all;
+			font-weight: 500;
 		}
 	}
 

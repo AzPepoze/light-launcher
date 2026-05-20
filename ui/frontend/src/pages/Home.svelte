@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
 	import { navigationCommand } from "@stores/navigationStore";
-	import { HomePageState } from "@lib/HomePageState.svelte";
+	import { HomePageState } from "@components/home/HomePageState.svelte";
 
 	import GameGrid from "@components/home/GameGrid.svelte";
 	import StatusDrawer from "@components/shared/StatusDrawer.svelte";
@@ -27,14 +27,14 @@
 
 	<div class="quick-launch-section">
 		<QuickLaunchHeader
-			isSelectionMode={state.isSelectionMode}
-			selectedCount={state.selectedPaths.size}
+			isSelectionMode={state.selection.isSelectionMode}
+			selectedCount={state.selection.selectedPaths.size}
 			prefixes={state.prefixes}
 			bind:selectedPrefixFilter={state.selectedPrefixFilter}
 			bind:searchQuery={state.searchQuery}
 			bind:currentView={state.currentView}
-			onBulkRemove={() => state.handleBulkRemove()}
-			onToggleSelectionMode={() => state.toggleSelectionMode()}
+			onBulkRemove={() => state.selection.handleBulkRemove()}
+			onToggleSelectionMode={() => state.selection.toggleSelectionMode()}
 			onShowAddModal={() => (state.showAddModal = true)}
 			onShowHelpModal={() => (state.showHelpModal = true)}
 		/>
@@ -61,16 +61,16 @@
 				games={state.games}
 				filteredGames={state.filteredGames}
 				scannedFolderGroups={state.filteredScannedFolderGroups}
-				gameIcons={state.gameIcons}
+				gameIcons={state.icons.gameIcons}
 				searchQuery={state.searchQuery}
 				selectedPrefixFilter={state.selectedPrefixFilter}
-				isSelectionMode={state.isSelectionMode}
-				selectedPaths={state.selectedPaths}
+				isSelectionMode={state.selection.isSelectionMode}
+				selectedPaths={state.selection.selectedPaths}
 				sessions={state.sessions}
 				isGameRunning={state.isGameRunning}
 				handleQuickLaunch={(game) => state.handleQuickLaunch(game)}
 				handleConfigure={(game) => state.handleConfigure(game)}
-				toggleGameSelection={(game, shiftKey) => state.toggleGameSelection(game, shiftKey)}
+				toggleGameSelection={(game, shiftKey) => state.selection.toggleGameSelection(game, shiftKey)}
 				onRefresh={() => state.refreshData(true)}
 			/>
 		{/if}
@@ -80,10 +80,10 @@
 <HowItWorksModal show={state.showHelpModal} onClose={() => (state.showHelpModal = false)} />
 
 <BulkRemoveModal
-	show={state.showBulkRemoveModal}
-	selectedCount={state.selectedPaths.size}
-	onClose={() => (state.showBulkRemoveModal = false)}
-	onConfirm={() => state.confirmBulkRemove()}
+	show={state.selection.showBulkRemoveModal}
+	selectedCount={state.selection.selectedPaths.size}
+	onClose={() => (state.selection.showBulkRemoveModal = false)}
+	onConfirm={() => state.selection.confirmBulkRemove(() => state.refreshData())}
 />
 
 <AddGameModal

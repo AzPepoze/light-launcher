@@ -13,6 +13,7 @@
 	export let toggleFolderMenu: (event: MouseEvent, folderPath: string) => void;
 	export let handleRescan: () => void;
 	export let handleRemoveFolder: (folderPath: string) => void;
+	export let handleConfigureFolder: (folderPath: string) => void;
 	export let handleRightClick: (event: MouseEvent, game: any) => void;
 	export let handleQuickLaunch: (game: any) => Promise<void>;
 	export let handleConfigure: (game: any) => void;
@@ -42,6 +43,10 @@
 					<div class="dropdown-item" on:click={handleRescan}>
 						<span class="material-icons">refresh</span>
 						<span>Rescan Folder</span>
+					</div>
+					<div class="dropdown-item" on:click={() => handleConfigureFolder(group.folderPath)}>
+						<span class="material-icons">settings</span>
+						<span>Folder Settings</span>
 					</div>
 					<div class="dropdown-item danger" on:click={() => handleRemoveFolder(group.folderPath)}>
 						<span class="material-icons">delete_outline</span>

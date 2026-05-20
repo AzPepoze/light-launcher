@@ -60,8 +60,8 @@ func onReady(logPath string) {
 		setupLsfgMenu()
 	}
 
-	mKill := systray.AddMenuItem("End Process", "Stop this game")
 	mLogs := systray.AddMenuItem("Show Logs", "Open terminal to view running logs")
+	mKill := systray.AddMenuItem("End Process", "Stop this game")
 
 	// Start game
 	opts := buildLaunchOptions()

@@ -129,8 +129,15 @@ type PrefixConfigWithProton struct {
 	ProtonIsSteam     bool          `json:"protonIsSteam"`
 }
 
+type ScanFolderConfig struct {
+	Path         string   `json:"Path"`
+	Depth        int      `json:"Depth"`
+	ExcludeNames []string `json:"ExcludeNames"`
+}
+
 type AppSettings struct {
-	TransparentMode bool     `json:"TransparentMode"`
-	ScanFolders     []string `json:"ScanFolders"`
-	Blacklist       []string `json:"Blacklist"`
+	TransparentMode   bool               `json:"TransparentMode"`
+	ScanFolders       []string           `json:"ScanFolders"`
+	ScanFolderConfigs []ScanFolderConfig `json:"ScanFolderConfigs"`
+	Blacklist         []string           `json:"Blacklist"`
 }

@@ -17,6 +17,12 @@ func (app *App) GetAllGames() ([]types.GameInfo, error) {
 		return nil, err
 	}
 
+	settings := config.LoadAppSettings()
+	var scanFolders []string
+	if settings != nil {
+		scanFolders = settings.ScanFolders
+	}
+
 	games := make([]types.GameInfo, 0)
 	for _, gameConfig := range configs {
 		name := gameConfig.Name
@@ -33,13 +39,34 @@ func (app *App) GetAllGames() ([]types.GameInfo, error) {
 			cleanedPath = absolutePath
 		}
 
+		inScanFolder := false
+		for _, sf := range scanFolders {
+			sfCleaned := filepath.Clean(sf)
+			if abs, err := filepath.Abs(sfCleaned); err == nil {
+				sfCleaned = abs
+			}
+			if isSubpath(cleanedPath, sfCleaned) {
+				inScanFolder = true
+				break
+			}
+		}
+
 		games = append(games, types.GameInfo{
-			Name:   name,
-			Path:   cleanedPath,
-			Config: gameConfig,
+			Name:          name,
+			Path:          cleanedPath,
+			Config:        gameConfig,
+			IsAutoScanned: inScanFolder,
 		})
 	}
 	return games, nil
+}
+
+func isSubpath(path, base string) bool {
+	rel, err := filepath.Rel(base, path)
+	if err != nil {
+		return false
+	}
+	return !strings.HasPrefix(rel, "..") && rel != "."
 }
 
 func (app *App) RemoveGame(executablePath string) error {

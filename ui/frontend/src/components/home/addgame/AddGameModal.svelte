@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { notifications } from "@stores/notificationStore";
 	import SelectionView from "./SelectionView.svelte";
-	import ConfigView from "./ConfigView.svelte";
+	import FolderConfiguration from "@components/shared/FolderConfiguration.svelte";
 	import ReviewView from "./ReviewView.svelte";
 	import Modal from "@components/shared/Modal.svelte";
 	import Dropdown from "@components/shared/Dropdown.svelte";
 	import { onMount } from "svelte";
 	import { fade } from "svelte/transition";
-	import { AddGameModalState } from "@lib/AddGameModalState.svelte";
+	import { AddGameModalState } from "./AddGameModalState.svelte";
 
 	let { show = false, onClose, onRefresh } = $props<{
 		show?: boolean;
@@ -61,7 +61,7 @@
 			/>
 		{:else}
 			{#if state.addMode === "folder-config"}
-				<ConfigView
+				<FolderConfiguration
 					selectedFolder={state.selectedFolder}
 					bind:searchDepth={state.searchDepth}
 					bind:excludeNames={state.excludeNames}

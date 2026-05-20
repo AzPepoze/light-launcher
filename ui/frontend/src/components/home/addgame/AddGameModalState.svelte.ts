@@ -6,10 +6,11 @@ import {
 	GetAllGames,
 	AddScanFolder,
 	BlacklistGame,
+	GetScanFolderConfig,
 } from "@bindings/light-launcher/internal/app/app";
 import { notifications } from "@stores/notificationStore";
 import { loadExeIcon } from "@lib/iconService";
-import { getDefaultPrefixName } from "./prefixService";
+import { getDefaultPrefixName } from "@lib/prefixService";
 import * as service from "@lib/gameService";
 
 export class AddGameModalState {
@@ -38,6 +39,21 @@ export class AddGameModalState {
 
 	async initialize() {
 		await this.loadPrefixes();
+	}
+
+	async initializeEdit(folderPath: string) {
+		this.selectedFolder = folderPath;
+		this.addMode = "folder-config";
+		await this.loadPrefixes();
+		try {
+			const config = await GetScanFolderConfig(folderPath);
+			if (config) {
+				this.searchDepth = config.Depth.toString();
+				this.excludeNames = config.ExcludeNames ? config.ExcludeNames.join(", ") : "";
+			}
+		} catch (error) {
+			console.error("Failed to load folder config:", error);
+		}
 	}
 
 	resetState() {

@@ -2,14 +2,14 @@ import {
 	PickFile,
 	PickFolder,
 	SaveGameConfig,
-	LoadPrefixConfig,
 } from "@bindings/light-launcher/internal/app/app";
 import * as core from "@bindings/light-launcher/internal/types/models";
 import { notifications } from "@stores/notificationStore";
 import { runState } from "@stores/runState";
-import { createLaunchOptions } from "./formService";
-import * as service from "./runService";
-import { loadConfigForGame, loadConfigForPrefix } from "./runConfig";
+import { createLaunchOptions } from "@lib/formService";
+import * as service from "@lib/runService";
+import { loadConfigForGame, loadConfigForPrefix } from "@lib/runConfig";
+import { ProtonState } from "./ProtonState.svelte";
 
 export class RunPageState {
 	mounted = $state(false);
@@ -25,11 +25,8 @@ export class RunPageState {
 	// Prefix & Utilities
 	availablePrefixes = $state<string[]>([]);
 
-	// Proton
-	protonVersions = $state<core.ProtonTool[]>([]);
-	protonOptions = $state<string[]>([]);
-	selectedProton = $state("");
-	isLoadingProton = $state(true);
+	// Sub-states
+	proton = new ProtonState();
 
 	// Game exe toggle state
 	useGamePath = $state(false);
@@ -48,7 +45,6 @@ export class RunPageState {
 	options = $state<core.LaunchOptions>(createLaunchOptions());
 	gpuList = $state<string[]>([]);
 	isSaving = $state(false);
-	prefixDefaultProton = $state("");
 
 	constructor() {
 		// Sync useGamePath and options.UseGamePath
@@ -63,14 +59,14 @@ export class RunPageState {
 		$effect(() => {
 			if (this.mounted) {
 				this.options.PrefixPath = this.prefixPath;
-				this.options.ProtonPath = this.selectedProton;
+				this.options.ProtonPath = this.proton.selectedProton;
 				runState.set({
 					mainExePath: this.mainExePath,
 					gameIcon: this.gameIcon,
 					launcherIcon: this.launcherIcon,
 					prefixPath: this.prefixPath,
 					selectedPrefixName: this.selectedPrefixName,
-					selectedProton: this.selectedProton,
+					selectedProton: this.proton.selectedProton,
 					options: this.options,
 				});
 			}
@@ -78,15 +74,15 @@ export class RunPageState {
 
 		// Update prefix default proton
 		$effect(() => {
-			if (this.mounted && this.selectedPrefixName && this.protonVersions.length > 0) {
-				this.updatePrefixDefaultProton(this.selectedPrefixName);
+			if (this.mounted && this.selectedPrefixName && this.proton.protonVersions.length > 0) {
+				this.proton.updatePrefixDefaultProton(this.selectedPrefixName);
 			}
 		});
 
 		// Fallback to prefix default proton
 		$effect(() => {
-			if (this.mounted && !this.options.UseCustomProton && this.prefixDefaultProton) {
-				this.selectedProton = this.prefixDefaultProton;
+			if (this.mounted && !this.options.UseCustomProton && this.proton.prefixDefaultProton) {
+				this.proton.selectedProton = this.proton.prefixDefaultProton;
 			}
 		});
 	}
@@ -97,16 +93,16 @@ export class RunPageState {
 			
 			this.baseDir = data.baseDir;
 			this.gpuList = data.gpuList;
-			this.protonVersions = data.protonVersions;
-			this.protonOptions = data.protonOptions;
+			this.proton.protonVersions = data.protonVersions;
+			this.proton.protonOptions = data.protonOptions;
 			this.availablePrefixes = data.availablePrefixes;
 			this.systemStatus = data.systemStatus;
 			this.launcherIcon = data.launcherIcon;
 			this.gameIcon = data.gameIcon;
 			this.mainExePath = data.mainExePath;
 
-			if (this.protonOptions.length > 0 && !this.selectedProton) {
-				this.selectedProton = this.protonOptions[0];
+			if (this.proton.protonOptions.length > 0 && !this.proton.selectedProton) {
+				this.proton.selectedProton = this.proton.protonOptions[0];
 			}
 
 			if (!this.prefixPath) {
@@ -117,7 +113,7 @@ export class RunPageState {
 		} catch (err) {
 			console.error("Failed to initialize:", err);
 		} finally {
-			this.isLoadingProton = false;
+			this.proton.isLoadingProton = false;
 			this.mounted = true;
 		}
 	}
@@ -127,9 +123,9 @@ export class RunPageState {
 		if (pPath) this.prefixPath = pPath;
 		if (pName) this.selectedPrefixName = pName;
 		if (proton) {
-			this.selectedProton = proton;
-			if (proton && !this.protonOptions.includes(proton)) {
-				this.protonOptions = [...this.protonOptions, proton];
+			this.proton.selectedProton = proton;
+			if (proton && !this.proton.protonOptions.includes(proton)) {
+				this.proton.protonOptions = [...this.proton.protonOptions, proton];
 			}
 		}
 	}
@@ -147,31 +143,11 @@ export class RunPageState {
 	}
 
 	async doLoadConfigForGame(path: string) {
-		await loadConfigForGame(path, this.options, this.prefixPath, this.baseDir, this.selectedPrefixName, this.protonVersions, this.handleConfigUpdate.bind(this));
+		await loadConfigForGame(path, this.options, this.prefixPath, this.baseDir, this.selectedPrefixName, this.proton.protonVersions, this.handleConfigUpdate.bind(this));
 	}
 
 	async doLoadConfigForPrefix(name: string) {
-		await loadConfigForPrefix(name, this.options, this.prefixPath, this.baseDir, this.protonVersions, this.handleConfigUpdate.bind(this));
-	}
-
-	async updatePrefixDefaultProton(prefixName: string) {
-		if (!prefixName || prefixName === "Custom...") return;
-		try {
-			const cfg = await LoadPrefixConfig(prefixName);
-			if (cfg && cfg.ProtonPath) {
-				const match = this.protonVersions.find((p) => p.Path === cfg.ProtonPath);
-				this.prefixDefaultProton = match ? match.DisplayName : cfg.ProtonPath;
-			} else {
-				if (this.protonVersions.length > 0) {
-					this.prefixDefaultProton = this.protonVersions[0].DisplayName;
-				}
-			}
-		} catch (e) {
-			console.error("Failed to load prefix config for default proton:", e);
-			if (this.protonVersions.length > 0) {
-				this.prefixDefaultProton = this.protonVersions[0].DisplayName;
-			}
-		}
+		await loadConfigForPrefix(name, this.options, this.prefixPath, this.baseDir, this.proton.protonVersions, this.handleConfigUpdate.bind(this));
 	}
 
 	async handlePrefixChange(name: string) {
@@ -224,18 +200,14 @@ export class RunPageState {
 		}
 	}
 
-	handleProtonChange(value: string) {
-		this.selectedProton = value;
-	}
-
 	closeLauncherOnConfirm = true;
 
 	async handleLaunch(closeLauncher = true) {
 		const shouldShowModal = await service.validateAndLaunch(
 			this.options, 
 			this.systemStatus, 
-			this.selectedProton, 
-			this.protonVersions, 
+			this.proton.selectedProton, 
+			this.proton.protonVersions, 
 			this.showLogsWindow,
 			closeLauncher
 		);
@@ -253,6 +225,6 @@ export class RunPageState {
 
 	async proceedToLaunch() {
 		this.showValidationModal = false;
-		await service.executeLaunch(this.options, this.selectedProton, this.protonVersions, this.showLogsWindow, this.closeLauncherOnConfirm);
+		await service.executeLaunch(this.options, this.proton.selectedProton, this.proton.protonVersions, this.showLogsWindow, this.closeLauncherOnConfirm);
 	}
 }
