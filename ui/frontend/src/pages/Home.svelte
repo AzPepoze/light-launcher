@@ -72,6 +72,7 @@
 				handleConfigure={(game) => state.handleConfigure(game)}
 				toggleGameSelection={(game, shiftKey) => state.selection.toggleGameSelection(game, shiftKey)}
 				onRefresh={() => state.refreshData(true)}
+				loadIcon={(path) => state.icons.enqueueIconLoad(path)}
 			/>
 		{/if}
 	</div>

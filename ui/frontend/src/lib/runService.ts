@@ -4,11 +4,11 @@ import {
 	DetectLosslessDll,
 	ScanProtonVersions,
 	GetInitialLauncherPath,
-	GetExeIcon,
 	ListPrefixes,
 	GetSystemToolsStatus,
 	RunGame,
 } from "@bindings/light-launcher/internal/app/app";
+import { loadExeIcon } from "@lib/iconService";
 import * as core from "@bindings/light-launcher/internal/types/models";
 import { notifications } from "@stores/notificationStore";
 import { runState } from "@stores/runState";
@@ -86,7 +86,7 @@ export async function initializeRunPage(
 			onConfigUpdate
 		);
 		if (!launcherIcon) {
-			launcherIcon = (await GetExeIcon(currentOptions.LauncherPath)) || "";
+			launcherIcon = (await loadExeIcon(currentOptions.LauncherPath)) || "";
 		}
 	}
 
@@ -96,14 +96,14 @@ export async function initializeRunPage(
 		if (!currentOptions.LauncherPath && !currentOptions.GamePath) {
 			currentOptions.LauncherPath = initialOsPath;
 			currentOptions.GamePath = initialOsPath; // Sync GamePath
-			launcherIcon = (await GetExeIcon(initialOsPath)) || "";
+			launcherIcon = (await loadExeIcon(initialOsPath)) || "";
 			if (!currentOptions.Name || currentOptions.Name === "Launcher") {
 				currentOptions.Name = initialOsPath.split(/[/\\]/).pop()?.replace(/\.exe$/i, "") || "Launcher";
 			}
 		} else if (!currentOptions.GamePath || currentOptions.GamePath === currentOptions.LauncherPath) {
 			mainExecutablePath = initialOsPath;
 			currentOptions.GamePath = initialOsPath;
-			gameIcon = (await GetExeIcon(initialOsPath)) || "";
+			gameIcon = (await loadExeIcon(initialOsPath)) || "";
 			await loadConfigForGame(
 				initialOsPath, 
 				currentOptions, 
@@ -118,10 +118,10 @@ export async function initializeRunPage(
 
 	// Ensure icons are loaded for existing paths
 	if (currentOptions.LauncherPath && !launcherIcon) {
-		launcherIcon = (await GetExeIcon(currentOptions.LauncherPath)) || "";
+		launcherIcon = (await loadExeIcon(currentOptions.LauncherPath)) || "";
 	}
 	if (currentOptions.GamePath && !gameIcon) {
-		gameIcon = (await GetExeIcon(currentOptions.GamePath)) || "";
+		gameIcon = (await loadExeIcon(currentOptions.GamePath)) || "";
 	}
 
 	const [availablePrefixesList, baseDirAgain, currentSystemStatus] = await Promise.all([

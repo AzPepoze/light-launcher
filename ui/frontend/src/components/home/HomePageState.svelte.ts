@@ -82,23 +82,7 @@ export class HomePageState {
 		this.prefixes = data.prefixes;
 		this.scannedFolderGroups = scannedGroups || [];
 
-		// Fetch icons for games
-		for (const game of this.games) {
-			const path = game.path || game.config.LauncherPath;
-			if (path) {
-				this.icons.enqueueIconLoad(path);
-			}
-		}
 
-		// Also fetch icons for scanned games
-		for (const group of this.scannedFolderGroups) {
-			for (const game of group.games) {
-				const path = game.path || game.config.LauncherPath;
-				if (path) {
-					this.icons.enqueueIconLoad(path);
-				}
-			}
-		}
 	}
 
 	initialize() {

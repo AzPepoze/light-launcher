@@ -11,6 +11,7 @@
 	export let handleQuickLaunch: (game: any) => Promise<void>;
 	export let handleConfigure: (game: any) => void;
 	export let toggleGameSelection: (game: any, shiftKey: boolean) => void;
+	export let loadIcon: (path: string) => void = () => {};
 </script>
 
 <div class="folder-group-header">
@@ -39,6 +40,7 @@
 					onLaunch={() => handleQuickLaunch(game)}
 					onConfigure={() => handleConfigure(game)}
 					onSelect={toggleGameSelection}
+					{loadIcon}
 				/>
 			</div>
 		{/each}

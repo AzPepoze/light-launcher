@@ -25,6 +25,7 @@
 	export let handleConfigure: (game: any) => void;
 	export let toggleGameSelection: (game: any, shiftKey: boolean) => void;
 	export let onRefresh: () => void = () => {};
+	export let loadIcon: (path: string) => void = () => {};
 
 	let menuX = 0;
 	let menuY = 0;
@@ -155,6 +156,7 @@
 					{handleQuickLaunch}
 					{handleConfigure}
 					{toggleGameSelection}
+					{loadIcon}
 				/>
 			{:else if filteredGames.length > 0}
 				<div class="games-grid">
@@ -170,6 +172,7 @@
 								onLaunch={() => handleQuickLaunch(game)}
 								onConfigure={() => handleConfigure(game)}
 								onSelect={toggleGameSelection}
+								{loadIcon}
 							/>
 						</div>
 					{/each}
@@ -196,6 +199,7 @@
 				{handleQuickLaunch}
 				{handleConfigure}
 				{toggleGameSelection}
+				{loadIcon}
 			/>
 		{/each}
 
