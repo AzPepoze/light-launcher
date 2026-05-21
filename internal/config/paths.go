@@ -8,17 +8,17 @@ import (
 func GetBaseDirectory() string {
 	homeDirectory, err := os.UserHomeDir()
 	if err != nil {
-		return "LightLauncher"
+		return AppName
 	}
-	return filepath.Join(homeDirectory, "LightLauncher")
+	return filepath.Join(homeDirectory, AppName)
 }
 
 func GetConfigDirectory() string {
-	return filepath.Join(GetBaseDirectory(), "config", "executables")
+	return filepath.Join(GetBaseDirectory(), ConfigDirName)
 }
 
 func GetPrefixBaseDirectory() string {
-	return filepath.Join(GetBaseDirectory(), "prefixes")
+	return filepath.Join(GetBaseDirectory(), PrefixesDirName)
 }
 
 func GetExecutableConfigPath(name string, id string) string {
@@ -39,4 +39,8 @@ func GetGameLsfgConfigPath(name string, id string) string {
 
 func GetPrefixConfigPath(prefixName string) string {
 	return filepath.Join(GetPrefixBaseDirectory(), prefixName, "light-launcher.json")
+}
+
+func GetLogsDirectory() string {
+	return filepath.Join(GetBaseDirectory(), LogsDirName)
 }

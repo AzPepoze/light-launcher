@@ -2,9 +2,14 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
+	"time"
+
+	"light-launcher/internal/config"
+	"light-launcher/internal/logger"
 
 	"github.com/getlantern/systray"
 )
@@ -48,9 +53,6 @@ var (
 
 	// Memory configuration
 	memoryMinValue string
-
-	// Logging
-	logFileHandle *os.File
 )
 
 func main() {
@@ -90,20 +92,25 @@ func main() {
 	}
 
 	if prefixPath == "" {
-		home, err := os.UserHomeDir()
-		if err == nil {
-			prefixPath = filepath.Join(home, "LightLauncher", "prefixes", "Default")
+		prefixPath = filepath.Join(config.GetPrefixBaseDirectory(), "Default")
+	}
+
+	timestamp := time.Now().Format("20060102-150405")
+	exeName := filepath.Base(gamePath)
+	logFileName := fmt.Sprintf("%s-%s.log", exeName, timestamp)
+
+	if err := logger.Init(logFileName, 10); err != nil {
+		log.Printf("Warning: failed to initialize logger: %v\n", err)
+	}
+
+	logPath := logger.GetLogPath()
+	if logPath != "" {
+		if file, err := os.OpenFile(logPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666); err == nil {
+			log.SetOutput(file)
 		}
 	}
 
-	logPath := getLogPath()
-	var err error
-	logFileHandle, err = os.OpenFile(logPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	if err == nil {
-		log.SetOutput(logFileHandle)
-		// Trim log file to last 500 lines to keep queue behavior
-		_ = trimLogFile(logPath, 500)
-	}
+	_ = logger.TrimCurrentLogFile(500)
 
 	systray.Run(func() { onReady(logPath) }, onExit)
 }

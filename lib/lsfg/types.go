@@ -34,7 +34,7 @@ type ConfigFile struct {
 type InternalProfile struct {
 	Name            string `toml:"name"`
 	GamePath        string `toml:"game_path"`
-	LauncherPath      string `toml:"launcher_path"`
+	LauncherPath    string `toml:"launcher_path"`
 	Multiplier      string `toml:"multiplier"`
 	PerformanceMode bool   `toml:"performance_mode"`
 	DllPath         string `toml:"dll_path"`

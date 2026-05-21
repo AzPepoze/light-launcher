@@ -6,43 +6,9 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"syscall"
 	"time"
 )
-
-var debugLogFile *os.File
-
-func InitDebugLog() {
-	homeDirectory, err := os.UserHomeDir()
-	if err != nil {
-		return
-	}
-
-	logPath := filepath.Join(homeDirectory, "LightLauncher", "debug.log")
-	os.MkdirAll(filepath.Dir(logPath), 0755)
-
-	file, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
-	if err == nil {
-		debugLogFile = file
-		DebugLog("=== DEBUG LOG STARTED ===")
-	}
-}
-
-func DebugLog(message string) {
-	if debugLogFile == nil {
-		InitDebugLog()
-	}
-	timestamp := time.Now().Format("2006-01-02 15:04:05")
-	line := fmt.Sprintf("[%s] %s\n", timestamp, message)
-
-	fmt.Print(line)
-
-	if debugLogFile != nil {
-		debugLogFile.WriteString(line)
-		debugLogFile.Sync()
-	}
-}
 
 func RunGameWithLog(commandArguments []string, environment []string, onLog func(string), onExit func()) (*os.Process, error) {
 	if len(commandArguments) == 0 {

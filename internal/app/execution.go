@@ -8,14 +8,14 @@ import (
 
 	"light-launcher/internal/app/instancebuilder"
 	"light-launcher/internal/config"
-	"light-launcher/internal/executor"
+	"light-launcher/internal/logger"
 	"light-launcher/internal/system"
 	"light-launcher/internal/types"
 	"light-launcher/lib/lsfg"
 )
 
 func (app *App) RunGame(options types.LaunchOptions, showLogs bool) error {
-	executor.DebugLog("RunGame called with options for: " + options.GamePath)
+	logger.Info("RunGame called with options for: %s", options.GamePath)
 
 	if !options.UseGamePath && options.LauncherPath != "" {
 		options.GamePath = options.LauncherPath
@@ -102,8 +102,6 @@ func findInstanceManager() string {
 	}
 	return ""
 }
-
-
 
 func parseMultiplier(multiplier string) int {
 	value := 2

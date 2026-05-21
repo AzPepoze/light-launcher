@@ -83,15 +83,15 @@ func (app *App) GetAutoScannedGames() ([]types.ScannedFolderGroup, error) {
 						PrefixPath:   defaultPrefix,
 						Extras: types.ExtrasConfig{
 							Lsfg: types.LsfgConfig{
-								Multiplier: "2",
+								Multiplier: config.DefaultMultiplier,
 							},
 							Memory: types.MemoryConfig{
-								Value: "4G",
+								Value: config.DefaultMemoryValue,
 							},
 							Gamescope: types.GamescopeConfig{
-								Width:       "1920",
-								Height:      "1080",
-								RefreshRate: "60",
+								Width:       config.DefaultWidth,
+								Height:      config.DefaultHeight,
+								RefreshRate: config.DefaultRefreshRate,
 							},
 						},
 					}
@@ -149,7 +149,7 @@ func (app *App) AddScanFolder(folderPath string) error {
 		settings.ScanFolderConfigs = append(settings.ScanFolderConfigs, types.ScanFolderConfig{
 			Path:         cleaned,
 			Depth:        2,
-			ExcludeNames: []string{"UnityCrashHandler64", "uninstall", "redist", "vc_redist", "dxsetup"},
+			ExcludeNames: append([]string(nil), config.DefaultExcludeNames...),
 		})
 	}
 
@@ -205,7 +205,7 @@ func (app *App) UpdateScanFolderConfig(folderPath string, depth int, excludeName
 			Depth:        depth,
 			ExcludeNames: excludeNames,
 		})
-		
+
 		exists := false
 		for _, sf := range settings.ScanFolders {
 			if filepath.Clean(sf) == cleaned {
@@ -239,7 +239,7 @@ func (app *App) GetScanFolderConfig(folderPath string) (*types.ScanFolderConfig,
 			return &types.ScanFolderConfig{
 				Path:         cleaned,
 				Depth:        2,
-				ExcludeNames: []string{"UnityCrashHandler64", "uninstall", "redist", "vc_redist", "dxsetup"},
+				ExcludeNames: append([]string(nil), config.DefaultExcludeNames...),
 			}, nil
 		}
 	}

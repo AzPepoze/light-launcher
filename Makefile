@@ -11,6 +11,19 @@ check:
 	@echo "Checking Frontend code..."
 	cd ui/frontend && bun run check
 
+fmt:
+	go fmt ./...
+
+vet:
+	go vet ./...
+
+test:
+	go test ./...
+
+lint: fmt vet
+
+.PHONY: check build-all build-instance build-ui package build generate-bindings dev start clean fmt vet test lint
+
 build-all:
 	mkdir -p $(BIN_DIR)
 	$(MAKE) build-instance

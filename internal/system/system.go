@@ -77,7 +77,7 @@ func GetSystemToolsStatus() types.SystemToolsStatus {
 	return types.SystemToolsStatus{
 		HasGamescope:  IsCommandAvailable("gamescope"),
 		HasMangoHud:   IsCommandAvailable("mangohud"),
-		HasGameMode:    IsCommandAvailable("gamemoderun"),
+		HasGameMode:   IsCommandAvailable("gamemoderun"),
 		HasVulkanInfo: IsCommandAvailable("vulkaninfo"),
 	}
 }

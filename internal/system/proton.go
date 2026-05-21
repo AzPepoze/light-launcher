@@ -5,27 +5,21 @@ import (
 	"light-launcher/internal/config"
 	"light-launcher/internal/types"
 	"os"
-	"os/user"
 	"path/filepath"
 	"sort"
 )
 
 func GetProtonTools() ([]types.ProtonTool, error) {
-	currentUser, err := user.Current()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get current user: %w", err)
-	}
-
 	searchPaths := []struct {
 		path    string
 		isSteam bool
 	}{
-		{filepath.Join(currentUser.HomeDir, ".steam/root/compatibilitytools.d"), false},
-		{filepath.Join(currentUser.HomeDir, ".local/share/Steam/compatibilitytools.d"), false},
+		{"~/.steam/root/compatibilitytools.d", false},
+		{"~/.local/share/Steam/compatibilitytools.d", false},
 		{"/usr/share/steam/compatibilitytools.d", false},
-		{filepath.Join(currentUser.HomeDir, ".steam/root/steamapps/common"), true},
-		{filepath.Join(currentUser.HomeDir, ".local/share/Steam/steamapps/common"), true},
-		{filepath.Join(currentUser.HomeDir, "LightLauncher/protons"), false},
+		{"~/.steam/root/steamapps/common", true},
+		{"~/.local/share/Steam/steamapps/common", true},
+		{filepath.Join(config.GetBaseDirectory(), config.ProtonsDirName), false},
 	}
 
 	var tools []types.ProtonTool

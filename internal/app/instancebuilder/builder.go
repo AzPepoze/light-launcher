@@ -1,8 +1,8 @@
 package instancebuilder
 
 import (
-	"path/filepath"
 	"light-launcher/internal/types"
+	"path/filepath"
 )
 
 type Builder struct {
@@ -40,5 +40,3 @@ func (b *Builder) Build() []string {
 
 	return b.args
 }
-
-

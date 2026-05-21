@@ -5,10 +5,10 @@ import "light-launcher/internal/types"
 // buildLaunchOptions creates the launch options from command line flags
 func buildLaunchOptions() types.LaunchOptions {
 	return types.LaunchOptions{
-		GamePath:      gamePath,
-		LauncherPath:  launcherPath,
-		PrefixPath:    prefixPath,
-		ProtonPath:    protonPath,
+		GamePath:     gamePath,
+		LauncherPath: launcherPath,
+		PrefixPath:   prefixPath,
+		ProtonPath:   protonPath,
 		Extras: types.ExtrasConfig{
 			EnableMangoHud: mango,
 			EnableGamemode: gamemode,

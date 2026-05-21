@@ -34,7 +34,7 @@ func main() {
 	})
 
 	appSettings := config.LoadAppSettings()
-	
+
 	backgroundType := application.BackgroundTypeSolid
 	backgroundColour := application.NewRGBA(24, 24, 27, 255) // Default dark solid
 	if appSettings.TransparentMode {
@@ -50,7 +50,6 @@ func main() {
 		BackgroundType:   backgroundType,
 		EnableFileDrop:   true,
 	})
-
 
 	wailsApp.RegisterService(application.NewService(backendApp))
 

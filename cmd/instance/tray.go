@@ -14,6 +14,7 @@ import (
 
 	"light-launcher/internal/executor"
 	"light-launcher/internal/executor/builder"
+	"light-launcher/internal/logger"
 	lsfgLib "light-launcher/lib/lsfg"
 
 	"github.com/getlantern/systray"
@@ -69,15 +70,29 @@ func onReady(logPath string) {
 
 	logGameStartup(cmdArgs)
 
+	var logFileHandle *os.File
+	if logPath != "" {
+		var err error
+		logFileHandle, err = os.OpenFile(logPath, os.O_WRONLY|os.O_APPEND, 0666)
+		if err != nil {
+			log.Printf("Warning: failed to open log file for game output: %v\n", err)
+		}
+	}
+
 	gameCmd := exec.Command(cmdArgs[0], cmdArgs[1:]...)
 	gameCmd.Env = env
 	gameCmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-	gameCmd.Stdout = logFileHandle
-	gameCmd.Stderr = logFileHandle
+	if logFileHandle != nil {
+		gameCmd.Stdout = logFileHandle
+		gameCmd.Stderr = logFileHandle
+	}
 
 	if err := gameCmd.Start(); err != nil {
 		log.Printf("!!! ERROR: Failed to start game: %v\n", err)
 		sendNotification("Launch Error", "Failed to start "+exeNameClean+" ("+launcherName+"): "+err.Error())
+		if logFileHandle != nil {
+			logFileHandle.Close()
+		}
 		systray.Quit()
 		return
 	}
@@ -127,13 +142,16 @@ func onReady(logPath string) {
 		ticker := time.NewTicker(30 * time.Second)
 		defer ticker.Stop()
 		for range ticker.C {
-			_ = trimLogFile(logPath, 500)
+			_ = logger.TrimCurrentLogFile(500)
 		}
 	}()
 
 	// Wait for game to exit
 	go func() {
 		err := gameCmd.Wait()
+		if logFileHandle != nil {
+			logFileHandle.Close()
+		}
 		log.Printf("Game process exited with: %v\n", err)
 
 		if err != nil {
@@ -202,7 +220,4 @@ func launchLsfgUI() {
 }
 
 func onExit() {
-	if logFileHandle != nil {
-		logFileHandle.Close()
-	}
 }

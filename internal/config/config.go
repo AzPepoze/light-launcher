@@ -8,11 +8,17 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"light-launcher/internal/types"
 	"light-launcher/lib/lsfg"
 
 	"github.com/pelletier/go-toml/v2"
+)
+
+var (
+	settingsMutex  sync.RWMutex
+	cachedSettings *types.AppSettings
 )
 
 func GenerateID() string {
@@ -68,15 +74,15 @@ func LoadPrefixConfig(prefixName string) (*types.LaunchOptions, error) {
 		return &types.LaunchOptions{
 			Extras: types.ExtrasConfig{
 				Lsfg: types.LsfgConfig{
-					Multiplier: "2",
+					Multiplier: DefaultMultiplier,
 				},
 				Memory: types.MemoryConfig{
-					Value: "4G",
+					Value: DefaultMemoryValue,
 				},
 				Gamescope: types.GamescopeConfig{
-					Width:       "1920",
-					Height:      "1080",
-					RefreshRate: "60",
+					Width:       DefaultWidth,
+					Height:      DefaultHeight,
+					RefreshRate: DefaultRefreshRate,
 				},
 			},
 		}, nil
@@ -90,12 +96,12 @@ func SaveGameConfig(options types.LaunchOptions) error {
 	}
 
 	path := GetGameConfigFilePath(options.Name, options.ID)
-	
+
 	dir := filepath.Dir(path)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return err
 	}
-	
+
 	return SaveConfig(path, options)
 }
 
@@ -192,15 +198,30 @@ func GetAppSettingsPath() string {
 }
 
 func LoadAppSettings() *types.AppSettings {
+	settingsMutex.RLock()
+	if cachedSettings != nil {
+		defer settingsMutex.RUnlock()
+		return cachedSettings
+	}
+	settingsMutex.RUnlock()
+
+	settingsMutex.Lock()
+	defer settingsMutex.Unlock()
+
+	if cachedSettings != nil {
+		return cachedSettings
+	}
+
 	path := GetAppSettingsPath()
 	var settings types.AppSettings
-	
+
 	if err := LoadConfig(path, &settings); err != nil {
-		return &types.AppSettings{
+		cachedSettings = &types.AppSettings{
 			TransparentMode:   true,
 			ScanFolderConfigs: make([]types.ScanFolderConfig, 0),
 			ScanFolders:       make([]string, 0),
 		}
+		return cachedSettings
 	}
 
 	modified := false
@@ -222,7 +243,7 @@ func LoadAppSettings() *types.AppSettings {
 			settings.ScanFolderConfigs = append(settings.ScanFolderConfigs, types.ScanFolderConfig{
 				Path:         cleaned,
 				Depth:        2,
-				ExcludeNames: []string{"UnityCrashHandler64", "uninstall", "redist", "vc_redist", "dxsetup"},
+				ExcludeNames: append([]string(nil), DefaultExcludeNames...),
 			})
 			modified = true
 		}
@@ -238,13 +259,22 @@ func LoadAppSettings() *types.AppSettings {
 	}
 
 	if modified {
-		_ = SaveAppSettings(settings)
+		_ = SaveConfig(path, settings)
 	}
 
-	return &settings
+	cachedSettings = &settings
+	return cachedSettings
 }
 
 func SaveAppSettings(settings types.AppSettings) error {
+	settingsMutex.Lock()
+	defer settingsMutex.Unlock()
+
 	path := GetAppSettingsPath()
-	return SaveConfig(path, settings)
+	if err := SaveConfig(path, settings); err != nil {
+		return err
+	}
+
+	cachedSettings = &settings
+	return nil
 }

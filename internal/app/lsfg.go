@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"light-launcher/internal/executor"
+	"light-launcher/internal/logger"
 	"light-launcher/internal/system"
 	"light-launcher/internal/types"
 	"light-launcher/lib/lsfg"
@@ -81,7 +81,7 @@ func (app *App) GetListGpus() []string {
 }
 
 func (app *App) UninstallLsfg() error {
-	return lsfg.Uninstall(executor.DebugLog)
+	return lsfg.Uninstall(func(msg string) { logger.Info("%s", msg) })
 }
 
 func (app *App) SaveLsfgProfile(profileName, gamePath string, multiplier int, performanceMode bool, dllPath, gpu, flowScale, pacing string, allowFp16 bool) error {
@@ -94,7 +94,7 @@ func (app *App) SaveLsfgProfile(profileName, gamePath string, multiplier int, pe
 		gpuList := system.GetListGpus()
 		if len(gpuList) > 0 {
 			gpu = gpuList[0]
-			executor.DebugLog("SaveLsfgProfile() GPU was blank, using first GPU: " + gpu)
+			logger.Info("SaveLsfgProfile() GPU was blank, using first GPU: %s", gpu)
 		}
 	}
 

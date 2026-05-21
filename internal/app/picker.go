@@ -92,7 +92,7 @@ func (app *App) SearchExecutables(folderPath string, maxDepth int, excludeNames 
 
 		for _, entry := range entries {
 			name := entry.Name()
-			
+
 			// Check exclusions
 			excluded := false
 			for _, regex := range excludeRegex {
