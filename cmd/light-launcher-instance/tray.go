@@ -15,7 +15,7 @@ import (
 	"light-launcher/internal/executor"
 	"light-launcher/internal/executor/builder"
 	"light-launcher/internal/logger"
-	lsfgLib "light-launcher/lib/lsfg"
+	lsfgLib "light-launcher/internal/utils/lsfg"
 
 	"github.com/getlantern/systray"
 )
@@ -42,9 +42,10 @@ func sendNotification(title, message string) {
 }
 
 func onReady(logPath string) {
-	exeName := filepath.Base(gamePath)
+	opts := buildLaunchOptions()
+	exeName := filepath.Base(opts.GamePath)
 	exeNameClean := strings.TrimSuffix(exeName, filepath.Ext(exeName))
-	launcherName := filepath.Base(launcherPath)
+	launcherName := filepath.Base(opts.LauncherPath)
 
 	systray.SetIcon(applicationIconData)
 	systray.SetTitle("LightLauncher: " + exeNameClean)
@@ -57,7 +58,7 @@ func onReady(logPath string) {
 	mStatus.Disable()
 	systray.AddSeparator()
 
-	if lsfg {
+	if opts.Extras.Lsfg.Enabled {
 		setupLsfgMenu()
 	}
 
@@ -65,10 +66,9 @@ func onReady(logPath string) {
 	mKill := systray.AddMenuItem("End Process", "Stop this game")
 
 	// Start game
-	opts := buildLaunchOptions()
 	cmdArgs, env := builder.BuildCommand(opts)
 
-	logGameStartup(cmdArgs)
+	logGameStartup(cmdArgs, opts)
 
 	var logFileHandle *os.File
 	if logPath != "" {

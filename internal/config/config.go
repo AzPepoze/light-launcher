@@ -11,7 +11,7 @@ import (
 	"sync"
 
 	"light-launcher/internal/types"
-	"light-launcher/lib/lsfg"
+	"light-launcher/internal/utils/lsfg"
 
 	"github.com/pelletier/go-toml/v2"
 )

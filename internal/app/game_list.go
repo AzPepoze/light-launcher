@@ -8,7 +8,7 @@ import (
 
 	"light-launcher/internal/config"
 	"light-launcher/internal/types"
-	"light-launcher/lib/lsfg"
+	"light-launcher/internal/utils/lsfg"
 )
 
 func (app *App) GetAllGames() ([]types.GameInfo, error) {

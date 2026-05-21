@@ -12,9 +12,13 @@ func FormatCommandForDisplay(commandArguments []string, options types.LaunchOpti
 	if options.Extras.Memory.Enabled && options.Extras.Memory.Value != "" {
 		builder.WriteString(fmt.Sprintf("[MemMin:%s] ", options.Extras.Memory.Value))
 	}
-	builder.WriteString("WINEPREFIX=" + options.PrefixPath + " ")
+	builder.WriteString("WINEPREFIX=")
+	builder.WriteString(options.PrefixPath)
+	builder.WriteString(" ")
 	if options.ProtonPath != "" {
-		builder.WriteString("UMU_PROTON_PATTERN=" + filepath.Base(options.ProtonPath) + " ")
+		builder.WriteString("UMU_PROTON_PATTERN=")
+		builder.WriteString(filepath.Base(options.ProtonPath))
+		builder.WriteString(" ")
 	}
 	if options.Extras.EnableMangoHud {
 		builder.WriteString("MANGOHUD=1 ")

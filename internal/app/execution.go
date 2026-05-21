@@ -6,12 +6,12 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"light-launcher/internal/app/instancebuilder"
 	"light-launcher/internal/config"
+	"light-launcher/internal/executor/instancebuilder"
 	"light-launcher/internal/logger"
 	"light-launcher/internal/system"
 	"light-launcher/internal/types"
-	"light-launcher/lib/lsfg"
+	"light-launcher/internal/utils/lsfg"
 )
 
 func (app *App) RunGame(options types.LaunchOptions, showLogs bool) error {

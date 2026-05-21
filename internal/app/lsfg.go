@@ -7,7 +7,7 @@ import (
 	"light-launcher/internal/logger"
 	"light-launcher/internal/system"
 	"light-launcher/internal/types"
-	"light-launcher/lib/lsfg"
+	"light-launcher/internal/utils/lsfg"
 
 	"github.com/pelletier/go-toml/v2"
 	"github.com/wailsapp/wails/v3/pkg/application"

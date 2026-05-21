@@ -1,6 +1,7 @@
 package instancebuilder
 
 import (
+	"light-launcher/internal/adapter"
 	"light-launcher/internal/types"
 	"path/filepath"
 )
@@ -28,11 +29,10 @@ func (b *Builder) Build() []string {
 		"--proton-path", b.options.ProtonPath,
 	)
 
-	b.applyMangoHud()
-	b.applyGamemode()
-	b.applyLsfg()
-	b.applyMemory()
-	b.applyGamescope()
+	// Build using adapters
+	for _, a := range adapter.GetAdapters() {
+		b.args = append(b.args, a.BuildInstanceArgs(b.options)...)
+	}
 
 	if !b.showLogs {
 		b.args = append(b.args, "--logs=false")

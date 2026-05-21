@@ -30,7 +30,7 @@ build-all:
 	$(MAKE) build-ui
 
 build-instance:
-	go build -o $(BIN_DIR)/$(INSTANCE_BIN) ./cmd/instance
+	go build -o $(BIN_DIR)/$(INSTANCE_BIN) ./cmd/light-launcher-instance
 
 build-ui:
 	PATH="$(shell go env GOPATH)/bin:$(PATH)" $(WAILS_BIN) task build

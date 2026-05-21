@@ -1,43 +1,54 @@
 package builder
 
 import (
+	"fmt"
+	"light-launcher/internal/adapter"
+	"light-launcher/internal/config"
 	"light-launcher/internal/types"
 	"os"
+	"path/filepath"
+	"strings"
 )
 
-type CommandBuilder struct {
-	Options     types.LaunchOptions
-	Arguments   []string
-	Environment []string
-}
-
-func NewCommandBuilder(options types.LaunchOptions) *CommandBuilder {
-	return &CommandBuilder{
-		Options:     options,
-		Environment: os.Environ(),
-	}
-}
-
 func BuildCommand(options types.LaunchOptions) ([]string, []string) {
-	builder := NewCommandBuilder(options)
+	// 1. Build initial command arguments (base execution command)
+	var arguments []string
+	arguments = append(arguments, "umu-run")
+	executablePath := options.LauncherPath
+	if executablePath == "" {
+		executablePath = options.GamePath
+	}
+	arguments = append(arguments, executablePath)
 
-	builder.buildBaseEnvironment()
-	builder.applyLsfg()
-
-	if !options.Extras.Gamescope.Enabled {
-		builder.applyMangoHud()
+	if options.CustomArgs != "" {
+		arguments = append(arguments, strings.Fields(options.CustomArgs)...)
 	}
 
-	builder.applyGameMode()
-
-	if options.Extras.Gamescope.Enabled {
-		builder.applyGamescope()
-		builder.applyMangoHud()
+	// 2. Build initial environment
+	environment := os.Environ()
+	environment = append(environment,
+		fmt.Sprintf("WINEPREFIX=%s", config.ExpandPath(options.PrefixPath)),
+	)
+	if options.ProtonPath != "" {
+		protonPattern := filepath.Base(options.ProtonPath)
+		environment = append(environment,
+			fmt.Sprintf("UMU_PROTON_PATTERN=%s", protonPattern),
+			fmt.Sprintf("PROTONPATH=%s", config.ExpandPath(options.ProtonPath)),
+		)
 	}
 
-	builder.addUmuRun()
-	builder.addCustomArgs()
-	builder.applyMemoryProtection()
+	// 3. Apply adapters
+	adapters := adapter.GetAdapters()
 
-	return builder.Arguments, builder.Environment
+	// Apply ModifyEnv
+	for _, a := range adapters {
+		environment = a.ModifyEnv(options, environment)
+	}
+
+	// Apply WrapCommand
+	for _, a := range adapters {
+		arguments = a.WrapCommand(options, arguments)
+	}
+
+	return arguments, environment
 }

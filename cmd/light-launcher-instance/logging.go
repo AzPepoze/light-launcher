@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"light-launcher/internal/logger"
+	"light-launcher/internal/types"
 )
 
 const banner = `
@@ -17,7 +18,7 @@ const banner = `
 `
 
 // logGameStartup logs the command and enabled features
-func logGameStartup(cmdArgs []string) {
+func logGameStartup(cmdArgs []string, options types.LaunchOptions) {
 	var sb strings.Builder
 	sb.WriteString(banner)
 	sb.WriteString("\n======================================================================\n")
@@ -26,24 +27,29 @@ func logGameStartup(cmdArgs []string) {
 
 	sb.WriteString("[ ENABLED FEATURES ]\n")
 	hasFeatures := false
-	if mango {
+	if options.Extras.EnableMangoHud {
 		sb.WriteString("  ✓ MangoHud\n")
 		hasFeatures = true
 	}
-	if gamemode {
+	if options.Extras.EnableGamemode {
 		sb.WriteString("  ✓ GameMode\n")
 		hasFeatures = true
 	}
-	if gamescope {
-		sb.WriteString(fmt.Sprintf("  ✓ Gamescope (%sx%s@%s)\n", gsW, gsH, gsR))
+	if options.Extras.Gamescope.Enabled {
+		sb.WriteString(fmt.Sprintf("  ✓ Gamescope (%sx%s@%s)\n",
+			options.Extras.Gamescope.Width,
+			options.Extras.Gamescope.Height,
+			options.Extras.Gamescope.RefreshRate))
 		hasFeatures = true
 	}
-	if lsfg {
-		sb.WriteString(fmt.Sprintf("  ✓ LSFG-VK (x%s, PerfMode:%v)\n", lsfgMult, lsfgPerf))
+	if options.Extras.Lsfg.Enabled {
+		sb.WriteString(fmt.Sprintf("  ✓ LSFG-VK (x%s, PerfMode:%v)\n",
+			options.Extras.Lsfg.Multiplier,
+			options.Extras.Lsfg.PerfMode))
 		hasFeatures = true
 	}
-	if memoryMin {
-		sb.WriteString(fmt.Sprintf("  ✓ Memory Protection (Min: %s)\n", memoryMinValue))
+	if options.Extras.Memory.Enabled {
+		sb.WriteString(fmt.Sprintf("  ✓ Memory Protection (Min: %s)\n", options.Extras.Memory.Value))
 		hasFeatures = true
 	}
 	if !hasFeatures {
