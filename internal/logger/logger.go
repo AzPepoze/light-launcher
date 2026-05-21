@@ -45,8 +45,6 @@ var (
 	outWriter   io.Writer = os.Stdout
 )
 
-// Init initializes the logger to write to the specified filename inside the app's log directory.
-// It also cleans up older log files, keeping only the specified count.
 func Init(fileName string, keepCount int) error {
 	mu.Lock()
 	defer mu.Unlock()
@@ -56,13 +54,11 @@ func Init(fileName string, keepCount int) error {
 		return fmt.Errorf("failed to create log directory: %w", err)
 	}
 
-	// Close existing log file if open
 	if logFile != nil {
 		logFile.Close()
 		logFile = nil
 	}
 
-	// Perform cleanup of old logs in logDir before opening a new file
 	cleanupLogs(logDir, keepCount)
 
 	logPath := filepath.Join(logDir, fileName)
@@ -76,7 +72,6 @@ func Init(fileName string, keepCount int) error {
 	return nil
 }
 
-// Close closes the underlying log file handle.
 func Close() {
 	mu.Lock()
 	defer mu.Unlock()
@@ -87,14 +82,12 @@ func Close() {
 	}
 }
 
-// SetLevel sets the minimum log level required to output a message.
 func SetLevel(level Level) {
 	mu.Lock()
 	defer mu.Unlock()
 	minLevel = level
 }
 
-// Log writes a message to the active outputs if its level meets the minimum requirement.
 func Log(level Level, message string) {
 	mu.Lock()
 	defer mu.Unlock()
@@ -116,34 +109,28 @@ func Log(level Level, message string) {
 	}
 }
 
-// Debug logs a debug-level message.
 func Debug(format string, args ...interface{}) {
 	Log(LevelDebug, fmt.Sprintf(format, args...))
 }
 
-// Info logs an info-level message.
 func Info(format string, args ...interface{}) {
 	Log(LevelInfo, fmt.Sprintf(format, args...))
 }
 
-// Warn logs a warning-level message.
 func Warn(format string, args ...interface{}) {
 	Log(LevelWarn, fmt.Sprintf(format, args...))
 }
 
-// Error logs an error-level message.
 func Error(format string, args ...interface{}) {
 	Log(LevelError, fmt.Sprintf(format, args...))
 }
 
-// GetLogPath returns the path to the currently active log file, or empty string.
 func GetLogPath() string {
 	mu.Lock()
 	defer mu.Unlock()
 	return currentPath
 }
 
-// TrimCurrentLogFile trims the active log file to keep only the last maxLines.
 func TrimCurrentLogFile(maxLines int) error {
 	mu.Lock()
 	path := currentPath
@@ -157,12 +144,10 @@ func TrimCurrentLogFile(maxLines int) error {
 	mu.Lock()
 	defer mu.Unlock()
 
-	// Close, read, trim, write, and reopen
 	file.Close()
 
 	data, err := os.ReadFile(path)
 	if err != nil {
-		// Reopen file in append mode to ensure we don't break subsequent writes
 		reopenFile(path)
 		return err
 	}
