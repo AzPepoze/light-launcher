@@ -6,7 +6,9 @@ directories:
 files:
   - dist/main/**/*
   - dist/preload/**/*
-  - src/renderer/dist/**/*
+  - dist/shared/**/*
+  - from: src/renderer/dist
+    to: dist/renderer
   - package.json
 extraResources:
   - from: bin/light-launcher-instance

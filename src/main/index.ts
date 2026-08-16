@@ -29,12 +29,7 @@ async function createWindow(): Promise<BrowserWindow> {
 	const settings = await ConfigService.loadAppSettings();
 	const isTransparent = settings.TransparentMode ?? true;
 
-	const preloadCandidates = [
-		path.join(__dirname, "../../preload/preload/index.js"),
-		path.join(__dirname, "../preload/index.js"),
-		path.join(__dirname, "../preload/preload/index.js")
-	];
-	const preloadPath = preloadCandidates.find((p) => fs.existsSync(p)) || preloadCandidates[0];
+	const preloadPath = path.join(__dirname, "../preload/index.js");
 
 	mainWindow = new BrowserWindow({
 		title: "LightLauncher",
@@ -61,21 +56,11 @@ async function createWindow(): Promise<BrowserWindow> {
 	});
 
 	// Load renderer
-	const devServerUrl = process.env.VITE_DEV_SERVER_URL;
-	if (devServerUrl) {
-		await mainWindow.loadURL(devServerUrl);
+	if (!app.isPackaged) {
+		const devUrl = process.env.VITE_DEV_SERVER_URL || "http://localhost:9245";
+		await mainWindow.loadURL(devUrl);
 	} else {
-		const rendererCandidates = [
-			path.join(__dirname, "../../src/renderer/dist/index.html"),
-			path.join(__dirname, "../renderer/index.html"),
-			path.join(__dirname, "../../../src/renderer/dist/index.html")
-		];
-		const rendererDist = rendererCandidates.find((p) => fs.existsSync(p));
-		if (rendererDist) {
-			await mainWindow.loadFile(rendererDist);
-		} else {
-			console.error("Could not find renderer index.html");
-		}
+		await mainWindow.loadFile(path.join(__dirname, "../renderer/index.html"));
 	}
 
 	mainWindow.on("closed", () => {
