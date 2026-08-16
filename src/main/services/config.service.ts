@@ -32,7 +32,14 @@ export class ConfigService {
 		const dir = path.dirname(filePath);
 		await fs.mkdir(dir, { recursive: true });
 		const data = JSON.stringify(value, null, 2);
-		await fs.writeFile(filePath, data, "utf-8");
+		const tempFile = `${filePath}.tmp.${Date.now()}.${Math.random().toString(36).slice(2, 8)}`;
+		try {
+			await fs.writeFile(tempFile, data, "utf-8");
+			await fs.rename(tempFile, filePath);
+		} catch (err) {
+			await fs.rm(tempFile, { force: true }).catch(() => {});
+			throw err;
+		}
 	}
 
 	static async loadAppSettings(): Promise<AppSettings> {

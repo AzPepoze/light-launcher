@@ -20,4 +20,34 @@ describe("ConfigService", () => {
 		expect(prefixConfig.Extras.Memory.Value).toBe("4G");
 		expect(prefixConfig.Extras.Lsfg.Multiplier).toBe("2");
 	});
+
+	it("saves and loads JSON data atomically", async () => {
+		const os = await import("os");
+		const path = await import("path");
+		const fs = await import("fs/promises");
+
+		const tempFile = path.join(os.tmpdir(), `test-config-${Date.now()}.json`);
+		try {
+			await ConfigService.saveJson(tempFile, { hello: "world", test: 123 });
+			const loaded = await ConfigService.loadJson<{ hello: string; test: number }>(tempFile);
+			expect(loaded.hello).toBe("world");
+			expect(loaded.test).toBe(123);
+		} finally {
+			await fs.unlink(tempFile).catch(() => {});
+		}
+	});
+
+	it("rejects empty JSON files cleanly", async () => {
+		const os = await import("os");
+		const path = await import("path");
+		const fs = await import("fs/promises");
+
+		const tempFile = path.join(os.tmpdir(), `test-empty-${Date.now()}.json`);
+		try {
+			await fs.writeFile(tempFile, "", "utf-8");
+			await expect(ConfigService.loadJson(tempFile)).rejects.toThrow("is empty");
+		} finally {
+			await fs.unlink(tempFile).catch(() => {});
+		}
+	});
 });

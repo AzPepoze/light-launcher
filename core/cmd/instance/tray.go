@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"light-launcher/core/internal/config"
 	"light-launcher/core/internal/executor"
 	"light-launcher/core/internal/executor/builder"
 	"light-launcher/core/internal/logger"
@@ -64,6 +65,11 @@ func onReady(logPath string) {
 
 	mLogs := systray.AddMenuItem("Show Logs", "Open terminal to view running logs")
 	mKill := systray.AddMenuItem("End Process", "Stop this game")
+
+	// Ensure prefix directory exists
+	if opts.PrefixPath != "" {
+		_ = os.MkdirAll(config.ExpandPath(opts.PrefixPath), 0755)
+	}
 
 	// Start game
 	cmdArgs, env := builder.BuildCommand(opts)

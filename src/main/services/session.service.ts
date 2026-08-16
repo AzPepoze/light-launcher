@@ -63,10 +63,13 @@ export class SessionService {
 	}
 
 	static async killSession(pid: number): Promise<void> {
+		if (!pid || pid <= 0) return;
 		try {
 			process.kill(pid, "SIGINT");
-		} catch (err) {
-			console.error(`Failed to send SIGINT to pid ${pid}:`, err);
+		} catch (err: any) {
+			if (err?.code !== "ESRCH") {
+				console.error(`Failed to send SIGINT to pid ${pid}:`, err);
+			}
 		}
 	}
 }

@@ -91,17 +91,43 @@ export class RunnerService {
 			await LsfgService.disableLsfgProfile(options.Name, options.GamePath);
 		}
 
-		const instancePath = this.findInstanceManager();
-		if (!instancePath) {
-			throw new Error("light-launcher-instance binary not found");
+		// Check umu-run availability
+		const hasUmu = (() => {
+			try {
+				const { spawnSync } = require("child_process");
+				return spawnSync("which", ["umu-run"]).status === 0;
+			} catch {
+				return false;
+			}
+		})();
+
+		if (!hasUmu) {
+			LoggerService.error("Runner", "umu-run command not found in PATH");
+			throw new Error(
+				"umu-run is required to launch games via Proton. Please install umu-launcher (e.g., 'yay -S umu-launcher')."
+			);
 		}
 
-		// Match Proton path if configured
+		const instancePath = this.findInstanceManager();
+		if (!instancePath) {
+			LoggerService.error("Runner", "light-launcher-instance binary not found");
+			throw new Error(
+				"light-launcher-instance binary not found. Please build or reinstall LightLauncher."
+			);
+		}
+
+		// Match Proton path if configured or fallback to first available
 		if (options.ProtonPath) {
 			const protonTools = await ProtonService.scanProtonVersions();
 			const match = ProtonService.findProtonMatch(options.ProtonPath, protonTools);
 			if (match) {
 				options.ProtonPath = match.Path;
+			} else if (!fsSync.existsSync(options.ProtonPath) && protonTools.length > 0) {
+				LoggerService.warn(
+					"Runner",
+					`Configured Proton "${options.ProtonPath}" not found. Falling back to "${protonTools[0].DisplayName}".`
+				);
+				options.ProtonPath = protonTools[0].Path;
 			}
 		}
 

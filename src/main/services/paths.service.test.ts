@@ -41,11 +41,19 @@ describe("PathsService", () => {
 		expect(PathsService.getRendererPath()).toContain("renderer");
 	});
 
-	it("expands tilde paths correctly", () => {
+	it("expands tilde paths and handles special Unicode characters correctly", () => {
 		const home = os.homedir();
 		expect(PathsService.expandPath("~")).toBe(home);
 		expect(PathsService.expandPath("~/games/steam")).toBe(path.join(home, "games/steam"));
-		expect(PathsService.expandPath("/absolute/path")).toBe("/absolute/path");
+		expect(PathsService.expandPath("/mnt/Drive1/Game♥/OK/Lustful Spirit Hunt.exe")).toBe(
+			"/mnt/Drive1/Game♥/OK/Lustful Spirit Hunt.exe"
+		);
 		expect(PathsService.expandPath("")).toBe("");
+	});
+
+	it("safely checks file existence without throwing", () => {
+		expect(PathsService.safeExists("")).toBe(false);
+		expect(PathsService.safeExists("/non/existent/path/here/never/exists")).toBe(false);
+		expect(PathsService.safeExists(os.homedir())).toBe(true);
 	});
 });

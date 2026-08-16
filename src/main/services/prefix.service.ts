@@ -91,9 +91,18 @@ export class PrefixService {
 		toolName: string,
 		protonPath: string
 	): Promise<void> {
+		if (!toolName) {
+			throw new Error("Tool name cannot be empty");
+		}
+
+		const resolvedPrefix = PathsService.expandPath(prefixPath);
+		if (!fsSync.existsSync(resolvedPrefix)) {
+			await fs.mkdir(resolvedPrefix, { recursive: true });
+		}
+
 		const env: NodeJS.ProcessEnv = {
 			...process.env,
-			WINEPREFIX: PathsService.expandPath(prefixPath)
+			WINEPREFIX: resolvedPrefix
 		};
 
 		if (protonPath) {
@@ -102,11 +111,19 @@ export class PrefixService {
 			env.UMU_PROTON_PATTERN = path.basename(expandedProton);
 		}
 
-		const child = spawn("umu-run", [toolName], {
-			env,
-			detached: true,
-			stdio: "ignore"
-		});
-		child.unref();
+		const hasSetsid = fsSync.existsSync("/usr/bin/setsid");
+		const cmd = hasSetsid ? "/usr/bin/setsid" : "umu-run";
+		const args = hasSetsid ? ["umu-run", toolName] : [toolName];
+
+		try {
+			const child = spawn(cmd, args, {
+				env,
+				detached: true,
+				stdio: "ignore"
+			});
+			child.unref();
+		} catch (err: any) {
+			throw new Error(`Failed to launch prefix tool "${toolName}": ${err?.message || err}`);
+		}
 	}
 }

@@ -56,8 +56,26 @@ export class GamesService {
 	}
 
 	static async removeGame(executablePath: string): Promise<void> {
+		if (!executablePath) {
+			throw new Error("Executable path cannot be empty");
+		}
 		const cfg = await ConfigService.loadGameConfig(executablePath);
 		if (!cfg) {
+			// Try finding by path basename as fallback
+			const configs = await ConfigService.listGameConfigs();
+			const normalizedTarget = path.normalize(executablePath).toLowerCase();
+			const match = configs.find(
+				(c) =>
+					(c.GamePath && path.normalize(c.GamePath).toLowerCase() === normalizedTarget) ||
+					(c.LauncherPath && path.normalize(c.LauncherPath).toLowerCase() === normalizedTarget)
+			);
+			if (match) {
+				const configDir = PathsService.getExecutableConfigPath(match.Name, match.ID);
+				if (fsSync.existsSync(configDir)) {
+					await fs.rm(configDir, { recursive: true, force: true });
+				}
+				return;
+			}
 			throw new Error(`Could not find game config to remove for path: ${executablePath}`);
 		}
 
@@ -72,8 +90,15 @@ export class GamesService {
 		maxDepth: number,
 		excludeNames: string[]
 	): Promise<string[]> {
+		if (!folderPath || folderPath.trim() === "") {
+			return [];
+		}
+		const cleanFolder = path.normalize(folderPath.trim());
+		if (!fsSync.existsSync(cleanFolder)) {
+			return [];
+		}
+
 		const executables: string[] = [];
-		const cleanFolder = path.normalize(folderPath);
 
 		const excludeRegexes: RegExp[] = [];
 		for (const pattern of excludeNames) {
@@ -104,10 +129,14 @@ export class GamesService {
 				if (isExcluded) continue;
 
 				const fullPath = path.join(currentDir, name);
-				if (entry.isDirectory()) {
-					await scanDir(fullPath, currentDepth + 1);
-				} else if (entry.isFile() && name.toLowerCase().endsWith(".exe")) {
-					executables.push(fullPath);
+				try {
+					if (entry.isDirectory()) {
+						await scanDir(fullPath, currentDepth + 1);
+					} else if (entry.isFile() && name.toLowerCase().endsWith(".exe")) {
+						executables.push(fullPath);
+					}
+				} catch {
+					// Skip unreadable files or broken symlinks
 				}
 			}
 		}

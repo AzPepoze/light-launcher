@@ -41,7 +41,7 @@ export class AppService {
 	}
 
 	static async getExeIcon(executablePath: string): Promise<string> {
-		if (!fsSync.existsSync(executablePath)) {
+		if (!executablePath || !fsSync.existsSync(executablePath)) {
 			return "";
 		}
 
@@ -49,7 +49,9 @@ export class AppService {
 		try {
 			// Try wrestool
 			try {
-				await execAsync(`wrestool -x --output="${tempDir}" "${executablePath}"`);
+				const { execFile } = require("child_process");
+				const execFileAsync = promisify(execFile);
+				await execFileAsync("wrestool", ["-x", `--output=${tempDir}`, executablePath]);
 				const files = await fs.readdir(tempDir);
 				const icoFile = files.find((f) => f.toLowerCase().endsWith(".ico"));
 				if (icoFile) {
@@ -62,8 +64,10 @@ export class AppService {
 
 			// Try icoextract
 			try {
+				const { execFile } = require("child_process");
+				const execFileAsync = promisify(execFile);
 				const outIco = path.join(tempDir, "icon.ico");
-				await execAsync(`icoextract "${executablePath}" "${outIco}"`);
+				await execFileAsync("icoextract", [executablePath, outIco]);
 				if (fsSync.existsSync(outIco)) {
 					const data = await fs.readFile(outIco);
 					if (data.length > 0) {

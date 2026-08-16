@@ -219,49 +219,72 @@ allow_fp16 = ${allowFp16 ? "true" : "false"}
 		const ext = assetName.endsWith(".tar.zst") ? ".tar.zst" : ".tar.xz";
 		const tempFile = path.join(os.tmpdir(), `lsfg-vk-dl${ext}`);
 
-		await new Promise<void>((resolve, reject) => {
-			https
-				.get(downloadURL, { headers: { "User-Agent": "LightLauncher-App" } }, (res) => {
-					if (res.statusCode === 302 || res.statusCode === 301) {
-						if (res.headers.location) {
-							return https.get(
-								res.headers.location,
-								{ headers: { "User-Agent": "LightLauncher-App" } },
-								(res2) => {
-									const fileStream = fsSync.createWriteStream(tempFile);
-									res2.pipe(fileStream);
-									fileStream.on("finish", () => resolve());
-									fileStream.on("error", reject);
-								}
-							);
-						}
-					}
-					const fileStream = fsSync.createWriteStream(tempFile);
-					res.pipe(fileStream);
-					fileStream.on("finish", () => resolve());
-					fileStream.on("error", reject);
-				})
-				.on("error", reject);
-		});
-
-		onProgress(85, "Installing to system directories (requires sudo)...");
-
-		let extractCmd = `tar -xf "${tempFile}" -C /usr`;
-		if (tempFile.endsWith(".tar.zst")) {
-			extractCmd = `tar --use-compress-program=unzstd -xf "${tempFile}" -C /usr`;
-		}
-
-		await execAsync(`pkexec sh -c "${extractCmd}"`);
 		try {
-			await fs.unlink(tempFile);
-		} catch {}
+			await new Promise<void>((resolve, reject) => {
+				const req = https.get(
+					downloadURL,
+					{
+						headers: { "User-Agent": "LightLauncher-App" },
+						timeout: 30000
+					},
+					(res) => {
+						if (res.statusCode === 302 || res.statusCode === 301) {
+							if (res.headers.location) {
+								return https.get(
+									res.headers.location,
+									{ headers: { "User-Agent": "LightLauncher-App" } },
+									(res2) => {
+										const fileStream = fsSync.createWriteStream(tempFile);
+										res2.pipe(fileStream);
+										fileStream.on("finish", () => resolve());
+										fileStream.on("error", reject);
+									}
+								);
+							}
+						}
+						const fileStream = fsSync.createWriteStream(tempFile);
+						res.pipe(fileStream);
+						fileStream.on("finish", () => resolve());
+						fileStream.on("error", reject);
+					}
+				);
+				req.on("timeout", () => {
+					req.destroy();
+					reject(new Error("Download request timed out"));
+				});
+				req.on("error", reject);
+			});
 
-		onProgress(100, "Installation complete!");
+			onProgress(85, "Installing to system directories (requires sudo)...");
+
+			let extractCmd = `tar -xf "${tempFile}" -C /usr`;
+			if (tempFile.endsWith(".tar.zst")) {
+				extractCmd = `tar --use-compress-program=unzstd -xf "${tempFile}" -C /usr`;
+			}
+
+			try {
+				await execAsync(`pkexec sh -c "${extractCmd}"`);
+			} catch (err: any) {
+				throw new Error("Authentication failed or was cancelled during installation.");
+			}
+
+			onProgress(100, "Installation complete!");
+		} finally {
+			try {
+				if (fsSync.existsSync(tempFile)) {
+					await fs.unlink(tempFile);
+				}
+			} catch {}
+		}
 	}
 
 	static async uninstallLsfg(): Promise<void> {
 		const manifest = this.getManifestPath();
 		const lib = this.getLibraryPath();
-		await execAsync(`pkexec rm -f "${manifest}" "${lib}"`);
+		try {
+			await execAsync(`pkexec rm -f "${manifest}" "${lib}"`);
+		} catch (err: any) {
+			throw new Error("Authentication failed or was cancelled during uninstallation.");
+		}
 	}
 }

@@ -164,34 +164,48 @@ export class ProtonService {
 		const url = `https://api.github.com/repos/${variant.RepoOwner}/${variant.RepoName}/releases?per_page=50`;
 
 		return new Promise((resolve, reject) => {
-			https
-				.get(
-					url,
-					{
-						headers: {
-							"User-Agent": "LightLauncher-App",
-							Accept: "application/vnd.github.v3+json"
-						}
+			const req = https.get(
+				url,
+				{
+					headers: {
+						"User-Agent": "LightLauncher-App",
+						Accept: "application/vnd.github.v3+json"
 					},
-					(res) => {
-						if (res.statusCode !== 200) {
-							reject(new Error(`GitHub API returned status ${res.statusCode}`));
-							return;
-						}
-
-						let body = "";
-						res.on("data", (chunk) => (body += chunk));
-						res.on("end", () => {
-							try {
-								const releases = JSON.parse(body) as GitHubRelease[];
-								resolve(releases);
-							} catch (e) {
-								reject(e);
-							}
-						});
+					timeout: 15000
+				},
+				(res) => {
+					if (res.statusCode === 403 || res.statusCode === 429) {
+						reject(
+							new Error(
+								"GitHub API rate limit exceeded. Please wait a few minutes before trying again."
+							)
+						);
+						return;
 					}
-				)
-				.on("error", reject);
+					if (res.statusCode !== 200) {
+						reject(new Error(`GitHub API returned HTTP ${res.statusCode}`));
+						return;
+					}
+
+					let body = "";
+					res.on("data", (chunk) => (body += chunk));
+					res.on("end", () => {
+						try {
+							const releases = JSON.parse(body) as GitHubRelease[];
+							resolve(releases);
+						} catch (e) {
+							reject(new Error("Failed to parse GitHub releases response"));
+						}
+					});
+				}
+			);
+			req.on("timeout", () => {
+				req.destroy();
+				reject(new Error("Request timed out connecting to GitHub"));
+			});
+			req.on("error", (err) => {
+				reject(new Error(`Network error: ${err.message}`));
+			});
 		});
 	}
 
@@ -212,61 +226,79 @@ export class ProtonService {
 		const ext = url.endsWith(".tar.zst") ? ".tar.zst" : ".tar.gz";
 		const tempFile = path.join(os.tmpdir(), `proton-install-${Date.now()}${ext}`);
 
-		await new Promise<void>((resolve, reject) => {
-			const getter = url.startsWith("https") ? https : http;
-			const req = getter.get(url, { headers: { "User-Agent": "LightLauncher-App" } }, (res) => {
-				// Follow redirects
-				if (res.statusCode === 302 || res.statusCode === 301) {
-					if (res.headers.location) {
-						return this.installProtonVersion(res.headers.location, versionTag, onProgress)
-							.then(resolve)
-							.catch(reject);
-					}
-				}
-
-				if (res.statusCode !== 200) {
-					reject(new Error(`Download failed with status ${res.statusCode}`));
-					return;
-				}
-
-				const total = parseInt(res.headers["content-length"] || "0", 10);
-				let current = 0;
-
-				const fileStream = fsSync.createWriteStream(tempFile);
-				res.on("data", (chunk) => {
-					current += chunk.length;
-					fileStream.write(chunk);
-					if (total > 0) {
-						const percent = Math.round((current / total) * 50);
-						onProgress(
-							percent,
-							`Downloading... ${(current / 1024 / 1024).toFixed(1)} MB / ${(total / 1024 / 1024).toFixed(1)} MB`
-						);
-					}
-				});
-
-				res.on("end", () => {
-					fileStream.end();
-					resolve();
-				});
-
-				res.on("error", reject);
-			});
-			req.on("error", reject);
-		});
-
-		onProgress(50, "Extracting Proton package...");
-
-		let extractCmd = `tar -xf "${tempFile}" -C "${targetBase}"`;
-		if (tempFile.endsWith(".tar.zst")) {
-			extractCmd = `tar --use-compress-program=unzstd -xf "${tempFile}" -C "${targetBase}"`;
-		}
-
-		await execAsync(extractCmd);
 		try {
-			await fs.unlink(tempFile);
-		} catch {}
+			await new Promise<void>((resolve, reject) => {
+				const getter = url.startsWith("https") ? https : http;
+				const req = getter.get(
+					url,
+					{
+						headers: { "User-Agent": "LightLauncher-App" },
+						timeout: 30000
+					},
+					(res) => {
+						if (res.statusCode === 302 || res.statusCode === 301) {
+							if (res.headers.location) {
+								return this.installProtonVersion(res.headers.location, versionTag, onProgress)
+									.then(resolve)
+									.catch(reject);
+							}
+						}
 
-		onProgress(100, "Installation Complete!");
+						if (res.statusCode !== 200) {
+							reject(new Error(`Download failed with status ${res.statusCode}`));
+							return;
+						}
+
+						const total = parseInt(res.headers["content-length"] || "0", 10);
+						let current = 0;
+
+						const fileStream = fsSync.createWriteStream(tempFile);
+						fileStream.on("error", reject);
+
+						res.on("data", (chunk) => {
+							current += chunk.length;
+							fileStream.write(chunk);
+							if (total > 0) {
+								const percent = Math.round((current / total) * 50);
+								onProgress(
+									percent,
+									`Downloading... ${(current / 1024 / 1024).toFixed(1)} MB / ${(total / 1024 / 1024).toFixed(1)} MB`
+								);
+							}
+						});
+
+						res.on("end", () => {
+							fileStream.end();
+							resolve();
+						});
+
+						res.on("error", reject);
+					}
+				);
+				req.on("timeout", () => {
+					req.destroy();
+					reject(new Error("Download request timed out"));
+				});
+				req.on("error", reject);
+			});
+
+			onProgress(50, "Extracting Proton package...");
+
+			let extractCmd = `tar -xf "${tempFile}" -C "${targetBase}"`;
+			if (tempFile.endsWith(".tar.zst")) {
+				extractCmd = `tar --use-compress-program=unzstd -xf "${tempFile}" -C "${targetBase}"`;
+			}
+
+			await execAsync(extractCmd);
+			onProgress(100, "Installation Complete!");
+		} catch (error: any) {
+			throw new Error(`Failed to install Proton ${versionTag}: ${error?.message || error}`);
+		} finally {
+			try {
+				if (fsSync.existsSync(tempFile)) {
+					await fs.unlink(tempFile);
+				}
+			} catch {}
+		}
 	}
 }

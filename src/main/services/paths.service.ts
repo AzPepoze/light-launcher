@@ -67,14 +67,25 @@ export class PathsService {
 		return candidates.find((p) => fsSync.existsSync(p)) || candidates[0];
 	}
 
+	static safeExists(targetPath: string): boolean {
+		if (!targetPath) return false;
+		try {
+			return fsSync.existsSync(this.expandPath(targetPath));
+		} catch {
+			return false;
+		}
+	}
+
 	static expandPath(targetPath: string): string {
-		if (!targetPath) return "";
-		if (targetPath === "~") {
+		if (!targetPath || typeof targetPath !== "string") return "";
+		const trimmed = targetPath.trim();
+		if (trimmed === "") return "";
+		if (trimmed === "~") {
 			return os.homedir();
 		}
-		if (targetPath.startsWith("~/")) {
-			return path.join(os.homedir(), targetPath.slice(2));
+		if (trimmed.startsWith("~/")) {
+			return path.join(os.homedir(), trimmed.slice(2));
 		}
-		return targetPath;
+		return path.normalize(trimmed);
 	}
 }
