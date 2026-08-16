@@ -138,6 +138,48 @@ export class MigrationService {
 					} catch {}
 				}
 			}
+
+			await this.repairPrefixSymlinks();
+		} catch {}
+	}
+
+	static async repairPrefixSymlinks(): Promise<void> {
+		const basePrefixDir = PathsService.getPrefixBaseDirectory();
+		if (!fsSync.existsSync(basePrefixDir)) return;
+
+		try {
+			const prefixEntries = await fs.readdir(basePrefixDir, { withFileTypes: true });
+			for (const pfx of prefixEntries) {
+				if (!pfx.isDirectory()) continue;
+				const pfxPath = path.join(basePrefixDir, pfx.name);
+				await this.walkAndRepairSymlinks(pfxPath, basePrefixDir);
+			}
+		} catch (err) {
+			console.error("Failed to repair prefix symlinks:", err);
+		}
+	}
+
+	private static async walkAndRepairSymlinks(dir: string, basePrefixDir: string): Promise<void> {
+		try {
+			const entries = await fs.readdir(dir, { withFileTypes: true });
+			for (const entry of entries) {
+				const fullPath = path.join(dir, entry.name);
+				try {
+					if (entry.isSymbolicLink()) {
+						const linkTarget = await fs.readlink(fullPath);
+						if (linkTarget.includes("/LightLauncher/prefixes/")) {
+							const fixedTarget = linkTarget.replace(
+								/^.*\/LightLauncher\/prefixes\//,
+								`${basePrefixDir}/`
+							);
+							await fs.unlink(fullPath);
+							await fs.symlink(fixedTarget, fullPath);
+						}
+					} else if (entry.isDirectory()) {
+						await this.walkAndRepairSymlinks(fullPath, basePrefixDir);
+					}
+				} catch {}
+			}
 		} catch {}
 	}
 }

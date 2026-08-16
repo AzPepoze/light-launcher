@@ -5,6 +5,7 @@ import { spawn } from "child_process";
 import { ConfigService } from "./config.service";
 import { PathsService } from "./paths.service";
 import { PrefixService } from "./prefix.service";
+import { MigrationService } from "./migration.service";
 import { LsfgService } from "./lsfg.service";
 import { ProtonService } from "./proton.service";
 import { SystemService } from "./system.service";
@@ -54,6 +55,8 @@ export class RunnerService {
 		if (!fsSync.existsSync(options.PrefixPath)) {
 			await fs.mkdir(options.PrefixPath, { recursive: true });
 		}
+
+		await MigrationService.repairPrefixSymlinks();
 
 		if (!fsSync.existsSync(options.GamePath)) {
 			LoggerService.error("Runner", `Game executable not found at: ${options.GamePath}`);
