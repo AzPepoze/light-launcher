@@ -34,6 +34,14 @@ _setup_go_env() {
   export GOPATH="$_golang_workspace_path"
   export GOMODCACHE="$_golang_module_cache_path"
   export GOCACHE="$_golang_build_cache_path"
+
+  # Go makes module cache directories read-only by default. Keep this cache
+  # writable because it lives under $srcdir and AUR helpers remove that build
+  # tree during cleanup after upgrades.
+  if [[ " ${GOFLAGS:-} " != *" -modcacherw "* ]]; then
+    export GOFLAGS="${GOFLAGS:+${GOFLAGS} }-modcacherw"
+  fi
+
   export PATH="${GOPATH}/bin:${PATH}"
 }
 
