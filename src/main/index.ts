@@ -34,7 +34,7 @@ async function createWindow(): Promise<BrowserWindow> {
 		path.join(__dirname, "../preload/index.js"),
 		path.join(__dirname, "../preload/preload/index.js")
 	];
-	const preloadPath = preloadCandidates.find(p => fs.existsSync(p)) || preloadCandidates[0];
+	const preloadPath = preloadCandidates.find((p) => fs.existsSync(p)) || preloadCandidates[0];
 
 	mainWindow = new BrowserWindow({
 		title: "LightLauncher",
@@ -70,7 +70,7 @@ async function createWindow(): Promise<BrowserWindow> {
 			path.join(__dirname, "../renderer/index.html"),
 			path.join(__dirname, "../../../src/renderer/dist/index.html")
 		];
-		const rendererDist = rendererCandidates.find(p => fs.existsSync(p));
+		const rendererDist = rendererCandidates.find((p) => fs.existsSync(p));
 		if (rendererDist) {
 			await mainWindow.loadFile(rendererDist);
 		} else {

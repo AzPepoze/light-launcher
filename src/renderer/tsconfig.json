@@ -28,11 +28,7 @@
 		"src/**/*.ts",
 		"src/**/*.js",
 		"src/**/*.svelte",
+		"vite.config.ts",
 		"../shared/**/*.ts"
-	],
-	"references": [
-		{
-			"path": "./tsconfig.node.json"
-		}
 	]
 }
