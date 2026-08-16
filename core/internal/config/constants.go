@@ -1,17 +1,15 @@
 package config
 
 const (
-	AppName = "LightLauncher"
-
+	AppName         = "light-launcher"
 	ConfigDirName   = "config/executables"
 	PrefixesDirName = "prefixes"
-	ProtonsDirName  = "protons"
 	LogsDirName     = "logs"
 
 	DefaultMemoryValue = "4G"
 	DefaultMultiplier  = "2"
-	DefaultWidth       = "1920"
-	DefaultHeight      = "1080"
+	DefaultWidth       = "1280"
+	DefaultHeight      = "720"
 	DefaultRefreshRate = "60"
 )
 

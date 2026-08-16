@@ -9,12 +9,13 @@ import type { LaunchOptions } from "../../shared/types/config.types";
 import type { PrefixConfigWithProton } from "../../shared/types/prefix.types";
 
 export class PrefixService {
-	static getPrefixBaseDir(): string {
-		return PathsService.getPrefixBaseDirectory();
+	static async getPrefixBaseDir(): Promise<string> {
+		const settings = await ConfigService.loadAppSettings();
+		return PathsService.getPrefixBaseDirectory(settings?.CustomPrefixDir);
 	}
 
 	static async listPrefixes(): Promise<string[]> {
-		const baseDir = this.getPrefixBaseDir();
+		const baseDir = await this.getPrefixBaseDir();
 		if (!fsSync.existsSync(baseDir)) {
 			return ["Default"];
 		}
@@ -35,7 +36,8 @@ export class PrefixService {
 		if (!name || name.trim() === "") {
 			throw new Error("Prefix name cannot be empty");
 		}
-		const prefixPath = path.join(this.getPrefixBaseDir(), name.trim());
+		const baseDir = await this.getPrefixBaseDir();
+		const prefixPath = path.join(baseDir, name.trim());
 		await fs.mkdir(prefixPath, { recursive: true });
 	}
 
@@ -43,7 +45,8 @@ export class PrefixService {
 		if (name === "Default") {
 			throw new Error("Cannot delete Default prefix");
 		}
-		const prefixPath = path.join(this.getPrefixBaseDir(), name);
+		const baseDir = await this.getPrefixBaseDir();
+		const prefixPath = path.join(baseDir, name);
 		if (fsSync.existsSync(prefixPath)) {
 			await fs.rm(prefixPath, { recursive: true, force: true });
 		}

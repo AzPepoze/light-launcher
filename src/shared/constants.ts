@@ -1,5 +1,5 @@
 export const AppName = "light-launcher";
-export const ConfigDirName = "games";
+export const ConfigDirName = "config/executables";
 export const PrefixesDirName = "prefixes";
 export const LogsDirName = "logs";
 

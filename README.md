@@ -67,14 +67,14 @@ LightLauncher is a games launcher designed to run non-Steam games on Linux using
 - **Multi-Game Support** – Run multiple Windows applications simultaneously with unique Proton configurations and prefixes.
 - **Process Isolation** – Every game gets its own System Tray icon for individual management (Graceful Stop/Status).
 - **Native Terminal Integration** – Real-time logs are piped to your preferred terminal (Kitty, Alacritty, etc.) for live debugging.
-- **Automatic Log Management** – Persistent logging to `~/LightLauncher/logs` with automatic rotation (keeps last 10 sessions)
+- **Automatic Log Management** – Persistent logging to `~/.config/light-launcher/logs` with automatic rotation (keeps last 10 sessions)
 - **umu-run Core** – Utilizes the Unified Linux Runtime (umu) to provide superior execution for non-Steam games.
-- **Shared Prefix Architecture** – Supports mapping individual or shared prefix environments interchangeably across different Proton versions seamlessly.
+- **Shared Prefix Architecture** – Supports mapping individual or shared prefix environments (configurable location) interchangeably across different Proton versions seamlessly.
 
 ## ARCHITECTURE & EFFICIENCY
 
-1. **UI (Wails/Go):** Used only for configuration. It **closes completely** after launching a game, freeing all WebKit memory.
-2. **Instance Manager (`light-launcher-instance`):** A tiny Go binary that manages the process life-cycle and tray.
+1. **UI (Electron / Svelte 5):** Rich modern interface for configuration, scanning, and monitoring.
+2. **Instance Manager (`light-launcher-instance`):** A lightweight Go binary that supervises the process life-cycle and tray.
 
 ## PREREQUISITES
 

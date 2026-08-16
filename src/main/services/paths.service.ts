@@ -16,7 +16,10 @@ export class PathsService {
 		return path.join(this.getBaseDirectory(), ConfigDirName);
 	}
 
-	static getPrefixBaseDirectory(): string {
+	static getPrefixBaseDirectory(customDir?: string): string {
+		if (customDir && customDir.trim() !== "") {
+			return this.expandPath(customDir.trim());
+		}
 		return path.join(this.getBaseDirectory(), PrefixesDirName);
 	}
 
@@ -43,8 +46,8 @@ export class PathsService {
 		return path.join(this.getExecutableConfigPath(name, id), "lsfg_vk.toml");
 	}
 
-	static getPrefixConfigPath(prefixName: string): string {
-		return path.join(this.getPrefixBaseDirectory(), prefixName, "light-launcher.json");
+	static getPrefixConfigPath(prefixName: string, customDir?: string): string {
+		return path.join(this.getPrefixBaseDirectory(customDir), prefixName, "light-launcher.json");
 	}
 
 	static getPreloadPath(): string {

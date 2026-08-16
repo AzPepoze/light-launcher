@@ -146,7 +146,11 @@ export class ConfigService {
 	}
 
 	static async loadPrefixConfig(prefixName: string): Promise<LaunchOptions> {
-		const prefixConfigPath = PathsService.getPrefixConfigPath(prefixName);
+		const settings = await this.loadAppSettings();
+		const prefixConfigPath = PathsService.getPrefixConfigPath(
+			prefixName,
+			settings?.CustomPrefixDir
+		);
 		if (fsSync.existsSync(prefixConfigPath)) {
 			try {
 				return await this.loadJson<LaunchOptions>(prefixConfigPath);
@@ -154,7 +158,19 @@ export class ConfigService {
 				console.error(`Failed to parse ${prefixConfigPath}:`, e);
 			}
 		}
+		return this.createDefaultLaunchOptions(prefixName);
+	}
 
+	static async savePrefixConfig(prefixName: string, options: LaunchOptions): Promise<void> {
+		const settings = await this.loadAppSettings();
+		const prefixConfigPath = PathsService.getPrefixConfigPath(
+			prefixName,
+			settings?.CustomPrefixDir
+		);
+		await this.saveJson(prefixConfigPath, options);
+	}
+
+	private static createDefaultLaunchOptions(prefixName: string): LaunchOptions {
 		return {
 			ID: "",
 			Name: prefixName,
@@ -201,10 +217,5 @@ export class ConfigService {
 				}
 			}
 		};
-	}
-
-	static async savePrefixConfig(prefixName: string, options: LaunchOptions): Promise<void> {
-		const prefixConfigPath = PathsService.getPrefixConfigPath(prefixName);
-		await this.saveJson(prefixConfigPath, options);
 	}
 }

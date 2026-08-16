@@ -5,6 +5,7 @@
 	import { onMount } from "svelte";
 	import ScanFoldersSetting from "@components/settings/ScanFoldersSetting.svelte";
 	import BlacklistSetting from "@components/settings/BlacklistSetting.svelte";
+	import PrefixStorageSetting from "@components/settings/PrefixStorageSetting.svelte";
 
 	let currentSettings = {
 		theme: "light",
@@ -15,7 +16,9 @@
 	let appSettings = {
 		TransparentMode: true,
 		ScanFolders: [] as string[],
+		ScanFolderConfigs: [] as any[],
 		Blacklist: [] as string[],
+		CustomPrefixDir: "",
 	};
 
 	async function refreshAppSettings() {
@@ -147,10 +150,13 @@
 			</div>
 		</div>
 
-		<!-- Zone 3: Automatic Scan Folders -->
+		<!-- Zone 3: Wine Prefix Storage Location -->
+		<PrefixStorageSetting {appSettings} onRefresh={refreshAppSettings} />
+
+		<!-- Zone 4: Automatic Scan Folders -->
 		<ScanFoldersSetting {appSettings} onRefresh={refreshAppSettings} />
 
-		<!-- Zone 4: Hidden / Blacklisted Games -->
+		<!-- Zone 5: Hidden / Blacklisted Games -->
 		<BlacklistSetting {appSettings} onRefresh={refreshAppSettings} />
 	</div>
 </div>

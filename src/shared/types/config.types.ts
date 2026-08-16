@@ -64,4 +64,5 @@ export interface AppSettings {
 	ScanFolders: string[];
 	ScanFolderConfigs: ScanFolderConfig[];
 	Blacklist: string[];
+	CustomPrefixDir?: string;
 }

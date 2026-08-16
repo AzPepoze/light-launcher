@@ -6,11 +6,15 @@ import (
 )
 
 func GetBaseDirectory() string {
+	xdgConfigHome := os.Getenv("XDG_CONFIG_HOME")
+	if xdgConfigHome != "" {
+		return filepath.Join(xdgConfigHome, AppName)
+	}
 	homeDirectory, err := os.UserHomeDir()
 	if err != nil {
-		return AppName
+		return filepath.Join(".config", AppName)
 	}
-	return filepath.Join(homeDirectory, AppName)
+	return filepath.Join(homeDirectory, ".config", AppName)
 }
 
 func GetConfigDirectory() string {

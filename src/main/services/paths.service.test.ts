@@ -22,8 +22,9 @@ describe("PathsService", () => {
 
 	it("computes config, prefix, and logs directories accurately", () => {
 		const base = PathsService.getBaseDirectory();
-		expect(PathsService.getConfigDirectory()).toBe(path.join(base, "games"));
+		expect(PathsService.getConfigDirectory()).toBe(path.join(base, "config/executables"));
 		expect(PathsService.getPrefixBaseDirectory()).toBe(path.join(base, "prefixes"));
+		expect(PathsService.getPrefixBaseDirectory("/mnt/drive/prefixes")).toBe("/mnt/drive/prefixes");
 		expect(PathsService.getLogsDirectory()).toBe(path.join(base, "logs"));
 	});
 

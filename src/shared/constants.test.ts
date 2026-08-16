@@ -12,7 +12,7 @@ import {
 describe("Shared Constants", () => {
 	it("has correct application directory constants", () => {
 		expect(AppName).toBe("light-launcher");
-		expect(ConfigDirName).toBe("games");
+		expect(ConfigDirName).toBe("config/executables");
 		expect(PrefixesDirName).toBe("prefixes");
 	});
 
