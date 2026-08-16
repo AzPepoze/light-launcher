@@ -1,6 +1,7 @@
-import path from "path";
+import fsSync from "fs";
 import os from "os";
-import { AppName, ConfigDirName, PrefixesDirName, LogsDirName } from "../../shared/constants";
+import path from "path";
+import { AppName, ConfigDirName, LogsDirName, PrefixesDirName } from "../../shared/constants";
 
 export class PathsService {
 	static getBaseDirectory(): string {
@@ -47,11 +48,20 @@ export class PathsService {
 	}
 
 	static getPreloadPath(): string {
-		return path.join(__dirname, "../preload/index.js");
+		const candidates = [
+			path.resolve(__dirname, "../../preload/index.js"),
+			path.resolve(__dirname, "../preload/index.js")
+		];
+		return candidates.find((p) => fsSync.existsSync(p)) || candidates[0];
 	}
 
 	static getRendererPath(): string {
-		return path.join(__dirname, "../renderer/index.html");
+		const candidates = [
+			path.resolve(__dirname, "../../renderer/index.html"),
+			path.resolve(__dirname, "../../../src/renderer/dist/index.html"),
+			path.resolve(__dirname, "../renderer/index.html")
+		];
+		return candidates.find((p) => fsSync.existsSync(p)) || candidates[0];
 	}
 
 	static expandPath(targetPath: string): string {
