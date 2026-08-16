@@ -60,5 +60,5 @@ func logGameStartup(cmdArgs []string, options types.LaunchOptions) {
 	sb.WriteString("  " + strings.Join(cmdArgs, " ") + "\n")
 	sb.WriteString("\n======================================================================\n\n")
 
-	logger.Log(logger.LevelInfo, sb.String())
+	logger.Info("Instance", "\n%s", sb.String())
 }

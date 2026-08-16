@@ -94,8 +94,7 @@ func onReady(logPath string) {
 	}
 
 	if err := gameCmd.Start(); err != nil {
-		log.Printf("!!! ERROR: Failed to start game: %v\n", err)
-		sendNotification("Launch Error", "Failed to start "+exeNameClean+" ("+launcherName+"): "+err.Error())
+		logger.Error("Runner", "Failed to start %s (%s): %v", exeNameClean, launcherName, err)
 		if logFileHandle != nil {
 			logFileHandle.Close()
 		}
@@ -106,7 +105,7 @@ func onReady(logPath string) {
 	// Internal helper to kill game gracefully
 	killGame := func() {
 		if gameCmd.Process != nil {
-			log.Println("Stopping game process group...")
+			logger.Info("Runner", "Stopping game process group...")
 			executor.StopProcessGroup(gameCmd.Process)
 		}
 	}
@@ -116,14 +115,14 @@ func onReady(logPath string) {
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		sig := <-sigs
-		log.Printf("Received system signal: %v, triggering graceful shutdown...\n", sig)
+		logger.Info("Runner", "Received system signal: %v, triggering graceful shutdown...", sig)
 		killGame()
 	}()
 
 	// Setup tray kill handler
 	go func() {
 		<-mKill.ClickedCh
-		log.Println("Kill button clicked in tray")
+		logger.Info("Runner", "Kill button clicked in tray")
 		killGame()
 	}()
 
@@ -131,7 +130,7 @@ func onReady(logPath string) {
 	go func() {
 		for {
 			<-mLogs.ClickedCh
-			log.Println("Show Logs button clicked in tray")
+			logger.Info("Runner", "Show Logs button clicked in tray")
 			if gameCmd.Process != nil {
 				startLogTerminal(logPath, gameCmd.Process.Pid)
 			}
@@ -158,10 +157,11 @@ func onReady(logPath string) {
 		if logFileHandle != nil {
 			logFileHandle.Close()
 		}
-		log.Printf("Game process exited with: %v\n", err)
 
 		if err != nil {
-			sendNotification("Process Exited", fmt.Sprintf("%s exited with error: %v", exeNameClean, err))
+			logger.Error("Runner", "%s exited with error: %v", exeNameClean, err)
+		} else {
+			logger.Info("Runner", "%s exited cleanly", exeNameClean)
 		}
 
 		time.Sleep(1 * time.Second)
