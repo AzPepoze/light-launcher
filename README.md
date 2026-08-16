@@ -105,9 +105,8 @@ sudo pacman -S umu-launcher # or yay -S umu-launcher
 ```bash
 mkdir -p /tmp/light-launcher && cd /tmp/light-launcher
 curl -L -O https://raw.githubusercontent.com/AzPepoze/light-launcher/main/install/arch/PKGBUILD
-curl -L -O https://raw.githubusercontent.com/AzPepoze/light-launcher/main/install/arch/light-launcher.install
 makepkg -si
-cd .. && sudo rm -rf light-launcher
+cd .. && rm -rf light-launcher
 ```
 
 **Option B: Build from source (All Distributions)**
@@ -123,11 +122,11 @@ bun install && bun run build
 ```bash
 # Start launcher
 light-launcher        # System install
-./bin/light-launcher  # Local build
+bun run dev           # Local development
 
 # Or launch a game directly
-light-launcher /path/to/game.exe        # System install
-./bin/light-launcher /path/to/game.exe  # Local build
+light-launcher /path/to/game.exe                # System install
+light-launcher-instance -game /path/to/game.exe # Direct instance runner
 ```
 
 ## USAGE

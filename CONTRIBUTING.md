@@ -85,6 +85,7 @@ light-launcher/
 | `bun run dev:renderer` | Starts the Vite dev server for the Svelte frontend                        |
 | `bun run dev:electron` | Compiles TypeScript and starts Electron                                   |
 | `bun run build`        | Builds Go binary, production Vite renderer, and TypeScript main process   |
+| `bun run dist`         | Packages the standalone Linux distribution bundle via `electron-builder`  |
 | `bun run test`         | Runs the Vitest test suite                                                |
 | `bun run typecheck`    | Runs TypeScript (`tsc`) and Svelte (`svelte-check`) type checking         |
 | `bun run lint`         | Runs `oxlint` for fast code linting                                       |
