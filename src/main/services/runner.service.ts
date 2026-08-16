@@ -1,8 +1,10 @@
+import fs from "fs/promises";
 import fsSync from "fs";
 import path from "path";
 import { spawn } from "child_process";
 import { ConfigService } from "./config.service";
 import { PathsService } from "./paths.service";
+import { PrefixService } from "./prefix.service";
 import { LsfgService } from "./lsfg.service";
 import { ProtonService } from "./proton.service";
 import { SystemService } from "./system.service";
@@ -36,8 +38,21 @@ export class RunnerService {
 			options.GamePath = options.LauncherPath;
 		}
 
-		if (!options.PrefixPath) {
-			options.PrefixPath = path.join(PathsService.getPrefixBaseDirectory(), "Default");
+		if (!options.PrefixPath || options.PrefixPath.includes("/LightLauncher/prefixes/")) {
+			const prefixName = options.PrefixPath ? path.basename(options.PrefixPath) : "Default";
+			const basePrefixDir = await PrefixService.getPrefixBaseDir();
+			options.PrefixPath = path.join(basePrefixDir, prefixName);
+		} else if (!fsSync.existsSync(options.PrefixPath)) {
+			const prefixName = path.basename(options.PrefixPath);
+			const basePrefixDir = await PrefixService.getPrefixBaseDir();
+			const candidate = path.join(basePrefixDir, prefixName);
+			if (fsSync.existsSync(candidate)) {
+				options.PrefixPath = candidate;
+			}
+		}
+
+		if (!fsSync.existsSync(options.PrefixPath)) {
+			await fs.mkdir(options.PrefixPath, { recursive: true });
 		}
 
 		if (!fsSync.existsSync(options.GamePath)) {
@@ -154,8 +169,14 @@ export class RunnerService {
 			}
 		}
 
-		// Spawn detached instance
-		const child = spawn(instancePath, args, {
+		// Spawn detached instance using setsid so it survives parent process / concurrently termination
+		const hasSetsid = fsSync.existsSync("/usr/bin/setsid");
+		const spawnCmd = hasSetsid ? "/usr/bin/setsid" : instancePath;
+		const spawnArgs = hasSetsid ? [instancePath, ...args] : args;
+
+		LoggerService.info("Runner", `Executing: ${spawnCmd} ${spawnArgs.join(" ")}`);
+
+		const child = spawn(spawnCmd, spawnArgs, {
 			detached: true,
 			stdio: "ignore"
 		});

@@ -97,10 +97,47 @@ export class MigrationService {
 			// Clean up remaining empty legacy root directory or debug files
 			await fs.rm(legacyDir, { recursive: true, force: true }).catch(() => {});
 
+			await this.sanitizeExistingConfigs();
+
 			return true;
 		} catch (error) {
 			console.error("Failed to migrate legacy LightLauncher data:", error);
 			return false;
 		}
+	}
+
+	static async sanitizeExistingConfigs(): Promise<void> {
+		const configDir = PathsService.getConfigDirectory();
+		if (!fsSync.existsSync(configDir)) return;
+
+		try {
+			const entries = await fs.readdir(configDir, { withFileTypes: true });
+			const basePrefixDir = PathsService.getPrefixBaseDirectory();
+
+			for (const entry of entries) {
+				if (!entry.isDirectory()) continue;
+				const configPath = path.join(configDir, entry.name, "config.json");
+				if (fsSync.existsSync(configPath)) {
+					try {
+						const raw = await fs.readFile(configPath, "utf-8");
+						if (!raw || raw.trim() === "") continue;
+						const cfg = JSON.parse(raw);
+
+						let changed = false;
+						if (cfg.PrefixPath) {
+							if (cfg.PrefixPath.includes("/LightLauncher/prefixes/")) {
+								const prefixName = path.basename(cfg.PrefixPath);
+								cfg.PrefixPath = path.join(basePrefixDir, prefixName);
+								changed = true;
+							}
+						}
+
+						if (changed) {
+							await fs.writeFile(configPath, JSON.stringify(cfg, null, 2), "utf-8");
+						}
+					} catch {}
+				}
+			}
+		} catch {}
 	}
 }
