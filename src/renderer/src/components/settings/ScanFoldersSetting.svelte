@@ -1,11 +1,11 @@
 <script lang="ts">
 	import * as service from "@lib/settingsService";
+	import type { AppSettings } from "@shared";
 
-	export let appSettings: {
-		ScanFolders?: string[];
-		[key: string]: any;
-	};
-	export let onRefresh: () => Promise<void>;
+	let { appSettings, onRefresh } = $props<{
+		appSettings: AppSettings;
+		onRefresh: () => Promise<void>;
+	}>();
 
 	async function handleAddFolder() {
 		const folder = await service.browseScanFolder();
@@ -38,7 +38,7 @@
 					<div class="folder-item">
 						<span class="material-icons folder-icon">folder</span>
 						<span class="folder-path" title={folder}>{folder}</span>
-						<button class="remove-btn" on:click={() => handleRemoveFolder(folder)} title="Remove folder">
+						<button class="remove-btn" onclick={() => handleRemoveFolder(folder)} title="Remove folder">
 							<span class="material-icons">delete</span>
 						</button>
 					</div>
@@ -52,7 +52,7 @@
 		{/if}
 
 		<div class="actions-row">
-			<button class="btn primary" on:click={handleAddFolder}>
+			<button class="btn primary" onclick={handleAddFolder}>
 				<span class="material-icons mini-icon">add</span>
 				Add Monitored Folder
 			</button>
@@ -61,6 +61,58 @@
 </div>
 
 <style lang="scss">
+	.zone-card {
+		background: var(--bg-surface);
+		border-radius: var(--radius-lg);
+		border: 2px solid rgba(255, 255, 255, 0.05);
+		padding: 32px;
+		display: flex;
+		flex-direction: column;
+		gap: 28px;
+		transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+
+		&:hover {
+			border-color: rgba(255, 255, 255, 0.08);
+			box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+		}
+
+		.zone-header {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			border-bottom: 2px solid rgba(255, 255, 255, 0.05);
+			padding-bottom: 16px;
+			margin-bottom: 4px;
+
+			.material-icons {
+				font-size: 24px;
+				color: var(--accent-primary);
+			}
+
+			h2 {
+				margin: 0;
+				font-size: 1.15rem;
+				font-weight: 800;
+				color: var(--text-main);
+				text-transform: uppercase;
+				letter-spacing: 1px;
+			}
+		}
+	}
+
+	.settings-section {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+
+		.desc {
+			margin: 0 0 16px 0;
+			font-size: 0.9rem;
+			font-weight: 600;
+			color: var(--text-muted);
+			line-height: 1.5;
+		}
+	}
 	.folder-list {
 		display: flex;
 		flex-direction: column;

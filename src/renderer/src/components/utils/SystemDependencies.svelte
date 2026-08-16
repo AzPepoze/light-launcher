@@ -57,8 +57,7 @@
 				<tr>
 					<td><strong>{item.name}</strong></td>
 					<td>
-						<span class="status-badge" class:ok={item.ok}>
-							<span class="dot"></span>
+						<span class="status-badge" class:ok={item.ok} title={item.statusText}>
 							{item.statusText}
 						</span>
 					</td>
@@ -142,9 +141,13 @@
 	}
 
 	.status-badge {
-		display: inline-flex;
-		align-items: center;
-		gap: 8px;
+		display: inline-block;
+		max-width: 100%;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		vertical-align: middle;
+		text-align: center;
 		font-size: 0.8rem;
 		font-weight: 700;
 		color: var(--danger);
@@ -153,23 +156,10 @@
 		border: 1px solid rgba(255, 59, 48, 0.2);
 		border-radius: var(--radius-pill);
 
-		.dot {
-			width: 6px;
-			height: 6px;
-			border-radius: 50%;
-			background: var(--danger);
-			box-shadow: 0 0 6px var(--danger);
-		}
-
 		&.ok {
 			color: var(--success);
 			background: rgba(52, 199, 89, 0.1);
 			border-color: rgba(52, 199, 89, 0.2);
-
-			.dot {
-				background: var(--success);
-				box-shadow: 0 0 6px var(--success);
-			}
 		}
 	}
 

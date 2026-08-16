@@ -1,11 +1,11 @@
 <script lang="ts">
 	import * as service from "@lib/settingsService";
+	import type { AppSettings } from "@shared";
 
-	export let appSettings: {
-		Blacklist?: string[];
-		[key: string]: any;
-	};
-	export let onRefresh: () => Promise<void>;
+	let { appSettings, onRefresh } = $props<{
+		appSettings: AppSettings;
+		onRefresh: () => Promise<void>;
+	}>();
 
 	async function handleRestoreGame(path: string) {
 		await service.unblacklistGame(path);
@@ -36,7 +36,7 @@
 							<span class="game-name">{getBaseName(path)}</span>
 							<span class="game-path" title={path}>{path}</span>
 						</div>
-						<button class="restore-btn btn secondary" on:click={() => handleRestoreGame(path)} title="Restore game">
+						<button class="restore-btn btn secondary" onclick={() => handleRestoreGame(path)} title="Restore game">
 							<span class="material-icons mini-icon">settings_backup_restore</span>
 							Restore
 						</button>
@@ -53,6 +53,58 @@
 </div>
 
 <style lang="scss">
+	.zone-card {
+		background: var(--bg-surface);
+		border-radius: var(--radius-lg);
+		border: 2px solid rgba(255, 255, 255, 0.05);
+		padding: 32px;
+		display: flex;
+		flex-direction: column;
+		gap: 28px;
+		transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+
+		&:hover {
+			border-color: rgba(255, 255, 255, 0.08);
+			box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+		}
+
+		.zone-header {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			border-bottom: 2px solid rgba(255, 255, 255, 0.05);
+			padding-bottom: 16px;
+			margin-bottom: 4px;
+
+			.material-icons {
+				font-size: 24px;
+				color: var(--accent-primary);
+			}
+
+			h2 {
+				margin: 0;
+				font-size: 1.15rem;
+				font-weight: 800;
+				color: var(--text-main);
+				text-transform: uppercase;
+				letter-spacing: 1px;
+			}
+		}
+	}
+
+	.settings-section {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+
+		.desc {
+			margin: 0 0 16px 0;
+			font-size: 0.9rem;
+			font-weight: 600;
+			color: var(--text-muted);
+			line-height: 1.5;
+		}
+	}
 	.blacklist-list {
 		display: flex;
 		flex-direction: column;
