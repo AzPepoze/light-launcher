@@ -42,8 +42,6 @@
 		service.updateTransparency(val);
 	}
 
-
-
 	async function handleBrowseBackground() {
 		await service.browseBackgroundImage();
 	}

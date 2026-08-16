@@ -219,8 +219,6 @@
 		}
 	}
 
-
-
 	.add-btn {
 		background: var(--accent-primary);
 		border: none;

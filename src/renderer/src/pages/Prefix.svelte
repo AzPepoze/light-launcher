@@ -313,8 +313,6 @@
 		}
 	}
 
-
-
 	.tools-panel :global(.tools-grid) {
 		margin-bottom: 0;
 	}
@@ -351,7 +349,6 @@
 			max-height: 320px;
 			min-height: 0;
 		}
-
 
 	}
 </style>

@@ -187,8 +187,6 @@
 		}
 	}
 
-
-
 	.status-badge {
 		font-size: 0.65rem;
 		padding: 2px 6px;

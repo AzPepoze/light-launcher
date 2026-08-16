@@ -33,7 +33,7 @@
 		try {
 			const ram = await GetTotalRam();
 			if (ram > 0) systemRamTotal = ram;
-			
+
 			const { gpus, dll } = await loadLsfgResources();
 
 			if (gpus.length > 0) {

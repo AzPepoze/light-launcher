@@ -1,6 +1,6 @@
 <script lang="ts">
 	import ToolButton from "@components/shared/ToolButton.svelte";
-	
+
 	export let runningToolName: string = "";
 	export let onRunTool: (tool: string) => void;
 </script>

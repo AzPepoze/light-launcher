@@ -1,6 +1,5 @@
 <script lang="ts">
 
-
 	export let options: string[] = [];
 	export let value: string = "";
 	export let placeholder: string = "Select an option";
@@ -205,7 +204,7 @@
 		box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
 		padding: 8px;
 		box-sizing: border-box;
-		
+
 		opacity: 0;
 		transform: translateY(-8px);
 		transition: opacity 150ms cubic-bezier(0.25, 1, 0.5, 1), transform 150ms cubic-bezier(0.25, 1, 0.5, 1);

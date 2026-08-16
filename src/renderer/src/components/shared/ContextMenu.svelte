@@ -7,7 +7,7 @@
 	export let visible: boolean;
 	export let isAutoScanned: boolean = false;
 	export let isRunning: boolean = false;
-	
+
 	export let onLaunch: () => void;
 	export let onConfigure: () => void;
 	export let onAction: () => void; // Blacklist or Delete

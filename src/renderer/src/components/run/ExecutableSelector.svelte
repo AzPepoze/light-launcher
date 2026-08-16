@@ -292,8 +292,6 @@
 		gap: 12px;
 	}
 
-
-
 	.exe-note {
 		font-size: 0.85rem;
 		font-weight: 700;

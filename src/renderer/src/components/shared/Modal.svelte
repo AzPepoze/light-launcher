@@ -89,7 +89,7 @@
 		box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 		display: flex;
 		flex-direction: column;
-		max-height: 90vh; /* Default max height */
+		max-height: 90vh;
 
 		&.fullscreen {
 			width: 100%;
@@ -148,7 +148,7 @@
 	.modal-body {
 		padding: 32px;
 		overflow-y: auto;
-		flex: 1; /* Take remaining space */
+		flex: 1;
 		display: flex;
 		flex-direction: column;
 

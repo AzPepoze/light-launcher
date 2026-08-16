@@ -43,7 +43,7 @@
 
 <div class="section-container glass">
 	<h3>System Dependencies</h3>
-	
+
 	<table class="status-table">
 		<thead>
 			<tr>

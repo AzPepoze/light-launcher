@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Dropdown from "@components/shared/Dropdown.svelte";
-	
+
 	export let protonOptions: string[] = [];
 	export let selectedProton: string = "";
 	export let isLoadingProton: boolean = true;

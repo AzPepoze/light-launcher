@@ -193,7 +193,6 @@
 			font-size: 0.95rem;
 			outline: none;
 
-			/* Remove arrows */
 			&::-webkit-inner-spin-button,
 			&::-webkit-outer-spin-button {
 				-webkit-appearance: none;
@@ -226,13 +225,13 @@
 		border: 1px solid var(--glass-border);
 		box-sizing: border-box;
 		border-radius: var(--radius-pill);
-		overflow: visible; // Allow thumb to overflow
+		overflow: visible;
 	}
 
 	.warning-zone {
 		position: absolute;
 		height: 100%;
-		background: rgba(255, 74, 122, 0.15); // Red/pink tint
+		background: rgba(255, 74, 122, 0.15);
 		border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
 		pointer-events: none;
 	}
@@ -248,7 +247,7 @@
 		transition: background var(--transition-fast);
 
 		&.warning {
-			background: var(--danger); // Red
+			background: var(--danger);
 			box-shadow: 0 0 10px var(--danger);
 		}
 	}
@@ -263,7 +262,7 @@
 		transform: translate(-50%, -50%);
 		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 		transition: transform 0.1s;
-		pointer-events: none; // Let wrapper handle events
+		pointer-events: none;
 
 		&.active {
 			transform: translate(-50%, -50%) scale(1.2);

@@ -190,7 +190,7 @@
 		display: flex;
 		gap: 16px;
 		width: 100%;
-		
+
 		.form-group {
 			flex: 1;
 		}

@@ -92,7 +92,6 @@
 				transform: scale(1.005);
 			}
 
-			/* Remove number input spinner */
 			&::-webkit-inner-spin-button,
 			&::-webkit-outer-spin-button {
 				-webkit-appearance: none;

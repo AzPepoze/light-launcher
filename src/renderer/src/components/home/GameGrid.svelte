@@ -18,7 +18,7 @@
 	export let selectedPrefixFilter = "All Prefixes";
 	export let isSelectionMode = false;
 	export let selectedPaths = new Set<string>();
-	
+
 	export let isGameRunning: (game: any, sessionsList: any[]) => boolean;
 	export let sessions: any[] = [];
 	export let handleQuickLaunch: (game: any) => Promise<void>;
@@ -335,8 +335,6 @@
 			filter: brightness(1.2);
 		}
 	}
-
-
 
 	.games-container.sidebar-layout-view {
 		overflow: hidden;

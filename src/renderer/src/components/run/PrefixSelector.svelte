@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Dropdown from "@components/shared/Dropdown.svelte";
 	import BrowseInput from "@components/shared/BrowseInput.svelte";
-	
+
 	export let availablePrefixes: string[] = [];
 	export let selectedPrefixName: string = "Default";
 	export let prefixPath: string = "";

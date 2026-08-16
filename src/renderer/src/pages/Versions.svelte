@@ -94,7 +94,6 @@
 		flex-direction: column;
 	}
 
-
 	.versions-list {
 		display: flex;
 		flex-direction: column;
@@ -194,7 +193,6 @@
 			}
 		}
 	}
-
 
 	.loading {
 		text-align: center;
