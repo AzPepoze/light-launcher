@@ -18,12 +18,8 @@ optdepends=(
 
 source=(
   "$pkgname::git+https://github.com/AzPepoze/light-launcher.git#branch=main"
-  "light-launcher.desktop"
-  "light-launcher.install"
 )
-sha256sums=('SKIP' 'SKIP' 'SKIP')
-
-install=light-launcher.install
+sha256sums=('SKIP')
 
 _setup_go_env() {
   local _golang_workspace_path="${srcdir}/go-path"
@@ -71,7 +67,7 @@ package() {
   ln -sf /opt/light-launcher/light-launcher "$pkgdir/usr/bin/light-launcher"
   ln -sf /opt/light-launcher/resources/light-launcher-instance "$pkgdir/usr/bin/light-launcher-instance"
 
-  install -Dm644 "$srcdir/light-launcher.desktop" "$pkgdir/usr/share/applications/light-launcher.desktop"
+  install -Dm644 "install/arch/light-launcher.desktop" "$pkgdir/usr/share/applications/light-launcher.desktop"
   install -Dm644 "build/icon.png" "$pkgdir/usr/share/icons/hicolor/256x256/apps/light-launcher.png"
 
   install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
