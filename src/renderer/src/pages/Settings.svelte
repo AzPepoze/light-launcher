@@ -15,6 +15,7 @@
 
 	let appSettings = {
 		TransparentMode: true,
+		NativeWayland: false,
 		ScanFolders: [] as string[],
 		ScanFolderConfigs: [] as any[],
 		Blacklist: [] as string[],
@@ -55,6 +56,10 @@
 
 	async function toggleTransparentMode() {
 		await service.toggleTransparentMode(appSettings);
+	}
+
+	async function toggleNativeWayland() {
+		await service.toggleNativeWayland(appSettings);
 	}
 </script>
 
@@ -150,7 +155,28 @@
 			</div>
 		</div>
 
-		<!-- Zone 3: Wine Prefix Storage Location -->
+		<!-- Zone 3: Display & Window Platform (Ozone) -->
+		<div class="zone-card">
+			<div class="zone-header">
+				<span class="material-icons">desktop_windows</span>
+				<h2>Display & Window Platform</h2>
+			</div>
+
+			<div class="settings-section">
+				<h3>Ozone Platform (Wayland / X11)</h3>
+				<p class="desc">
+					Configure whether LightLauncher runs natively on Wayland or via X11/Xwayland. You can also override this via <code>--wayland</code>, <code>--x11</code>, or <code>~/.config/light-launcher-flags.conf</code>.
+				</p>
+				<div>
+					<button class="btn {appSettings.NativeWayland ? 'primary' : 'secondary'}" on:click={toggleNativeWayland}>
+						<span class="material-icons mini-icon">{appSettings.NativeWayland ? 'layers' : 'view_in_ar'}</span>
+						<span>{appSettings.NativeWayland ? 'Platform: Native Wayland' : 'Platform: X11 / Xwayland'} (Restarts App)</span>
+					</button>
+				</div>
+			</div>
+		</div>
+
+		<!-- Zone 4: Wine Prefix Storage Location -->
 		<PrefixStorageSetting {appSettings} onRefresh={refreshAppSettings} />
 
 		<!-- Zone 4: Automatic Scan Folders -->

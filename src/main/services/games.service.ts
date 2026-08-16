@@ -106,13 +106,10 @@ export class GamesService {
 		const existingConfigsMap = new Map<string, LaunchOptions>();
 		for (const cfg of existingConfigsList) {
 			if (cfg.GamePath) existingConfigsMap.set(cleanPath(cfg.GamePath).toLowerCase(), cfg);
-			if (cfg.LauncherPath)
-				existingConfigsMap.set(cleanPath(cfg.LauncherPath).toLowerCase(), cfg);
+			if (cfg.LauncherPath) existingConfigsMap.set(cleanPath(cfg.LauncherPath).toLowerCase(), cfg);
 		}
 
-		const blacklist = new Set(
-			(settings.Blacklist || []).map((p) => cleanPath(p).toLowerCase())
-		);
+		const blacklist = new Set((settings.Blacklist || []).map((p) => cleanPath(p).toLowerCase()));
 
 		const groups: ScannedFolderGroup[] = [];
 

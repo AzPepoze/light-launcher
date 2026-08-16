@@ -20,6 +20,15 @@ describe("PathsService", () => {
 		expect(PathsService.getBaseDirectory()).toBe(path.join(os.homedir(), ".config/light-launcher"));
 	});
 
+	it("computes flags file path in user config directory", () => {
+		delete process.env.XDG_CONFIG_HOME;
+		expect(PathsService.getFlagsFilePath()).toBe(
+			path.join(os.homedir(), ".config", "light-launcher-flags.conf")
+		);
+		process.env.XDG_CONFIG_HOME = "/custom/config";
+		expect(PathsService.getFlagsFilePath()).toBe("/custom/config/light-launcher-flags.conf");
+	});
+
 	it("computes config, prefix, and logs directories accurately", () => {
 		const base = PathsService.getBaseDirectory();
 		expect(PathsService.getConfigDirectory()).toBe(path.join(base, "config/executables"));

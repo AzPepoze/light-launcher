@@ -61,6 +61,7 @@ export interface ScanFolderConfig {
 
 export interface AppSettings {
 	TransparentMode: boolean;
+	NativeWayland?: boolean;
 	ScanFolders: string[];
 	ScanFolderConfigs: ScanFolderConfig[];
 	Blacklist: string[];

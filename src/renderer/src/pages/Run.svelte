@@ -132,7 +132,6 @@
 	.run-container {
 		display: flex;
 		flex-direction: column;
-		padding: 40px 48px;
 	}
 
 	.zones-stack {
@@ -220,11 +219,10 @@
 
 	.actions-row {
 		position: sticky;
-		bottom: -32px;
-		margin: 48px -32px -32px -32px;
-		padding: 32px;
+		bottom: 0;
+		margin-top: 32px;
+		padding: 24px 0 8px;
 		z-index: 10;
-		background: linear-gradient(to top, var(--bg-base) 80%, transparent);
 		display: flex;
 		align-items: center;
 		gap: 16px;

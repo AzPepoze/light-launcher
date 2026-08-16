@@ -31,6 +31,12 @@ export class PathsService {
 		return path.join(this.getBaseDirectory(), "settings.json");
 	}
 
+	static getFlagsFilePath(): string {
+		const xdgConfigHome = process.env.XDG_CONFIG_HOME;
+		const base = xdgConfigHome || path.join(os.homedir(), ".config");
+		return path.join(base, `${AppName}-flags.conf`);
+	}
+
 	static getExecutableConfigPath(name: string, id: string): string {
 		if (id) {
 			return path.join(this.getConfigDirectory(), id);

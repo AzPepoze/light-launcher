@@ -3,6 +3,7 @@ import fsSync from "fs";
 import path from "path";
 import os from "os";
 import { PathsService } from "./paths.service";
+import { LoggerService } from "./logger.service";
 
 export class MigrationService {
 	static getLegacyDirectory(): string {
@@ -101,7 +102,7 @@ export class MigrationService {
 
 			return true;
 		} catch (error) {
-			console.error("Failed to migrate legacy LightLauncher data:", error);
+			LoggerService.error("Migration", `Failed to migrate legacy LightLauncher data: ${error}`);
 			return false;
 		}
 	}
@@ -155,7 +156,7 @@ export class MigrationService {
 				await this.walkAndRepairSymlinks(pfxPath, basePrefixDir);
 			}
 		} catch (err) {
-			console.error("Failed to repair prefix symlinks:", err);
+			LoggerService.error("Migration", `Failed to repair prefix symlinks: ${err}`);
 		}
 	}
 

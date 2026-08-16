@@ -4,6 +4,7 @@ import path from "path";
 import os from "os";
 import { exec, execSync } from "child_process";
 import { promisify } from "util";
+import { LoggerService } from "./logger.service";
 import type { SystemInfo, SystemToolsStatus, SystemUsage } from "../../shared/types/system.types";
 
 const execAsync = promisify(exec);
@@ -222,7 +223,7 @@ export class SystemService {
 			const cmdStr = `swapoff -a ; ${swaponCmds}`;
 			await execAsync(`pkexec sh -c "${cmdStr}"`);
 		} catch (err) {
-			console.error("Error clearing swap:", err);
+			LoggerService.error("System", `Error clearing swap: ${err}`);
 		}
 	}
 

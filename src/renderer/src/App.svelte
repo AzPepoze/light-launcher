@@ -146,25 +146,27 @@
 					}}
 					out:fade={{ duration: 150 }}
 				>
-					{#if activePage === "home"}
-						<Home />
-					{:else if activePage === "run"}
-						<Run />
-					{:else if activePage === "versions"}
-						<Versions />
-					{:else if activePage === "prefix"}
-						<Prefix />
-					{:else if activePage === "utils"}
-						<Utils />
-					{:else if activePage === "settings"}
-						<Settings />
-					{:else if activePage === "editlsfg"}
-						<EditLsfg gamePath={editLsfgGamePath} />
-					{:else}
-						<div class="placeholder">
-							Page "{activePage}" not implemented yet.
-						</div>
-					{/if}
+					<div class="content-zone" class:full-width={activePage === "home" || activePage === "editlsfg"}>
+						{#if activePage === "home"}
+							<Home />
+						{:else if activePage === "run"}
+							<Run />
+						{:else if activePage === "versions"}
+							<Versions />
+						{:else if activePage === "prefix"}
+							<Prefix />
+						{:else if activePage === "utils"}
+							<Utils />
+						{:else if activePage === "settings"}
+							<Settings />
+						{:else if activePage === "editlsfg"}
+							<EditLsfg gamePath={editLsfgGamePath} />
+						{:else}
+							<div class="placeholder">
+								Page "{activePage}" not implemented yet.
+							</div>
+						{/if}
+					</div>
 				</div>
 			{/key}
 		</div>
@@ -295,6 +297,17 @@
 		overflow-y: auto;
 		padding: 76px 48px 40px 84px;
 		box-sizing: border-box;
+	}
+
+	.content-zone {
+		width: 100%;
+		max-width: var(--content-max-width, 1150px);
+		margin: 0 auto;
+		box-sizing: border-box;
+
+		&.full-width {
+			max-width: 100%;
+		}
 	}
 
 	.placeholder {

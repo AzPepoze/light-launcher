@@ -6,8 +6,76 @@ import { ConfigService } from "./services/config.service";
 import { AppService } from "./services/app.service";
 import { PathsService } from "./services/paths.service";
 import { MigrationService } from "./services/migration.service";
+import { LoggerService } from "./services/logger.service";
 
 let mainWindow: BrowserWindow | null = null;
+
+function initPlatformFlags(): void {
+	// 1. Check for custom flags file (e.g. ~/.config/light-launcher-flags.conf)
+	const flagsFile = PathsService.getFlagsFilePath();
+	let hasOzoneInFlagsFile = false;
+
+	if (fs.existsSync(flagsFile)) {
+		try {
+			const content = fs.readFileSync(flagsFile, "utf-8");
+			const lines = content.split("\n");
+			for (const line of lines) {
+				const trimmed = line.trim();
+				if (!trimmed || trimmed.startsWith("#")) continue;
+
+				if (trimmed.startsWith("--ozone-platform")) {
+					hasOzoneInFlagsFile = true;
+				}
+
+				if (trimmed.startsWith("--")) {
+					const withoutDash = trimmed.slice(2);
+					const eqIdx = withoutDash.indexOf("=");
+					if (eqIdx !== -1) {
+						app.commandLine.appendSwitch(withoutDash.slice(0, eqIdx), withoutDash.slice(eqIdx + 1));
+					} else {
+						app.commandLine.appendSwitch(withoutDash);
+					}
+				}
+			}
+			LoggerService.info("Platform", `Applied custom flags from ${flagsFile}`);
+		} catch (err) {
+			LoggerService.error("Platform", `Failed to read flags file: ${err}`);
+		}
+	}
+
+	// 2. If ozone platform was not explicitly set via flags file, determine from settings / CLI
+	if (!hasOzoneInFlagsFile) {
+		let nativeWayland = false;
+		const settingsPath = PathsService.getAppSettingsPath();
+		if (fs.existsSync(settingsPath)) {
+			try {
+				const raw = fs.readFileSync(settingsPath, "utf-8");
+				const parsed = JSON.parse(raw);
+				nativeWayland = Boolean(parsed.NativeWayland);
+			} catch (err) {
+				LoggerService.error("Platform", `Failed to read settings for Ozone configuration: ${err}`);
+			}
+		}
+
+		const isWaylandForced = process.argv.includes("--wayland");
+		const isX11Forced = process.argv.includes("--x11");
+
+		const platform = (nativeWayland || isWaylandForced) && !isX11Forced ? "wayland" : "x11";
+
+		app.commandLine.appendSwitch("ozone-platform", platform);
+		if (platform === "wayland") {
+			app.commandLine.appendSwitch("enable-features", "UseOzonePlatform,WaylandWindowDecorations");
+		}
+
+		LoggerService.info("Platform", `Ozone platform initialized: ${platform}`, {
+			nativeWayland,
+			isWaylandForced,
+			isX11Forced
+		});
+	}
+}
+
+initPlatformFlags();
 
 function parseCliArgs(): void {
 	const args = process.argv.slice(app.isPackaged ? 1 : 2);

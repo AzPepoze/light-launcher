@@ -2,6 +2,7 @@ import fs from "fs/promises";
 import path from "path";
 import { exec } from "child_process";
 import { promisify } from "util";
+import { LoggerService } from "./logger.service";
 import type { RunningSession } from "../../shared/types/games.types";
 
 const execAsync = promisify(exec);
@@ -68,7 +69,7 @@ export class SessionService {
 			process.kill(pid, "SIGINT");
 		} catch (err: any) {
 			if (err?.code !== "ESRCH") {
-				console.error(`Failed to send SIGINT to pid ${pid}:`, err);
+				LoggerService.error("Session", `Failed to send SIGINT to pid ${pid}: ${err}`);
 			}
 		}
 	}

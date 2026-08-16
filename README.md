@@ -27,10 +27,6 @@ LightLauncher is a games launcher designed to run non-Steam games on Linux using
 >
 > This project is still in **early development**. You may encounter bugs or breaking changes. Feel free to report issues or contribute!
 
-> [!NOTE]
->
-> The name **LightLauncher** comes from the word **"Go"** (as in "Go for it!"), representing the ability to launch Proton immediately. It's also a happy coincidence that the project is built using the **Go (Golang)** programming language! XD
-
 ## CONTENTS
 
 - [CONTENTS](#contents)
@@ -38,11 +34,13 @@ LightLauncher is a games launcher designed to run non-Steam games on Linux using
 - [FEATURES](#features)
 - [ARCHITECTURE \& EFFICIENCY](#architecture--efficiency)
 - [PREREQUISITES](#prerequisites)
-- [INSTALLATION](#installation)
-  - [Arch Linux](#arch-linux)
-  - [Other Distributions](#other-distributions)
-- [BUILD](#build)
+- [QUICK START](#quick-start)
 - [USAGE](#usage)
+- [CLI REFERENCE](#cli-reference)
+  - [Main Launcher CLI](#1-main-launcher-cli-light-launcher)
+  - [Instance Manager CLI](#2-instance-manager-cli-light-launcher-instance)
+- [WAYLAND \& DISPLAY PLATFORM (OZONE)](#wayland--display-platform-ozone)
+- [CONTRIBUTING](#contributing)
 - [STONKS!](#stonks)
 
 ## SCREENSHOTS
@@ -63,35 +61,48 @@ LightLauncher is a games launcher designed to run non-Steam games on Linux using
 
 ## FEATURES
 
-- **Independent Instance Manager** – Each game runs as a standalone detached process. Closing the main launcher does not affect running games.
-- **Multi-Game Support** – Run multiple Windows applications simultaneously with unique Proton configurations and prefixes.
-- **Process Isolation** – Every game gets its own System Tray icon for individual management (Graceful Stop/Status).
-- **Native Terminal Integration** – Real-time logs are piped to your preferred terminal (Kitty, Alacritty, etc.) for live debugging.
-- **Automatic Log Management** – Persistent logging to `~/.config/light-launcher/logs` with automatic rotation (keeps last 10 sessions)
-- **umu-run Core** – Utilizes the Unified Linux Runtime (umu) to provide superior execution for non-Steam games.
-- **Shared Prefix Architecture** – Supports mapping individual or shared prefix environments (configurable location) interchangeably across different Proton versions seamlessly.
+| Feature                | Description                                                                      |
+| :--------------------- | :------------------------------------------------------------------------------- |
+| **Detached Instances** | Games run independently. Closing launcher does not close games.                  |
+| **Multi-Game Support** | Run multiple games simultaneously with custom Proton versions and prefixes.      |
+| **Tray Management**    | Dedicated tray icon per game for status monitoring and graceful exit.            |
+| **Live Terminal Logs** | Pipes real-time logs to terminal (Kitty, Alacritty, etc.) for instant debugging. |
+| **Log Rotation**       | Auto-rotates logs in `~/.config/light-launcher/logs` (keeps last 10 runs).       |
+| **umu-run Core**       | Uses Unified Linux Runtime (`umu`) for Proton compatibility.                     |
+| **Flexible Prefixes**  | Supports isolated or shared WINE prefixes across Proton builds.                  |
+| **Ozone Support**      | Runs natively on Wayland or X11/Xwayland via Ozone.                              |
 
 ## ARCHITECTURE & EFFICIENCY
 
-1. **UI (Electron / Svelte 5):** Rich modern interface for configuration, scanning, and monitoring.
-2. **Instance Manager (`light-launcher-instance`):** A lightweight Go binary that supervises the process life-cycle and tray.
+1. **UI (Electron / Svelte 5):** Interface for configuration, scanning, and monitoring.
+2. **Instance Manager (`light-launcher-instance`):** Standalone Go binary supervising game lifecycle and tray.
 
 ## PREREQUISITES
 
-- **umu-launcher** (Required for execution)
-- **Steam** (Installed and configured)
-- **ProtonPlus** (Recommended for managing and adding Proton versions)
+- [**umu-launcher**](https://github.com/Open-Wine-Components/umu-launcher) (Required for execution)
+- [**Steam**](https://store.steampowered.com/about/) (Installed and configured)
+- [**ProtonPlus**](https://github.com/Vysp3r/ProtonPlus) (Recommended for managing Proton versions)
 
 > [!TIP]
 >
-> Use **ProtonPlus** or **Steam** to download and install different Proton versions. LightLauncher will automatically detect them in your Steam compatibility tools directory.
+> Use **ProtonPlus** or **Steam** to install Proton versions. LightLauncher detects them automatically.
 
-## INSTALLATION
+## QUICK START
 
-### Arch Linux
+Get up and running in 3 steps:
+
+### 1. Install `umu-launcher`
 
 ```bash
-# Download and install using makepkg
+# Arch Linux
+sudo pacman -S umu-launcher # or yay -S umu-launcher
+```
+
+### 2. Install or Build LightLauncher
+
+**Option A: Arch Linux (PKGBUILD)**
+
+```bash
 mkdir -p /tmp/light-launcher && cd /tmp/light-launcher
 curl -L -O https://raw.githubusercontent.com/AzPepoze/light-launcher/main/install/arch/PKGBUILD
 curl -L -O https://raw.githubusercontent.com/AzPepoze/light-launcher/main/install/arch/light-launcher.install
@@ -99,43 +110,199 @@ makepkg -si
 cd .. && sudo rm -rf light-launcher
 ```
 
-### Other Distributions
-
-Build from source:
+**Option B: Build from source (All Distributions)**
 
 ```bash
 git clone https://github.com/AzPepoze/light-launcher.git
 cd light-launcher
-make build
-# Binaries are in ./bin/
+bun install && bun run build
 ```
 
-## BUILD
-
-Build from source locally:
+### 3. Launch & Play
 
 ```bash
-# Install dependencies: go, nodejs, wails
-make build
+# Start launcher
+light-launcher        # System install
+./bin/light-launcher  # Local build
 
-# Binaries will be in ./bin/
+# Or launch a game directly
+light-launcher /path/to/game.exe        # System install
+./bin/light-launcher /path/to/game.exe  # Local build
 ```
 
 ## USAGE
 
-**Arch Linux** (after `makepkg -si`):
-
 ```bash
-light-launcher                    # Launch UI
-light-launcher path/to/game.exe   # Direct launch
+# Launch Graphical Launcher
+light-launcher [OPTIONS] [GAME_PATH]
+
+# Launch Instance Daemon Directly
+light-launcher-instance [OPTIONS] -game <PATH>
 ```
 
-**Other Distributions** (from ./bin/):
+---
+
+## CLI REFERENCE
+
+### 1. Main Launcher CLI (`light-launcher`)
 
 ```bash
-./bin/light-launcher                    # Launch UI
-./bin/light-launcher path/to/game.exe   # Direct launch
+light-launcher [OPTIONS] [GAME_PATH]
 ```
+
+#### [OPTIONS]
+
+| Option / Flag                 | Type     | Default | Description                                   |
+| :---------------------------- | :------- | :------ | :-------------------------------------------- |
+| `[game_path]`                 | `string` | —       | Path to game `.exe` to launch or configure    |
+| `--wayland`                   | `flag`   | —       | Force Native Wayland display via Ozone        |
+| `--x11`                       | `flag`   | —       | Force X11 / Xwayland display via Ozone        |
+| `--ozone-platform=<platform>` | `string` | `x11`   | Set Ozone platform (`wayland`, `x11`, `auto`) |
+| `--edit-lsfg`                 | `flag`   | —       | Open directly into LSFG configuration view    |
+
+#### Examples
+
+```bash
+# Launch default UI
+light-launcher
+
+# Launch in Native Wayland mode
+light-launcher --wayland
+
+# Launch or configure a game
+light-launcher ~/Games/EldenRing/eldenring.exe
+
+# Open directly into LSFG configuration
+light-launcher --edit-lsfg
+```
+
+---
+
+### 2. Instance Manager CLI (`light-launcher-instance`)
+
+```bash
+light-launcher-instance [OPTIONS] -game <GAME_PATH>
+```
+
+#### [OPTIONS] — Core Launch Settings
+
+| Flag                     | Type     | Default   | Description                         |
+| :----------------------- | :------- | :-------- | :---------------------------------- |
+| `-game <path>`           | `string` | —         | **(Required)** Game executable path |
+| `-launcher <path>`       | `string` | —         | Wrapper launcher executable         |
+| `-prefix <path>`         | `string` | `Default` | `WINEPREFIX` directory              |
+| `-proton-path <path>`    | `string` | —         | Proton tool directory               |
+| `-proton-pattern <name>` | `string` | —         | Proton pattern for UMU lookup       |
+| `-logs`                  | `bool`   | `true`    | Open live terminal log window       |
+
+#### [OPTIONS] — MangoHud & GameMode
+
+| Flag                  | Description             |
+| :-------------------- | :---------------------- |
+| `-mangohud`, `-mango` | Enable MangoHud overlay |
+| `-gamemode`           | Enable Feral GameMode   |
+
+#### [OPTIONS] — Memory Protection
+
+| Flag                      | Type     | Default | Description                            |
+| :------------------------ | :------- | :------ | :------------------------------------- |
+| `-memory-min`             | `flag`   | —       | Enable RAM trimming & protection       |
+| `-memory-min-value <val>` | `string` | `4G`    | Protection threshold (e.g. `4G`, `8G`) |
+
+#### [OPTIONS] — Gamescope
+
+| Flag                     | Type     | Default      | Description                                 |
+| :----------------------- | :------- | :----------- | :------------------------------------------ |
+| `-gamescope`             | `flag`   | —            | Enable Gamescope compositor                 |
+| `-gs-w <width>`          | `string` | `1280`       | Internal render width                       |
+| `-gs-h <height>`         | `string` | `720`        | Internal render height                      |
+| `-gs-out-w <width>`      | `string` | —            | Output display width                        |
+| `-gs-out-h <height>`     | `string` | —            | Output display height                       |
+| `-gs-r <rate>`           | `string` | `60`         | Refresh rate limit (`60`, `144`, etc.)      |
+| `-gs-fr-limit <fps>`     | `string` | —            | Frame rate cap                              |
+| `-gs-window-mode <mode>` | `string` | `borderless` | `fullscreen`, `borderless`, `windowed`      |
+| `-gs-scaler <scaler>`    | `string` | `auto`       | `auto`, `integer`, `fit`, `fill`, `stretch` |
+| `-gs-filter <filter>`    | `string` | `linear`     | `linear`, `nearest`, `fsr`, `nis`, `pixel`  |
+| `-gs-sharpness <level>`  | `string` | `0`          | Upscaling sharpness (`0` - `20`)            |
+| `-gs-hdr`                | `flag`   | —            | Enable HDR output                           |
+| `-gs-adaptive-sync`      | `flag`   | —            | Enable VRR / Adaptive Sync                  |
+| `-gs-mangoapp`           | `flag`   | —            | Enable Mangoapp overlay in Gamescope        |
+| `-gs-custom-args <args>` | `string` | —            | Additional Gamescope flags                  |
+
+#### [OPTIONS] — Lossless Scaling (LSFG-VK)
+
+| Flag                      | Type     | Default  | Description                        |
+| :------------------------ | :------- | :------- | :--------------------------------- |
+| `-lsfg`                   | `flag`   | —        | Enable LSFG frame generation layer |
+| `-lsfg-multiplier <mult>` | `string` | `2`      | Frame multiplier (`2`, `3`, `4`)   |
+| `-lsfg-perf`              | `flag`   | —        | Enable Performance Mode            |
+| `-lsfg-dll <path>`        | `string` | —        | Path to `Lossless.dll`             |
+| `-lsfg-gpu <index>`       | `string` | —        | Target GPU index                   |
+| `-lsfg-flow <scale>`      | `string` | `1.0`    | Flow scale factor                  |
+| `-lsfg-pacing <mode>`     | `string` | `smooth` | Pacing mode (`smooth`, etc.)       |
+| `-lsfg-fp16`              | `flag`   | —        | Enable FP16 half-precision         |
+
+#### Examples
+
+```bash
+# 1. Basic Launch with custom prefix and Proton version
+light-launcher-instance \
+  -game ~/Games/Cyberpunk2077/bin/x64/Cyberpunk2077.exe \
+  -prefix ~/.config/light-launcher/prefixes/Cyberpunk \
+  -proton-path ~/.local/share/Steam/compatibilitytools.d/GE-Proton9-25
+
+# 2. Launch with MangoHud & GameMode
+light-launcher-instance \
+  -game ~/Games/EldenRing/eldenring.exe \
+  -mangohud \
+  -gamemode
+
+# 3. Launch with Gamescope (720p internal -> 1080p output with FSR)
+light-launcher-instance \
+  -game ~/Games/Witcher3/bin/x64/witcher3.exe \
+  -gamescope \
+  -gs-w 1280 -gs-h 720 \
+  -gs-out-w 1920 -gs-out-h 1080 \
+  -gs-filter fsr -gs-sharpness 5 \
+  -gs-window-mode borderless
+
+# 4. Launch with Lossless Scaling (2x multiplier)
+light-launcher-instance \
+  -game ~/Games/Cyberpunk2077/bin/x64/Cyberpunk2077.exe \
+  -lsfg \
+  -lsfg-multiplier 2 \
+  -lsfg-flow 1.0 \
+  -lsfg-pacing smooth
+
+# 5. Combined Advanced Launch (Gamescope + LSFG + MangoHud + GameMode)
+light-launcher-instance \
+  -game ~/Games/Game.exe \
+  -prefix ~/.config/light-launcher/prefixes/MyGame \
+  -proton-path ~/.local/share/Steam/compatibilitytools.d/GE-Proton9-25 \
+  -gamemode \
+  -mangohud \
+  -gamescope -gs-w 1920 -gs-h 1080 -gs-r 144 \
+  -lsfg -lsfg-multiplier 2
+```
+
+---
+
+## WAYLAND & DISPLAY PLATFORM (OZONE)
+
+LightLauncher supports running natively under Wayland or X11/Xwayland via Chromium's Ozone abstraction layer:
+
+1. **In-App Settings**: Navigate to **Appearance & Settings -> Display & Window Platform** to toggle between Native Wayland and X11 mode (automatically restarts the app to apply).
+2. **CLI Flags**: Pass `--wayland` or `--x11` when starting the launcher to override the configured platform for that session.
+3. **Flags Configuration File**: Create `~/.config/light-launcher-flags.conf` to pass custom Electron/Chromium flags (matching the Arch / VS Code convention):
+   ```text
+   # ~/.config/light-launcher-flags.conf
+   --ozone-platform=wayland
+   --enable-features=UseOzonePlatform,WaylandWindowDecorations
+   ```
+
+## CONTRIBUTING
+
+Contributions, bug reports, and suggestions are welcome! Please check out [CONTRIBUTING.md](CONTRIBUTING.md) for local development setup, architecture details, available scripts, and contribution guidelines.
 
 ## STONKS!
 

@@ -49,6 +49,8 @@
 	--transition-fast: 150ms var(--ease-out);
 	--transition-spring: 400ms var(--ease-spring);
 	--transition-normal: 300ms var(--ease-out);
+
+	--content-max-width: 1150px;
 }
 
 /* Backward compatibility fallback properties */

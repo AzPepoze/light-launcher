@@ -3,6 +3,7 @@ import fsSync from "fs";
 import path from "path";
 import crypto from "crypto";
 import { PathsService } from "./paths.service";
+import { LoggerService } from "./logger.service";
 import type { AppSettings, LaunchOptions } from "../../shared/types/config.types";
 import {
 	DefaultExcludeNames,
@@ -86,11 +87,12 @@ export class ConfigService {
 				return cachedSettings;
 			}
 		} catch (err) {
-			console.error("Error loading app settings:", err);
+			LoggerService.error("Config", `Error loading app settings: ${err}`);
 		}
 
 		cachedSettings = {
 			TransparentMode: true,
+			NativeWayland: false,
 			ScanFolders: [],
 			ScanFolderConfigs: [],
 			Blacklist: []
@@ -122,13 +124,13 @@ export class ConfigService {
 						const options = await this.loadJson<LaunchOptions>(configPath);
 						configs.push(options);
 					} catch (e) {
-						console.error(`Failed to parse ${configPath}:`, e);
+						LoggerService.error("Config", `Failed to parse ${configPath}: ${e}`);
 					}
 				}
 			}
 			return configs;
 		} catch (err) {
-			console.error("Error listing game configs:", err);
+			LoggerService.error("Config", `Error listing game configs: ${err}`);
 			return [];
 		}
 	}
@@ -165,7 +167,7 @@ export class ConfigService {
 			try {
 				return await this.loadJson<LaunchOptions>(prefixConfigPath);
 			} catch (e) {
-				console.error(`Failed to parse ${prefixConfigPath}:`, e);
+				LoggerService.error("Config", `Failed to parse ${prefixConfigPath}: ${e}`);
 			}
 		}
 		return this.createDefaultLaunchOptions(prefixName);

@@ -137,6 +137,7 @@ type ScanFolderConfig struct {
 
 type AppSettings struct {
 	TransparentMode   bool               `json:"TransparentMode"`
+	NativeWayland     bool               `json:"NativeWayland"`
 	ScanFolders       []string           `json:"ScanFolders"`
 	ScanFolderConfigs []ScanFolderConfig `json:"ScanFolderConfigs"`
 	Blacklist         []string           `json:"Blacklist"`

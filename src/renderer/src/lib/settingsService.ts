@@ -42,6 +42,23 @@ export async function toggleTransparentMode(currentSettings: any): Promise<void>
 }
 
 /**
+ * Toggles Native Wayland (Ozone platform) mode and restarts the app
+ */
+export async function toggleNativeWayland(currentSettings: any): Promise<void> {
+	try {
+		const newSettings = { ...currentSettings, NativeWayland: !currentSettings.NativeWayland };
+		await SaveAppSettings(newSettings);
+		notifications.add("Restarting app to apply display platform changes...", "info");
+		setTimeout(async () => {
+			await RestartApp();
+		}, 1500);
+	} catch (err) {
+		notifications.add("Failed to save setting", "error");
+		throw err;
+	}
+}
+
+/**
  * Opens a file picker for background images
  */
 export async function browseBackgroundImage(): Promise<string | null> {

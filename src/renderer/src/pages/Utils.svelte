@@ -118,22 +118,9 @@
 
 <style lang="scss">
 	.utils-container {
-		padding: 40px 48px;
-		height: 100%;
 		display: flex;
 		flex-direction: column;
-		overflow-y: auto;
-
-		&::-webkit-scrollbar {
-			width: 8px;
-		}
-		&::-webkit-scrollbar-track {
-			background: transparent;
-		}
-		&::-webkit-scrollbar-thumb {
-			background: rgba(255, 102, 171, 0.2);
-			border-radius: 10px;
-		}
+		width: 100%;
 	}
 
 	.utils-grid {
