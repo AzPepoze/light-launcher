@@ -6,8 +6,8 @@ import {
 	ClearShaderCache,
 	DropCaches,
 	ClearSwap,
-} from "@bindings/light-launcher/internal/app/app";
-import * as core from "@bindings/light-launcher/internal/types/models";
+} from "@lib/api";
+import * as core from "@shared";
 
 export class StatusDrawerState {
 	isExpanded = $state(false);

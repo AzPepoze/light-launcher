@@ -84,7 +84,7 @@ export class PrefixService {
 	}
 
 	static async runPrefixTool(prefixPath: string, toolName: string, protonPath: string): Promise<void> {
-		const env = {
+		const env: NodeJS.ProcessEnv = {
 			...process.env,
 			WINEPREFIX: PathsService.expandPath(prefixPath)
 		};

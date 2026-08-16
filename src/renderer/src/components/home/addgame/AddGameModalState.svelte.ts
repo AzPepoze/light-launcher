@@ -7,7 +7,7 @@ import {
 	AddScanFolder,
 	BlacklistGame,
 	GetScanFolderConfig,
-} from "@bindings/light-launcher/internal/app/app";
+} from "@lib/api";
 import { notifications } from "@stores/notificationStore";
 import { loadExeIcon } from "@lib/iconService";
 import { getDefaultPrefixName } from "@lib/prefixService";

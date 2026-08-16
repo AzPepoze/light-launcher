@@ -2,7 +2,7 @@
 	import { notifications } from "@stores/notificationStore";
 	import Modal from "@components/shared/Modal.svelte";
 	import FolderConfiguration from "@components/shared/FolderConfiguration.svelte";
-	import { GetScanFolderConfig, UpdateScanFolderConfig } from "@bindings/light-launcher/internal/app/app";
+	import { GetScanFolderConfig, UpdateScanFolderConfig } from "@lib/api";
 
 	export let show = false;
 	export let folderPath = "";

@@ -6,10 +6,10 @@
 		GetUtilsStatus,
 		InstallLsfg,
 		UninstallLsfg,
-	} from "@bindings/light-launcher/internal/app/app";
-	import * as core from "@bindings/light-launcher/internal/types/models";
+		onEvent,
+	} from "@lib/api";
+	import * as core from "@shared";
 	import { notifications } from "@stores/notificationStore";
-	import { Events } from "@wailsio/runtime";
 	import { onDestroy, onMount } from "svelte";
 
 	import lsfgPng from "@icons/lsfg.png";
@@ -28,6 +28,7 @@
 	let isUninstalling = $state(false);
 	let progressMessage = $state("");
 	let progressPercent = $state(0);
+	let unsubProgress: (() => void) | null = null;
 
 	const utilities = $derived([
 		{
@@ -62,14 +63,14 @@
 
 	onMount(() => {
 		loadStatus();
-		Events.On("lsfg-install-progress", (data: any) => {
+		unsubProgress = onEvent("lsfg-install-progress", (data: any) => {
 			progressMessage = data.message;
 			progressPercent = data.percent;
 		});
 	});
 
 	onDestroy(() => {
-		Events.Off("lsfg-install-progress");
+		if (unsubProgress) unsubProgress();
 	});
 
 	async function handleInstall() {

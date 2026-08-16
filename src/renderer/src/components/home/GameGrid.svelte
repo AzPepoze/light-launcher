@@ -5,7 +5,7 @@
 	import SidebarPanel from "@components/home/SidebarPanel.svelte";
 	import FolderGroup from "@components/home/FolderGroup.svelte";
 	import FolderSettingsModal from "@components/home/FolderSettingsModal.svelte";
-	import { BlacklistGame, RemoveGame, RemoveScanFolder } from "@bindings/light-launcher/internal/app/app";
+	import { BlacklistGame, RemoveGame, RemoveScanFolder } from "@lib/api";
 	import { notifications } from "@stores/notificationStore";
 	import SidebarProfilesSection from "@components/home/SidebarProfilesSection.svelte";
 

@@ -7,8 +7,8 @@
 	import {
 		PickFileCustom,
 		GetTotalRam,
-	} from "@bindings/light-launcher/internal/app/app";
-	import * as core from "@bindings/light-launcher/internal/types/models";
+	} from "@lib/api";
+	import * as core from "@shared";
 	import { onMount } from "svelte";
 	import { loadLsfgResources, parseMemoryValue } from "@lib/formService";
 
@@ -51,7 +51,7 @@
 	async function handleBrowseDll() {
 		try {
 			const path = await PickFileCustom("Select Lossless.dll", [
-				{ DisplayName: "Lossless.dll", Pattern: "Lossless.dll" },
+				{ displayName: "Lossless.dll", pattern: "Lossless.dll" },
 			]);
 			if (path) options.Extras.Lsfg.DllPath = path;
 		} catch (err) {

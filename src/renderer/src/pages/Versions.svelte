@@ -1,9 +1,8 @@
 <script lang="ts">
 	import PageHeader from "@components/shared/PageHeader.svelte";
-	import { ScanProtonVersions } from "@bindings/light-launcher/internal/app/app";
-	import * as core from "@bindings/light-launcher/internal/types/models";
+	import { ScanProtonVersions, OpenURL } from "@lib/api";
+	import * as core from "@shared";
 	import { notifications } from "@stores/notificationStore";
-	import { Browser } from "@wailsio/runtime";
 	import { onMount } from "svelte";
 
 	import externalIcon from "@icons/protron_forked.png";
@@ -29,7 +28,7 @@
 	}
 
 	function openExternal(url: string) {
-		Browser.OpenURL(url);
+		OpenURL(url);
 	}
 </script>
 

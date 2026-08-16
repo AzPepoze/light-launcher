@@ -1,5 +1,5 @@
-import { LoadPrefixConfig } from "@bindings/light-launcher/internal/app/app";
-import * as core from "@bindings/light-launcher/internal/types/models";
+import { LoadPrefixConfig } from "@lib/api";
+import * as core from "@shared";
 
 export class ProtonState {
 	protonVersions = $state<core.ProtonTool[]>([]);

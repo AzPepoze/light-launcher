@@ -1,4 +1,4 @@
-import { GetExeIcon } from "@bindings/light-launcher/internal/app/app";
+import { GetExeIcon } from "@lib/api";
 
 // Promise-based in-flight and result cache
 const iconPromises = new Map<string, Promise<string>>();

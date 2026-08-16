@@ -7,7 +7,7 @@ import {
 	RemoveScanFolder,
 	UnblacklistGame,
 	PickFolder
-} from "@bindings/light-launcher/internal/app/app";
+} from "@lib/api";
 import { notifications } from "@stores/notificationStore";
 import { settingsStore } from "@stores/settingsStore";
 
@@ -48,8 +48,8 @@ export async function browseBackgroundImage(): Promise<string | null> {
 	try {
 		const path = await PickFileCustom("Select Background Image", [
 			{
-				DisplayName: "Images",
-				Pattern: "*.png;*.jpg;*.jpeg;*.svg;*.webp",
+				displayName: "Images",
+				pattern: "*.png;*.jpg;*.jpeg;*.svg;*.webp",
 			},
 		]);
 		if (path) {

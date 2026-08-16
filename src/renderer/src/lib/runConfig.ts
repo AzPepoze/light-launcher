@@ -1,5 +1,5 @@
-import * as core from "@bindings/light-launcher/internal/types/models";
-import { GetConfig, LoadPrefixConfig, DetectLosslessDll } from "@bindings/light-launcher/internal/app/app";
+import * as core from "@shared";
+import { GetConfig, LoadPrefixConfig, DetectLosslessDll } from "@lib/api";
 
 export async function loadConfigForGame(
 	path: string,

@@ -2,7 +2,7 @@
 	import Dropdown from "@components/shared/Dropdown.svelte";
 	import SlideButton from "@components/shared/SlideButton.svelte";
 	import MultiplierInput from "@components/shared/MultiplierInput.svelte";
-	import * as core from "@bindings/light-launcher/internal/types/models";
+	import * as core from "@shared";
 
 	export let options: core.LaunchOptions;
 	export let gpuList: string[] = [];

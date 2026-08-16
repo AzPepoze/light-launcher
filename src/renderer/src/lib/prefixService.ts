@@ -6,8 +6,8 @@ import {
 	RemovePrefix,
 	RunPrefixTool,
 	SavePrefixConfig,
-} from "@bindings/light-launcher/internal/app/app";
-import * as core from "@bindings/light-launcher/internal/types/models";
+} from "@lib/api";
+import * as core from "@shared";
 import { notifications } from "@stores/notificationStore";
 import { createLogger } from "./logger";
 

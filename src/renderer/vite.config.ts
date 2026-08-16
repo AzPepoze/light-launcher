@@ -1,22 +1,20 @@
 import { svelte } from "@sveltejs/vite-plugin-svelte";
-import wails from "@wailsio/runtime/plugins/vite";
 import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vite";
 
 // https://vitejs.dev/config/
 export default defineConfig({
-	plugins: [svelte(), wails("./bindings")],
+	base: "./",
+	plugins: [svelte()],
 	resolve: {
 		alias: {
-			"@bindings": fileURLToPath(
-				new URL("./bindings", import.meta.url),
-			),
+			"@shared": fileURLToPath(new URL("../shared", import.meta.url)),
 			"@components": fileURLToPath(
-				new URL("./src/components", import.meta.url),
+				new URL("./src/components", import.meta.url)
 			),
 			"@lib": fileURLToPath(new URL("./src/lib", import.meta.url)),
 			"@stores": fileURLToPath(
-				new URL("./src/stores", import.meta.url),
+				new URL("./src/stores", import.meta.url)
 			),
 			"@icons": fileURLToPath(new URL("./src/icons", import.meta.url)),
 		},
@@ -31,6 +29,7 @@ export default defineConfig({
 		sourcemap: false,
 		cssMinify: true,
 		cssCodeSplit: true,
+		outDir: "dist",
 		modulePreload: {
 			polyfill: false,
 		},

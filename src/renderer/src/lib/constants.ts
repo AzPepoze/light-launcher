@@ -1,4 +1,4 @@
-import * as core from "@bindings/light-launcher/internal/types/models";
+import * as core from "@shared";
 
 export const DEFAULT_LAUNCH_OPTIONS: core.LaunchOptions = {
 	...({

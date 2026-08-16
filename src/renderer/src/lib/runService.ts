@@ -7,15 +7,15 @@ import {
 	ListPrefixes,
 	GetSystemToolsStatus,
 	RunGame,
-} from "@bindings/light-launcher/internal/app/app";
+	CloseWindow,
+} from "@lib/api";
 import { loadExeIcon } from "@lib/iconService";
-import * as core from "@bindings/light-launcher/internal/types/models";
+import * as core from "@shared";
 import { notifications } from "@stores/notificationStore";
 import { runState } from "@stores/runState";
 import { get } from "svelte/store";
 import { mergeOptions } from "./formService";
 import { loadConfigForGame } from "./runConfig";
-import { Window } from "@wailsio/runtime";
 
 export interface RunPageInitData {
 	baseDir: string;
@@ -195,7 +195,7 @@ export async function executeLaunch(
 	try {
 		await RunGame(launchOptions, showLogsWindow);
 		if (closeLauncher) {
-			Window.Close();
+			CloseWindow();
 		}
 	} catch (error) {
 		console.error("[EXECUTE] Launch failed:", error);

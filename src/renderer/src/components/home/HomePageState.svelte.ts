@@ -1,9 +1,8 @@
-import { GetAutoScannedGames } from "@bindings/light-launcher/internal/app/app";
+import { GetAutoScannedGames, onEvent } from "@lib/api";
 import * as service from "@lib/homeService";
 import { navigationCommand } from "@stores/navigationStore";
 import { notifications } from "@stores/notificationStore";
 import { runState } from "@stores/runState";
-import { Events } from "@wailsio/runtime";
 import { IconLoaderState } from "./IconLoaderState.svelte";
 import { SelectionState } from "./SelectionState.svelte";
 
@@ -88,8 +87,8 @@ export class HomePageState {
 	initialize() {
 		this.refreshData(true);
 
-		this.dropUnsubscribe = Events.On("FilesDropped", async (event) => {
-			const files = event.data as string[];
+		this.dropUnsubscribe = onEvent("FilesDropped", async (event: any) => {
+			const files = (event?.data || event) as string[];
 			const added = await service.processDroppedFiles(files);
 			if (added > 0) {
 				notifications.add(

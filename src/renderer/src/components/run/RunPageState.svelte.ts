@@ -2,8 +2,8 @@ import {
 	PickFile,
 	PickFolder,
 	SaveGameConfig,
-} from "@bindings/light-launcher/internal/app/app";
-import * as core from "@bindings/light-launcher/internal/types/models";
+} from "@lib/api";
+import * as core from "@shared";
 import { notifications } from "@stores/notificationStore";
 import { runState } from "@stores/runState";
 import { createLaunchOptions } from "@lib/formService";

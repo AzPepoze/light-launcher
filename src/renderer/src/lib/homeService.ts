@@ -9,7 +9,7 @@ import {
 	SaveGameConfig,
 	IsDir,
 	AddScanFolder,
-} from "@bindings/light-launcher/internal/app/app";
+} from "@lib/api";
 import { notifications } from "@stores/notificationStore";
 import { createLaunchOptions } from "./formService";
 

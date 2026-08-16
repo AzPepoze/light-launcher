@@ -8,6 +8,17 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "declaration": false
+    "declaration": false,
+    "baseUrl": ".",
+    "paths": {
+      "@shared": ["src/shared/index.ts"],
+      "@shared/*": ["src/shared/*"],
+      "@services/*": ["src/main/services/*"],
+      "@ipc/*": ["src/main/ipc/*"],
+      "@components/*": ["src/renderer/src/components/*"],
+      "@lib/*": ["src/renderer/src/lib/*"],
+      "@stores/*": ["src/renderer/src/stores/*"],
+      "@icons/*": ["src/renderer/src/icons/*"]
+    }
   }
 }

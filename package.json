@@ -6,15 +6,15 @@
   "main": "dist/main/index.js",
   "scripts": {
     "dev:go": "go build -o bin/light-launcher-instance ./core/cmd/instance",
-    "dev:renderer": "cd src/renderer && vite",
-    "dev:electron": "tsc -p src/main/tsconfig.json && tsc -p src/preload/tsconfig.json && electron .",
-    "dev": "npm run dev:go && electron-vite dev || (concurrently \"npm run dev:renderer\" \"npm run dev:electron\")",
+    "dev:renderer": "cd src/renderer && bun run dev",
+    "dev:electron": "bunx tsc -p src/main/tsconfig.json && bunx tsc -p src/preload/tsconfig.json && bunx electron .",
+    "dev": "bun run dev:go && concurrently \"bun run dev:renderer\" \"bun run dev:electron\"",
     "build:go": "go build -ldflags=\"-s -w\" -o bin/light-launcher-instance ./core/cmd/instance",
-    "build:renderer": "cd src/renderer && vite build",
-    "build:electron": "tsc -p src/main/tsconfig.json && tsc -p src/preload/tsconfig.json",
-    "build": "npm run build:go && npm run build:renderer && npm run build:electron",
-    "dist": "npm run build && electron-builder --config build/electron-builder.yml",
-    "typecheck": "tsc --noEmit && svelte-check --tsconfig ./src/renderer/tsconfig.json"
+    "build:renderer": "cd src/renderer && bun run build",
+    "build:electron": "bunx tsc -p src/main/tsconfig.json && bunx tsc -p src/preload/tsconfig.json",
+    "build": "bun run build:go && bun run build:renderer && bun run build:electron",
+    "dist": "bun run build && bunx electron-builder --config build/electron-builder.yml",
+    "typecheck": "bunx tsc --noEmit && cd src/renderer && bunx svelte-check --tsconfig ./tsconfig.json"
   },
   "dependencies": {},
   "devDependencies": {

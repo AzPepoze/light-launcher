@@ -5,7 +5,7 @@
 		GetInitialGamePath,
 		GetInitialLauncherPath,
 		GetShouldEditLsfg,
-	} from "@bindings/light-launcher/internal/app/app";
+	} from "@lib/api";
 	import Navbar from "@components/shared/Navbar.svelte";
 	import NotificationHost from "@components/shared/NotificationHost.svelte";
 	import { navigationCommand } from "@stores/navigationStore";

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { PickFolder, PickFile } from "@bindings/light-launcher/internal/app/app";
+	import { PickFolder, PickFile } from "@lib/api";
 
 	export let value = "";
 	export let placeholder = "Select path...";

@@ -31,7 +31,7 @@ export class SystemService {
 	}
 
 	static async getSystemUsage(): Promise<SystemUsage> {
-		const usage: SystemUsage = { CPU: '0%', RAM: '0%', GPU: '0%' };
+		const usage: SystemUsage = { cpu: '0%', ram: '0%', gpu: '0%' };
 
 		// 1. CPU Usage via /proc/stat
 		try {
@@ -47,7 +47,7 @@ export class SystemService {
 					const idleDelta = idle - lastIdle;
 					if (totalDelta > 0) {
 						const cpuPercent = (100 * (totalDelta - idleDelta)) / totalDelta;
-						usage.CPU = `${cpuPercent.toFixed(1)}%`;
+						usage.cpu = `${cpuPercent.toFixed(1)}%`;
 					}
 				}
 				lastTotal = total;
@@ -77,14 +77,14 @@ export class SystemService {
 				const usedGb = (used / 1024 / 1024).toFixed(1);
 				const totalGb = Math.round(memTotal / 1024 / 1024);
 				const percent = Math.round((used / memTotal) * 100);
-				usage.RAM = `${usedGb} GB / ${totalGb} GB (${percent}%)`;
+				usage.ram = `${usedGb} GB / ${totalGb} GB (${percent}%)`;
 			}
 		} catch (e) {
 			// ignore error
 		}
 
 		// 3. GPU Usage
-		usage.GPU = await this.getGpuUsage();
+		usage.gpu = await this.getGpuUsage();
 		return usage;
 	}
 

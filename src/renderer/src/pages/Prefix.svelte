@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { ScanProtonVersions } from "@bindings/light-launcher/internal/app/app";
-	import * as core from "@bindings/light-launcher/internal/types/models";
+	import { ScanProtonVersions } from "@lib/api";
+	import * as core from "@shared";
 	import PrefixList from "@components/prefix/PrefixList.svelte";
 	import PrefixTools from "@components/prefix/PrefixTools.svelte";
 	import PrefixHeroPanel from "@components/prefix/PrefixHeroPanel.svelte";

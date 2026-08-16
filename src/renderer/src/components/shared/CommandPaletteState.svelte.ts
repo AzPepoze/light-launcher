@@ -1,4 +1,4 @@
-import { GetAllGames, RunGame } from "@bindings/light-launcher/internal/app/app";
+import { GetAllGames, RunGame } from "@lib/api";
 import { navigationCommand } from "@stores/navigationStore";
 import { notifications } from "@stores/notificationStore";
 import { loadExeIcon } from "@lib/iconService";

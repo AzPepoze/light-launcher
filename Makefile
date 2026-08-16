@@ -1,4 +1,4 @@
-.PHONY: all build dev build-go build-renderer build-electron clean
+.PHONY: all build dev build-go build-renderer build-electron dist clean
 
 all: build
 
@@ -9,17 +9,17 @@ build-go:
 	go build -ldflags="-s -w" -o bin/light-launcher-instance ./core/cmd/instance
 
 build-renderer:
-	@cd src/renderer && bun run build || npm run build
+	@cd src/renderer && bun run build
 
 build-electron:
-	@npx tsc -p src/main/tsconfig.json
-	@npx tsc -p src/preload/tsconfig.json
+	@bunx tsc -p src/main/tsconfig.json
+	@bunx tsc -p src/preload/tsconfig.json
 
 dev: build-go
-	@npm run dev
+	@bun run dev
 
 dist: build
-	@npx electron-builder --config build/electron-builder.yml
+	@bunx electron-builder --config build/electron-builder.yml
 
 clean:
 	@rm -rf bin dist src/renderer/dist

@@ -11,13 +11,12 @@
 		"noEmit": true,
 		"strict": false,
 		"isolatedModules": true,
-		"importsNotUsedAsValues": "remove",
-		"preserveValueImports": false,
 		"jsx": "preserve",
 		"skipLibCheck": true,
 		"verbatimModuleSyntax": true,
 		"paths": {
-			"@bindings/*": ["./bindings/*"],
+			"@shared": ["../shared/index.ts"],
+			"@shared/*": ["../shared/*"],
 			"@components/*": ["./src/components/*"],
 			"@lib/*": ["./src/lib/*"],
 			"@stores/*": ["./src/stores/*"],
@@ -28,7 +27,8 @@
 		"src/**/*.d.ts",
 		"src/**/*.ts",
 		"src/**/*.js",
-		"src/**/*.svelte"
+		"src/**/*.svelte",
+		"../shared/**/*.ts"
 	],
 	"references": [
 		{
