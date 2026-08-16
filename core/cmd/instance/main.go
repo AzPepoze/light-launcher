@@ -41,6 +41,13 @@ func main() {
 	flag.Parse()
 
 	if gamePath == "" {
+		sendNotification("Launch Error", "No game executable specified to launch.")
+		os.Exit(1)
+	}
+
+	cleanGamePath := config.ExpandPath(gamePath)
+	if _, err := os.Stat(cleanGamePath); os.IsNotExist(err) {
+		sendNotification("Launch Error", fmt.Sprintf("Executable not found: %s", filepath.Base(gamePath)))
 		os.Exit(1)
 	}
 
