@@ -2,7 +2,7 @@ import fs from "fs/promises";
 import fsSync from "fs";
 import path from "path";
 import os from "os";
-import { app, dialog, shell } from "electron";
+import { app, BrowserWindow, dialog, shell } from "electron";
 import { exec, execSync } from "child_process";
 import { promisify } from "util";
 
@@ -122,56 +122,9 @@ export class AppService {
 		}
 	}
 
-	static async runSystemPicker(
-		title: string,
-		isFolder: boolean,
-		filters?: { displayName: string; pattern: string }[]
-	): Promise<string | null> {
-		// Zenity
-		try {
-			execSync("which zenity", { stdio: "ignore" });
-			const args = ["--file-selection", `--title="${title}"`];
-			if (isFolder) args.push("--directory");
-			if (filters && filters.length > 0) {
-				for (const f of filters) {
-					args.push(`--file-filter="${f.displayName}|${f.pattern.replace(/;/g, " ")}"`);
-				}
-			}
-			const { stdout } = await execAsync(`zenity ${args.join(" ")}`);
-			return stdout.trim() || null;
-		} catch {}
-
-		// Kdialog
-		try {
-			execSync("which kdialog", { stdio: "ignore" });
-			if (isFolder) {
-				const { stdout } = await execAsync(`kdialog --getexistingdirectory . --title "${title}"`);
-				return stdout.trim() || null;
-			} else {
-				let filterStr = "";
-				if (filters && filters.length > 0) {
-					filterStr = filters
-						.map((f) => `${f.displayName} (${f.pattern.replace(/;/g, " ")})`)
-						.join(";;");
-				}
-				const { stdout } = await execAsync(
-					`kdialog --getopenfilename . "${filterStr}" --title "${title}"`
-				);
-				return stdout.trim() || null;
-			}
-		} catch {}
-
-		return null;
-	}
-
 	static async pickFile(): Promise<string> {
-		const sysResult = await this.runSystemPicker("Select Game Executable", false, [
-			{ displayName: "Executables (*.exe)", pattern: "*.exe" },
-			{ displayName: "All Files", pattern: "*.*" }
-		]);
-		if (sysResult !== null) return sysResult;
-
-		const result = await dialog.showOpenDialog({
+		const focusedWindow = BrowserWindow.getFocusedWindow() || undefined;
+		const result = await dialog.showOpenDialog(focusedWindow!, {
 			title: "Select Game Executable",
 			properties: ["openFile"],
 			filters: [
@@ -183,10 +136,8 @@ export class AppService {
 	}
 
 	static async pickFolder(): Promise<string> {
-		const sysResult = await this.runSystemPicker("Select Directory", true);
-		if (sysResult !== null) return sysResult;
-
-		const result = await dialog.showOpenDialog({
+		const focusedWindow = BrowserWindow.getFocusedWindow() || undefined;
+		const result = await dialog.showOpenDialog(focusedWindow!, {
 			title: "Select Directory",
 			properties: ["openDirectory"]
 		});
@@ -197,15 +148,13 @@ export class AppService {
 		title: string,
 		filters: { displayName: string; pattern: string }[]
 	): Promise<string> {
-		const sysResult = await this.runSystemPicker(title, false, filters);
-		if (sysResult !== null) return sysResult;
-
 		const electronFilters = (filters || []).map((f) => ({
 			name: f.displayName,
 			extensions: f.pattern.split(";").map((p) => p.replace(/^\*\./, ""))
 		}));
 
-		const result = await dialog.showOpenDialog({
+		const focusedWindow = BrowserWindow.getFocusedWindow() || undefined;
+		const result = await dialog.showOpenDialog(focusedWindow!, {
 			title,
 			properties: ["openFile"],
 			filters: electronFilters
