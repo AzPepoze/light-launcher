@@ -64,13 +64,15 @@ export class ProtonService {
 			path.join(home, ".var/app/com.valvesoftware.Steam/.local/share/Steam/compatibilitytools.d")
 		];
 
-		// 1. Scan Steam official Proton installations
-		for (const basePath of steamCommonPaths) {
-			if (!fsSync.existsSync(basePath)) continue;
-			try {
-				const entries = await fs.readdir(basePath, { withFileTypes: true });
-				for (const entry of entries) {
-					if (entry.isDirectory() && entry.name.toLowerCase().startsWith("proton")) {
+		async function scanTools(pathsList: string[], isSteam: boolean, prefix: string) {
+			for (const basePath of pathsList) {
+				if (!fsSync.existsSync(basePath)) continue;
+				try {
+					const entries = await fs.readdir(basePath, { withFileTypes: true });
+					for (const entry of entries) {
+						if (!entry.isDirectory()) continue;
+						if (isSteam && !entry.name.toLowerCase().startsWith("proton")) continue;
+
 						const protonPath = path.join(basePath, entry.name);
 						const realP = fsSync.existsSync(protonPath)
 							? fsSync.realpathSync(protonPath)
@@ -83,42 +85,17 @@ export class ProtonService {
 							tools.push({
 								Name: entry.name,
 								Path: protonPath,
-								IsSteam: true,
-								DisplayName: `Steam: ${entry.name}`
+								IsSteam: isSteam,
+								DisplayName: `${prefix}: ${entry.name}`
 							});
 						}
 					}
-				}
-			} catch {}
+				} catch {}
+			}
 		}
 
-		// 2. Scan custom compatibility tools
-		for (const basePath of customToolsPaths) {
-			if (!fsSync.existsSync(basePath)) continue;
-			try {
-				const entries = await fs.readdir(basePath, { withFileTypes: true });
-				for (const entry of entries) {
-					if (entry.isDirectory()) {
-						const protonPath = path.join(basePath, entry.name);
-						const realP = fsSync.existsSync(protonPath)
-							? fsSync.realpathSync(protonPath)
-							: protonPath;
-						if (seenPaths.has(realP)) continue;
-
-						const protonExe = path.join(protonPath, "proton");
-						if (fsSync.existsSync(protonExe)) {
-							seenPaths.add(realP);
-							tools.push({
-								Name: entry.name,
-								Path: protonPath,
-								IsSteam: false,
-								DisplayName: `Custom: ${entry.name}`
-							});
-						}
-					}
-				}
-			} catch {}
-		}
+		await scanTools(steamCommonPaths, true, "Steam");
+		await scanTools(customToolsPaths, false, "Custom");
 
 		return tools;
 	}

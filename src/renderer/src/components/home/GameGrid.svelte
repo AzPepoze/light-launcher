@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { onMount } from "svelte";
-	import GameCard from "@components/home/GameCard.svelte";
 	import ContextMenu from "@components/shared/ContextMenu.svelte";
 	import SidebarPanel from "@components/home/SidebarPanel.svelte";
 	import FolderGroup from "@components/home/FolderGroup.svelte";
 	import FolderSettingsModal from "@components/home/FolderSettingsModal.svelte";
+	import SidebarProfilesSection from "@components/home/SidebarProfilesSection.svelte";
+	import GameCardGrid from "@components/home/shared/GameCardGrid.svelte";
 	import { BlacklistGame, RemoveGame, RemoveScanFolder } from "@lib/api";
 	import { notifications } from "@stores/notificationStore";
-	import SidebarProfilesSection from "@components/home/SidebarProfilesSection.svelte";
 
 	export let currentView: "grid" | "list-grid" | "sidebar-grid" = "grid";
 	export let games: any[] = [];
@@ -159,24 +159,20 @@
 					{loadIcon}
 				/>
 			{:else if filteredGames.length > 0}
-				<div class="games-grid">
-					{#each filteredGames as game}
-						<div on:contextmenu|preventDefault|stopPropagation={(e) => handleRightClick(e, game)}>
-							<GameCard
-								{game}
-								icon={gameIcons[game.path || game.config.LauncherPath]}
-								isRunning={isGameRunning(game, sessions)}
-								{isSelectionMode}
-								isSelected={selectedPaths.has(game.path || game.config.LauncherPath)}
-								view={currentView}
-								onLaunch={() => handleQuickLaunch(game)}
-								onConfigure={() => handleConfigure(game)}
-								onSelect={toggleGameSelection}
-								{loadIcon}
-							/>
-						</div>
-					{/each}
-				</div>
+				<GameCardGrid
+					games={filteredGames}
+					view={currentView}
+					{gameIcons}
+					{isGameRunning}
+					{sessions}
+					{isSelectionMode}
+					{selectedPaths}
+					{handleRightClick}
+					{handleQuickLaunch}
+					{handleConfigure}
+					{toggleGameSelection}
+					{loadIcon}
+				/>
 			{/if}
 		{/if}
 
@@ -252,24 +248,6 @@
 		min-height: 0;
 		overflow-y: auto;
 		padding-right: 8px;
-	}
-
-	.games-grid {
-		display: grid;
-		gap: 28px;
-		width: 100%;
-		padding: 12px;
-		padding-bottom: 40px;
-	}
-
-	.grid-view .games-grid,
-	.sidebar-layout-view .games-grid {
-		grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-	}
-
-	.list-view .games-grid {
-		grid-template-columns: 1fr;
-		gap: 16px;
 	}
 
 	.scan-section-title {

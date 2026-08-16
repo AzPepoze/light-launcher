@@ -1,4 +1,7 @@
 <script lang="ts">
+	import CardRunningIndicator from "./shared/CardRunningIndicator.svelte";
+	import CardSelectionCheckbox from "./shared/CardSelectionCheckbox.svelte";
+
 	export let game: any;
 	export let icon: string = "";
 	export let isRunning: boolean = false;
@@ -36,22 +39,11 @@
 		tabindex="0"
 	>
 		{#if isSelectionMode}
-			<div class="selection-overlay">
-				<div class="checkbox">
-					{#if isSelected}
-						<span class="material-icons" style="font-size: 16px;"
-							>check</span
-						>
-					{/if}
-				</div>
-			</div>
+			<CardSelectionCheckbox {isSelected} />
 		{/if}
 
 		{#if isRunning}
-			<div class="running-indicator">
-				<span class="pulse"></span>
-				<span class="indicator-text">RUNNING</span>
-			</div>
+			<CardRunningIndicator />
 		{/if}
 
 		<div class="rainbow-glow"></div>
@@ -97,12 +89,6 @@
 				border-color: var(--accent-primary);
 				box-shadow: 0 0 24px var(--accent-glow);
 			}
-
-			.checkbox {
-				background: var(--accent-primary) !important;
-				border-color: var(--accent-primary) !important;
-				color: var(--bg-base);
-			}
 		}
 
 		&:hover {
@@ -128,18 +114,15 @@
 
 			.game-footer .game-name {
 				color: var(--text-main);
+				white-space: normal;
+				overflow: visible;
+				word-break: break-all;
 			}
 
 			.config-btn {
 				opacity: 1;
 				visibility: visible;
 				transform: scale(1);
-			}
-
-			.game-footer .game-name {
-				white-space: normal;
-				overflow: visible;
-				word-break: break-all;
 			}
 		}
 
@@ -238,60 +221,8 @@
 		}
 	}
 
-	.selection-overlay {
-		position: absolute;
-		inset: 0;
-		display: flex;
-		align-items: flex-start;
-		justify-content: flex-end;
-		padding: 12px;
-		z-index: 5;
-		background: rgba(var(--bg-input-rgb), 0.4);
-		border-radius: calc(var(--radius-lg) - 2px);
-
-		.checkbox {
-			width: 24px;
-			height: 24px;
-			border: 2px solid rgba(255, 255, 255, 0.15);
-			border-radius: var(--radius-sm);
-			background: var(--bg-surface);
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			transition: all var(--transition-fast);
-			color: transparent;
-		}
-	}
-
 	.game-card:hover .launch-icon-large {
 		transform: scale(1);
-	}
-
-	.running-indicator {
-		position: absolute;
-		top: 12px;
-		right: 12px;
-		background: var(--success, #44ffaa);
-		color: #000;
-		padding: 4px 12px;
-		border-radius: var(--radius-pill);
-		font-size: 0.65rem;
-		font-weight: 900;
-		display: flex;
-		align-items: center;
-		gap: 6px;
-		letter-spacing: 0.5px;
-		z-index: 10;
-		box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-
-		.pulse {
-			width: 6px;
-			height: 6px;
-			background: #000;
-			border-radius: 50%;
-			display: inline-block;
-			animation: blink 1s infinite;
-		}
 	}
 
 	.game-footer {
@@ -348,18 +279,6 @@
 		}
 		100% {
 			filter: blur(3px) hue-rotate(360deg);
-		}
-	}
-
-	@keyframes blink {
-		0%,
-		100% {
-			opacity: 1;
-			transform: scale(1);
-		}
-		50% {
-			opacity: 0.5;
-			transform: scale(0.8);
 		}
 	}
 </style>

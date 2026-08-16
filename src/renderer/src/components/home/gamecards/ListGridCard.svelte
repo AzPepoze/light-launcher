@@ -1,4 +1,8 @@
 <script lang="ts">
+	import CardRunningIndicator from "./shared/CardRunningIndicator.svelte";
+	import CardSelectionCheckbox from "./shared/CardSelectionCheckbox.svelte";
+	import { getGamePath } from "@lib/gameUtils";
+
 	export let game: any;
 	export let icon: string = "";
 	export let isRunning: boolean = false;
@@ -32,15 +36,7 @@
 	on:keydown={(e) => e.key === "Enter" && handleLaunch()}
 >
 	{#if isSelectionMode}
-		<div class="selection-checkbox">
-			<div class="checkbox" class:checked={isSelected}>
-				{#if isSelected}
-					<span class="material-icons" style="font-size: 16px;"
-						>check</span
-					>
-				{/if}
-			</div>
-		</div>
+		<CardSelectionCheckbox {isSelected} inline={true} />
 	{/if}
 
 	<div class="icon-section">
@@ -57,18 +53,14 @@
 		{/if}
 
 		{#if isRunning}
-			<div class="running-indicator-small">
-				<span class="pulse"></span>
-			</div>
+			<CardRunningIndicator compact={true} />
 		{/if}
 	</div>
 
 	<div class="content-section">
 		<div class="info">
 			<span class="game-name">{game.name}</span>
-			<span class="game-path"
-				>{game.path || game.config.LauncherPath}</span
-			>
+			<span class="game-path">{getGamePath(game)}</span>
 		</div>
 
 		<div class="actions">
@@ -121,29 +113,6 @@
 		&.selected {
 			border-color: var(--accent-primary);
 			background: var(--bg-elevated);
-
-			.checkbox {
-				background: var(--accent-primary) !important;
-				border-color: var(--accent-primary) !important;
-				color: var(--bg-base);
-			}
-		}
-	}
-
-	.selection-checkbox {
-		flex-shrink: 0;
-
-		.checkbox {
-			width: 24px;
-			height: 24px;
-			border: 2px solid rgba(255, 255, 255, 0.15);
-			border-radius: var(--radius-sm);
-			background: var(--bg-base);
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			transition: all var(--transition-fast);
-			color: transparent;
 		}
 	}
 
@@ -171,25 +140,6 @@
 			align-items: center;
 			justify-content: center;
 			opacity: 1;
-		}
-
-		.running-indicator-small {
-			position: absolute;
-			top: 4px;
-			right: 4px;
-			width: 8px;
-			height: 8px;
-			background: var(--success, #44ffaa);
-			border-radius: var(--radius-xl);
-			box-shadow: 0 0 8px var(--success, #44ffaa);
-
-			.pulse {
-				position: absolute;
-				inset: 0;
-				background: inherit;
-				border-radius: inherit;
-				animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
-			}
 		}
 	}
 
@@ -266,14 +216,6 @@
 			border-color: var(--accent-primary);
 			color: #ffffff;
 			box-shadow: 0 4px 10px var(--accent-glow);
-		}
-	}
-
-	@keyframes ping {
-		75%,
-		100% {
-			transform: scale(2.5);
-			opacity: 0;
 		}
 	}
 </style>
