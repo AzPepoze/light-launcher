@@ -5,3 +5,4 @@ export * from "./types/lsfg.types";
 export * from "./types/prefix.types";
 export * from "./types/ipc.types";
 export * from "./constants";
+export * from "./logger";

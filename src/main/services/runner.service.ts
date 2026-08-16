@@ -6,6 +6,7 @@ import { PathsService } from "./paths.service";
 import { LsfgService } from "./lsfg.service";
 import { ProtonService } from "./proton.service";
 import { SystemService } from "./system.service";
+import { LoggerService } from "./logger.service";
 import type { LaunchOptions } from "../../shared/types/config.types";
 
 export class RunnerService {
@@ -40,8 +41,15 @@ export class RunnerService {
 		}
 
 		if (!fsSync.existsSync(options.GamePath)) {
+			LoggerService.error("Runner", `Game executable not found at: ${options.GamePath}`);
 			throw new Error(`Game executable not found at: ${options.GamePath}`);
 		}
+
+		LoggerService.info("Runner", `Launching "${options.Name || path.basename(options.GamePath)}"`, {
+			game: options.GamePath,
+			prefix: options.PrefixPath,
+			proton: options.ProtonPath || "default"
+		});
 
 		// Save configuration
 		await ConfigService.saveGameConfig(options);

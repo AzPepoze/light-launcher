@@ -1,70 +1,64 @@
-/**
- * Shared logger utility for frontend
- * Provides consistent logging with prefixes and timestamps
- */
-
-type LogLevel = "debug" | "info" | "warn" | "error";
-
-interface LogEntry {
-	timestamp: string;
-	level: LogLevel;
-	module: string;
-	message: string;
-	data?: unknown;
-}
+import { getCategoryColor, LEVEL_COLORS, type LogLevel, type LogEntry } from "@shared";
 
 const isDevelopment = import.meta.env.DEV;
 
-/**
- * Format a log entry with timestamp and module
- */
-function formatLog(level: LogLevel, module: string, message: string): string {
-	const timestamp = new Date().toLocaleTimeString();
-	return `[${timestamp}] [${module}] ${message}`;
-}
+function log(level: LogLevel, category: string, message: string, data?: unknown) {
+	if (level === "debug" && !isDevelopment) {
+		return;
+	}
 
-/**
- * Internal function to log with different levels
- */
-function log(level: LogLevel, module: string, message: string, data?: unknown) {
-	const formatted = formatLog(level, module, message);
+	const catColor = getCategoryColor(category);
+	const lvlColor = LEVEL_COLORS[level];
+	const time = new Date().toLocaleTimeString();
+
+	const catStyle = `background: ${catColor.cssBg}; color: ${catColor.hex}; border: 1px solid ${catColor.cssBorder}; border-radius: 4px; padding: 1px 6px; font-weight: 700; font-family: monospace; font-size: 0.9em;`;
+	const lvlStyle = `background: ${lvlColor.bg}; color: ${lvlColor.hex}; border-radius: 4px; padding: 1px 4px; font-weight: 800; font-family: monospace; font-size: 0.85em;`;
+	const timeStyle = `color: rgba(255, 255, 255, 0.4); font-size: 0.85em; font-family: monospace;`;
+	const msgStyle = `color: inherit; font-weight: 500;`;
+
+	const prefix = `%c${time}%c %c${level.toUpperCase().padEnd(5)}%c %c[${category}]%c %c${message}`;
+
+	const styles = [timeStyle, "", lvlStyle, "", catStyle, "", msgStyle];
 
 	switch (level) {
-		case "debug":
-			if (isDevelopment) {
-				console.debug(formatted, data);
+		case "error":
+			if (data !== undefined) {
+				console.error(prefix, ...styles, data);
+			} else {
+				console.error(prefix, ...styles);
 			}
 			break;
-		case "info":
-			console.log(formatted, data);
-			break;
 		case "warn":
-			console.warn(formatted, data);
+			if (data !== undefined) {
+				console.warn(prefix, ...styles, data);
+			} else {
+				console.warn(prefix, ...styles);
+			}
 			break;
-		case "error":
-			console.error(formatted, data);
+		default:
+			if (data !== undefined) {
+				console.log(prefix, ...styles, data);
+			} else {
+				console.log(prefix, ...styles);
+			}
 			break;
 	}
 }
 
-/**
- * Create a logger instance for a specific module
- */
-export function createLogger(module: string) {
+export function createLogger(category: string) {
 	return {
-		debug: (message: string, data?: unknown) => log("debug", module, message, data),
-		info: (message: string, data?: unknown) => log("info", module, message, data),
-		warn: (message: string, data?: unknown) => log("warn", module, message, data),
-		error: (message: string, data?: unknown) => log("error", module, message, data)
+		debug: (message: string, data?: unknown) => log("debug", category, message, data),
+		info: (message: string, data?: unknown) => log("info", category, message, data),
+		warn: (message: string, data?: unknown) => log("warn", category, message, data),
+		error: (message: string, data?: unknown) => log("error", category, message, data)
 	};
 }
 
-/**
- * Global logger for generic logging
- */
 export const logger = {
-	debug: (module: string, message: string, data?: unknown) => log("debug", module, message, data),
-	info: (module: string, message: string, data?: unknown) => log("info", module, message, data),
-	warn: (module: string, message: string, data?: unknown) => log("warn", module, message, data),
-	error: (module: string, message: string, data?: unknown) => log("error", module, message, data)
+	debug: (category: string, message: string, data?: unknown) =>
+		log("debug", category, message, data),
+	info: (category: string, message: string, data?: unknown) => log("info", category, message, data),
+	warn: (category: string, message: string, data?: unknown) => log("warn", category, message, data),
+	error: (category: string, message: string, data?: unknown) =>
+		log("error", category, message, data)
 };

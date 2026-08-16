@@ -1,8 +1,18 @@
 import { contextBridge, ipcRenderer } from "electron";
 
+function sanitizePayload<T>(payload: T): T {
+	if (payload === undefined || payload === null) return payload;
+	try {
+		return JSON.parse(JSON.stringify(payload));
+	} catch {
+		return payload;
+	}
+}
+
 const electronAPI = {
 	invoke: async <T = any>(method: string, payload: any = {}): Promise<T> => {
-		const response = await ipcRenderer.invoke("api", { method, payload });
+		const clean = sanitizePayload(payload);
+		const response = await ipcRenderer.invoke("api", { method, payload: clean });
 		if (!response.success) {
 			throw new Error(response.error || `IPC error calling ${method}`);
 		}

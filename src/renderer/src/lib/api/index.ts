@@ -26,9 +26,18 @@ declare global {
 	}
 }
 
+function sanitizePayload<T>(payload: T): T {
+	if (payload === undefined || payload === null) return payload;
+	try {
+		return JSON.parse(JSON.stringify(payload));
+	} catch {
+		return payload;
+	}
+}
+
 async function invoke<T>(method: string, payload: any = {}): Promise<T> {
 	if (typeof window !== "undefined" && window.electronAPI) {
-		return window.electronAPI.invoke<T>(method, payload);
+		return window.electronAPI.invoke<T>(method, sanitizePayload(payload));
 	}
 	throw new Error("electronAPI is not available on window");
 }
