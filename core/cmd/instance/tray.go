@@ -102,6 +102,9 @@ func onReady(logPath string) {
 		return
 	}
 
+	logger.Info("Runner", "Game started successfully (PID: %d). Running: %s", gameCmd.Process.Pid, exeNameClean)
+	sendNotification("LightLauncher Running", fmt.Sprintf("%s is now running (PID: %d)", exeNameClean, gameCmd.Process.Pid))
+
 	// Internal helper to kill game gracefully
 	killGame := func() {
 		if gameCmd.Process != nil {

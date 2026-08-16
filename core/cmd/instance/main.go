@@ -64,11 +64,8 @@ func main() {
 	}
 
 	logPath := logger.GetLogPath()
-	if logPath != "" {
-		if file, err := os.OpenFile(logPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666); err == nil {
-			log.SetOutput(file)
-		}
-	}
+	logger.SetNotificationIcon(getIconPath())
+	logger.Info("Instance", "Starting LightLauncher Go instance [PID=%d] [Game=%s]", os.Getpid(), exeName)
 
 	_ = logger.TrimCurrentLogFile(500)
 

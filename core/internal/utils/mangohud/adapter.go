@@ -37,6 +37,7 @@ func (a *MangoHudAdapter) WrapCommand(options types.LaunchOptions, args []string
 
 func (a *MangoHudAdapter) RegisterFlags(fs *flag.FlagSet) {
 	fs.BoolVar(&a.enabled, "mango", false, "Enable MangoHud")
+	fs.BoolVar(&a.enabled, "mangohud", false, "Enable MangoHud")
 }
 
 func (a *MangoHudAdapter) ExtractOptions(options *types.LaunchOptions) {
