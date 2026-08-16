@@ -5,6 +5,7 @@ import { registerIpcHandlers } from "./ipc";
 import { ConfigService } from "./services/config.service";
 import { AppService } from "./services/app.service";
 import { PathsService } from "./services/paths.service";
+import { MigrationService } from "./services/migration.service";
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -71,6 +72,7 @@ async function createWindow(): Promise<BrowserWindow> {
 
 // App lifecycle
 app.whenReady().then(async () => {
+	await MigrationService.migrateIfNeeded();
 	parseCliArgs();
 	registerIpcHandlers();
 	await createWindow();

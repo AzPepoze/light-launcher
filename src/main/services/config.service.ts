@@ -22,6 +22,9 @@ export class ConfigService {
 
 	static async loadJson<T>(filePath: string): Promise<T> {
 		const data = await fs.readFile(filePath, "utf-8");
+		if (!data || data.trim() === "") {
+			throw new Error(`File ${filePath} is empty`);
+		}
 		return JSON.parse(data) as T;
 	}
 
