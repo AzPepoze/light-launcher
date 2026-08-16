@@ -1,0 +1,212 @@
+<script lang="ts">
+	import SlideButton from "@components/shared/SlideButton.svelte";
+	import Modal from "@components/shared/Modal.svelte";
+	import RangeSlider from "@components/shared/RangeSlider.svelte";
+	import LsfgConfigForm from "@components/editlsfg/LsfgConfigForm.svelte";
+	import GamescopeConfigForm from "@components/editgamescope/GamescopeConfigForm.svelte";
+	import {
+		PickFileCustom,
+		GetTotalRam,
+	} from "@lib/api";
+	import * as core from "@shared";
+	import { onMount } from "svelte";
+	import { loadLsfgResources, parseMemoryValue } from "@lib/formService";
+
+	export let options: core.LaunchOptions;
+	export let showLogsWindow = false;
+	let showLsfgModal = false;
+	let showGamescopeModal = false;
+	let showMemoryModal = false;
+
+	let memorySliderValue = 4;
+	let systemRamTotal = 16;
+	let gpuList: string[] = ["Auto (Detect)"];
+
+	$: if (options.Extras.Memory.Value) {
+		const val = parseMemoryValue(options.Extras.Memory.Value);
+		if (val !== memorySliderValue) {
+			memorySliderValue = val;
+		}
+	}
+
+	onMount(async () => {
+		try {
+			const ram = await GetTotalRam();
+			if (ram > 0) systemRamTotal = ram;
+
+			const { gpus, dll } = await loadLsfgResources();
+
+			if (gpus.length > 0) {
+				gpuList = ["Auto (Detect)", ...gpus];
+			}
+			if (dll && !options.Extras.Lsfg.DllPath) {
+				options.Extras.Lsfg.DllPath = dll;
+				console.log("[ConfigForm] Auto-detected DLL:", dll);
+			}
+		} catch (e) {
+			console.error(e);
+		}
+	});
+
+	async function handleBrowseDll() {
+		try {
+			const path = await PickFileCustom("Select Lossless.dll", [
+				{ displayName: "Lossless.dll", pattern: "Lossless.dll" },
+			]);
+			if (path) options.Extras.Lsfg.DllPath = path;
+		} catch (err) {
+			console.error(err);
+		}
+	}
+</script>
+
+<div class="config-form">
+	<div class="form-group">
+		<label for="customArgs">Custom Arguments</label>
+		<input
+			id="customArgs"
+			type="text"
+			class="input"
+			bind:value={options.CustomArgs}
+			placeholder="e.g. -windowed -novid"
+		/>
+	</div>
+
+	<div class="toggles-grid">
+		<SlideButton
+			bind:checked={options.Extras.EnableMangoHud}
+			label="MangoHud"
+			subtitle="Performance overlay"
+		/>
+		<SlideButton
+			bind:checked={options.Extras.EnableGamemode}
+			label="GameMode"
+			subtitle="Optimize priorities"
+		/>
+		<SlideButton
+			bind:checked={options.Extras.Lsfg.Enabled}
+			label="LSFG-VK"
+			subtitle="Lossless Scaling Frame Generation"
+			hasConfig={true}
+			onConfig={() => (showLsfgModal = true)}
+		/>
+		<SlideButton
+			bind:checked={options.Extras.Gamescope.Enabled}
+			label="Gamescope"
+			subtitle="Micro-compositor"
+			hasConfig={true}
+			onConfig={() => (showGamescopeModal = true)}
+		/>
+		<SlideButton
+			bind:checked={options.Extras.Memory.Enabled}
+			label="Memory Protect"
+			subtitle="Prevent Swap (Min RAM)"
+			hasConfig={true}
+			onConfig={() => (showMemoryModal = true)}
+		/>
+		<SlideButton
+			bind:checked={showLogsWindow}
+			label="Show Logs"
+			subtitle="Open logs in terminal"
+		/>
+	</div>
+
+	<!-- LSFG Settings Modal -->
+	<Modal
+		show={showLsfgModal}
+		title="LSFG-VK Configuration"
+		fullscreen={true}
+		onClose={() => (showLsfgModal = false)}
+	>
+		<LsfgConfigForm {options} {gpuList} onDllBrowse={handleBrowseDll} />
+	</Modal>
+
+	<!-- Gamescope Settings Modal -->
+	<Modal
+		show={showGamescopeModal}
+		title="Gamescope Configuration"
+		fullscreen={true}
+		onClose={() => (showGamescopeModal = false)}
+	>
+		<GamescopeConfigForm {options} />
+	</Modal>
+
+	<!-- Memory Settings Modal -->
+	<Modal
+		show={showMemoryModal}
+		title="Memory Protection"
+		onClose={() => (showMemoryModal = false)}
+	>
+		<div class="modal-form">
+			<div class="form-group">
+				<label for="memorySlider">Minimum RAM Allocation</label>
+				<RangeSlider
+					value={memorySliderValue}
+					max={systemRamTotal}
+					snapValues={[2, 4, 6, 8, 12, 16, 24, 32, 48, 64]}
+					onChange={(changedValue) => {
+						memorySliderValue = changedValue;
+						options.Extras.Memory.Value = changedValue + "G";
+					}}
+				/>
+			</div>
+			<p class="note">
+				Guarantees {options.Extras.Memory.Value} of physical RAM for the game
+				process, preventing swapping.
+				<br />Values in Red Zone (>75%) might cause system
+				instability.
+			</p>
+		</div>
+	</Modal>
+</div>
+
+<style lang="scss">
+	.toggles-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+		gap: 20px;
+		margin-top: 12px;
+	}
+	.modal-form {
+		display: flex;
+		flex-direction: column;
+		gap: 20px;
+	}
+	.form-group {
+		label {
+			display: block;
+			font-size: 0.9rem;
+			font-weight: 800;
+			color: var(--accent-primary);
+			text-transform: uppercase;
+			letter-spacing: 1px;
+			margin-bottom: 10px;
+		}
+
+		.input {
+			width: 100%;
+			box-sizing: border-box;
+			display: block;
+			background: var(--bg-input);
+			border: 2px solid var(--glass-border);
+			padding: 12px 16px;
+			border-radius: var(--radius-md);
+			color: var(--text-main);
+			font-weight: 600;
+			outline: none;
+			transition: border-color var(--transition-fast), transform var(--transition-fast);
+
+			&:focus {
+				border-color: var(--accent-primary);
+				transform: scale(1.005);
+			}
+		}
+	}
+	.note {
+		font-size: 0.8rem;
+		font-weight: 600;
+		color: var(--text-muted);
+		line-height: 1.5;
+		margin-top: 8px;
+	}
+</style>

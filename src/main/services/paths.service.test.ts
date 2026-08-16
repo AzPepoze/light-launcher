@@ -1,0 +1,68 @@
+import { describe, it, expect, afterEach } from "vitest";
+import path from "path";
+import os from "os";
+import { PathsService } from "./paths.service";
+
+describe("PathsService", () => {
+	const originalXdg = process.env.XDG_CONFIG_HOME;
+
+	afterEach(() => {
+		process.env.XDG_CONFIG_HOME = originalXdg;
+	});
+
+	it("resolves base directory using XDG_CONFIG_HOME when present", () => {
+		process.env.XDG_CONFIG_HOME = "/custom/config";
+		expect(PathsService.getBaseDirectory()).toBe("/custom/config/light-launcher");
+	});
+
+	it("falls back to ~/.config/light-launcher when XDG_CONFIG_HOME is empty", () => {
+		delete process.env.XDG_CONFIG_HOME;
+		expect(PathsService.getBaseDirectory()).toBe(path.join(os.homedir(), ".config/light-launcher"));
+	});
+
+	it("computes flags file path in user config directory", () => {
+		delete process.env.XDG_CONFIG_HOME;
+		expect(PathsService.getFlagsFilePath()).toBe(
+			path.join(os.homedir(), ".config", "light-launcher-flags.conf")
+		);
+		process.env.XDG_CONFIG_HOME = "/custom/config";
+		expect(PathsService.getFlagsFilePath()).toBe("/custom/config/light-launcher-flags.conf");
+	});
+
+	it("computes config, prefix, and logs directories accurately", () => {
+		const base = PathsService.getBaseDirectory();
+		expect(PathsService.getConfigDirectory()).toBe(path.join(base, "config/executables"));
+		expect(PathsService.getPrefixBaseDirectory()).toBe(path.join(base, "prefixes"));
+		expect(PathsService.getPrefixBaseDirectory("/mnt/drive/prefixes")).toBe("/mnt/drive/prefixes");
+		expect(PathsService.getLogsDirectory()).toBe(path.join(base, "logs"));
+	});
+
+	it("computes executable config path by id or name fallback", () => {
+		const configDir = PathsService.getConfigDirectory();
+		expect(PathsService.getExecutableConfigPath("MyGame", "id123")).toBe(
+			path.join(configDir, "id123")
+		);
+		expect(PathsService.getExecutableConfigPath("MyGame", "")).toBe(path.join(configDir, "MyGame"));
+	});
+
+	it("resolves preload and renderer paths", () => {
+		expect(PathsService.getPreloadPath()).toContain("preload");
+		expect(PathsService.getRendererPath()).toContain("renderer");
+	});
+
+	it("expands tilde paths and handles special Unicode characters correctly", () => {
+		const home = os.homedir();
+		expect(PathsService.expandPath("~")).toBe(home);
+		expect(PathsService.expandPath("~/games/steam")).toBe(path.join(home, "games/steam"));
+		expect(PathsService.expandPath("/mnt/Drive1/Game♥/OK/Lustful Spirit Hunt.exe")).toBe(
+			"/mnt/Drive1/Game♥/OK/Lustful Spirit Hunt.exe"
+		);
+		expect(PathsService.expandPath("")).toBe("");
+	});
+
+	it("safely checks file existence without throwing", () => {
+		expect(PathsService.safeExists("")).toBe(false);
+		expect(PathsService.safeExists("/non/existent/path/here/never/exists")).toBe(false);
+		expect(PathsService.safeExists(os.homedir())).toBe(true);
+	});
+});
