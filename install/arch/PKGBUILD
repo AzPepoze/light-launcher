@@ -55,7 +55,8 @@ build() {
   bun run build
   bunx electron-builder --config build/electron-builder.yml --linux dir
 
-  chmod -R u+w "${srcdir}" 2>/dev/null || true
+  go clean -modcache 2>/dev/null || true
+  rm -rf "$_golang_workspace_path" "$_golang_build_cache_path" "$_bun_install_cache_path"
 }
 
 package() {
