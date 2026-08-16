@@ -8,7 +8,7 @@
 		"dev:go": "go build -o bin/light-launcher-instance ./core/cmd/instance",
 		"dev:renderer": "cd src/renderer && bun run dev",
 		"dev:electron": "tsc && sleep 1 && electron .",
-		"dev": "bun run dev:go && concurrently \"bun run dev:renderer\" \"bun run dev:electron\"",
+		"dev": "bun run dev:go && concurrently -k \"bun run dev:renderer\" \"bun run dev:electron\"",
 		"build:go": "go build -ldflags=\"-s -w\" -o bin/light-launcher-instance ./core/cmd/instance",
 		"build:renderer": "cd src/renderer && bun run build",
 		"build:electron": "tsc",
