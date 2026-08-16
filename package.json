@@ -3,7 +3,7 @@
 	"version": "1.0.0",
 	"private": true,
 	"description": "Ultra-lightweight, customizable Linux gaming launcher powered by Go & Electron",
-	"main": "dist/main/index.js",
+	"main": "dist/main/main/index.js",
 	"scripts": {
 		"dev:go": "go build -o bin/light-launcher-instance ./core/cmd/instance",
 		"dev:renderer": "cd src/renderer && bun run dev",

@@ -29,7 +29,12 @@ async function createWindow(): Promise<BrowserWindow> {
 	const settings = await ConfigService.loadAppSettings();
 	const isTransparent = settings.TransparentMode ?? true;
 
-	const preloadPath = path.join(__dirname, "../preload/index.js");
+	const preloadCandidates = [
+		path.join(__dirname, "../../preload/preload/index.js"),
+		path.join(__dirname, "../preload/index.js"),
+		path.join(__dirname, "../preload/preload/index.js")
+	];
+	const preloadPath = preloadCandidates.find(p => fs.existsSync(p)) || preloadCandidates[0];
 
 	mainWindow = new BrowserWindow({
 		title: "LightLauncher",
@@ -60,17 +65,16 @@ async function createWindow(): Promise<BrowserWindow> {
 	if (devServerUrl) {
 		await mainWindow.loadURL(devServerUrl);
 	} else {
-		const rendererDist = path.join(__dirname, "../renderer/index.html");
-		if (fs.existsSync(rendererDist)) {
+		const rendererCandidates = [
+			path.join(__dirname, "../../src/renderer/dist/index.html"),
+			path.join(__dirname, "../renderer/index.html"),
+			path.join(__dirname, "../../../src/renderer/dist/index.html")
+		];
+		const rendererDist = rendererCandidates.find(p => fs.existsSync(p));
+		if (rendererDist) {
 			await mainWindow.loadFile(rendererDist);
 		} else {
-			// Fallback path in development
-			const fallbackDist = path.join(__dirname, "../../renderer/dist/index.html");
-			if (fs.existsSync(fallbackDist)) {
-				await mainWindow.loadFile(fallbackDist);
-			} else {
-				console.error("Could not find renderer index.html at", rendererDist);
-			}
+			console.error("Could not find renderer index.html");
 		}
 	}
 
