@@ -52,14 +52,10 @@ function log(level: LogLevel, module: string, message: string, data?: unknown) {
  */
 export function createLogger(module: string) {
 	return {
-		debug: (message: string, data?: unknown) =>
-			log("debug", module, message, data),
-		info: (message: string, data?: unknown) =>
-			log("info", module, message, data),
-		warn: (message: string, data?: unknown) =>
-			log("warn", module, message, data),
-		error: (message: string, data?: unknown) =>
-			log("error", module, message, data),
+		debug: (message: string, data?: unknown) => log("debug", module, message, data),
+		info: (message: string, data?: unknown) => log("info", module, message, data),
+		warn: (message: string, data?: unknown) => log("warn", module, message, data),
+		error: (message: string, data?: unknown) => log("error", module, message, data)
 	};
 }
 
@@ -67,12 +63,8 @@ export function createLogger(module: string) {
  * Global logger for generic logging
  */
 export const logger = {
-	debug: (module: string, message: string, data?: unknown) =>
-		log("debug", module, message, data),
-	info: (module: string, message: string, data?: unknown) =>
-		log("info", module, message, data),
-	warn: (module: string, message: string, data?: unknown) =>
-		log("warn", module, message, data),
-	error: (module: string, message: string, data?: unknown) =>
-		log("error", module, message, data),
+	debug: (module: string, message: string, data?: unknown) => log("debug", module, message, data),
+	info: (module: string, message: string, data?: unknown) => log("info", module, message, data),
+	warn: (module: string, message: string, data?: unknown) => log("warn", module, message, data),
+	error: (module: string, message: string, data?: unknown) => log("error", module, message, data)
 };

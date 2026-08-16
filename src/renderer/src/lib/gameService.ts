@@ -1,8 +1,4 @@
-import {
-	SearchExecutables,
-	SaveGameConfig,
-	DetectLosslessDll,
-} from "@lib/api";
+import { SearchExecutables, SaveGameConfig, DetectLosslessDll } from "@lib/api";
 import { notifications } from "@stores/notificationStore";
 import { createLaunchOptions } from "./formService";
 
@@ -27,7 +23,7 @@ export async function scanFolderForExecutables(
 			return executables.map((path) => ({
 				path,
 				name: path.split("/").pop()?.replace(".exe", "") || "Game",
-				icon: null,
+				icon: null
 			}));
 		}
 	} catch (error) {
@@ -40,12 +36,9 @@ export async function scanFolderForExecutables(
 /**
  * Registers a game in the library with its initial configuration
  */
-export async function registerGame(
-	executablePath: string,
-	prefixPath: string
-): Promise<void> {
+export async function registerGame(executablePath: string, prefixPath: string): Promise<void> {
 	const gameName = executablePath.split("/").pop()?.replace(".exe", "") || "Game";
-	
+
 	let losslessDllPath = "";
 	try {
 		losslessDllPath = await DetectLosslessDll();
@@ -58,11 +51,11 @@ export async function registerGame(
 	gameConfig.LauncherPath = executablePath;
 	gameConfig.GamePath = executablePath;
 	gameConfig.PrefixPath = prefixPath;
-	
+
 	if (losslessDllPath) {
 		gameConfig.Extras.Lsfg.DllPath = losslessDllPath;
 	}
-	
+
 	try {
 		await SaveGameConfig(gameConfig);
 	} catch (error) {
@@ -81,7 +74,7 @@ export async function batchRegisterGames(
 ): Promise<number> {
 	const gamesToRegister = scannedExecutables.filter((exe) => !discardedPaths.has(exe.path));
 	let successfullyAddedCount = 0;
-	
+
 	for (const game of gamesToRegister) {
 		try {
 			await registerGame(game.path, targetPrefixPath);
@@ -90,10 +83,10 @@ export async function batchRegisterGames(
 			console.error(`Failed to register ${game.name}:`, error);
 		}
 	}
-	
+
 	if (successfullyAddedCount > 0) {
 		notifications.add(`Successfully added ${successfullyAddedCount} games to library`, "success");
 	}
-	
+
 	return successfullyAddedCount;
 }

@@ -11,7 +11,7 @@ const { subscribe, update } = writable<Notification[]>([]);
 const notificationStore = {
 	subscribe,
 	add: (message: any, type: "info" | "error" | "success" = "info") => {
-		const msg = typeof message === "string" ? message : (message?.message || String(message));
+		const msg = typeof message === "string" ? message : message?.message || String(message);
 		const id = Date.now();
 		update((n) => [...n, { id, message: msg, type }]);
 		setTimeout(() => {
@@ -36,7 +36,7 @@ const notificationStore = {
 			pending?: string;
 			success?: string;
 			error?: string;
-		},
+		}
 	): Promise<T> => {
 		if (options.pending) notificationStore.info(options.pending);
 
@@ -50,7 +50,7 @@ const notificationStore = {
 			notificationStore.error(errorMsg);
 			throw err;
 		}
-	},
+	}
 };
 
 export const notifications = notificationStore;

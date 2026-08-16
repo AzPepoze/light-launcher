@@ -25,17 +25,11 @@ export class HomePageState {
 	filteredGames = $derived.by(() => {
 		return this.games.filter((game) => {
 			if (game.isAutoScanned) return false;
-			const matchesSearch = game.name
-				.toLowerCase()
-				.includes(this.searchQuery.toLowerCase());
+			const matchesSearch = game.name.toLowerCase().includes(this.searchQuery.toLowerCase());
 			const matchesPrefix =
 				this.selectedPrefixFilter === "All Prefixes" ||
-				game.config.PrefixPath.endsWith(
-					"/" + this.selectedPrefixFilter,
-				) ||
-				game.config.PrefixPath.endsWith(
-					"\\" + this.selectedPrefixFilter,
-				);
+				game.config.PrefixPath.endsWith("/" + this.selectedPrefixFilter) ||
+				game.config.PrefixPath.endsWith("\\" + this.selectedPrefixFilter);
 			return matchesSearch && matchesPrefix;
 		});
 	});
@@ -44,16 +38,13 @@ export class HomePageState {
 		return this.scannedFolderGroups
 			.map((group) => {
 				const filteredGames = group.games.filter((game: any) => {
-					const matchesSearch = game.name
-						.toLowerCase()
-						.includes(this.searchQuery.toLowerCase());
-					const matchesPrefix =
-						this.selectedPrefixFilter === "All Prefixes";
+					const matchesSearch = game.name.toLowerCase().includes(this.searchQuery.toLowerCase());
+					const matchesPrefix = this.selectedPrefixFilter === "All Prefixes";
 					return matchesSearch && matchesPrefix;
 				});
 				return {
 					...group,
-					games: filteredGames,
+					games: filteredGames
 				};
 			})
 			.filter((group) => {
@@ -71,17 +62,13 @@ export class HomePageState {
 
 		const [data, scannedGroups] = await Promise.all([
 			service.refreshHomeData(),
-			shouldScan
-				? GetAutoScannedGames()
-				: Promise.resolve(this.scannedFolderGroups),
+			shouldScan ? GetAutoScannedGames() : Promise.resolve(this.scannedFolderGroups)
 		]);
 
 		this.games = data.games;
 		this.sessions = data.sessions;
 		this.prefixes = data.prefixes;
 		this.scannedFolderGroups = scannedGroups || [];
-
-
 	}
 
 	initialize() {
@@ -91,18 +78,12 @@ export class HomePageState {
 			const files = (event?.data || event) as string[];
 			const added = await service.processDroppedFiles(files);
 			if (added > 0) {
-				notifications.add(
-					`Successfully added ${added} game(s)`,
-					"success",
-				);
+				notifications.add(`Successfully added ${added} game(s)`, "success");
 				this.refreshData(true);
 			}
 		});
 
-		this.sessionInterval = setInterval(
-			() => this.refreshData(false),
-			3000,
-		);
+		this.sessionInterval = setInterval(() => this.refreshData(false), 3000);
 	}
 
 	destroy() {
@@ -122,7 +103,7 @@ export class HomePageState {
 	handleConfigure(game: any) {
 		runState.update((s) => ({
 			...s,
-			options: game.config,
+			options: game.config
 		}));
 		navigationCommand.set({ page: "run" });
 	}

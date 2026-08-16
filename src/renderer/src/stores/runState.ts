@@ -19,7 +19,7 @@ const initial: RunState = {
 	prefixPath: "",
 	selectedPrefixName: "Default",
 	selectedProton: "",
-	options: DEFAULT_LAUNCH_OPTIONS,
+	options: DEFAULT_LAUNCH_OPTIONS
 };
 
 export const runState = writable<RunState>(initial);

@@ -12,14 +12,13 @@ build-renderer:
 	@cd src/renderer && bun run build
 
 build-electron:
-	@bunx tsc -p src/main/tsconfig.json
-	@bunx tsc -p src/preload/tsconfig.json
+	@bun run build:electron
 
 dev: build-go
 	@bun run dev
 
 dist: build
-	@bunx electron-builder --config build/electron-builder.yml
+	@bun run dist
 
 clean:
 	@rm -rf bin dist src/renderer/dist

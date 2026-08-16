@@ -5,7 +5,7 @@ import {
 	LoadPrefixConfigWithProton,
 	RemovePrefix,
 	RunPrefixTool,
-	SavePrefixConfig,
+	SavePrefixConfig
 } from "@lib/api";
 import * as core from "@shared";
 import { notifications } from "@stores/notificationStore";
@@ -33,17 +33,14 @@ export function getDefaultPrefixName(prefixes: string[]): string {
  */
 export async function getPrefixData(): Promise<PrefixData> {
 	try {
-		const [list, base] = await Promise.all([
-			ListPrefixes(),
-			GetPrefixBaseDir(),
-		]);
+		const [list, base] = await Promise.all([ListPrefixes(), GetPrefixBaseDir()]);
 		log.debug("Fetched prefix data", {
 			count: list?.length || 0,
-			baseDir: base,
+			baseDir: base
 		});
 		return {
 			availablePrefixes: Array.isArray(list) ? list : [],
-			baseDir: base || "",
+			baseDir: base || ""
 		};
 	} catch (err) {
 		log.error("Failed to fetch prefix data", err);
@@ -57,7 +54,7 @@ export async function getPrefixData(): Promise<PrefixData> {
  */
 export async function getPrefixConfig(
 	name: string,
-	baseDir: string,
+	baseDir: string
 ): Promise<{
 	path: string;
 	options: core.LaunchOptions | null;
@@ -74,12 +71,12 @@ export async function getPrefixConfig(
 		}
 
 		log.info("Returning config with proton", {
-			proton: result.protonDisplayName,
+			proton: result.protonDisplayName
 		});
 		return {
 			path,
 			options: result.config,
-			selectedProton: result.protonDisplayName,
+			selectedProton: result.protonDisplayName
 		};
 	} catch (e) {
 		log.error("Failed to load config", { prefix: name, error: e });
@@ -93,7 +90,7 @@ export async function getPrefixConfig(
 export async function savePrefixDefaults(
 	prefixPath: string,
 	options: core.LaunchOptions,
-	protonTool: core.ProtonTool | null,
+	protonTool: core.ProtonTool | null
 ): Promise<void> {
 	if (!prefixPath) return;
 	const name = prefixPath.split("/").pop() || "Default";
@@ -111,11 +108,11 @@ export async function savePrefixDefaults(
 
 	log.debug("Calling SavePrefixConfig", {
 		name,
-		protonPath: options.ProtonPath,
+		protonPath: options.ProtonPath
 	});
 	await notifications.withNotification(SavePrefixConfig(name, options), {
 		success: "Prefix defaults saved!",
-		error: "Failed to save configuration",
+		error: "Failed to save configuration"
 	});
 	log.info("Prefix defaults saved");
 }
@@ -127,7 +124,7 @@ export async function createNewPrefix(name: string): Promise<void> {
 	if (!name) return;
 	await notifications.withNotification(CreatePrefix(name), {
 		success: `Created prefix "${name}"`,
-		error: "Failed to create prefix",
+		error: "Failed to create prefix"
 	});
 }
 
@@ -141,7 +138,7 @@ export async function deletePrefix(name: string): Promise<void> {
 	}
 	await notifications.withNotification(RemovePrefix(name), {
 		success: `Deleted prefix "${name}"`,
-		error: "Failed to delete prefix",
+		error: "Failed to delete prefix"
 	});
 }
 
@@ -151,7 +148,7 @@ export async function deletePrefix(name: string): Promise<void> {
 export async function executePrefixTool(
 	prefixPath: string,
 	toolName: string,
-	protonPath: string,
+	protonPath: string
 ): Promise<void> {
 	if (!prefixPath) {
 		notifications.error("Please select or create a prefix first.");

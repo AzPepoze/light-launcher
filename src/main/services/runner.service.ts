@@ -1,22 +1,22 @@
-import fsSync from 'fs';
-import path from 'path';
-import { spawn } from 'child_process';
-import { ConfigService } from './config.service';
-import { PathsService } from './paths.service';
-import { LsfgService } from './lsfg.service';
-import { ProtonService } from './proton.service';
-import { SystemService } from './system.service';
-import type { LaunchOptions } from '../../shared/types/config.types';
+import fsSync from "fs";
+import path from "path";
+import { spawn } from "child_process";
+import { ConfigService } from "./config.service";
+import { PathsService } from "./paths.service";
+import { LsfgService } from "./lsfg.service";
+import { ProtonService } from "./proton.service";
+import { SystemService } from "./system.service";
+import type { LaunchOptions } from "../../shared/types/config.types";
 
 export class RunnerService {
 	static findInstanceManager(): string {
-		const instanceName = 'light-launcher-instance';
+		const instanceName = "light-launcher-instance";
 		const candidates = [
-			path.join(process.resourcesPath || '', instanceName),
-			path.join(process.resourcesPath || '', 'bin', instanceName),
-			path.join(__dirname, '../../bin', instanceName),
-			path.join(__dirname, '../../../bin', instanceName),
-			path.join(process.cwd(), 'bin', instanceName),
+			path.join(process.resourcesPath || "", instanceName),
+			path.join(process.resourcesPath || "", "bin", instanceName),
+			path.join(__dirname, "../../bin", instanceName),
+			path.join(__dirname, "../../../bin", instanceName),
+			path.join(process.cwd(), "bin", instanceName),
 			path.join(process.cwd(), instanceName),
 			`/usr/bin/${instanceName}`
 		];
@@ -27,7 +27,7 @@ export class RunnerService {
 			}
 		}
 
-		return '';
+		return "";
 	}
 
 	static async runGame(options: LaunchOptions, showLogs: boolean): Promise<void> {
@@ -36,7 +36,7 @@ export class RunnerService {
 		}
 
 		if (!options.PrefixPath) {
-			options.PrefixPath = path.join(PathsService.getPrefixBaseDirectory(), 'Default');
+			options.PrefixPath = path.join(PathsService.getPrefixBaseDirectory(), "Default");
 		}
 
 		if (!fsSync.existsSync(options.GamePath)) {
@@ -56,7 +56,7 @@ export class RunnerService {
 			await LsfgService.saveLsfgProfile(
 				options.Name,
 				options.GamePath,
-				parseInt(options.Extras.Lsfg.Multiplier || '2', 10),
+				parseInt(options.Extras.Lsfg.Multiplier || "2", 10),
 				options.Extras.Lsfg.PerfMode,
 				options.Extras.Lsfg.DllPath,
 				gpu,
@@ -70,7 +70,7 @@ export class RunnerService {
 
 		const instancePath = this.findInstanceManager();
 		if (!instancePath) {
-			throw new Error('light-launcher-instance binary not found');
+			throw new Error("light-launcher-instance binary not found");
 		}
 
 		// Match Proton path if configured
@@ -84,67 +84,72 @@ export class RunnerService {
 
 		// Build arguments for light-launcher-instance
 		const args: string[] = [
-			'--game', options.GamePath,
-			'--launcher', options.LauncherPath || options.GamePath,
-			'--prefix', PathsService.expandPath(options.PrefixPath),
-			'--proton-pattern', options.ProtonPath ? path.basename(options.ProtonPath) : '',
-			'--proton-path', options.ProtonPath ? PathsService.expandPath(options.ProtonPath) : ''
+			"--game",
+			options.GamePath,
+			"--launcher",
+			options.LauncherPath || options.GamePath,
+			"--prefix",
+			PathsService.expandPath(options.PrefixPath),
+			"--proton-pattern",
+			options.ProtonPath ? path.basename(options.ProtonPath) : "",
+			"--proton-path",
+			options.ProtonPath ? PathsService.expandPath(options.ProtonPath) : ""
 		];
 
 		if (!showLogs) {
-			args.push('--logs=false');
+			args.push("--logs=false");
 		}
 
 		// Extra features
 		const extras = options.Extras;
 		if (extras) {
 			if (extras.EnableMangoHud) {
-				args.push('--mangohud');
+				args.push("--mangohud");
 			}
 			if (extras.EnableGamemode) {
-				args.push('--gamemode');
+				args.push("--gamemode");
 			}
 			if (extras.Memory?.Enabled) {
-				args.push('--memory-min');
+				args.push("--memory-min");
 				if (extras.Memory.Value) {
-					args.push('--memory-min-value', extras.Memory.Value);
+					args.push("--memory-min-value", extras.Memory.Value);
 				}
 			}
 			if (extras.Gamescope?.Enabled) {
 				const gs = extras.Gamescope;
-				args.push('--gamescope');
-				if (gs.Width) args.push('--gs-w', gs.Width);
-				if (gs.Height) args.push('--gs-h', gs.Height);
-				if (gs.OutputWidth) args.push('--gs-out-w', gs.OutputWidth);
-				if (gs.OutputHeight) args.push('--gs-out-h', gs.OutputHeight);
-				if (gs.RefreshRate) args.push('--gs-r', gs.RefreshRate);
-				if (gs.FramerateLimit) args.push('--gs-fr-limit', gs.FramerateLimit);
-				if (gs.WindowMode) args.push('--gs-window-mode', gs.WindowMode);
-				if (gs.Scaler) args.push('--gs-scaler', gs.Scaler);
-				if (gs.Filter) args.push('--gs-filter', gs.Filter);
-				if (gs.Sharpness) args.push('--gs-sharpness', gs.Sharpness);
-				if (gs.HDR) args.push('--gs-hdr');
-				if (gs.AdaptiveSync) args.push('--gs-adaptive-sync');
-				if (gs.Mangoapp) args.push('--gs-mangoapp');
-				if (gs.CustomArgs) args.push('--gs-custom-args', gs.CustomArgs);
+				args.push("--gamescope");
+				if (gs.Width) args.push("--gs-w", gs.Width);
+				if (gs.Height) args.push("--gs-h", gs.Height);
+				if (gs.OutputWidth) args.push("--gs-out-w", gs.OutputWidth);
+				if (gs.OutputHeight) args.push("--gs-out-h", gs.OutputHeight);
+				if (gs.RefreshRate) args.push("--gs-r", gs.RefreshRate);
+				if (gs.FramerateLimit) args.push("--gs-fr-limit", gs.FramerateLimit);
+				if (gs.WindowMode) args.push("--gs-window-mode", gs.WindowMode);
+				if (gs.Scaler) args.push("--gs-scaler", gs.Scaler);
+				if (gs.Filter) args.push("--gs-filter", gs.Filter);
+				if (gs.Sharpness) args.push("--gs-sharpness", gs.Sharpness);
+				if (gs.HDR) args.push("--gs-hdr");
+				if (gs.AdaptiveSync) args.push("--gs-adaptive-sync");
+				if (gs.Mangoapp) args.push("--gs-mangoapp");
+				if (gs.CustomArgs) args.push("--gs-custom-args", gs.CustomArgs);
 			}
 			if (extras.Lsfg?.Enabled) {
 				const ls = extras.Lsfg;
-				args.push('--lsfg');
-				if (ls.Multiplier) args.push('--lsfg-multiplier', ls.Multiplier);
-				if (ls.PerfMode) args.push('--lsfg-perf');
-				if (ls.DllPath) args.push('--lsfg-dll', ls.DllPath);
-				if (ls.Gpu) args.push('--lsfg-gpu', ls.Gpu);
-				if (ls.FlowScale) args.push('--lsfg-flow', ls.FlowScale);
-				if (ls.Pacing) args.push('--lsfg-pacing', ls.Pacing);
-				if (ls.AllowFp16) args.push('--lsfg-fp16');
+				args.push("--lsfg");
+				if (ls.Multiplier) args.push("--lsfg-multiplier", ls.Multiplier);
+				if (ls.PerfMode) args.push("--lsfg-perf");
+				if (ls.DllPath) args.push("--lsfg-dll", ls.DllPath);
+				if (ls.Gpu) args.push("--lsfg-gpu", ls.Gpu);
+				if (ls.FlowScale) args.push("--lsfg-flow", ls.FlowScale);
+				if (ls.Pacing) args.push("--lsfg-pacing", ls.Pacing);
+				if (ls.AllowFp16) args.push("--lsfg-fp16");
 			}
 		}
 
 		// Spawn detached instance
 		const child = spawn(instancePath, args, {
 			detached: true,
-			stdio: 'ignore'
+			stdio: "ignore"
 		});
 		child.unref();
 	}

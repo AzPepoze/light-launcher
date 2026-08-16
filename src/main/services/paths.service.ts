@@ -1,6 +1,6 @@
-import path from 'path';
-import os from 'os';
-import { AppName, ConfigDirName, PrefixesDirName, LogsDirName } from '../../shared/constants';
+import path from "path";
+import os from "os";
+import { AppName, ConfigDirName, PrefixesDirName, LogsDirName } from "../../shared/constants";
 
 export class PathsService {
 	static getBaseDirectory(): string {
@@ -8,7 +8,7 @@ export class PathsService {
 		if (xdgConfigHome) {
 			return path.join(xdgConfigHome, AppName);
 		}
-		return path.join(os.homedir(), '.config', AppName);
+		return path.join(os.homedir(), ".config", AppName);
 	}
 
 	static getConfigDirectory(): string {
@@ -24,7 +24,7 @@ export class PathsService {
 	}
 
 	static getAppSettingsPath(): string {
-		return path.join(this.getBaseDirectory(), 'settings.json');
+		return path.join(this.getBaseDirectory(), "settings.json");
 	}
 
 	static getExecutableConfigPath(name: string, id: string): string {
@@ -35,23 +35,23 @@ export class PathsService {
 	}
 
 	static getGameConfigFilePath(name: string, id: string): string {
-		return path.join(this.getExecutableConfigPath(name, id), 'config.json');
+		return path.join(this.getExecutableConfigPath(name, id), "config.json");
 	}
 
 	static getGameLsfgConfigPath(name: string, id: string): string {
-		return path.join(this.getExecutableConfigPath(name, id), 'lsfg_vk.toml');
+		return path.join(this.getExecutableConfigPath(name, id), "lsfg_vk.toml");
 	}
 
 	static getPrefixConfigPath(prefixName: string): string {
-		return path.join(this.getPrefixBaseDirectory(), prefixName, 'light-launcher.json');
+		return path.join(this.getPrefixBaseDirectory(), prefixName, "light-launcher.json");
 	}
 
 	static expandPath(targetPath: string): string {
-		if (!targetPath) return '';
-		if (targetPath === '~') {
+		if (!targetPath) return "";
+		if (targetPath === "~") {
 			return os.homedir();
 		}
-		if (targetPath.startsWith('~/')) {
+		if (targetPath.startsWith("~/")) {
 			return path.join(os.homedir(), targetPath.slice(2));
 		}
 		return targetPath;

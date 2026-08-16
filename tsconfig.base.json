@@ -1,24 +1,24 @@
 {
-  "compilerOptions": {
-    "target": "ESNext",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "declaration": false,
-    "baseUrl": ".",
-    "paths": {
-      "@shared": ["src/shared/index.ts"],
-      "@shared/*": ["src/shared/*"],
-      "@services/*": ["src/main/services/*"],
-      "@ipc/*": ["src/main/ipc/*"],
-      "@components/*": ["src/renderer/src/components/*"],
-      "@lib/*": ["src/renderer/src/lib/*"],
-      "@stores/*": ["src/renderer/src/stores/*"],
-      "@icons/*": ["src/renderer/src/icons/*"]
-    }
-  }
+	"compilerOptions": {
+		"target": "ESNext",
+		"module": "NodeNext",
+		"moduleResolution": "NodeNext",
+		"strict": true,
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"forceConsistentCasingInFileNames": true,
+		"resolveJsonModule": true,
+		"declaration": false,
+		"baseUrl": ".",
+		"paths": {
+			"@shared": ["src/shared/index.ts"],
+			"@shared/*": ["src/shared/*"],
+			"@services/*": ["src/main/services/*"],
+			"@ipc/*": ["src/main/ipc/*"],
+			"@components/*": ["src/renderer/src/components/*"],
+			"@lib/*": ["src/renderer/src/lib/*"],
+			"@stores/*": ["src/renderer/src/stores/*"],
+			"@icons/*": ["src/renderer/src/icons/*"]
+		}
+	}
 }

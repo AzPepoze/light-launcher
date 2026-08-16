@@ -1,0 +1,8 @@
+dist/
+bin/
+node_modules/
+.git/
+src/renderer/dist/
+src/main/dist/
+src/preload/dist/
+bun.lock

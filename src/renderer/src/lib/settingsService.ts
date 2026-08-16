@@ -1,6 +1,6 @@
-import { 
-	GetAppSettings, 
-	SaveAppSettings, 
+import {
+	GetAppSettings,
+	SaveAppSettings,
 	RestartApp,
 	PickFileCustom,
 	AddScanFolder,
@@ -49,13 +49,13 @@ export async function browseBackgroundImage(): Promise<string | null> {
 		const path = await PickFileCustom("Select Background Image", [
 			{
 				displayName: "Images",
-				pattern: "*.png;*.jpg;*.jpeg;*.svg;*.webp",
-			},
+				pattern: "*.png;*.jpg;*.jpeg;*.svg;*.webp"
+			}
 		]);
 		if (path) {
 			settingsStore.update((s) => ({
 				...s,
-				backgroundImagePath: path,
+				backgroundImagePath: path
 			}));
 			notifications.add("Background image updated", "success");
 			return path;
@@ -72,7 +72,7 @@ export async function browseBackgroundImage(): Promise<string | null> {
 export function clearBackgroundImage(): void {
 	settingsStore.update((s) => ({
 		...s,
-		backgroundImagePath: "",
+		backgroundImagePath: ""
 	}));
 	notifications.add("Background image cleared", "info");
 }
@@ -83,7 +83,7 @@ export function clearBackgroundImage(): void {
 export function toggleTheme(): void {
 	settingsStore.update((s) => ({
 		...s,
-		theme: s.theme === "light" ? "dark" : "light",
+		theme: s.theme === "light" ? "dark" : "light"
 	}));
 }
 
@@ -93,7 +93,7 @@ export function toggleTheme(): void {
 export function updateTransparency(value: number): void {
 	settingsStore.update((s) => ({
 		...s,
-		transparency: value,
+		transparency: value
 	}));
 }
 
@@ -136,5 +136,3 @@ export async function browseScanFolder(): Promise<string | null> {
 		return null;
 	}
 }
-
-

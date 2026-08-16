@@ -17,7 +17,7 @@ export function createFormState<T>(defaults: T): FormState<T> {
 		data: structuredClone(defaults),
 		isLoading: false,
 		error: "",
-		isSuccess: false,
+		isSuccess: false
 	};
 }
 
@@ -33,33 +33,36 @@ export function resetFormState<T>(state: FormState<T>, defaults: T): void {
 /**
  * Merges loaded data with existing options while preserving defaults
  */
-export function mergeOptions(existing: core.LaunchOptions, loaded: Partial<core.LaunchOptions>): core.LaunchOptions {
+export function mergeOptions(
+	existing: core.LaunchOptions,
+	loaded: Partial<core.LaunchOptions>
+): core.LaunchOptions {
 	const merged = {
 		...existing,
-		...loaded,
+		...loaded
 	};
 
 	if (loaded.Extras) {
 		merged.Extras = {
 			...existing.Extras,
-			...loaded.Extras,
+			...loaded.Extras
 		};
 		if (loaded.Extras.Lsfg) {
 			merged.Extras.Lsfg = {
 				...existing.Extras.Lsfg,
-				...loaded.Extras.Lsfg,
+				...loaded.Extras.Lsfg
 			};
 		}
 		if (loaded.Extras.Gamescope) {
 			merged.Extras.Gamescope = {
 				...existing.Extras.Gamescope,
-				...loaded.Extras.Gamescope,
+				...loaded.Extras.Gamescope
 			};
 		}
 		if (loaded.Extras.Memory) {
 			merged.Extras.Memory = {
 				...existing.Extras.Memory,
-				...loaded.Extras.Memory,
+				...loaded.Extras.Memory
 			};
 		}
 	}

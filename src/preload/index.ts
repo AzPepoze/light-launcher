@@ -1,8 +1,8 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer } from "electron";
 
 const electronAPI = {
 	invoke: async <T = any>(method: string, payload: any = {}): Promise<T> => {
-		const response = await ipcRenderer.invoke('api', { method, payload });
+		const response = await ipcRenderer.invoke("api", { method, payload });
 		if (!response.success) {
 			throw new Error(response.error || `IPC error calling ${method}`);
 		}
@@ -20,6 +20,6 @@ const electronAPI = {
 	}
 };
 
-contextBridge.exposeInMainWorld('electronAPI', electronAPI);
+contextBridge.exposeInMainWorld("electronAPI", electronAPI);
 
 export type ElectronAPI = typeof electronAPI;

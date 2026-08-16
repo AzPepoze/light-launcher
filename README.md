@@ -47,18 +47,18 @@ LightLauncher is a games launcher designed to run non-Steam games on Linux using
 
 ## SCREENSHOTS
 
-|            HOME            |
-| :------------------------: |
+|             HOME             |
+| :--------------------------: |
 |    ![home](docs/home.png)    |
-|         ADD GAMES         |
-| ![home](docs/add_games.png) |
-|            RUN            |
+|          ADD GAMES           |
+| ![home](docs/add_games.png)  |
+|             RUN              |
 |     ![run](docs/run.png)     |
-|           PREFIX           |
+|            PREFIX            |
 |  ![prefix](docs/prefix.png)  |
-|          VERSION          |
+|           VERSION            |
 | ![version](docs/version.png) |
-|           UTILS           |
+|            UTILS             |
 |   ![utils](docs/utils.png)   |
 
 ## FEATURES

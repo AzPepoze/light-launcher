@@ -1,8 +1,4 @@
-import {
-	PickFile,
-	PickFolder,
-	SaveGameConfig,
-} from "@lib/api";
+import { PickFile, PickFolder, SaveGameConfig } from "@lib/api";
 import * as core from "@shared";
 import { notifications } from "@stores/notificationStore";
 import { runState } from "@stores/runState";
@@ -39,7 +35,7 @@ export class RunPageState {
 		hasGamescope: false,
 		hasMangoHud: false,
 		hasGameMode: false,
-		hasVulkanInfo: false,
+		hasVulkanInfo: false
 	});
 
 	options = $state<core.LaunchOptions>(createLaunchOptions());
@@ -67,7 +63,7 @@ export class RunPageState {
 					prefixPath: this.prefixPath,
 					selectedPrefixName: this.selectedPrefixName,
 					selectedProton: this.proton.selectedProton,
-					options: this.options,
+					options: this.options
 				});
 			}
 		});
@@ -89,8 +85,11 @@ export class RunPageState {
 
 	async initialize() {
 		try {
-			const data = await service.initializeRunPage(this.options, this.handleConfigUpdate.bind(this));
-			
+			const data = await service.initializeRunPage(
+				this.options,
+				this.handleConfigUpdate.bind(this)
+			);
+
 			this.baseDir = data.baseDir;
 			this.gpuList = data.gpuList;
 			this.proton.protonVersions = data.protonVersions;
@@ -143,11 +142,26 @@ export class RunPageState {
 	}
 
 	async doLoadConfigForGame(path: string) {
-		await loadConfigForGame(path, this.options, this.prefixPath, this.baseDir, this.selectedPrefixName, this.proton.protonVersions, this.handleConfigUpdate.bind(this));
+		await loadConfigForGame(
+			path,
+			this.options,
+			this.prefixPath,
+			this.baseDir,
+			this.selectedPrefixName,
+			this.proton.protonVersions,
+			this.handleConfigUpdate.bind(this)
+		);
 	}
 
 	async doLoadConfigForPrefix(name: string) {
-		await loadConfigForPrefix(name, this.options, this.prefixPath, this.baseDir, this.proton.protonVersions, this.handleConfigUpdate.bind(this));
+		await loadConfigForPrefix(
+			name,
+			this.options,
+			this.prefixPath,
+			this.baseDir,
+			this.proton.protonVersions,
+			this.handleConfigUpdate.bind(this)
+		);
 	}
 
 	async handlePrefixChange(name: string) {
@@ -176,7 +190,11 @@ export class RunPageState {
 			if (path) {
 				this.options = { ...this.options, LauncherPath: path };
 				if (!this.options.Name || this.options.Name === "Launcher") {
-					this.options.Name = path.split(/[/\\]/).pop()?.replace(/\.exe$/i, "") || "Launcher";
+					this.options.Name =
+						path
+							.split(/[/\\]/)
+							.pop()
+							?.replace(/\.exe$/i, "") || "Launcher";
 				}
 				if (!this.mainExePath) {
 					this.options = { ...this.options, GamePath: path };
@@ -193,7 +211,7 @@ export class RunPageState {
 			const path = await PickFolder();
 			if (path) {
 				this.prefixPath = path;
-				this.selectedPrefixName = path.split('/').filter(Boolean).pop() || "Custom";
+				this.selectedPrefixName = path.split("/").filter(Boolean).pop() || "Custom";
 			}
 		} catch (err) {
 			console.error(err);
@@ -204,27 +222,37 @@ export class RunPageState {
 
 	async handleLaunch(closeLauncher = true) {
 		const shouldShowModal = await service.validateAndLaunch(
-			this.options, 
-			this.systemStatus, 
-			this.proton.selectedProton, 
-			this.proton.protonVersions, 
+			this.options,
+			this.systemStatus,
+			this.proton.selectedProton,
+			this.proton.protonVersions,
 			this.showLogsWindow,
 			closeLauncher
 		);
-		
+
 		if (shouldShowModal === true) {
 			this.closeLauncherOnConfirm = closeLauncher;
 			this.missingToolsList = [];
-			if (this.options.Extras.Gamescope.Enabled && !this.systemStatus.hasGamescope) this.missingToolsList.push("Gamescope");
-			if (this.options.Extras.EnableMangoHud && !this.systemStatus.hasMangoHud) this.missingToolsList.push("MangoHud");
-			if (this.options.Extras.EnableGamemode && !this.systemStatus.hasGameMode) this.missingToolsList.push("GameMode");
-			if (this.options.Extras.Lsfg.Enabled && !this.systemStatus.hasVulkanInfo) this.missingToolsList.push("Vulkan-Tools");
+			if (this.options.Extras.Gamescope.Enabled && !this.systemStatus.hasGamescope)
+				this.missingToolsList.push("Gamescope");
+			if (this.options.Extras.EnableMangoHud && !this.systemStatus.hasMangoHud)
+				this.missingToolsList.push("MangoHud");
+			if (this.options.Extras.EnableGamemode && !this.systemStatus.hasGameMode)
+				this.missingToolsList.push("GameMode");
+			if (this.options.Extras.Lsfg.Enabled && !this.systemStatus.hasVulkanInfo)
+				this.missingToolsList.push("Vulkan-Tools");
 			this.showValidationModal = true;
 		}
 	}
 
 	async proceedToLaunch() {
 		this.showValidationModal = false;
-		await service.executeLaunch(this.options, this.proton.selectedProton, this.proton.protonVersions, this.showLogsWindow, this.closeLauncherOnConfirm);
+		await service.executeLaunch(
+			this.options,
+			this.proton.selectedProton,
+			this.proton.protonVersions,
+			this.showLogsWindow,
+			this.closeLauncherOnConfirm
+		);
 	}
 }

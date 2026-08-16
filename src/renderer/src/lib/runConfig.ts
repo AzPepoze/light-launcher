@@ -18,12 +18,19 @@ export async function loadConfigForGame(
 			if (newPrefixPath.startsWith(baseDir)) {
 				newPrefixName = newPrefixPath.replace(baseDir + "/", "");
 			} else {
-				newPrefixName = newPrefixPath.split('/').filter(Boolean).pop() || "Custom";
+				newPrefixName = newPrefixPath.split("/").filter(Boolean).pop() || "Custom";
 			}
 			const updatedProton = applyConfigToOptions(config, options, protonVersions);
 			updateOptions(options, newPrefixPath, newPrefixName, updatedProton);
 		} else {
-			await loadConfigForPrefix(selectedPrefixName, options, prefixPath, baseDir, protonVersions, updateOptions);
+			await loadConfigForPrefix(
+				selectedPrefixName,
+				options,
+				prefixPath,
+				baseDir,
+				protonVersions,
+				updateOptions
+			);
 		}
 
 		// Auto-detect Lossless.dll if not already set
@@ -66,7 +73,7 @@ export async function loadConfigForPrefix(
 			if (savedLauncherPath) options.LauncherPath = savedLauncherPath;
 			options.UseGamePath = savedUseGamePath;
 			options.UseCustomProton = savedUseCustomProton;
-			
+
 			if (savedUseCustomProton && savedProtonPath) {
 				options.ProtonPath = savedProtonPath;
 				updatedProton = savedProtonPath;
@@ -88,7 +95,7 @@ export function applyConfigToOptions(
 	protonVersions: core.ProtonTool[]
 ): string {
 	let selectedProton = "";
-	
+
 	// Try matching by absolute path
 	const matchByPath = protonVersions.find((p) => p.Path === config.ProtonPath);
 	if (matchByPath) {
@@ -102,26 +109,26 @@ export function applyConfigToOptions(
 	options.Name = config.Name || options.Name;
 	options.CustomArgs = config.CustomArgs || "";
 	options.UseCustomProton = config.UseCustomProton || false;
-	
+
 	// Copy Extras
 	if (config.Extras) {
 		const currentDll = options.Extras?.Lsfg?.DllPath;
-		
+
 		// Use structuredClone to ensure we have a deep copy of the config's extras
 		const newExtras = structuredClone(config.Extras);
-		
+
 		// Preserve current DLL path if not set in config
 		if (!newExtras.Lsfg.DllPath && currentDll) {
 			newExtras.Lsfg.DllPath = currentDll;
 		}
-		
+
 		options.Extras = newExtras;
 	}
-	
+
 	if (!options.LauncherPath && config.LauncherPath) {
 		options.LauncherPath = config.LauncherPath;
 	}
-	options.UseGamePath = config.UseGamePath === true; 
+	options.UseGamePath = config.UseGamePath === true;
 
 	if (!options.UseGamePath && options.LauncherPath) {
 		options.GamePath = options.LauncherPath;

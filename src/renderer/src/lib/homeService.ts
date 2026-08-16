@@ -8,7 +8,7 @@ import {
 	GetPrefixBaseDir,
 	SaveGameConfig,
 	IsDir,
-	AddScanFolder,
+	AddScanFolder
 } from "@lib/api";
 import { notifications } from "@stores/notificationStore";
 import { createLaunchOptions } from "./formService";
@@ -27,13 +27,13 @@ export async function refreshHomeData(): Promise<HomeData> {
 		const [fetchedGames, fetchedSessions, fetchedPrefixes] = await Promise.all([
 			GetAllGames(),
 			GetRunningSessions(),
-			ListPrefixes(),
+			ListPrefixes()
 		]);
 
 		return {
 			games: fetchedGames || [],
 			sessions: fetchedSessions || [],
-			prefixes: ["All Prefixes", ...(fetchedPrefixes || [])],
+			prefixes: ["All Prefixes", ...(fetchedPrefixes || [])]
 		};
 	} catch (error) {
 		console.error("Failed to refresh home data:", error);
@@ -100,7 +100,7 @@ export async function processDroppedFiles(filePaths: string[]): Promise<number> 
 				addedCount++;
 			} else if (filePath.toLowerCase().endsWith(".exe")) {
 				const gameName = filePath.split("/").pop()?.replace(".exe", "") || "Game";
-				
+
 				const gameConfig = createLaunchOptions();
 				gameConfig.Name = gameName;
 				gameConfig.LauncherPath = filePath;

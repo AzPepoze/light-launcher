@@ -1,9 +1,9 @@
-import fs from 'fs/promises';
-import fsSync from 'fs';
-import path from 'path';
-import crypto from 'crypto';
-import { PathsService } from './paths.service';
-import type { AppSettings, LaunchOptions, ScanFolderConfig } from '../../shared/types/config.types';
+import fs from "fs/promises";
+import fsSync from "fs";
+import path from "path";
+import crypto from "crypto";
+import { PathsService } from "./paths.service";
+import type { AppSettings, LaunchOptions } from "../../shared/types/config.types";
 import {
 	DefaultExcludeNames,
 	DefaultHeight,
@@ -11,17 +11,17 @@ import {
 	DefaultMultiplier,
 	DefaultRefreshRate,
 	DefaultWidth
-} from '../../shared/constants';
+} from "../../shared/constants";
 
 let cachedSettings: AppSettings | null = null;
 
 export class ConfigService {
 	static generateId(): string {
-		return crypto.randomBytes(8).toString('hex');
+		return crypto.randomBytes(8).toString("hex");
 	}
 
 	static async loadJson<T>(filePath: string): Promise<T> {
-		const data = await fs.readFile(filePath, 'utf-8');
+		const data = await fs.readFile(filePath, "utf-8");
 		return JSON.parse(data) as T;
 	}
 
@@ -29,7 +29,7 @@ export class ConfigService {
 		const dir = path.dirname(filePath);
 		await fs.mkdir(dir, { recursive: true });
 		const data = JSON.stringify(value, null, 2);
-		await fs.writeFile(filePath, data, 'utf-8');
+		await fs.writeFile(filePath, data, "utf-8");
 	}
 
 	static async loadAppSettings(): Promise<AppSettings> {
@@ -55,7 +55,9 @@ export class ConfigService {
 				let modified = false;
 				for (const sf of settings.ScanFolders) {
 					const cleaned = path.normalize(sf);
-					const found = settings.ScanFolderConfigs.some(cfg => path.normalize(cfg.Path) === cleaned);
+					const found = settings.ScanFolderConfigs.some(
+						(cfg) => path.normalize(cfg.Path) === cleaned
+					);
 					if (!found) {
 						settings.ScanFolderConfigs.push({
 							Path: cleaned,
@@ -74,7 +76,7 @@ export class ConfigService {
 				return cachedSettings;
 			}
 		} catch (err) {
-			console.error('Error loading app settings:', err);
+			console.error("Error loading app settings:", err);
 		}
 
 		cachedSettings = {
@@ -104,7 +106,7 @@ export class ConfigService {
 
 			for (const entry of entries) {
 				if (!entry.isDirectory()) continue;
-				const configPath = path.join(configDir, entry.name, 'config.json');
+				const configPath = path.join(configDir, entry.name, "config.json");
 				if (fsSync.existsSync(configPath)) {
 					try {
 						const options = await this.loadJson<LaunchOptions>(configPath);
@@ -116,7 +118,7 @@ export class ConfigService {
 			}
 			return configs;
 		} catch (err) {
-			console.error('Error listing game configs:', err);
+			console.error("Error listing game configs:", err);
 			return [];
 		}
 	}
@@ -134,8 +136,8 @@ export class ConfigService {
 		const cleanPath = path.normalize(executablePath).toLowerCase();
 
 		for (const cfg of configs) {
-			const cfgGame = cfg.GamePath ? path.normalize(cfg.GamePath).toLowerCase() : '';
-			const cfgLaunch = cfg.LauncherPath ? path.normalize(cfg.LauncherPath).toLowerCase() : '';
+			const cfgGame = cfg.GamePath ? path.normalize(cfg.GamePath).toLowerCase() : "";
+			const cfgLaunch = cfg.LauncherPath ? path.normalize(cfg.LauncherPath).toLowerCase() : "";
 			if (cfgGame === cleanPath || cfgLaunch === cleanPath) {
 				return cfg;
 			}
@@ -154,15 +156,15 @@ export class ConfigService {
 		}
 
 		return {
-			ID: '',
+			ID: "",
 			Name: prefixName,
-			LauncherPath: '',
-			GamePath: '',
+			LauncherPath: "",
+			GamePath: "",
 			UseGamePath: false,
 			PrefixPath: path.join(PathsService.getPrefixBaseDirectory(), prefixName),
-			ProtonPath: '',
+			ProtonPath: "",
 			UseCustomProton: false,
-			CustomArgs: '',
+			CustomArgs: "",
 			Extras: {
 				EnableMangoHud: false,
 				EnableGamemode: false,
@@ -170,28 +172,28 @@ export class ConfigService {
 					Enabled: false,
 					Multiplier: DefaultMultiplier,
 					PerfMode: false,
-					DllPath: '',
-					Gpu: '',
-					FlowScale: '1.0',
-					Pacing: 'smooth',
+					DllPath: "",
+					Gpu: "",
+					FlowScale: "1.0",
+					Pacing: "smooth",
 					AllowFp16: false
 				},
 				Gamescope: {
 					Enabled: false,
 					Width: DefaultWidth,
 					Height: DefaultHeight,
-					OutputWidth: '',
-					OutputHeight: '',
+					OutputWidth: "",
+					OutputHeight: "",
 					RefreshRate: DefaultRefreshRate,
-					FramerateLimit: '',
-					WindowMode: 'borderless',
-					Scaler: 'auto',
-					Filter: 'linear',
-					Sharpness: '0',
+					FramerateLimit: "",
+					WindowMode: "borderless",
+					Scaler: "auto",
+					Filter: "linear",
+					Sharpness: "0",
 					HDR: false,
 					AdaptiveSync: false,
 					Mangoapp: false,
-					CustomArgs: ''
+					CustomArgs: ""
 				},
 				Memory: {
 					Enabled: false,

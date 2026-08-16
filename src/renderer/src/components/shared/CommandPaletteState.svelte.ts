@@ -18,10 +18,23 @@ export class CommandPaletteState {
 
 	readonly PAGES = [
 		{ name: "Go to Home", icon: "home", action: () => this.navigateTo("home") },
-		{ name: "Go to Launch Configuration", icon: "play_arrow", action: () => this.navigateTo("run") },
+		{
+			name: "Go to Launch Configuration",
+			icon: "play_arrow",
+			action: () => this.navigateTo("run")
+		},
 		{ name: "Go to Utilities", icon: "handyman", action: () => this.navigateTo("utils") },
-		{ name: "Go to Appearance & Settings", icon: "settings", action: () => this.navigateTo("settings") },
-		{ name: "Go to Proton Versions", icon: protonIcon, isCustomIcon: true, action: () => this.navigateTo("versions") },
+		{
+			name: "Go to Appearance & Settings",
+			icon: "settings",
+			action: () => this.navigateTo("settings")
+		},
+		{
+			name: "Go to Proton Versions",
+			icon: protonIcon,
+			isCustomIcon: true,
+			action: () => this.navigateTo("versions")
+		},
 		{ name: "Go to WINE Prefixes", icon: "folder", action: () => this.navigateTo("prefix") }
 	];
 
@@ -29,7 +42,7 @@ export class CommandPaletteState {
 		try {
 			const fetched = await GetAllGames();
 			this.games = fetched || [];
-			
+
 			for (const game of this.games) {
 				const path = game.path || game.config?.LauncherPath;
 				if (path && !this.gameIcons[path]) {
@@ -49,19 +62,25 @@ export class CommandPaletteState {
 
 	filterItems() {
 		const query = this.searchQuery.trim().toLowerCase();
-		
+
 		if (!query) {
 			this.filteredItems = [
-				...this.PAGES.map(p => ({ ...p, type: "page" })),
-				...this.games.slice(0, 5).map(g => ({ name: `Launch ${g.name}`, icon: "sports_esports", type: "game", game: g }))
+				...this.PAGES.map((p) => ({ ...p, type: "page" })),
+				...this.games
+					.slice(0, 5)
+					.map((g) => ({ name: `Launch ${g.name}`, icon: "sports_esports", type: "game", game: g }))
 			];
 			this.selectedIndex = 0;
 			return;
 		}
 
-		const matchedPages = this.PAGES.filter(p => p.name.toLowerCase().includes(query)).map(p => ({ ...p, type: "page" }));
-		const matchedGames = this.games.filter(g => g.name.toLowerCase().includes(query)).map(g => ({ name: `Launch ${g.name}`, icon: "sports_esports", type: "game", game: g }));
-		
+		const matchedPages = this.PAGES.filter((p) => p.name.toLowerCase().includes(query)).map(
+			(p) => ({ ...p, type: "page" })
+		);
+		const matchedGames = this.games
+			.filter((g) => g.name.toLowerCase().includes(query))
+			.map((g) => ({ name: `Launch ${g.name}`, icon: "sports_esports", type: "game", game: g }));
+
 		this.filteredItems = [...matchedPages, ...matchedGames];
 		this.selectedIndex = 0;
 	}
@@ -99,7 +118,9 @@ export class CommandPaletteState {
 			e.preventDefault();
 			this.scrollToSelected();
 		} else if (e.key === "ArrowUp") {
-			this.selectedIndex = (this.selectedIndex - 1 + this.filteredItems.length) % Math.max(1, this.filteredItems.length);
+			this.selectedIndex =
+				(this.selectedIndex - 1 + this.filteredItems.length) %
+				Math.max(1, this.filteredItems.length);
 			e.preventDefault();
 			this.scrollToSelected();
 		} else if (e.key === "Enter") {

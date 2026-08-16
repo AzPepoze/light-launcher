@@ -1,12 +1,12 @@
-import fs from 'fs/promises';
-import fsSync from 'fs';
-import path from 'path';
-import { spawn } from 'child_process';
-import { PathsService } from './paths.service';
-import { ConfigService } from './config.service';
-import { ProtonService } from './proton.service';
-import type { LaunchOptions } from '../../shared/types/config.types';
-import type { PrefixConfigWithProton } from '../../shared/types/prefix.types';
+import fs from "fs/promises";
+import fsSync from "fs";
+import path from "path";
+import { spawn } from "child_process";
+import { PathsService } from "./paths.service";
+import { ConfigService } from "./config.service";
+import { ProtonService } from "./proton.service";
+import type { LaunchOptions } from "../../shared/types/config.types";
+import type { PrefixConfigWithProton } from "../../shared/types/prefix.types";
 
 export class PrefixService {
 	static getPrefixBaseDir(): string {
@@ -16,32 +16,32 @@ export class PrefixService {
 	static async listPrefixes(): Promise<string[]> {
 		const baseDir = this.getPrefixBaseDir();
 		if (!fsSync.existsSync(baseDir)) {
-			return ['Default'];
+			return ["Default"];
 		}
 
 		try {
 			const entries = await fs.readdir(baseDir, { withFileTypes: true });
-			const prefixes = entries.filter(e => e.isDirectory()).map(e => e.name);
-			if (!prefixes.includes('Default')) {
-				prefixes.unshift('Default');
+			const prefixes = entries.filter((e) => e.isDirectory()).map((e) => e.name);
+			if (!prefixes.includes("Default")) {
+				prefixes.unshift("Default");
 			}
 			return prefixes;
 		} catch {
-			return ['Default'];
+			return ["Default"];
 		}
 	}
 
 	static async createPrefix(name: string): Promise<void> {
-		if (!name || name.trim() === '') {
-			throw new Error('Prefix name cannot be empty');
+		if (!name || name.trim() === "") {
+			throw new Error("Prefix name cannot be empty");
 		}
 		const prefixPath = path.join(this.getPrefixBaseDir(), name.trim());
 		await fs.mkdir(prefixPath, { recursive: true });
 	}
 
 	static async removePrefix(name: string): Promise<void> {
-		if (name === 'Default') {
-			throw new Error('Cannot delete Default prefix');
+		if (name === "Default") {
+			throw new Error("Cannot delete Default prefix");
 		}
 		const prefixPath = path.join(this.getPrefixBaseDir(), name);
 		if (fsSync.existsSync(prefixPath)) {
@@ -61,9 +61,9 @@ export class PrefixService {
 		const cfg = await ConfigService.loadPrefixConfig(prefixName);
 		const result: PrefixConfigWithProton = {
 			config: cfg,
-			protonDisplayName: '',
-			protonName: '',
-			protonPath: cfg.ProtonPath || '',
+			protonDisplayName: "",
+			protonName: "",
+			protonPath: cfg.ProtonPath || "",
 			protonIsSteam: false
 		};
 
@@ -83,7 +83,11 @@ export class PrefixService {
 		return result;
 	}
 
-	static async runPrefixTool(prefixPath: string, toolName: string, protonPath: string): Promise<void> {
+	static async runPrefixTool(
+		prefixPath: string,
+		toolName: string,
+		protonPath: string
+	): Promise<void> {
 		const env: NodeJS.ProcessEnv = {
 			...process.env,
 			WINEPREFIX: PathsService.expandPath(prefixPath)
@@ -95,10 +99,10 @@ export class PrefixService {
 			env.UMU_PROTON_PATTERN = path.basename(expandedProton);
 		}
 
-		const child = spawn('umu-run', [toolName], {
+		const child = spawn("umu-run", [toolName], {
 			env,
 			detached: true,
-			stdio: 'ignore'
+			stdio: "ignore"
 		});
 		child.unref();
 	}

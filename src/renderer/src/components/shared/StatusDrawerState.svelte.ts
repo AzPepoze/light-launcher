@@ -5,7 +5,7 @@ import {
 	GetShaderCacheSize,
 	ClearShaderCache,
 	DropCaches,
-	ClearSwap,
+	ClearSwap
 } from "@lib/api";
 import * as core from "@shared";
 
@@ -25,7 +25,7 @@ export class StatusDrawerState {
 		cpu: "",
 		gpu: "",
 		ram: "",
-		driver: "",
+		driver: ""
 	});
 	sysUsage = $state<core.SystemUsage>({ cpu: "0%", ram: "0%", gpu: "0%" });
 	shaderCacheSize = $state("...");
@@ -36,7 +36,7 @@ export class StatusDrawerState {
 			const [info, usage, cache] = await Promise.all([
 				GetSystemInfo(),
 				GetSystemUsage(),
-				GetShaderCacheSize(),
+				GetShaderCacheSize()
 			]);
 			this.sysInfo = info;
 			this.sysUsage = usage;
@@ -59,7 +59,9 @@ export class StatusDrawerState {
 		if (this.usageInterval) clearInterval(this.usageInterval);
 	}
 
-	private triggerSuccess(stateKey: "showCleanupSuccess" | "showCacheSuccess" | "showDropSuccess" | "showSwapSuccess") {
+	private triggerSuccess(
+		stateKey: "showCleanupSuccess" | "showCacheSuccess" | "showDropSuccess" | "showSwapSuccess"
+	) {
 		setTimeout(() => {
 			this[stateKey] = true;
 			setTimeout(() => {

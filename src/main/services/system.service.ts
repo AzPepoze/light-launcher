@@ -1,10 +1,10 @@
-import fs from 'fs/promises';
-import fsSync from 'fs';
-import path from 'path';
-import os from 'os';
-import { exec, execSync, spawn } from 'child_process';
-import { promisify } from 'util';
-import type { SystemInfo, SystemToolsStatus, SystemUsage } from '../../shared/types/system.types';
+import fs from "fs/promises";
+import fsSync from "fs";
+import path from "path";
+import os from "os";
+import { exec, execSync } from "child_process";
+import { promisify } from "util";
+import type { SystemInfo, SystemToolsStatus, SystemUsage } from "../../shared/types/system.types";
 
 const execAsync = promisify(exec);
 
@@ -14,7 +14,7 @@ let lastIdle = 0;
 export class SystemService {
 	static isCommandAvailable(commandName: string): boolean {
 		try {
-			execSync(`which ${commandName}`, { stdio: 'ignore' });
+			execSync(`which ${commandName}`, { stdio: "ignore" });
 			return true;
 		} catch {
 			return false;
@@ -23,21 +23,21 @@ export class SystemService {
 
 	static getSystemToolsStatus(): SystemToolsStatus {
 		return {
-			hasGamescope: this.isCommandAvailable('gamescope'),
-			hasMangoHud: this.isCommandAvailable('mangohud'),
-			hasGameMode: this.isCommandAvailable('gamemoderun'),
-			hasVulkanInfo: this.isCommandAvailable('vulkaninfo')
+			hasGamescope: this.isCommandAvailable("gamescope"),
+			hasMangoHud: this.isCommandAvailable("mangohud"),
+			hasGameMode: this.isCommandAvailable("gamemoderun"),
+			hasVulkanInfo: this.isCommandAvailable("vulkaninfo")
 		};
 	}
 
 	static async getSystemUsage(): Promise<SystemUsage> {
-		const usage: SystemUsage = { cpu: '0%', ram: '0%', gpu: '0%' };
+		const usage: SystemUsage = { cpu: "0%", ram: "0%", gpu: "0%" };
 
 		// 1. CPU Usage via /proc/stat
 		try {
-			const statContent = await fs.readFile('/proc/stat', 'utf-8');
-			const lines = statContent.split('\n');
-			if (lines.length > 0 && lines[0].startsWith('cpu ')) {
+			const statContent = await fs.readFile("/proc/stat", "utf-8");
+			const lines = statContent.split("\n");
+			if (lines.length > 0 && lines[0].startsWith("cpu ")) {
 				const fields = lines[0].trim().split(/\s+/).slice(1).map(Number);
 				const total = fields.reduce((acc, v) => acc + v, 0);
 				const idle = fields[3] || 0;
@@ -59,15 +59,15 @@ export class SystemService {
 
 		// 2. RAM Usage via /proc/meminfo
 		try {
-			const memContent = await fs.readFile('/proc/meminfo', 'utf-8');
+			const memContent = await fs.readFile("/proc/meminfo", "utf-8");
 			let memTotal = 0;
 			let memAvailable = 0;
 
-			for (const line of memContent.split('\n')) {
-				if (line.startsWith('MemTotal:')) {
-					memTotal = parseInt(line.replace(/\D/g, ''), 10);
-				} else if (line.startsWith('MemAvailable:')) {
-					memAvailable = parseInt(line.replace(/\D/g, ''), 10);
+			for (const line of memContent.split("\n")) {
+				if (line.startsWith("MemTotal:")) {
+					memTotal = parseInt(line.replace(/\D/g, ""), 10);
+				} else if (line.startsWith("MemAvailable:")) {
+					memAvailable = parseInt(line.replace(/\D/g, ""), 10);
 				}
 				if (memTotal > 0 && memAvailable > 0) break;
 			}
@@ -89,39 +89,41 @@ export class SystemService {
 	}
 
 	static async getGpuUsage(): Promise<string> {
-		if (this.isCommandAvailable('nvidia-smi')) {
+		if (this.isCommandAvailable("nvidia-smi")) {
 			try {
-				const { stdout } = await execAsync('nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits');
+				const { stdout } = await execAsync(
+					"nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits"
+				);
 				const trimmed = stdout.trim();
 				if (trimmed) return `${trimmed}%`;
 			} catch {}
 		}
 
 		try {
-			const drmPath = '/sys/class/drm';
+			const drmPath = "/sys/class/drm";
 			if (fsSync.existsSync(drmPath)) {
 				const entries = await fs.readdir(drmPath);
 				for (const entry of entries) {
-					const busyFile = path.join(drmPath, entry, 'device/gpu_busy_percent');
+					const busyFile = path.join(drmPath, entry, "device/gpu_busy_percent");
 					if (fsSync.existsSync(busyFile)) {
-						const val = (await fs.readFile(busyFile, 'utf-8')).trim();
+						const val = (await fs.readFile(busyFile, "utf-8")).trim();
 						if (val) return `${val}%`;
 					}
 				}
 			}
 		} catch {}
 
-		return '0%';
+		return "0%";
 	}
 
 	static getListGpus(): string[] {
 		const gpus: string[] = [];
 		try {
-			if (fsSync.existsSync('/sys/class/drm')) {
-				const entries = fsSync.readdirSync('/sys/class/drm');
+			if (fsSync.existsSync("/sys/class/drm")) {
+				const entries = fsSync.readdirSync("/sys/class/drm");
 				for (const entry of entries) {
-					if (entry.startsWith('card') && !entry.includes('-')) {
-						const devicePath = path.join('/sys/class/drm', entry, 'device');
+					if (entry.startsWith("card") && !entry.includes("-")) {
+						const devicePath = path.join("/sys/class/drm", entry, "device");
 						if (fsSync.existsSync(devicePath)) {
 							gpus.push(entry);
 						}
@@ -132,10 +134,10 @@ export class SystemService {
 
 		if (gpus.length === 0) {
 			try {
-				const output = execSync("lspci | grep -i 'vga\\|3d\\|display'", { encoding: 'utf-8' });
-				const lines = output.trim().split('\n').filter(Boolean);
+				const output = execSync("lspci | grep -i 'vga\\|3d\\|display'", { encoding: "utf-8" });
+				const lines = output.trim().split("\n").filter(Boolean);
 				for (const line of lines) {
-					const parts = line.split(': ');
+					const parts = line.split(": ");
 					if (parts.length > 1) {
 						gpus.push(parts[1].trim());
 					}
@@ -148,20 +150,20 @@ export class SystemService {
 
 	static async getSystemInfo(): Promise<SystemInfo> {
 		const info: SystemInfo = {
-			os: 'Unknown',
-			kernel: 'Unknown',
-			cpu: 'Unknown',
-			gpu: 'Unknown',
-			ram: 'Unknown',
-			driver: 'Unknown'
+			os: "Unknown",
+			kernel: "Unknown",
+			cpu: "Unknown",
+			gpu: "Unknown",
+			ram: "Unknown",
+			driver: "Unknown"
 		};
 
 		try {
-			if (fsSync.existsSync('/etc/os-release')) {
-				const content = await fs.readFile('/etc/os-release', 'utf-8');
-				for (const line of content.split('\n')) {
-					if (line.startsWith('PRETTY_NAME=')) {
-						info.os = line.replace('PRETTY_NAME=', '').replace(/"/g, '').trim();
+			if (fsSync.existsSync("/etc/os-release")) {
+				const content = await fs.readFile("/etc/os-release", "utf-8");
+				for (const line of content.split("\n")) {
+					if (line.startsWith("PRETTY_NAME=")) {
+						info.os = line.replace("PRETTY_NAME=", "").replace(/"/g, "").trim();
 						break;
 					}
 				}
@@ -169,7 +171,7 @@ export class SystemService {
 		} catch {}
 
 		try {
-			const { stdout } = await execAsync('uname -r');
+			const { stdout } = await execAsync("uname -r");
 			info.kernel = stdout.trim();
 		} catch {}
 
@@ -184,10 +186,10 @@ export class SystemService {
 		}
 
 		try {
-			const meminfo = await fs.readFile('/proc/meminfo', 'utf-8');
-			for (const line of meminfo.split('\n')) {
-				if (line.startsWith('MemTotal:')) {
-					const memKb = parseInt(line.replace(/\D/g, ''), 10);
+			const meminfo = await fs.readFile("/proc/meminfo", "utf-8");
+			for (const line of meminfo.split("\n")) {
+				if (line.startsWith("MemTotal:")) {
+					const memKb = parseInt(line.replace(/\D/g, ""), 10);
 					info.ram = `${Math.round(memKb / 1024 / 1024)} GB`;
 					break;
 				}
@@ -195,41 +197,43 @@ export class SystemService {
 		} catch {}
 
 		try {
-			const { stdout } = await execAsync("vulkaninfo --summary | grep -m 1 'driverVersion' | awk '{print $3}'");
-			info.driver = stdout.trim() || 'Unknown';
+			const { stdout } = await execAsync(
+				"vulkaninfo --summary | grep -m 1 'driverVersion' | awk '{print $3}'"
+			);
+			info.driver = stdout.trim() || "Unknown";
 		} catch {}
 
 		return info;
 	}
 
 	static async dropCaches(): Promise<void> {
-		await execAsync('sync');
-		await execAsync('pkexec sysctl -w vm.drop_caches=3');
+		await execAsync("sync");
+		await execAsync("pkexec sysctl -w vm.drop_caches=3");
 	}
 
 	static async clearSwap(): Promise<void> {
 		try {
-			const swapContent = await fs.readFile('/proc/swaps', 'utf-8');
-			const lines = swapContent.trim().split('\n').slice(1);
-			const swaps = lines.map(l => l.trim().split(/\s+/)[0]).filter(Boolean);
+			const swapContent = await fs.readFile("/proc/swaps", "utf-8");
+			const lines = swapContent.trim().split("\n").slice(1);
+			const swaps = lines.map((l) => l.trim().split(/\s+/)[0]).filter(Boolean);
 			if (swaps.length === 0) return;
 
-			const swaponCmds = swaps.map(s => `swapon ${s}`).join(' ; ');
+			const swaponCmds = swaps.map((s) => `swapon ${s}`).join(" ; ");
 			const cmdStr = `swapoff -a ; ${swaponCmds}`;
 			await execAsync(`pkexec sh -c "${cmdStr}"`);
 		} catch (err) {
-			console.error('Error clearing swap:', err);
+			console.error("Error clearing swap:", err);
 		}
 	}
 
 	static async cleanupProcesses(): Promise<void> {
 		const commands = [
-			'umu-run',
-			'pressure-vessel',
-			'gamescopereaper',
-			'steam-runtime-launcher-service',
-			'srt-bwrap',
-			'reaper'
+			"umu-run",
+			"pressure-vessel",
+			"gamescopereaper",
+			"steam-runtime-launcher-service",
+			"srt-bwrap",
+			"reaper"
 		];
 		for (const command of commands) {
 			try {
@@ -241,11 +245,11 @@ export class SystemService {
 	static getShaderCachePaths(): string[] {
 		const home = os.homedir();
 		return [
-			path.join(home, '.cache/mesa_shader_cache'),
-			path.join(home, '.cache/nvidia/GLCache'),
-			path.join(home, '.nv/GLCache'),
-			path.join(home, '.cache/AMD/VkCache'),
-			path.join(home, '.cache/radv_builtin_shaders')
+			path.join(home, ".cache/mesa_shader_cache"),
+			path.join(home, ".cache/nvidia/GLCache"),
+			path.join(home, ".nv/GLCache"),
+			path.join(home, ".cache/AMD/VkCache"),
+			path.join(home, ".cache/radv_builtin_shaders")
 		];
 	}
 
@@ -260,7 +264,7 @@ export class SystemService {
 				} catch {}
 			}
 		}
-		if (totalBytes === 0) return '0 MB';
+		if (totalBytes === 0) return "0 MB";
 		return `${(totalBytes / 1024 / 1024).toFixed(1)} MB`;
 	}
 

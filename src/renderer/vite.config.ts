@@ -9,19 +9,15 @@ export default defineConfig({
 	resolve: {
 		alias: {
 			"@shared": fileURLToPath(new URL("../shared", import.meta.url)),
-			"@components": fileURLToPath(
-				new URL("./src/components", import.meta.url)
-			),
+			"@components": fileURLToPath(new URL("./src/components", import.meta.url)),
 			"@lib": fileURLToPath(new URL("./src/lib", import.meta.url)),
-			"@stores": fileURLToPath(
-				new URL("./src/stores", import.meta.url)
-			),
-			"@icons": fileURLToPath(new URL("./src/icons", import.meta.url)),
-		},
+			"@stores": fileURLToPath(new URL("./src/stores", import.meta.url)),
+			"@icons": fileURLToPath(new URL("./src/icons", import.meta.url))
+		}
 	},
 	server: {
 		port: 9245,
-		strictPort: true,
+		strictPort: true
 	},
 	build: {
 		target: "esnext",
@@ -31,13 +27,13 @@ export default defineConfig({
 		cssCodeSplit: true,
 		outDir: "dist",
 		modulePreload: {
-			polyfill: false,
+			polyfill: false
 		},
 		rollupOptions: {
 			treeshake: {
 				preset: "smallest",
-				moduleSideEffects: "no-external",
-			},
-		},
-	},
+				moduleSideEffects: "no-external"
+			}
+		}
+	}
 });

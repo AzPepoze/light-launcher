@@ -6,7 +6,7 @@ import {
 	GetAllGames,
 	AddScanFolder,
 	BlacklistGame,
-	GetScanFolderConfig,
+	GetScanFolderConfig
 } from "@lib/api";
 import { notifications } from "@stores/notificationStore";
 import { loadExeIcon } from "@lib/iconService";
@@ -72,9 +72,9 @@ export class AddGameModalState {
 			const path = await PickFile();
 			if (path) {
 				const existingGames = await GetAllGames();
-				const normalizedPath = path.replace(/\\/g, '/').toLowerCase().trim();
+				const normalizedPath = path.replace(/\\/g, "/").toLowerCase().trim();
 				const alreadyExists = (existingGames || []).some(
-					g => g.path.replace(/\\/g, '/').toLowerCase().trim() === normalizedPath
+					(g) => g.path.replace(/\\/g, "/").toLowerCase().trim() === normalizedPath
 				);
 
 				if (alreadyExists) {
@@ -110,18 +110,21 @@ export class AddGameModalState {
 		this.isSearching = true;
 		try {
 			const depth = parseInt(this.searchDepth) || 2;
-			const excludes = this.excludeNames.split(",").map((e) => e.trim()).filter(Boolean);
+			const excludes = this.excludeNames
+				.split(",")
+				.map((e) => e.trim())
+				.filter(Boolean);
 
 			const results = await service.scanFolderForExecutables(this.selectedFolder, depth, excludes);
-			
+
 			if (results.length > 0) {
 				const existingGames = await GetAllGames();
 				const normalizedExisting = new Set(
-					(existingGames || []).map(g => g.path.replace(/\\/g, '/').toLowerCase().trim())
+					(existingGames || []).map((g) => g.path.replace(/\\/g, "/").toLowerCase().trim())
 				);
 
 				this.foundExecutables = results.map((item) => {
-					const normPath = item.path.replace(/\\/g, '/').toLowerCase().trim();
+					const normPath = item.path.replace(/\\/g, "/").toLowerCase().trim();
 					const alreadyExists = normalizedExisting.has(normPath);
 					if (alreadyExists) {
 						this.discardedExecutables.add(item.path);
@@ -134,7 +137,7 @@ export class AddGameModalState {
 
 				this.addMode = "folder-review";
 				this.discardedExecutables = new Set(this.discardedExecutables);
-				
+
 				this.foundExecutables.forEach((item, index) => {
 					loadExeIcon(item.path).then((icon) => {
 						if (icon) {

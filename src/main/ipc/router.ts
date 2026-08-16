@@ -1,139 +1,155 @@
-import type { WebContents } from 'electron';
-import { AppService } from '../services/app.service';
-import { ConfigService } from '../services/config.service';
-import { GamesService } from '../services/games.service';
-import { LsfgService } from '../services/lsfg.service';
-import { PrefixService } from '../services/prefix.service';
-import { ProtonService } from '../services/proton.service';
-import { RunnerService } from '../services/runner.service';
-import { SessionService } from '../services/session.service';
-import { SystemService } from '../services/system.service';
+import type { WebContents } from "electron";
+import { AppService } from "../services/app.service";
+import { ConfigService } from "../services/config.service";
+import { GamesService } from "../services/games.service";
+import { LsfgService } from "../services/lsfg.service";
+import { PrefixService } from "../services/prefix.service";
+import { ProtonService } from "../services/proton.service";
+import { RunnerService } from "../services/runner.service";
+import { SessionService } from "../services/session.service";
+import { SystemService } from "../services/system.service";
 
 export class IpcRouter {
 	static async dispatch(method: string, payload: any, sender: WebContents): Promise<any> {
 		switch (method) {
 			// App Service
-			case 'GetInitialLauncherPath':
+			case "GetInitialLauncherPath":
 				return AppService.getInitialLauncherPath();
-			case 'GetInitialGamePath':
+			case "GetInitialGamePath":
 				return AppService.getInitialGamePath();
-			case 'GetShouldEditLsfg':
+			case "GetShouldEditLsfg":
 				return AppService.getShouldEditLsfg();
-			case 'IsDir':
+			case "IsDir":
 				return AppService.isDir(payload.path);
-			case 'GetExeIcon':
+			case "GetExeIcon":
 				return AppService.getExeIcon(payload.executablePath);
-			case 'GetTotalRam':
+			case "GetTotalRam":
 				return AppService.getTotalRam();
-			case 'GetImageBase64':
+			case "GetImageBase64":
 				return AppService.getImageBase64(payload.imagePath);
-			case 'PickFile':
+			case "PickFile":
 				return AppService.pickFile();
-			case 'PickFolder':
+			case "PickFolder":
 				return AppService.pickFolder();
-			case 'PickFileCustom':
+			case "PickFileCustom":
 				return AppService.pickFileCustom(payload.title, payload.filters);
-			case 'OpenURL':
+			case "OpenURL":
 				return AppService.openExternal(payload.url);
-			case 'CloseWindow':
+			case "CloseWindow":
 				return AppService.closeWindow();
-			case 'RestartApp':
+			case "RestartApp":
 				return AppService.restartApp();
 
 			// Config & Settings
-			case 'GetAppSettings':
+			case "GetAppSettings":
 				return ConfigService.loadAppSettings();
-			case 'SaveAppSettings':
+			case "SaveAppSettings":
 				return ConfigService.saveAppSettings(payload.settings);
-			case 'GetConfig':
+			case "GetConfig":
 				return ConfigService.loadGameConfig(payload.executablePath);
-			case 'SaveGameConfig':
+			case "SaveGameConfig":
 				return ConfigService.saveGameConfig(payload.options);
 
 			// Games Service
-			case 'GetAllGames':
+			case "GetAllGames":
 				return GamesService.getAllGames();
-			case 'RemoveGame':
+			case "RemoveGame":
 				return GamesService.removeGame(payload.executablePath);
-			case 'SearchExecutables':
-				return GamesService.searchExecutables(payload.folderPath, payload.maxDepth, payload.excludeNames);
-			case 'GetAutoScannedGames':
+			case "SearchExecutables":
+				return GamesService.searchExecutables(
+					payload.folderPath,
+					payload.maxDepth,
+					payload.excludeNames
+				);
+			case "GetAutoScannedGames":
 				return GamesService.getAutoScannedGames();
-			case 'AddScanFolder':
+			case "AddScanFolder":
 				return GamesService.addScanFolder(payload.folderPath);
-			case 'RemoveScanFolder':
+			case "RemoveScanFolder":
 				return GamesService.removeScanFolder(payload.folderPath);
-			case 'UpdateScanFolderConfig':
-				return GamesService.updateScanFolderConfig(payload.folderPath, payload.depth, payload.excludeNames);
-			case 'GetScanFolderConfig':
+			case "UpdateScanFolderConfig":
+				return GamesService.updateScanFolderConfig(
+					payload.folderPath,
+					payload.depth,
+					payload.excludeNames
+				);
+			case "GetScanFolderConfig":
 				return GamesService.getScanFolderConfig(payload.folderPath);
-			case 'BlacklistGame':
+			case "BlacklistGame":
 				return GamesService.blacklistGame(payload.executablePath);
-			case 'UnblacklistGame':
+			case "UnblacklistGame":
 				return GamesService.unblacklistGame(payload.executablePath);
 
 			// Runner Service
-			case 'RunGame':
+			case "RunGame":
 				return RunnerService.runGame(payload.options, payload.showLogs);
 
 			// System Service
-			case 'GetSystemToolsStatus':
+			case "GetSystemToolsStatus":
 				return SystemService.getSystemToolsStatus();
-			case 'GetSystemInfo':
+			case "GetSystemInfo":
 				return SystemService.getSystemInfo();
-			case 'GetSystemUsage':
+			case "GetSystemUsage":
 				return SystemService.getSystemUsage();
-			case 'GetShaderCacheSize':
+			case "GetShaderCacheSize":
 				return SystemService.getShaderCacheSize();
-			case 'ClearShaderCache':
+			case "ClearShaderCache":
 				return SystemService.clearShaderCache();
-			case 'DropCaches':
+			case "DropCaches":
 				return SystemService.dropCaches();
-			case 'ClearSwap':
+			case "ClearSwap":
 				return SystemService.clearSwap();
-			case 'CleanupProcesses':
+			case "CleanupProcesses":
 				return SystemService.cleanupProcesses();
-			case 'GetListGpus':
+			case "GetListGpus":
 				return SystemService.getListGpus();
 
 			// Prefix Service
-			case 'ListPrefixes':
+			case "ListPrefixes":
 				return PrefixService.listPrefixes();
-			case 'CreatePrefix':
+			case "CreatePrefix":
 				return PrefixService.createPrefix(payload.name);
-			case 'GetPrefixBaseDir':
+			case "GetPrefixBaseDir":
 				return PrefixService.getPrefixBaseDir();
-			case 'RemovePrefix':
+			case "RemovePrefix":
 				return PrefixService.removePrefix(payload.name);
-			case 'SavePrefixConfig':
+			case "SavePrefixConfig":
 				return PrefixService.savePrefixConfig(payload.prefixName, payload.options);
-			case 'LoadPrefixConfig':
+			case "LoadPrefixConfig":
 				return PrefixService.loadPrefixConfig(payload.prefixName);
-			case 'LoadPrefixConfigWithProton':
+			case "LoadPrefixConfigWithProton":
 				return PrefixService.loadPrefixConfigWithProton(payload.prefixName);
-			case 'RunPrefixTool':
-				return PrefixService.runPrefixTool(payload.prefixPath, payload.toolName, payload.protonPath);
+			case "RunPrefixTool":
+				return PrefixService.runPrefixTool(
+					payload.prefixPath,
+					payload.toolName,
+					payload.protonPath
+				);
 
 			// Proton Service
-			case 'ScanProtonVersions':
+			case "ScanProtonVersions":
 				return ProtonService.scanProtonVersions();
-			case 'GetProtonVariants':
+			case "GetProtonVariants":
 				return ProtonService.getProtonVariants();
-			case 'GetProtonReleases':
+			case "GetProtonReleases":
 				return ProtonService.getProtonReleases(payload.variantID);
-			case 'InstallProtonVersion':
-				return ProtonService.installProtonVersion(payload.url, payload.version, (percent, message) => {
-					sender.send('event:install-proton-progress', { percent, message });
-				});
+			case "InstallProtonVersion":
+				return ProtonService.installProtonVersion(
+					payload.url,
+					payload.version,
+					(percent, message) => {
+						sender.send("event:install-proton-progress", { percent, message });
+					}
+				);
 
 			// LSFG Service
-			case 'GetUtilsStatus':
+			case "GetUtilsStatus":
 				return LsfgService.getUtilsStatus();
-			case 'GetLsfgProfileForGame':
+			case "GetLsfgProfileForGame":
 				return LsfgService.getLsfgProfileForGame(payload.name, payload.gamePath);
-			case 'DetectLosslessDll':
+			case "DetectLosslessDll":
 				return LsfgService.detectLosslessDll();
-			case 'SaveLsfgProfile':
+			case "SaveLsfgProfile":
 				return LsfgService.saveLsfgProfile(
 					payload.profileName,
 					payload.gamePath,
@@ -145,21 +161,21 @@ export class IpcRouter {
 					payload.pacing,
 					payload.allowFp16
 				);
-			case 'DisableLsfgProfile':
+			case "DisableLsfgProfile":
 				return LsfgService.disableLsfgProfile(payload.profileName, payload.gamePath);
-			case 'RemoveProfile':
+			case "RemoveProfile":
 				return LsfgService.removeProfile(payload.mainExecutablePath);
-			case 'InstallLsfg':
+			case "InstallLsfg":
 				return LsfgService.installLsfg((percent, message) => {
-					sender.send('event:lsfg-install-progress', { percent, message });
+					sender.send("event:lsfg-install-progress", { percent, message });
 				});
-			case 'UninstallLsfg':
+			case "UninstallLsfg":
 				return LsfgService.uninstallLsfg();
 
 			// Session Service
-			case 'GetRunningSessions':
+			case "GetRunningSessions":
 				return SessionService.getRunningSessions();
-			case 'KillSession':
+			case "KillSession":
 				return SessionService.killSession(payload.pid);
 
 			default:

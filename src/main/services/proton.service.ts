@@ -1,43 +1,44 @@
-import fs from 'fs/promises';
-import fsSync from 'fs';
-import path from 'path';
-import os from 'os';
-import http from 'http';
-import https from 'https';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import type { GitHubRelease, ProtonTool, ProtonVariant } from '../../shared/types/prefix.types';
+import fs from "fs/promises";
+import fsSync from "fs";
+import path from "path";
+import os from "os";
+import http from "http";
+import https from "https";
+import { exec } from "child_process";
+import { promisify } from "util";
+import type { GitHubRelease, ProtonTool, ProtonVariant } from "../../shared/types/prefix.types";
 
 const execAsync = promisify(exec);
 
 const KNOWN_VARIANTS: ProtonVariant[] = [
 	{
-		ID: 'ge-proton',
-		Name: 'GE-Proton (GloriousEggroll)',
-		Description: 'The most popular custom Proton build. Includes many game fixes and codec patches.',
-		RepoOwner: 'GloriousEggroll',
-		RepoName: 'proton-ge-custom'
+		ID: "ge-proton",
+		Name: "GE-Proton (GloriousEggroll)",
+		Description:
+			"The most popular custom Proton build. Includes many game fixes and codec patches.",
+		RepoOwner: "GloriousEggroll",
+		RepoName: "proton-ge-custom"
 	},
 	{
-		ID: 'proton-cachyos',
-		Name: 'Proton-CachyOS',
-		Description: 'Optimized for performance with CachyOS patches and schedulers.',
-		RepoOwner: 'CachyOS',
-		RepoName: 'proton-cachyos'
+		ID: "proton-cachyos",
+		Name: "Proton-CachyOS",
+		Description: "Optimized for performance with CachyOS patches and schedulers.",
+		RepoOwner: "CachyOS",
+		RepoName: "proton-cachyos"
 	},
 	{
-		ID: 'kron4ek',
-		Name: 'Proton-Kron4ek',
-		Description: 'Vanilla builds and TKG builds. Often smaller and faster updates.',
-		RepoOwner: 'Kron4ek',
-		RepoName: 'Proton-Builds'
+		ID: "kron4ek",
+		Name: "Proton-Kron4ek",
+		Description: "Vanilla builds and TKG builds. Often smaller and faster updates.",
+		RepoOwner: "Kron4ek",
+		RepoName: "Proton-Builds"
 	},
 	{
-		ID: 'luxtorpeda',
-		Name: 'Luxtorpeda (Native Tools)',
-		Description: 'Runs Windows games using native Linux engines (e.g. GZDoom, ScummVM).',
-		RepoOwner: 'luxtorpeda-dev',
-		RepoName: 'luxtorpeda'
+		ID: "luxtorpeda",
+		Name: "Luxtorpeda (Native Tools)",
+		Description: "Runs Windows games using native Linux engines (e.g. GZDoom, ScummVM).",
+		RepoOwner: "luxtorpeda-dev",
+		RepoName: "luxtorpeda"
 	}
 ];
 
@@ -51,15 +52,15 @@ export class ProtonService {
 		const home = os.homedir();
 
 		const steamCommonPaths = [
-			path.join(home, '.steam/root/steamapps/common'),
-			path.join(home, '.local/share/Steam/steamapps/common'),
-			path.join(home, '.var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps/common')
+			path.join(home, ".steam/root/steamapps/common"),
+			path.join(home, ".local/share/Steam/steamapps/common"),
+			path.join(home, ".var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps/common")
 		];
 
 		const customToolsPaths = [
-			path.join(home, '.steam/root/compatibilitytools.d'),
-			path.join(home, '.local/share/Steam/compatibilitytools.d'),
-			path.join(home, '.var/app/com.valvesoftware.Steam/.local/share/Steam/compatibilitytools.d')
+			path.join(home, ".steam/root/compatibilitytools.d"),
+			path.join(home, ".local/share/Steam/compatibilitytools.d"),
+			path.join(home, ".var/app/com.valvesoftware.Steam/.local/share/Steam/compatibilitytools.d")
 		];
 
 		// 1. Scan Steam official Proton installations
@@ -68,9 +69,9 @@ export class ProtonService {
 			try {
 				const entries = await fs.readdir(basePath, { withFileTypes: true });
 				for (const entry of entries) {
-					if (entry.isDirectory() && entry.name.toLowerCase().startsWith('proton')) {
+					if (entry.isDirectory() && entry.name.toLowerCase().startsWith("proton")) {
 						const protonPath = path.join(basePath, entry.name);
-						const protonExe = path.join(protonPath, 'proton');
+						const protonExe = path.join(protonPath, "proton");
 						if (fsSync.existsSync(protonExe)) {
 							tools.push({
 								Name: entry.name,
@@ -92,10 +93,10 @@ export class ProtonService {
 				for (const entry of entries) {
 					if (entry.isDirectory()) {
 						const protonPath = path.join(basePath, entry.name);
-						const protonExe = path.join(protonPath, 'proton');
+						const protonExe = path.join(protonPath, "proton");
 						if (fsSync.existsSync(protonExe)) {
 							// Avoid duplicates
-							if (!tools.some(t => t.Path === protonPath)) {
+							if (!tools.some((t) => t.Path === protonPath)) {
 								tools.push({
 									Name: entry.name,
 									Path: protonPath,
@@ -127,7 +128,7 @@ export class ProtonService {
 
 		// 3. Match by directory name
 		const dirName = path.basename(path.normalize(savedPath));
-		const isSteam = savedPath.includes('steamapps/common');
+		const isSteam = savedPath.includes("steamapps/common");
 
 		for (const tool of protonVersions) {
 			if (tool.Name === dirName && tool.IsSteam === isSteam) {
@@ -145,7 +146,7 @@ export class ProtonService {
 	}
 
 	static async getProtonReleases(variantID: string): Promise<GitHubRelease[]> {
-		const variant = KNOWN_VARIANTS.find(v => v.ID === variantID);
+		const variant = KNOWN_VARIANTS.find((v) => v.ID === variantID);
 		if (!variant) {
 			throw new Error(`Unknown variant: ${variantID}`);
 		}
@@ -153,32 +154,34 @@ export class ProtonService {
 		const url = `https://api.github.com/repos/${variant.RepoOwner}/${variant.RepoName}/releases?per_page=50`;
 
 		return new Promise((resolve, reject) => {
-			https.get(
-				url,
-				{
-					headers: {
-						'User-Agent': 'LightLauncher-App',
-						Accept: 'application/vnd.github.v3+json'
-					}
-				},
-				res => {
-					if (res.statusCode !== 200) {
-						reject(new Error(`GitHub API returned status ${res.statusCode}`));
-						return;
-					}
-
-					let body = '';
-					res.on('data', chunk => (body += chunk));
-					res.on('end', () => {
-						try {
-							const releases = JSON.parse(body) as GitHubRelease[];
-							resolve(releases);
-						} catch (e) {
-							reject(e);
+			https
+				.get(
+					url,
+					{
+						headers: {
+							"User-Agent": "LightLauncher-App",
+							Accept: "application/vnd.github.v3+json"
 						}
-					});
-				}
-			).on('error', reject);
+					},
+					(res) => {
+						if (res.statusCode !== 200) {
+							reject(new Error(`GitHub API returned status ${res.statusCode}`));
+							return;
+						}
+
+						let body = "";
+						res.on("data", (chunk) => (body += chunk));
+						res.on("end", () => {
+							try {
+								const releases = JSON.parse(body) as GitHubRelease[];
+								resolve(releases);
+							} catch (e) {
+								reject(e);
+							}
+						});
+					}
+				)
+				.on("error", reject);
 		});
 	}
 
@@ -188,20 +191,20 @@ export class ProtonService {
 		onProgress: (percent: number, message: string) => void
 	): Promise<void> {
 		const home = os.homedir();
-		let targetBase = path.join(home, '.steam/root/compatibilitytools.d');
-		if (!fsSync.existsSync(path.join(home, '.steam/root'))) {
-			targetBase = path.join(home, '.local/share/Steam/compatibilitytools.d');
+		let targetBase = path.join(home, ".steam/root/compatibilitytools.d");
+		if (!fsSync.existsSync(path.join(home, ".steam/root"))) {
+			targetBase = path.join(home, ".local/share/Steam/compatibilitytools.d");
 		}
 
 		await fs.mkdir(targetBase, { recursive: true });
-		onProgress(0, 'Downloading...');
+		onProgress(0, "Downloading...");
 
-		const ext = url.endsWith('.tar.zst') ? '.tar.zst' : '.tar.gz';
+		const ext = url.endsWith(".tar.zst") ? ".tar.zst" : ".tar.gz";
 		const tempFile = path.join(os.tmpdir(), `proton-install-${Date.now()}${ext}`);
 
 		await new Promise<void>((resolve, reject) => {
-			const getter = url.startsWith('https') ? https : http;
-			const req = getter.get(url, { headers: { 'User-Agent': 'LightLauncher-App' } }, res => {
+			const getter = url.startsWith("https") ? https : http;
+			const req = getter.get(url, { headers: { "User-Agent": "LightLauncher-App" } }, (res) => {
 				// Follow redirects
 				if (res.statusCode === 302 || res.statusCode === 301) {
 					if (res.headers.location) {
@@ -216,33 +219,36 @@ export class ProtonService {
 					return;
 				}
 
-				const total = parseInt(res.headers['content-length'] || '0', 10);
+				const total = parseInt(res.headers["content-length"] || "0", 10);
 				let current = 0;
 
 				const fileStream = fsSync.createWriteStream(tempFile);
-				res.on('data', chunk => {
+				res.on("data", (chunk) => {
 					current += chunk.length;
 					fileStream.write(chunk);
 					if (total > 0) {
 						const percent = Math.round((current / total) * 50);
-						onProgress(percent, `Downloading... ${((current / 1024 / 1024)).toFixed(1)} MB / ${(total / 1024 / 1024).toFixed(1)} MB`);
+						onProgress(
+							percent,
+							`Downloading... ${(current / 1024 / 1024).toFixed(1)} MB / ${(total / 1024 / 1024).toFixed(1)} MB`
+						);
 					}
 				});
 
-				res.on('end', () => {
+				res.on("end", () => {
 					fileStream.end();
 					resolve();
 				});
 
-				res.on('error', reject);
+				res.on("error", reject);
 			});
-			req.on('error', reject);
+			req.on("error", reject);
 		});
 
-		onProgress(50, 'Extracting Proton package...');
+		onProgress(50, "Extracting Proton package...");
 
 		let extractCmd = `tar -xf "${tempFile}" -C "${targetBase}"`;
-		if (tempFile.endsWith('.tar.zst')) {
+		if (tempFile.endsWith(".tar.zst")) {
 			extractCmd = `tar --use-compress-program=unzstd -xf "${tempFile}" -C "${targetBase}"`;
 		}
 
@@ -251,6 +257,6 @@ export class ProtonService {
 			await fs.unlink(tempFile);
 		} catch {}
 
-		onProgress(100, 'Installation Complete!');
+		onProgress(100, "Installation Complete!");
 	}
 }

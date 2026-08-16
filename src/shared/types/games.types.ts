@@ -1,4 +1,4 @@
-import type { LaunchOptions } from './config.types';
+import type { LaunchOptions } from "./config.types";
 
 export interface GameInfo {
 	name: string;

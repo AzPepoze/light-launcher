@@ -1,8 +1,8 @@
-import { ipcMain } from 'electron';
-import { IpcRouter } from './router';
+import { ipcMain } from "electron";
+import { IpcRouter } from "./router";
 
 export function registerIpcHandlers(): void {
-	ipcMain.handle('api', async (event, { method, payload }: { method: string; payload?: any }) => {
+	ipcMain.handle("api", async (event, { method, payload }: { method: string; payload?: any }) => {
 		try {
 			const result = await IpcRouter.dispatch(method, payload || {}, event.sender);
 			return { success: true, data: result };
@@ -12,9 +12,9 @@ export function registerIpcHandlers(): void {
 		}
 	});
 
-	ipcMain.on('window-action', (_, action: string) => {
+	ipcMain.on("window-action", (_, action: string) => {
 		switch (action) {
-			case 'close':
+			case "close":
 				break;
 		}
 	});

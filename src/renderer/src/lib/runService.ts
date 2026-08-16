@@ -7,7 +7,7 @@ import {
 	ListPrefixes,
 	GetSystemToolsStatus,
 	RunGame,
-	CloseWindow,
+	CloseWindow
 } from "@lib/api";
 import { loadExeIcon } from "@lib/iconService";
 import * as core from "@shared";
@@ -29,7 +29,12 @@ export interface RunPageInitData {
 	mainExePath: string;
 }
 
-export type ConfigUpdateCallback = (newOpts: core.LaunchOptions, pPath: string, pName: string, proton: string) => void;
+export type ConfigUpdateCallback = (
+	newOpts: core.LaunchOptions,
+	pPath: string,
+	pName: string,
+	proton: string
+) => void;
 
 /**
  * Orchestrates the full initialization of the Launch Configuration page.
@@ -40,11 +45,11 @@ export async function initializeRunPage(
 	onConfigUpdate: ConfigUpdateCallback
 ): Promise<RunPageInitData> {
 	const baseDirectory = await GetPrefixBaseDir();
-	
+
 	const [availableGpus, detectedLosslessDll, detectedProtons] = await Promise.all([
 		GetListGpus(),
 		DetectLosslessDll(),
-		ScanProtonVersions(),
+		ScanProtonVersions()
 	]);
 
 	const gpuList = availableGpus || [];
@@ -77,12 +82,12 @@ export async function initializeRunPage(
 	// Auto-load config if a runner is already set
 	if (currentOptions.LauncherPath) {
 		await loadConfigForGame(
-			currentOptions.LauncherPath, 
-			currentOptions, 
-			prefixPath, 
-			baseDirectory, 
-			selectedPrefixName, 
-			protonVersions, 
+			currentOptions.LauncherPath,
+			currentOptions,
+			prefixPath,
+			baseDirectory,
+			selectedPrefixName,
+			protonVersions,
 			onConfigUpdate
 		);
 		if (!launcherIcon) {
@@ -98,19 +103,26 @@ export async function initializeRunPage(
 			currentOptions.GamePath = initialOsPath; // Sync GamePath
 			launcherIcon = (await loadExeIcon(initialOsPath)) || "";
 			if (!currentOptions.Name || currentOptions.Name === "Launcher") {
-				currentOptions.Name = initialOsPath.split(/[/\\]/).pop()?.replace(/\.exe$/i, "") || "Launcher";
+				currentOptions.Name =
+					initialOsPath
+						.split(/[/\\]/)
+						.pop()
+						?.replace(/\.exe$/i, "") || "Launcher";
 			}
-		} else if (!currentOptions.GamePath || currentOptions.GamePath === currentOptions.LauncherPath) {
+		} else if (
+			!currentOptions.GamePath ||
+			currentOptions.GamePath === currentOptions.LauncherPath
+		) {
 			mainExecutablePath = initialOsPath;
 			currentOptions.GamePath = initialOsPath;
 			gameIcon = (await loadExeIcon(initialOsPath)) || "";
 			await loadConfigForGame(
-				initialOsPath, 
-				currentOptions, 
-				prefixPath, 
-				baseDirectory, 
-				selectedPrefixName, 
-				protonVersions, 
+				initialOsPath,
+				currentOptions,
+				prefixPath,
+				baseDirectory,
+				selectedPrefixName,
+				protonVersions,
 				onConfigUpdate
 			);
 		}
@@ -127,7 +139,7 @@ export async function initializeRunPage(
 	const [availablePrefixesList, baseDirAgain, currentSystemStatus] = await Promise.all([
 		ListPrefixes(),
 		GetPrefixBaseDir(),
-		GetSystemToolsStatus(),
+		GetSystemToolsStatus()
 	]);
 
 	return {
@@ -139,7 +151,7 @@ export async function initializeRunPage(
 		systemStatus: currentSystemStatus,
 		launcherIcon,
 		gameIcon,
-		mainExePath: mainExecutablePath,
+		mainExePath: mainExecutablePath
 	};
 }
 
@@ -167,16 +179,26 @@ export async function validateAndLaunch(
 
 	// Check for missing system tools
 	const missingTools: string[] = [];
-	if (launchOptions.Extras.Gamescope.Enabled && !systemStatus.hasGamescope) missingTools.push("Gamescope");
-	if (launchOptions.Extras.EnableMangoHud && !systemStatus.hasMangoHud) missingTools.push("MangoHud");
-	if (launchOptions.Extras.EnableGamemode && !systemStatus.hasGameMode) missingTools.push("GameMode");
-	if (launchOptions.Extras.Lsfg.Enabled && !systemStatus.hasVulkanInfo) missingTools.push("Vulkan-Tools");
+	if (launchOptions.Extras.Gamescope.Enabled && !systemStatus.hasGamescope)
+		missingTools.push("Gamescope");
+	if (launchOptions.Extras.EnableMangoHud && !systemStatus.hasMangoHud)
+		missingTools.push("MangoHud");
+	if (launchOptions.Extras.EnableGamemode && !systemStatus.hasGameMode)
+		missingTools.push("GameMode");
+	if (launchOptions.Extras.Lsfg.Enabled && !systemStatus.hasVulkanInfo)
+		missingTools.push("Vulkan-Tools");
 
 	if (missingTools.length > 0) {
 		return true; // Show modal
 	}
 
-	await executeLaunch(launchOptions, selectedProtonName, protonVersions, showLogsWindow, closeLauncher);
+	await executeLaunch(
+		launchOptions,
+		selectedProtonName,
+		protonVersions,
+		showLogsWindow,
+		closeLauncher
+	);
 	return false;
 }
 

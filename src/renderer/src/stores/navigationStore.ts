@@ -10,12 +10,12 @@ export const navigationCommand = writable<NavigationCommand | null>(null);
 export function navigateToEditLsfg(gamePath: string) {
 	navigationCommand.set({
 		page: "editlsfg",
-		gamePath,
+		gamePath
 	});
 }
 
 export function navigateTo(page: string) {
 	navigationCommand.set({
-		page,
+		page
 	});
 }

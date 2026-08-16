@@ -1,10 +1,10 @@
-import fs from 'fs/promises';
-import fsSync from 'fs';
-import path from 'path';
-import { ConfigService } from './config.service';
-import { PathsService } from './paths.service';
-import type { GameInfo, ScannedFolderGroup } from '../../shared/types/games.types';
-import type { LaunchOptions, ScanFolderConfig } from '../../shared/types/config.types';
+import fs from "fs/promises";
+import fsSync from "fs";
+import path from "path";
+import { ConfigService } from "./config.service";
+import { PathsService } from "./paths.service";
+import type { GameInfo, ScannedFolderGroup } from "../../shared/types/games.types";
+import type { LaunchOptions, ScanFolderConfig } from "../../shared/types/config.types";
 import {
 	DefaultExcludeNames,
 	DefaultHeight,
@@ -12,7 +12,7 @@ import {
 	DefaultMultiplier,
 	DefaultRefreshRate,
 	DefaultWidth
-} from '../../shared/constants';
+} from "../../shared/constants";
 
 export class GamesService {
 	static async getAllGames(): Promise<GameInfo[]> {
@@ -36,7 +36,7 @@ export class GamesService {
 			for (const sf of scanFolders) {
 				const sfCleaned = path.normalize(sf);
 				const rel = path.relative(sfCleaned, cleanedPath);
-				if (!rel.startsWith('..') && !path.isAbsolute(rel) && rel !== '') {
+				if (!rel.startsWith("..") && !path.isAbsolute(rel) && rel !== "") {
 					inScanFolder = true;
 					break;
 				}
@@ -45,7 +45,7 @@ export class GamesService {
 			games.push({
 				name,
 				path: cleanedPath,
-				icon: '',
+				icon: "",
 				config: gameConfig,
 				isRecent: false,
 				isAutoScanned: inScanFolder
@@ -67,16 +67,20 @@ export class GamesService {
 		}
 	}
 
-	static async searchExecutables(folderPath: string, maxDepth: number, excludeNames: string[]): Promise<string[]> {
+	static async searchExecutables(
+		folderPath: string,
+		maxDepth: number,
+		excludeNames: string[]
+	): Promise<string[]> {
 		const executables: string[] = [];
 		const cleanFolder = path.normalize(folderPath);
 
 		const excludeRegexes: RegExp[] = [];
 		for (const pattern of excludeNames) {
 			if (!pattern) continue;
-			let regexStr = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
+			let regexStr = pattern.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*");
 			try {
-				excludeRegexes.push(new RegExp(`^${regexStr}$`, 'i'));
+				excludeRegexes.push(new RegExp(`^${regexStr}$`, "i"));
 			} catch (e) {
 				// skip invalid regex
 			}
@@ -96,13 +100,13 @@ export class GamesService {
 
 			for (const entry of entries) {
 				const name = entry.name;
-				const isExcluded = excludeRegexes.some(r => r.test(name));
+				const isExcluded = excludeRegexes.some((r) => r.test(name));
 				if (isExcluded) continue;
 
 				const fullPath = path.join(currentDir, name);
 				if (entry.isDirectory()) {
 					await scanDir(fullPath, currentDepth + 1);
-				} else if (entry.isFile() && name.toLowerCase().endsWith('.exe')) {
+				} else if (entry.isFile() && name.toLowerCase().endsWith(".exe")) {
 					executables.push(fullPath);
 				}
 			}
@@ -120,20 +124,19 @@ export class GamesService {
 
 		const manualGames = await this.getAllGames();
 		const manualPaths = new Set(
-			manualGames
-				.filter(g => !g.isAutoScanned)
-				.map(g => path.normalize(g.path).toLowerCase())
+			manualGames.filter((g) => !g.isAutoScanned).map((g) => path.normalize(g.path).toLowerCase())
 		);
 
 		const existingConfigsList = await ConfigService.listGameConfigs();
 		const existingConfigsMap = new Map<string, LaunchOptions>();
 		for (const cfg of existingConfigsList) {
 			if (cfg.GamePath) existingConfigsMap.set(path.normalize(cfg.GamePath).toLowerCase(), cfg);
-			if (cfg.LauncherPath) existingConfigsMap.set(path.normalize(cfg.LauncherPath).toLowerCase(), cfg);
+			if (cfg.LauncherPath)
+				existingConfigsMap.set(path.normalize(cfg.LauncherPath).toLowerCase(), cfg);
 		}
 
 		const blacklist = new Set(
-			(settings.Blacklist || []).map(p => path.normalize(p).toLowerCase())
+			(settings.Blacklist || []).map((p) => path.normalize(p).toLowerCase())
 		);
 
 		const groups: ScannedFolderGroup[] = [];
@@ -160,7 +163,7 @@ export class GamesService {
 				let cfg = existingConfigsMap.get(normExe);
 
 				if (!cfg) {
-					const defaultPrefix = path.join(PathsService.getPrefixBaseDirectory(), 'Default');
+					const defaultPrefix = path.join(PathsService.getPrefixBaseDirectory(), "Default");
 					cfg = {
 						ID: ConfigService.generateId(),
 						Name: name,
@@ -168,9 +171,9 @@ export class GamesService {
 						GamePath: exePath,
 						UseGamePath: false,
 						PrefixPath: defaultPrefix,
-						ProtonPath: '',
+						ProtonPath: "",
 						UseCustomProton: false,
-						CustomArgs: '',
+						CustomArgs: "",
 						Extras: {
 							EnableMangoHud: false,
 							EnableGamemode: false,
@@ -178,28 +181,28 @@ export class GamesService {
 								Enabled: false,
 								Multiplier: DefaultMultiplier,
 								PerfMode: false,
-								DllPath: '',
-								Gpu: '',
-								FlowScale: '1.0',
-								Pacing: 'smooth',
+								DllPath: "",
+								Gpu: "",
+								FlowScale: "1.0",
+								Pacing: "smooth",
 								AllowFp16: false
 							},
 							Gamescope: {
 								Enabled: false,
 								Width: DefaultWidth,
 								Height: DefaultHeight,
-								OutputWidth: '',
-								OutputHeight: '',
+								OutputWidth: "",
+								OutputHeight: "",
 								RefreshRate: DefaultRefreshRate,
-								FramerateLimit: '',
-								WindowMode: 'borderless',
-								Scaler: 'auto',
-								Filter: 'linear',
-								Sharpness: '0',
+								FramerateLimit: "",
+								WindowMode: "borderless",
+								Scaler: "auto",
+								Filter: "linear",
+								Sharpness: "0",
 								HDR: false,
 								AdaptiveSync: false,
 								Mangoapp: false,
-								CustomArgs: ''
+								CustomArgs: ""
 							},
 							Memory: {
 								Enabled: false,
@@ -214,7 +217,7 @@ export class GamesService {
 				games.push({
 					name,
 					path: exePath,
-					icon: '',
+					icon: "",
 					config: cfg,
 					isRecent: false,
 					isAutoScanned: true
@@ -239,7 +242,7 @@ export class GamesService {
 			settings.ScanFolders.push(cleaned);
 		}
 
-		const exists = settings.ScanFolderConfigs.some(cfg => path.normalize(cfg.Path) === cleaned);
+		const exists = settings.ScanFolderConfigs.some((cfg) => path.normalize(cfg.Path) === cleaned);
 		if (!exists) {
 			settings.ScanFolderConfigs.push({
 				Path: cleaned,
@@ -255,13 +258,19 @@ export class GamesService {
 		const settings = await ConfigService.loadAppSettings();
 		const cleaned = path.normalize(folderPath);
 
-		settings.ScanFolders = settings.ScanFolders.filter(f => path.normalize(f) !== cleaned);
-		settings.ScanFolderConfigs = settings.ScanFolderConfigs.filter(cfg => path.normalize(cfg.Path) !== cleaned);
+		settings.ScanFolders = settings.ScanFolders.filter((f) => path.normalize(f) !== cleaned);
+		settings.ScanFolderConfigs = settings.ScanFolderConfigs.filter(
+			(cfg) => path.normalize(cfg.Path) !== cleaned
+		);
 
 		await ConfigService.saveAppSettings(settings);
 	}
 
-	static async updateScanFolderConfig(folderPath: string, depth: number, excludeNames: string[]): Promise<void> {
+	static async updateScanFolderConfig(
+		folderPath: string,
+		depth: number,
+		excludeNames: string[]
+	): Promise<void> {
 		const settings = await ConfigService.loadAppSettings();
 		const cleaned = path.normalize(folderPath);
 
@@ -281,7 +290,7 @@ export class GamesService {
 				Depth: depth,
 				ExcludeNames: excludeNames
 			});
-			if (!settings.ScanFolders.some(f => path.normalize(f) === cleaned)) {
+			if (!settings.ScanFolders.some((f) => path.normalize(f) === cleaned)) {
 				settings.ScanFolders.push(cleaned);
 			}
 		}
@@ -293,7 +302,7 @@ export class GamesService {
 		const settings = await ConfigService.loadAppSettings();
 		const cleaned = path.normalize(folderPath);
 
-		const cfg = settings.ScanFolderConfigs.find(c => path.normalize(c.Path) === cleaned);
+		const cfg = settings.ScanFolderConfigs.find((c) => path.normalize(c.Path) === cleaned);
 		if (cfg) return cfg;
 
 		return {
@@ -307,7 +316,7 @@ export class GamesService {
 		const settings = await ConfigService.loadAppSettings();
 		const cleaned = path.normalize(executablePath);
 
-		if (!settings.Blacklist.some(p => path.normalize(p) === cleaned)) {
+		if (!settings.Blacklist.some((p) => path.normalize(p) === cleaned)) {
 			settings.Blacklist.push(cleaned);
 			await ConfigService.saveAppSettings(settings);
 		}
@@ -317,7 +326,7 @@ export class GamesService {
 		const settings = await ConfigService.loadAppSettings();
 		const cleaned = path.normalize(executablePath);
 
-		settings.Blacklist = settings.Blacklist.filter(p => path.normalize(p) !== cleaned);
+		settings.Blacklist = settings.Blacklist.filter((p) => path.normalize(p) !== cleaned);
 		await ConfigService.saveAppSettings(settings);
 	}
 }

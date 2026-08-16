@@ -26,24 +26,17 @@ export class SelectionState {
 		if (shiftKey && this.lastSelectedPath) {
 			const visible = this.getVisibleGames();
 			const lastIdx = visible.findIndex(
-				(g) =>
-					(g.path || g.config.LauncherPath) ===
-					this.lastSelectedPath,
+				(g) => (g.path || g.config.LauncherPath) === this.lastSelectedPath
 			);
-			const currentIdx = visible.findIndex(
-				(g) => (g.path || g.config.LauncherPath) === path,
-			);
+			const currentIdx = visible.findIndex((g) => (g.path || g.config.LauncherPath) === path);
 
 			if (lastIdx !== -1 && currentIdx !== -1) {
 				const start = Math.min(lastIdx, currentIdx);
 				const end = Math.max(lastIdx, currentIdx);
-				const shouldSelect = this.selectedPaths.has(
-					this.lastSelectedPath,
-				);
+				const shouldSelect = this.selectedPaths.has(this.lastSelectedPath);
 
 				for (let i = start; i <= end; i++) {
-					const p =
-						visible[i].path || visible[i].config.LauncherPath;
+					const p = visible[i].path || visible[i].config.LauncherPath;
 					if (shouldSelect) {
 						this.selectedPaths.add(p);
 					} else {
