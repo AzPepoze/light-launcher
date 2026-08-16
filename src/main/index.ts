@@ -4,6 +4,7 @@ import fs from "fs";
 import { registerIpcHandlers } from "./ipc";
 import { ConfigService } from "./services/config.service";
 import { AppService } from "./services/app.service";
+import { PathsService } from "./services/paths.service";
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -29,8 +30,6 @@ async function createWindow(): Promise<BrowserWindow> {
 	const settings = await ConfigService.loadAppSettings();
 	const isTransparent = settings.TransparentMode ?? true;
 
-	const preloadPath = path.join(__dirname, "../preload/index.js");
-
 	mainWindow = new BrowserWindow({
 		title: "LightLauncher",
 		width: 1024,
@@ -42,7 +41,7 @@ async function createWindow(): Promise<BrowserWindow> {
 		frame: true,
 		autoHideMenuBar: true,
 		webPreferences: {
-			preload: preloadPath,
+			preload: PathsService.getPreloadPath(),
 			contextIsolation: true,
 			nodeIntegration: false,
 			sandbox: false
@@ -60,10 +59,7 @@ async function createWindow(): Promise<BrowserWindow> {
 		const devUrl = process.env.VITE_DEV_SERVER_URL || "http://localhost:9245";
 		await mainWindow.loadURL(devUrl);
 	} else {
-		const prodHtmlPath = fs.existsSync(path.join(__dirname, "../renderer/index.html"))
-			? path.join(__dirname, "../renderer/index.html")
-			: path.join(__dirname, "../../src/renderer/dist/index.html");
-		await mainWindow.loadFile(prodHtmlPath);
+		await mainWindow.loadFile(PathsService.getRendererPath());
 	}
 
 	mainWindow.on("closed", () => {

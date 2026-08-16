@@ -46,6 +46,14 @@ export class PathsService {
 		return path.join(this.getPrefixBaseDirectory(), prefixName, "light-launcher.json");
 	}
 
+	static getPreloadPath(): string {
+		return path.join(__dirname, "../preload/index.js");
+	}
+
+	static getRendererPath(): string {
+		return path.join(__dirname, "../renderer/index.html");
+	}
+
 	static expandPath(targetPath: string): string {
 		if (!targetPath) return "";
 		if (targetPath === "~") {

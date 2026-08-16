@@ -35,6 +35,11 @@ describe("PathsService", () => {
 		expect(PathsService.getExecutableConfigPath("MyGame", "")).toBe(path.join(configDir, "MyGame"));
 	});
 
+	it("resolves preload and renderer paths", () => {
+		expect(PathsService.getPreloadPath()).toContain("preload");
+		expect(PathsService.getRendererPath()).toContain("renderer");
+	});
+
 	it("expands tilde paths correctly", () => {
 		const home = os.homedir();
 		expect(PathsService.expandPath("~")).toBe(home);
