@@ -122,7 +122,6 @@
 		width: 100%;
 	}
 
-	// Shimmering pulse keyframe
 	@keyframes skeleton-pulse {
 		0%, 100% {
 			opacity: 0.15;
@@ -138,9 +137,6 @@
 		animation: skeleton-pulse 2s infinite ease-in-out;
 	}
 
-	// SKELETON DEFINITIONS
-
-	// 1. Grid View Card Skeleton
 	.skeleton-grid-card {
 		display: flex;
 		flex-direction: column;
@@ -148,7 +144,7 @@
 		width: 100%;
 		max-width: 200px;
 		margin: 6px;
-		aspect-ratio: 1; // matches .game-icon-container aspect-ratio: 1
+		aspect-ratio: 1;
 		box-sizing: border-box;
 
 		.skeleton-icon-large {
@@ -187,7 +183,6 @@
 		}
 	}
 
-	// 2. List View Card Skeleton
 	.skeleton-list-card {
 		display: flex;
 		align-items: center;
@@ -237,7 +232,6 @@
 		}
 	}
 
-	// 3. Perspective View Card Skeleton
 	.skeleton-perspective-card {
 		width: 220px;
 		height: 310px;

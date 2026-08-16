@@ -181,13 +181,13 @@
 		width: 100vw;
 		color: var(--text-main);
 		user-select: none;
-		overflow: hidden; /* Prevent scrollbar flicker during transition */
+		overflow: hidden;
 	}
 
 	.app-layout {
 		display: flex;
-		flex-direction: row !important; /* Force horizontal layout */
-		justify-content: flex-start !important; /* Start from left */
+		flex-direction: row !important;
+		justify-content: flex-start !important;
 		height: 100vh;
 		width: 100vw;
 		position: relative;
@@ -286,15 +286,14 @@
 		}
 	}
 
-	/* Wrapper to handle transition positioning */
 	.page-wrapper {
 		position: absolute;
 		top: 0;
 		left: 0;
 		width: 100%;
 		height: 100%;
-		overflow-y: auto; /* Allow scrolling inside the page */
-		padding: 76px 48px 40px 84px; /* left padding offsets floating navbar, top padding offsets topbar */
+		overflow-y: auto;
+		padding: 76px 48px 40px 84px;
 		box-sizing: border-box;
 	}
 

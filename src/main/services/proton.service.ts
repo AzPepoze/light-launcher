@@ -49,6 +49,7 @@ export class ProtonService {
 
 	static async scanProtonVersions(): Promise<ProtonTool[]> {
 		const tools: ProtonTool[] = [];
+		const seenPaths = new Set<string>();
 		const home = os.homedir();
 
 		const steamCommonPaths = [
@@ -71,8 +72,14 @@ export class ProtonService {
 				for (const entry of entries) {
 					if (entry.isDirectory() && entry.name.toLowerCase().startsWith("proton")) {
 						const protonPath = path.join(basePath, entry.name);
+						const realP = fsSync.existsSync(protonPath)
+							? fsSync.realpathSync(protonPath)
+							: protonPath;
+						if (seenPaths.has(realP)) continue;
+
 						const protonExe = path.join(protonPath, "proton");
 						if (fsSync.existsSync(protonExe)) {
+							seenPaths.add(realP);
 							tools.push({
 								Name: entry.name,
 								Path: protonPath,
@@ -93,17 +100,20 @@ export class ProtonService {
 				for (const entry of entries) {
 					if (entry.isDirectory()) {
 						const protonPath = path.join(basePath, entry.name);
+						const realP = fsSync.existsSync(protonPath)
+							? fsSync.realpathSync(protonPath)
+							: protonPath;
+						if (seenPaths.has(realP)) continue;
+
 						const protonExe = path.join(protonPath, "proton");
 						if (fsSync.existsSync(protonExe)) {
-							// Avoid duplicates
-							if (!tools.some((t) => t.Path === protonPath)) {
-								tools.push({
-									Name: entry.name,
-									Path: protonPath,
-									IsSteam: false,
-									DisplayName: `Custom: ${entry.name}`
-								});
-							}
+							seenPaths.add(realP);
+							tools.push({
+								Name: entry.name,
+								Path: protonPath,
+								IsSteam: false,
+								DisplayName: `Custom: ${entry.name}`
+							});
 						}
 					}
 				}
