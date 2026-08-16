@@ -1,0 +1,26 @@
+appId: com.azpepoze.lightlauncher
+productName: LightLauncher
+directories:
+  output: dist/bundle
+  buildResources: build
+files:
+  - dist/main/**/*
+  - dist/preload/**/*
+  - src/renderer/dist/**/*
+  - package.json
+extraResources:
+  - from: bin/light-launcher-instance
+    to: light-launcher-instance
+linux:
+  target:
+    - target: AppImage
+      arch:
+        - x64
+    - target: tar.gz
+      arch:
+        - x64
+  category: Game
+  desktop:
+    StartupWMClass: light-launcher
+    Name: LightLauncher
+    Comment: Ultra-lightweight Linux gaming launcher
