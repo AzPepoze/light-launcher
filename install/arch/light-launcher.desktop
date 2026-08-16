@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=LightLauncher
+Comment=Ultra-lightweight Linux gaming launcher powered by Go & Electron
+Exec=/usr/bin/light-launcher %U
+Icon=light-launcher
+Terminal=false
+Type=Application
+Categories=Game;Utility;
+StartupWMClass=light-launcher
