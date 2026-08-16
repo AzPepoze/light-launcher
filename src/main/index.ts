@@ -60,7 +60,10 @@ async function createWindow(): Promise<BrowserWindow> {
 		const devUrl = process.env.VITE_DEV_SERVER_URL || "http://localhost:9245";
 		await mainWindow.loadURL(devUrl);
 	} else {
-		await mainWindow.loadFile(path.join(__dirname, "../renderer/index.html"));
+		const prodHtmlPath = fs.existsSync(path.join(__dirname, "../renderer/index.html"))
+			? path.join(__dirname, "../renderer/index.html")
+			: path.join(__dirname, "../../src/renderer/dist/index.html");
+		await mainWindow.loadFile(prodHtmlPath);
 	}
 
 	mainWindow.on("closed", () => {
