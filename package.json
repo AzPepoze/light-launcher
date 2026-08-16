@@ -25,7 +25,6 @@
 	},
 	"dependencies": {},
 	"devDependencies": {
-		"@eslint/js": "^10.0.1",
 		"@sveltejs/vite-plugin-svelte": "^6.2.4",
 		"@tsconfig/svelte": "^5.0.6",
 		"@types/node": "^25.6.0",
@@ -33,20 +32,14 @@
 		"concurrently": "^9.1.2",
 		"electron": "^34.3.0",
 		"electron-builder": "^25.1.8",
-		"eslint": "^10.8.1",
-		"eslint-plugin-svelte": "^3.23.0",
-		"globals": "^17.11.0",
 		"oxfmt": "^0.63.0",
 		"oxlint": "^1.78.0",
-		"prettier": "^3.9.6",
-		"prettier-plugin-svelte": "^4.1.1",
 		"sass": "^1.97.3",
 		"svelte": "^5.49.1",
 		"svelte-check": "^4.3.6",
 		"svelte-preprocess": "^6.0.3",
 		"tslib": "^2.8.1",
 		"typescript": "^5.9.3",
-		"typescript-eslint": "^8.67.0",
 		"vite": "^7.3.1",
 		"vitest": "^4.1.10"
 	}
