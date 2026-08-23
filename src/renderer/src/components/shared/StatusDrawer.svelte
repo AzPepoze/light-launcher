@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
-	import StatusUtilityButton from "@components/shared/StatusUtilityButton.svelte";
 	import SystemResources from "@components/shared/SystemResources.svelte";
 	import CleanupActions from "@components/shared/CleanupActions.svelte";
 	import { StatusDrawerState } from "./StatusDrawerState.svelte";
 
+	export let embedded = false;
 	const state = new StatusDrawerState();
 
 	onMount(() => {
@@ -16,18 +16,20 @@
 	});
 </script>
 
-<div class="status-drawer-wrapper" class:expanded={state.isExpanded}>
-	<button class="toggle-btn" on:click={() => (state.isExpanded = !state.isExpanded)}>
-		<span class="material-icons">tune</span>
-		<span class="trigger-text"
-			>{state.isExpanded
-				? "CLOSE DRAWER"
-				: "SYSTEM STATUS & UTILITIES"}</span
-		>
-		<span class="material-icons">
-			{state.isExpanded ? "keyboard_arrow_down" : "keyboard_arrow_up"}
-		</span>
-	</button>
+<div class="status-drawer-wrapper" class:expanded={state.isExpanded} class:embedded>
+	{#if !embedded}
+		<button class="toggle-btn" on:click={() => (state.isExpanded = !state.isExpanded)}>
+			<span class="material-icons">tune</span>
+			<span class="trigger-text"
+				>{state.isExpanded
+					? "CLOSE DRAWER"
+					: "SYSTEM STATUS & UTILITIES"}</span
+			>
+			<span class="material-icons">
+				{state.isExpanded ? "keyboard_arrow_down" : "keyboard_arrow_up"}
+			</span>
+		</button>
+	{/if}
 
 	<div class="drawer-content">
 		<SystemResources sysInfo={state.sysInfo} sysUsage={state.sysUsage} />
@@ -72,6 +74,22 @@
 		&.expanded {
 			transform: translateY(0);
 			box-shadow: 0 10px 60px rgba(255, 102, 171, 0.1);
+		}
+
+		&.embedded {
+			position: relative;
+			bottom: auto;
+			width: 100%;
+			margin: 0;
+			padding: 24px;
+			transform: none;
+			z-index: auto;
+			overflow: visible;
+			box-shadow: 0 12px 40px rgba(0, 0, 0, 0.22);
+
+			.drawer-content {
+				padding-top: 0;
+			}
 		}
 	}
 
@@ -120,5 +138,10 @@
 		display: flex;
 		flex-direction: column;
 		gap: 24px;
+	}
+
+	.divider {
+		height: 1px;
+		background: rgba(255, 255, 255, 0.06);
 	}
 </style>
