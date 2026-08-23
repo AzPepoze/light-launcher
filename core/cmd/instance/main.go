@@ -37,7 +37,7 @@ func main() {
 	flag.StringVar(&protonPattern, "proton-pattern", "", "Proton pattern for UMU")
 	flag.StringVar(&gameName, "game-name", "", "Friendly game/profile name")
 	flag.StringVar(&discordClientID, "discord-client-id", "", "Discord application client ID for Rich Presence")
-	flag.BoolVar(&trackPlaytime, "track-playtime", false, "Persist recent game activity and playtime")
+	flag.BoolVar(&trackPlaytime, "track-playtime", true, "Persist recent game activity and playtime")
 	flag.BoolVar(&showLogs, "logs", true, "Show terminal logs")
 
 	for _, a := range adapter.GetAdapters() {
