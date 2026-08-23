@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	activityStore "light-launcher/core/internal/activity"
 	"light-launcher/core/internal/config"
 	"light-launcher/core/internal/discordrpc"
 	"light-launcher/core/internal/executor"
@@ -107,6 +108,7 @@ func onReady(logPath string) {
 	}
 
 	gameStartedAt := time.Now()
+	shouldTrackPlaytime := trackPlaytime && activityStore.TrackingEnabled()
 	logger.Info("Runner", "Game started successfully (PID: %d). Running: %s", gameCmd.Process.Pid, exeNameClean)
 	sendNotification("LightLauncher Running", fmt.Sprintf("%s is now running (PID: %d)", exeNameClean, gameCmd.Process.Pid))
 
@@ -178,11 +180,17 @@ func onReady(logPath string) {
 	// Wait for game to exit
 	go func() {
 		err := gameCmd.Wait()
+		endedAt := time.Now()
 		if logFileHandle != nil {
 			logFileHandle.Close()
 		}
 		if discordClient != nil {
 			_ = discordClient.Close()
+		}
+		if shouldTrackPlaytime {
+			if err := activityStore.Finalize(opts.GamePath, exeNameClean, gameStartedAt, endedAt); err != nil {
+				logger.Info("Activity", "Failed to finalize playtime: %v", err)
+			}
 		}
 
 		if err != nil {
@@ -205,7 +213,7 @@ func setupLsfgMenu() {
 		for {
 			log.Printf("LSFG menu handler: waiting for click...")
 			<-mLsfgEdit.ClickedCh
-			log.Printf("LSFG menu handler: click received!")
+			log.Printf("LSFG menu handler: Kill button clicked in tray")
 
 			profile, idx, err := lsfgLib.FindProfileForGame(gamePath)
 			if err != nil {
