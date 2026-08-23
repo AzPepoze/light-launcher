@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"light-launcher/core/internal/config"
+	"light-launcher/core/internal/discordrpc"
 	"light-launcher/core/internal/executor"
 	"light-launcher/core/internal/executor/builder"
 	"light-launcher/core/internal/logger"
@@ -46,6 +47,9 @@ func onReady(logPath string) {
 	opts := buildLaunchOptions()
 	exeName := filepath.Base(opts.GamePath)
 	exeNameClean := strings.TrimSuffix(exeName, filepath.Ext(exeName))
+	if strings.TrimSpace(gameName) != "" {
+		exeNameClean = strings.TrimSpace(gameName)
+	}
 	launcherName := filepath.Base(opts.LauncherPath)
 
 	systray.SetIcon(applicationIconData)
@@ -102,8 +106,25 @@ func onReady(logPath string) {
 		return
 	}
 
+	gameStartedAt := time.Now()
 	logger.Info("Runner", "Game started successfully (PID: %d). Running: %s", gameCmd.Process.Pid, exeNameClean)
 	sendNotification("LightLauncher Running", fmt.Sprintf("%s is now running (PID: %d)", exeNameClean, gameCmd.Process.Pid))
+
+	// Rich Presence lives in the per-game instance so it survives the Electron window
+	// being closed after launch. Discord is optional and failures never block the game.
+	var discordClient *discordrpc.Client
+	if strings.TrimSpace(discordClientID) != "" {
+		client, err := discordrpc.Connect(strings.TrimSpace(discordClientID))
+		if err != nil {
+			logger.Info("Discord", "Rich Presence unavailable: %v", err)
+		} else if err := client.SetActivity(exeNameClean, gameStartedAt); err != nil {
+			logger.Info("Discord", "Failed to set Rich Presence: %v", err)
+			_ = client.Close()
+		} else {
+			discordClient = client
+			logger.Info("Discord", "Rich Presence active for %s", exeNameClean)
+		}
+	}
 
 	// Internal helper to kill game gracefully
 	killGame := func() {
@@ -159,6 +180,9 @@ func onReady(logPath string) {
 		err := gameCmd.Wait()
 		if logFileHandle != nil {
 			logFileHandle.Close()
+		}
+		if discordClient != nil {
+			_ = discordClient.Close()
 		}
 
 		if err != nil {
