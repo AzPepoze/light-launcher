@@ -6,7 +6,14 @@
 	import FolderSettingsModal from "@components/home/FolderSettingsModal.svelte";
 	import SidebarProfilesSection from "@components/home/SidebarProfilesSection.svelte";
 	import GameCardGrid from "@components/home/shared/GameCardGrid.svelte";
-	import { BlacklistGame, RemoveGame, RemoveScanFolder } from "@lib/api";
+	import {
+		BlacklistGame,
+		RemoveGame,
+		RemoveScanFolder,
+		KillSession,
+		PickFileCustom,
+		SaveGameConfig
+	} from "@lib/api";
 	import { notifications } from "@stores/notificationStore";
 
 	export let currentView: "grid" | "list-grid" | "sidebar-grid" = "grid";
@@ -21,7 +28,7 @@
 
 	export let isGameRunning: (game: any, sessionsList: any[]) => boolean;
 	export let sessions: any[] = [];
-	export let handleQuickLaunch: (game: any) => Promise<void>;
+	export let handleQuickLaunch: (game: any, showLogs?: boolean) => Promise<void>;
 	export let handleConfigure: (game: any) => void;
 	export let toggleGameSelection: (game: any, shiftKey: boolean) => void;
 	export let onRefresh: () => void = () => {};
@@ -84,6 +91,62 @@
 		menuY = event.clientY;
 		activeMenuGame = game;
 		menuVisible = true;
+	}
+
+	function getGamePath(game: any): string {
+		return game?.path || game?.config?.GamePath || game?.config?.LauncherPath || "";
+	}
+
+	async function handleKillActiveGame() {
+		if (!activeMenuGame) return;
+		const activePath = getGamePath(activeMenuGame);
+		const session = sessions.find((item) => item.gamePath === activePath);
+		if (!session) {
+			notifications.add("The running game session was not found.", "error");
+			return;
+		}
+
+		try {
+			await KillSession(session.pid);
+			notifications.add(`Stopping ${activeMenuGame.name}...`, "info");
+			onRefresh();
+		} catch (err) {
+			notifications.add(`Failed to stop game: ${err}`, "error");
+		}
+	}
+
+	async function handleSetCustomIcon() {
+		if (!activeMenuGame || activeMenuGame.isAutoScanned) return;
+		try {
+			const iconPath = await PickFileCustom("Select Game Icon", [
+				{
+					displayName: "Images",
+					pattern: "*.png;*.jpg;*.jpeg;*.webp;*.svg;*.ico"
+				}
+			]);
+			if (!iconPath) return;
+
+			const config = structuredClone(activeMenuGame.config);
+			config.CustomIconPath = iconPath;
+			await SaveGameConfig(config);
+			notifications.add("Custom game icon saved", "success");
+			onRefresh();
+		} catch (err) {
+			notifications.add(`Failed to set custom icon: ${err}`, "error");
+		}
+	}
+
+	async function handleClearCustomIcon() {
+		if (!activeMenuGame || activeMenuGame.isAutoScanned) return;
+		try {
+			const config = structuredClone(activeMenuGame.config);
+			config.CustomIconPath = "";
+			await SaveGameConfig(config);
+			notifications.add("Using executable icon again", "success");
+			onRefresh();
+		} catch (err) {
+			notifications.add(`Failed to clear custom icon: ${err}`, "error");
+		}
 	}
 
 	async function handleAction() {
@@ -228,8 +291,13 @@
 		bind:visible={menuVisible}
 		isAutoScanned={activeMenuGame.isAutoScanned}
 		isRunning={isGameRunning(activeMenuGame, sessions)}
-		onLaunch={() => handleQuickLaunch(activeMenuGame)}
+		hasCustomIcon={Boolean(activeMenuGame.config?.CustomIconPath)}
+		onLaunch={() => handleQuickLaunch(activeMenuGame, false)}
+		onLaunchWithLogs={() => handleQuickLaunch(activeMenuGame, true)}
+		onKill={handleKillActiveGame}
 		onConfigure={() => handleConfigure(activeMenuGame)}
+		onSetCustomIcon={handleSetCustomIcon}
+		onClearCustomIcon={handleClearCustomIcon}
 		onAction={handleAction}
 		onClose={() => { menuVisible = false; activeMenuGame = null; }}
 	/>
