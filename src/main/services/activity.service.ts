@@ -85,18 +85,17 @@ export class ActivityService {
 
 		const running = new Map(sessions.map((session) => [this.key(session.gamePath), session]));
 
+		// The Go game instance owns playtime finalization because it knows the exact
+		// exit time even when Electron has already quit. Renderer polling only clears
+		// stale active markers; it never increments total playtime.
 		for (const [key, activity] of Object.entries(store.games)) {
 			if (activity.activeSince && !running.has(key)) {
-				activity.totalPlaytimeSeconds += Math.max(
-					0,
-					Math.round((now - activity.activeSince) / 1000)
-				);
 				delete activity.activeSince;
 				changed = true;
 			}
 		}
 
-		// Recover tracking if the launcher restarted while a managed instance stayed alive.
+		// Recover active state if the launcher restarted while a managed instance stayed alive.
 		for (const session of sessions) {
 			const key = this.key(session.gamePath);
 			const existing = store.games[key];
