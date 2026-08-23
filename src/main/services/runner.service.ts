@@ -10,6 +10,7 @@ import { LsfgService } from "./lsfg.service";
 import { ProtonService } from "./proton.service";
 import { SystemService } from "./system.service";
 import { LoggerService } from "./logger.service";
+import { ActivityService } from "./activity.service";
 import type { LaunchOptions } from "../../shared/types/config.types";
 
 export class RunnerService {
@@ -35,23 +36,27 @@ export class RunnerService {
 	}
 
 	static async runGame(options: LaunchOptions, showLogs: boolean): Promise<void> {
+		// Renderer callers must not be able to mutate their saved object as the backend
+		// normalizes paths/runtime selections for this launch.
+		options = structuredClone(options);
+
 		if (!options.UseGamePath && options.LauncherPath) {
 			options.GamePath = options.LauncherPath;
 		}
 
+		const basePrefixDir = await PrefixService.getPrefixBaseDir();
 		if (!options.PrefixPath || options.PrefixPath.includes("/LightLauncher/prefixes/")) {
 			const prefixName = options.PrefixPath ? path.basename(options.PrefixPath) : "Default";
-			const basePrefixDir = await PrefixService.getPrefixBaseDir();
 			options.PrefixPath = path.join(basePrefixDir, prefixName);
 		} else if (!fsSync.existsSync(options.PrefixPath)) {
 			const prefixName = path.basename(options.PrefixPath);
-			const basePrefixDir = await PrefixService.getPrefixBaseDir();
 			const candidate = path.join(basePrefixDir, prefixName);
 			if (fsSync.existsSync(candidate)) {
 				options.PrefixPath = candidate;
 			}
 		}
 
+		options.PrefixPath = PathsService.expandPath(options.PrefixPath);
 		if (!fsSync.existsSync(options.PrefixPath)) {
 			await fs.mkdir(options.PrefixPath, { recursive: true });
 		}
@@ -63,13 +68,53 @@ export class RunnerService {
 			throw new Error(`Game executable not found at: ${options.GamePath}`);
 		}
 
+		// Runtime selection is authoritative here so every entry point (Run page,
+		// library quick launch, command palette, context menu) gets identical behavior.
+		// A game-level custom Proton wins. Otherwise use the selected prefix default.
+		if (!options.UseCustomProton) {
+			options.ProtonPath = "";
+			const prefixConfigPath = path.join(options.PrefixPath, "light-launcher.json");
+			if (fsSync.existsSync(prefixConfigPath)) {
+				try {
+					const prefixConfig = await ConfigService.loadJson<LaunchOptions>(prefixConfigPath);
+					if (prefixConfig.ProtonPath) {
+						options.ProtonPath = prefixConfig.ProtonPath;
+					}
+				} catch (err) {
+					LoggerService.warn("Runner", `Failed to read prefix runtime defaults: ${err}`);
+				}
+			}
+		}
+
+		const protonTools = await ProtonService.scanProtonVersions();
+		if (options.ProtonPath) {
+			const match = ProtonService.findProtonMatch(options.ProtonPath, protonTools);
+			if (match) {
+				options.ProtonPath = match.Path;
+			} else if (!fsSync.existsSync(PathsService.expandPath(options.ProtonPath))) {
+				if (protonTools.length > 0) {
+					LoggerService.warn(
+						"Runner",
+						`Configured Proton "${options.ProtonPath}" not found. Falling back to "${protonTools[0].DisplayName}".`
+					);
+					options.ProtonPath = protonTools[0].Path;
+				} else {
+					throw new Error("No Proton runtime was found. Install a Proton version first.");
+				}
+			}
+		} else if (protonTools.length > 0) {
+			options.ProtonPath = protonTools[0].Path;
+		} else {
+			throw new Error("No Proton runtime was found. Install a Proton version first.");
+		}
+
 		LoggerService.info("Runner", `Launching "${options.Name || path.basename(options.GamePath)}"`, {
 			game: options.GamePath,
 			prefix: options.PrefixPath,
 			proton: options.ProtonPath || "default"
 		});
 
-		// Save configuration
+		// Save the normalized configuration so future launches use valid current paths.
 		await ConfigService.saveGameConfig(options);
 
 		// Handle LSFG profile
@@ -119,21 +164,6 @@ export class RunnerService {
 			);
 		}
 
-		// Match Proton path if configured or fallback to first available
-		if (options.ProtonPath) {
-			const protonTools = await ProtonService.scanProtonVersions();
-			const match = ProtonService.findProtonMatch(options.ProtonPath, protonTools);
-			if (match) {
-				options.ProtonPath = match.Path;
-			} else if (!fsSync.existsSync(options.ProtonPath) && protonTools.length > 0) {
-				LoggerService.warn(
-					"Runner",
-					`Configured Proton "${options.ProtonPath}" not found. Falling back to "${protonTools[0].DisplayName}".`
-				);
-				options.ProtonPath = protonTools[0].Path;
-			}
-		}
-
 		// Build arguments for light-launcher-instance
 		const args: string[] = [
 			"--game",
@@ -141,12 +171,22 @@ export class RunnerService {
 			"--launcher",
 			options.LauncherPath || options.GamePath,
 			"--prefix",
-			PathsService.expandPath(options.PrefixPath),
+			options.PrefixPath,
 			"--proton-pattern",
-			options.ProtonPath ? path.basename(options.ProtonPath) : "",
+			path.basename(options.ProtonPath),
 			"--proton-path",
-			options.ProtonPath ? PathsService.expandPath(options.ProtonPath) : ""
+			PathsService.expandPath(options.ProtonPath),
+			"--game-name",
+			options.Name || path.parse(options.GamePath).name
 		];
+
+		const settings = await ConfigService.loadAppSettings();
+		if (settings.DiscordRichPresence !== false) {
+			const discordClientId = (settings.DiscordClientId || process.env.LIGHT_LAUNCHER_DISCORD_CLIENT_ID || "").trim();
+			if (discordClientId) {
+				args.push("--discord-client-id", discordClientId);
+			}
+		}
 
 		if (!showLogs) {
 			args.push("--logs=false");
@@ -210,5 +250,7 @@ export class RunnerService {
 			stdio: "ignore"
 		});
 		child.unref();
+
+		await ActivityService.recordLaunch(options);
 	}
 }
