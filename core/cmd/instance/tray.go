@@ -213,7 +213,7 @@ func setupLsfgMenu() {
 		for {
 			log.Printf("LSFG menu handler: waiting for click...")
 			<-mLsfgEdit.ClickedCh
-			log.Printf("LSFG menu handler: Kill button clicked in tray")
+			log.Printf("LSFG menu handler: click received!")
 
 			profile, idx, err := lsfgLib.FindProfileForGame(gamePath)
 			if err != nil {
