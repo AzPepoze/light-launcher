@@ -22,8 +22,10 @@ var (
 	prefixPath    string
 	protonPath    string
 	protonPattern string
+	gameName      string
 
-	showLogs bool
+	discordClientID string
+	showLogs        bool
 )
 
 func main() {
@@ -32,6 +34,8 @@ func main() {
 	flag.StringVar(&prefixPath, "prefix", "", "Path to the WINEPREFIX")
 	flag.StringVar(&protonPath, "proton-path", "", "Full path to the Proton tool")
 	flag.StringVar(&protonPattern, "proton-pattern", "", "Proton pattern for UMU")
+	flag.StringVar(&gameName, "game-name", "", "Friendly game/profile name")
+	flag.StringVar(&discordClientID, "discord-client-id", "", "Discord application client ID for Rich Presence")
 	flag.BoolVar(&showLogs, "logs", true, "Show terminal logs")
 
 	for _, a := range adapter.GetAdapters() {
