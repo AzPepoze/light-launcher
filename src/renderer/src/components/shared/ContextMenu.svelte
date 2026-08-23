@@ -7,9 +7,14 @@
 	export let visible: boolean;
 	export let isAutoScanned: boolean = false;
 	export let isRunning: boolean = false;
+	export let hasCustomIcon: boolean = false;
 
 	export let onLaunch: () => void;
+	export let onLaunchWithLogs: () => void = () => {};
+	export let onKill: () => void = () => {};
 	export let onConfigure: () => void;
+	export let onSetCustomIcon: () => void = () => {};
+	export let onClearCustomIcon: () => void = () => {};
 	export let onAction: () => void; // Blacklist or Delete
 	export let onClose: () => void;
 
@@ -43,15 +48,41 @@
 			on:click|stopPropagation
 			transition:scale={{ duration: 120, start: 0.95 }}
 		>
-			<button class="menu-item" on:click={() => { onLaunch(); onClose(); }}>
-				<span class="material-icons">{isRunning ? 'stop' : 'play_arrow'}</span>
-				<span>{isRunning ? 'Kill Process' : 'Launch Game'}</span>
-			</button>
+			{#if isRunning}
+				<button class="menu-item danger-soft" on:click={() => { onKill(); onClose(); }}>
+					<span class="material-icons">stop_circle</span>
+					<span>Stop Game</span>
+				</button>
+			{:else}
+				<button class="menu-item" on:click={() => { onLaunch(); onClose(); }}>
+					<span class="material-icons">play_arrow</span>
+					<span>Launch Game</span>
+				</button>
+
+				<button class="menu-item" on:click={() => { onLaunchWithLogs(); onClose(); }}>
+					<span class="material-icons">terminal</span>
+					<span>Run with Logs</span>
+				</button>
+			{/if}
 
 			<button class="menu-item" on:click={() => { onConfigure(); onClose(); }}>
 				<span class="material-icons">settings</span>
-				<span>Configure Config</span>
+				<span>Configure Profile</span>
 			</button>
+
+			{#if !isAutoScanned}
+				<div class="menu-divider"></div>
+				<button class="menu-item" on:click={() => { onSetCustomIcon(); onClose(); }}>
+					<span class="material-icons">image</span>
+					<span>{hasCustomIcon ? 'Replace Custom Icon' : 'Set Custom Icon'}</span>
+				</button>
+				{#if hasCustomIcon}
+					<button class="menu-item" on:click={() => { onClearCustomIcon(); onClose(); }}>
+						<span class="material-icons">hide_image</span>
+						<span>Use Executable Icon</span>
+					</button>
+				{/if}
+			{/if}
 
 			<div class="menu-divider"></div>
 
@@ -80,8 +111,8 @@
 
 	.context-menu {
 		position: absolute;
-		min-width: 180px;
-		background: rgba(var(--bg-surface-rgb, 12, 12, 12), 0.75);
+		min-width: 210px;
+		background: rgba(var(--bg-surface-rgb, 12, 12, 12), 0.82);
 		backdrop-filter: blur(20px);
 		-webkit-backdrop-filter: blur(20px);
 		border: 1px solid var(--glass-border);
@@ -114,7 +145,7 @@
 			color: var(--accent-primary);
 		}
 
-		&.danger:hover {
+		&.danger:hover, &.danger-soft:hover {
 			background: rgba(255, 68, 68, 0.1);
 			color: var(--danger, #ff4444);
 		}
