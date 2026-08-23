@@ -50,6 +50,7 @@ export interface LaunchOptions {
 	ProtonPath: string;
 	UseCustomProton: boolean;
 	CustomArgs: string;
+	CustomIconPath?: string;
 	Extras: ExtrasConfig;
 }
 
@@ -66,4 +67,7 @@ export interface AppSettings {
 	ScanFolderConfigs: ScanFolderConfig[];
 	Blacklist: string[];
 	CustomPrefixDir?: string;
+	TrackPlaytime?: boolean;
+	DiscordRichPresence?: boolean;
+	DiscordClientId?: string;
 }
