@@ -16,12 +16,14 @@
 	import { fade, fly } from "svelte/transition";
 	import EditLsfg from "./pages/EditLsfg.svelte";
 	import Home from "./pages/Home.svelte";
+	import GameManager from "./pages/GameManager.svelte";
 	import Prefix from "./pages/Prefix.svelte";
 	import Run from "./pages/Run.svelte";
 	import Settings from "./pages/Settings.svelte";
 	import Utils from "./pages/Utils.svelte";
 	import Versions from "./pages/Versions.svelte";
 	import CommandPalette from "@components/shared/CommandPalette.svelte";
+	import { commandPaletteState } from "@components/shared/CommandPaletteState.svelte";
 
 	let bgBase64 = "";
 	let transparency = 1.0;
@@ -98,9 +100,14 @@
 
 	let showCommandPalette = false;
 
+	function openCommandPalette() {
+		showCommandPalette = true;
+		setTimeout(() => commandPaletteState.focusInput(), 0);
+	}
+
 	function handleGlobalKeydown(e: KeyboardEvent) {
 		if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
-			showCommandPalette = !showCommandPalette;
+			openCommandPalette();
 			e.preventDefault();
 		}
 	}
@@ -127,11 +134,20 @@
 		<div class="content-container">
 			{#if activePage !== "editlsfg"}
 				<div class="topbar-container">
-					<button class="global-search-trigger" on:click={() => showCommandPalette = true} aria-label="Search games and actions">
+					<div class="global-search-trigger" role="search">
 						<span class="material-icons">search</span>
-						<span class="placeholder-text">Search...</span>
-						<span class="shortcut-kbd">Ctrl K</span>
-					</button>
+						<input
+							bind:value={commandPaletteState.searchQuery}
+							type="text"
+							placeholder="Search games, pages, and actions..."
+							aria-label="Search games and actions"
+							autocomplete="off"
+							spellcheck="false"
+							on:focus={openCommandPalette}
+							on:input={openCommandPalette}
+						/>
+						<button class="shortcut-kbd" on:click={openCommandPalette} aria-label="Open command palette">Ctrl K</button>
+					</div>
 				</div>
 			{/if}
 
@@ -149,6 +165,8 @@
 					<div class="content-zone" class:full-width={activePage === "home" || activePage === "editlsfg"}>
 						{#if activePage === "home"}
 							<Home />
+						{:else if activePage === "manager"}
+							<GameManager />
 						{:else if activePage === "run"}
 							<Run />
 						{:else if activePage === "versions"}
@@ -236,7 +254,7 @@
 		left: 50%;
 		transform: translateX(-50%);
 		width: 100%;
-		max-width: 480px;
+		max-width: 520px;
 		display: flex;
 		justify-content: center;
 		z-index: 150;
@@ -245,25 +263,22 @@
 
 	.global-search-trigger {
 		pointer-events: auto;
-		display: inline-flex;
+		display: flex;
 		align-items: center;
 		width: 100%;
 		gap: 8px;
 		background: var(--bg-surface);
 		border: 2px solid rgba(255, 255, 255, 0.05);
 		border-radius: var(--radius-md);
-		padding: 8px 16px;
+		padding: 6px 10px 6px 14px;
 		color: var(--text-muted);
-		cursor: pointer;
-		font-size: 0.85rem;
-		font-weight: 600;
 		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-		transition: border-color var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
+		transition: border-color var(--transition-fast), background var(--transition-fast), box-shadow var(--transition-fast);
 
-		&:hover {
-			border-color: rgba(255, 255, 255, 0.15);
+		&:focus-within, &:hover {
+			border-color: rgba(255, 255, 255, 0.16);
 			background: var(--bg-elevated);
-			color: var(--text-main);
+			box-shadow: 0 6px 24px rgba(0, 0, 0, 0.22);
 		}
 
 		.material-icons {
@@ -271,9 +286,19 @@
 			color: var(--text-dim);
 		}
 
-		.placeholder-text {
+		input {
 			flex: 1;
-			text-align: left;
+			min-width: 0;
+			border: 0;
+			outline: 0;
+			background: transparent;
+			color: var(--text-main);
+			font: inherit;
+			font-size: 0.88rem;
+			font-weight: 650;
+			user-select: text;
+
+			&::placeholder { color: var(--text-dim); }
 		}
 
 		.shortcut-kbd {
@@ -281,10 +306,10 @@
 			font-family: monospace;
 			background: rgba(255, 255, 255, 0.05);
 			border: 1px solid rgba(255, 255, 255, 0.1);
-			padding: 2px 6px;
+			padding: 4px 7px;
 			border-radius: var(--radius-sm);
 			color: var(--text-dim);
-			margin-left: 12px;
+			cursor: pointer;
 		}
 	}
 
