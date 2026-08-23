@@ -5,6 +5,7 @@ import type {
 	GameInfo,
 	ScannedFolderGroup,
 	RunningSession,
+	GameActivity,
 	SystemInfo,
 	SystemUsage,
 	SystemToolsStatus,
@@ -168,6 +169,7 @@ export const RemoveProfile = (mainExecutablePath: string) =>
 export const InstallLsfg = () => invoke<void>("InstallLsfg");
 export const UninstallLsfg = () => invoke<void>("UninstallLsfg");
 
-// Sessions
+// Sessions & Activity
 export const GetRunningSessions = () => invoke<RunningSession[]>("GetRunningSessions");
 export const KillSession = (pid: number) => invoke<void>("KillSession", { pid });
+export const GetGameActivity = () => invoke<GameActivity[]>("GetGameActivity");
