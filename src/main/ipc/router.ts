@@ -8,6 +8,7 @@ import { ProtonService } from "../services/proton.service";
 import { RunnerService } from "../services/runner.service";
 import { SessionService } from "../services/session.service";
 import { SystemService } from "../services/system.service";
+import { ActivityService } from "../services/activity.service";
 
 export class IpcRouter {
 	static async dispatch(method: string, payload: any, sender: WebContents): Promise<any> {
@@ -172,11 +173,14 @@ export class IpcRouter {
 			case "UninstallLsfg":
 				return LsfgService.uninstallLsfg();
 
-			// Session Service
+			// Session & Activity Service
 			case "GetRunningSessions":
 				return SessionService.getRunningSessions();
 			case "KillSession":
 				return SessionService.killSession(payload.pid);
+			case "GetGameActivity":
+				await SessionService.getRunningSessions();
+				return ActivityService.getActivities();
 
 			default:
 				throw new Error(`Unknown IPC method: ${method}`);
