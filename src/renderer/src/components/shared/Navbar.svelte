@@ -7,6 +7,7 @@
 
 	const navItems = [
 		{ id: "home", label: "Home", icon: "home" },
+		{ id: "manager", label: "Game Manager", icon: "monitor_heart" },
 		{ id: "run", label: "Run", icon: "rocket_launch" },
 		{ id: "versions", label: "Versions", icon: protonIcon, isCustomIcon: true },
 		{ id: "prefix", label: "Prefix", icon: "folder_shared" },
