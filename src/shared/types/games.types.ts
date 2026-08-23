@@ -19,4 +19,16 @@ export interface RunningSession {
 	pid: number;
 	gamePath: string;
 	gameName: string;
+	startedAt?: number;
+}
+
+export interface GameActivity {
+	gamePath: string;
+	gameName: string;
+	profileId?: string;
+	customIconPath?: string;
+	lastPlayedAt: number;
+	totalPlaytimeSeconds: number;
+	sessionCount: number;
+	activeSince?: number;
 }
