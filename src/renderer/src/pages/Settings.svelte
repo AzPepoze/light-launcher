@@ -6,6 +6,7 @@
 	import ScanFoldersSetting from "@components/settings/ScanFoldersSetting.svelte";
 	import BlacklistSetting from "@components/settings/BlacklistSetting.svelte";
 	import PrefixStorageSetting from "@components/settings/PrefixStorageSetting.svelte";
+	import GamingIntegrationsSetting from "@components/settings/GamingIntegrationsSetting.svelte";
 
 	let currentSettings = {
 		theme: "light",
@@ -20,12 +21,21 @@
 		ScanFolderConfigs: [] as any[],
 		Blacklist: [] as string[],
 		CustomPrefixDir: "",
+		TrackPlaytime: true,
+		DiscordRichPresence: true,
+		DiscordClientId: "",
 	};
 
 	async function refreshAppSettings() {
 		const settings = await service.loadAppSettings();
 		if (settings) {
-			appSettings = settings;
+			appSettings = {
+				...appSettings,
+				...settings,
+				TrackPlaytime: settings.TrackPlaytime ?? true,
+				DiscordRichPresence: settings.DiscordRichPresence ?? true,
+				DiscordClientId: settings.DiscordClientId ?? "",
+			};
 		}
 	}
 
@@ -176,13 +186,15 @@
 			</div>
 		</div>
 
-		<!-- Zone 4: Wine Prefix Storage Location -->
+		<GamingIntegrationsSetting {appSettings} onRefresh={refreshAppSettings} />
+
+		<!-- Wine Prefix Storage Location -->
 		<PrefixStorageSetting {appSettings} onRefresh={refreshAppSettings} />
 
-		<!-- Zone 4: Automatic Scan Folders -->
+		<!-- Automatic Scan Folders -->
 		<ScanFoldersSetting {appSettings} onRefresh={refreshAppSettings} />
 
-		<!-- Zone 5: Hidden / Blacklisted Games -->
+		<!-- Hidden / Blacklisted Games -->
 		<BlacklistSetting {appSettings} onRefresh={refreshAppSettings} />
 	</div>
 </div>
