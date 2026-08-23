@@ -1,6 +1,5 @@
 import { GetAllGames, GetImageBase64 } from "@lib/api";
 import { navigationCommand } from "@stores/navigationStore";
-import { notifications } from "@stores/notificationStore";
 import { loadExeIcon } from "@lib/iconService";
 import { launchGame } from "@lib/gameLaunchService";
 import protonIcon from "@icons/protron_forked.png";
