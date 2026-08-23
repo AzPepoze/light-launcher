@@ -29,7 +29,7 @@ type appSettings struct {
 	TrackPlaytime *bool `json:"TrackPlaytime"`
 }
 
-func trackingStillEnabled() bool {
+func TrackingEnabled() bool {
 	data, err := os.ReadFile(filepath.Join(config.GetBaseDirectory(), "settings.json"))
 	if err != nil {
 		return true
@@ -44,7 +44,7 @@ func trackingStillEnabled() bool {
 // Finalize records the exact game lifetime from the long-lived instance process.
 // This keeps playtime correct even when the Electron launcher quits immediately after launch.
 func Finalize(gamePath, gameName string, startedAt, endedAt time.Time) error {
-	if !trackingStillEnabled() {
+	if !TrackingEnabled() {
 		return nil
 	}
 
