@@ -2,7 +2,6 @@ import {
 	GetAllGames,
 	GetRunningSessions,
 	ListPrefixes,
-	RunGame,
 	KillSession,
 	RemoveGame,
 	GetPrefixBaseDir,
@@ -12,6 +11,7 @@ import {
 } from "@lib/api";
 import { notifications } from "@stores/notificationStore";
 import { createLaunchOptions } from "./formService";
+import { launchGame } from "./gameLaunchService";
 
 export interface HomeData {
 	games: any[];
@@ -42,16 +42,11 @@ export async function refreshHomeData(): Promise<HomeData> {
 }
 
 /**
- * Handles quick launch of a game
+ * Handles quick launch of a game through the same shared launch pipeline used by
+ * command/context actions. Prefix and Proton normalization is finalized in the backend.
  */
-export async function quickLaunchGame(game: any): Promise<void> {
-	try {
-		notifications.add(`Launching ${game.name}...`, "info");
-		await RunGame(game.config, false);
-	} catch (error) {
-		notifications.add(`Launch failed: ${error}`, "error");
-		throw error;
-	}
+export async function quickLaunchGame(game: any, showLogs = false): Promise<void> {
+	await launchGame(game.config, { showLogs });
 }
 
 /**
