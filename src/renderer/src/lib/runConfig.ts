@@ -10,6 +10,8 @@ export async function loadConfigForGame(
 	protonVersions: core.ProtonTool[],
 	updateOptions: (newOpts: core.LaunchOptions, pPath: string, pName: string, proton: string) => void
 ) {
+	let effectivePrefixPath = prefixPath;
+	let effectivePrefixName = selectedPrefixName;
 	try {
 		const config = await GetConfig(path);
 		if (config) {
@@ -21,6 +23,9 @@ export async function loadConfigForGame(
 				newPrefixName = newPrefixPath.split("/").filter(Boolean).pop() || "Custom";
 			}
 			const updatedProton = applyConfigToOptions(config, options, protonVersions);
+			options.PrefixPath = newPrefixPath;
+			effectivePrefixPath = newPrefixPath;
+			effectivePrefixName = newPrefixName;
 			updateOptions(options, newPrefixPath, newPrefixName, updatedProton);
 		} else {
 			await loadConfigForPrefix(
@@ -31,15 +36,17 @@ export async function loadConfigForGame(
 				protonVersions,
 				updateOptions
 			);
+			effectivePrefixPath = options.PrefixPath || prefixPath;
 		}
 
-		// Auto-detect Lossless.dll if not already set
+		// Auto-detect Lossless.dll if not already set. Keep the prefix that was just
+		// loaded instead of replaying the stale function arguments back into state.
 		if (!options.Extras.Lsfg.DllPath) {
 			try {
 				const dll = await DetectLosslessDll();
 				if (dll) {
 					options.Extras.Lsfg.DllPath = dll;
-					updateOptions(options, prefixPath, selectedPrefixName, ""); // triggers reactivity
+					updateOptions(options, effectivePrefixPath, effectivePrefixName, "");
 				}
 			} catch (err) {
 				console.error("Failed to detect Lossless.dll:", err);
