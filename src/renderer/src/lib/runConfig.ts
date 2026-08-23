@@ -45,7 +45,9 @@ export async function loadConfigForGame(
 				console.error("Failed to detect Lossless.dll:", err);
 			}
 		}
-	} catch (err) {}
+	} catch (err) {
+		console.error("Failed to load game configuration:", err);
+	}
 }
 
 export async function loadConfigForPrefix(
@@ -63,12 +65,13 @@ export async function loadConfigForPrefix(
 			const savedGamePath = options.GamePath;
 			const savedLauncherPath = options.LauncherPath;
 			const savedUseGamePath = options.UseGamePath;
-			const savedPrefixPath = options.PrefixPath;
 			const savedUseCustomProton = options.UseCustomProton;
 			const savedProtonPath = options.ProtonPath;
 
 			let updatedProton = applyConfigToOptions(config, options, protonVersions);
 
+			// Prefix profiles provide environment defaults, but selecting a prefix must not
+			// replace the currently selected game/launcher.
 			if (savedGamePath) options.GamePath = savedGamePath;
 			if (savedLauncherPath) options.LauncherPath = savedLauncherPath;
 			options.UseGamePath = savedUseGamePath;
@@ -79,14 +82,14 @@ export async function loadConfigForPrefix(
 				updatedProton = savedProtonPath;
 			}
 
-			let newPrefixPath = prefixPath;
-			if (savedPrefixPath) {
-				options.PrefixPath = savedPrefixPath;
-				newPrefixPath = savedPrefixPath;
-			}
-			updateOptions(options, newPrefixPath, name, updatedProton);
+			// The caller has already changed prefixPath to the newly selected prefix.
+			// Never restore options.PrefixPath from the previous game profile here.
+			options.PrefixPath = prefixPath;
+			updateOptions(options, prefixPath, name, updatedProton);
 		}
-	} catch (err) {}
+	} catch (err) {
+		console.error(`Failed to load prefix configuration for ${name}:`, err);
+	}
 }
 
 export function applyConfigToOptions(
@@ -109,6 +112,7 @@ export function applyConfigToOptions(
 	options.Name = config.Name || options.Name;
 	options.CustomArgs = config.CustomArgs || "";
 	options.UseCustomProton = config.UseCustomProton || false;
+	options.CustomIconPath = config.CustomIconPath || "";
 
 	// Copy Extras
 	if (config.Extras) {
