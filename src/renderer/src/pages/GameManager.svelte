@@ -2,8 +2,7 @@
 	import { onMount, onDestroy } from "svelte";
 	import PageHeader from "@components/shared/PageHeader.svelte";
 	import StatusDrawer from "@components/shared/StatusDrawer.svelte";
-	import { GetRunningSessions, KillSession, GetAppSettings } from "@lib/api";
-	import { GetGameActivity } from "@lib/activityApi";
+	import { GetRunningSessions, KillSession, GetAppSettings, GetGameActivity } from "@lib/api";
 	import { notifications } from "@stores/notificationStore";
 	import type { AppSettings, GameActivity, RunningSession } from "@shared";
 
