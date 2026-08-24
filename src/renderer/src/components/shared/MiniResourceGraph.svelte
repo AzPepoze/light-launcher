@@ -11,7 +11,7 @@
 
 	$: points = (() => {
 		const arr = data.length > 0 ? data : [0];
-		// Pad with initial values or zeros if less than maxPoints
+		// Pad with initial values or zeros if less than maxPoints to ensure stable command count
 		const fullData: number[] = [];
 		const padCount = Math.max(0, maxPoints - arr.length);
 		for (let i = 0; i < padCount; i++) {
@@ -29,15 +29,36 @@
 		});
 	})();
 
-	$: linePath = (() => {
-		if (points.length === 0) return "";
-		return points.reduce((acc, p, i) => {
-			return `${acc} ${i === 0 ? "M" : "L"} ${p.x.toFixed(1)},${p.y.toFixed(1)}`;
-		}, "");
-	})();
+	function getSmoothSplinePath(pts: { x: number; y: number }[]): string {
+		if (pts.length === 0) return "";
+		if (pts.length === 1) return `M ${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`;
+		if (pts.length === 2) {
+			return `M ${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)} L ${pts[1].x.toFixed(1)},${pts[1].y.toFixed(1)}`;
+		}
+
+		let path = `M ${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`;
+		const tension = 0.22;
+
+		for (let i = 0; i < pts.length - 1; i++) {
+			const p0 = pts[Math.max(0, i - 1)];
+			const p1 = pts[i];
+			const p2 = pts[i + 1];
+			const p3 = pts[Math.min(pts.length - 1, i + 2)];
+
+			const cp1x = p1.x + (p2.x - p0.x) * tension;
+			const cp1y = p1.y + (p2.y - p0.y) * tension;
+			const cp2x = p2.x - (p3.x - p1.x) * tension;
+			const cp2y = p2.y - (p3.y - p1.y) * tension;
+
+			path += ` C ${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`;
+		}
+		return path;
+	}
+
+	$: linePath = getSmoothSplinePath(points);
 
 	$: areaPath = (() => {
-		if (points.length === 0) return "";
+		if (!linePath || points.length === 0) return "";
 		const startX = points[0].x.toFixed(1);
 		const endX = points[points.length - 1].x.toFixed(1);
 		return `${linePath} L ${endX},${SVG_HEIGHT} L ${startX},${SVG_HEIGHT} Z`;
@@ -77,7 +98,7 @@
 
 		<!-- Gradient Fill -->
 		{#if areaPath}
-			<path d={areaPath} fill="url(#{id})" />
+			<path d={areaPath} fill="url(#{id})" class="area-fill" />
 		{/if}
 
 		<!-- Active Line Stroke -->
@@ -131,13 +152,17 @@
 		}
 	}
 
+	.area-fill {
+		transition: d 1000ms cubic-bezier(0.15, 0.85, 0.35, 1);
+	}
+
 	.stroke-line {
 		filter: drop-shadow(0 0 3px var(--graph-color));
-		transition: d 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
+		transition: d 1000ms cubic-bezier(0.15, 0.85, 0.35, 1);
 	}
 
 	.endpoint-dot {
 		filter: drop-shadow(0 0 4px var(--graph-color));
-		transition: cx 300ms ease, cy 300ms ease;
+		transition: cx 1000ms cubic-bezier(0.15, 0.85, 0.35, 1), cy 1000ms cubic-bezier(0.15, 0.85, 0.35, 1);
 	}
 </style>

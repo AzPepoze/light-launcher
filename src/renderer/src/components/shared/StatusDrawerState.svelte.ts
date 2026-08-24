@@ -52,7 +52,7 @@ export class StatusDrawerState {
 			try {
 				this.sysUsage = await GetSystemUsage();
 			} catch (e) {}
-		}, 3000);
+		}, 1000);
 	}
 
 	destroy() {
