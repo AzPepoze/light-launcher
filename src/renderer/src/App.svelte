@@ -114,6 +114,13 @@
 
 	function handleNavigate(page: string) {
 		activePage = page;
+		scrolled = false;
+	}
+
+	let scrolled = false;
+
+	function handlePageScroll(e: Event) {
+		scrolled = (e.currentTarget as HTMLElement).scrollTop > 0;
 	}
 </script>
 
@@ -134,9 +141,10 @@
 		<div class="content-container">
 			{#if activePage !== "editlsfg"}
 				<div class="topbar-container">
-					<div class="global-search-trigger" role="search">
+					<div class="global-search-trigger" class:open={showCommandPalette} class:scrolled={scrolled} role="search">
 						<span class="material-icons">search</span>
 						<input
+							bind:this={commandPaletteState.inputElement}
 							bind:value={commandPaletteState.searchQuery}
 							type="text"
 							placeholder="Search games, pages, and actions..."
@@ -148,12 +156,14 @@
 						/>
 						<button class="shortcut-kbd" on:click={openCommandPalette} aria-label="Open command palette">Ctrl K</button>
 					</div>
+					<CommandPalette bind:show={showCommandPalette} onClose={() => showCommandPalette = false} />
 				</div>
 			{/if}
 
 			{#key activePage}
 				<div
 					class="page-wrapper"
+					on:scroll={handlePageScroll}
 					in:fly={{
 						y: 30,
 						duration: 400,
@@ -191,7 +201,6 @@
 	</div>
 
 	<NotificationHost />
-	<CommandPalette bind:show={showCommandPalette} onClose={() => showCommandPalette = false} />
 </main>
 
 <style lang="scss">
@@ -256,7 +265,8 @@
 		width: 100%;
 		max-width: 520px;
 		display: flex;
-		justify-content: center;
+		flex-direction: column;
+		align-items: center;
 		z-index: 150;
 		pointer-events: none;
 	}
@@ -267,13 +277,24 @@
 		align-items: center;
 		width: 100%;
 		gap: 8px;
-		background: var(--bg-surface);
-		border: 2px solid rgba(255, 255, 255, 0.05);
+		border: 2px solid transparent;
 		border-radius: var(--radius-md);
 		padding: 6px 10px 6px 14px;
 		color: var(--text-muted);
-		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 		transition: border-color var(--transition-fast), background var(--transition-fast), box-shadow var(--transition-fast);
+
+		&.scrolled, &.open {
+			background: var(--bg-surface);
+			border-color: rgba(255, 255, 255, 0.05);
+			box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+		}
+
+		&.open {
+			border-color: rgba(255, 255, 255, 0.16);
+			border-bottom-left-radius: 0;
+			border-bottom-right-radius: 0;
+			box-shadow: none;
+		}
 
 		&:focus-within, &:hover {
 			border-color: rgba(255, 255, 255, 0.16);
