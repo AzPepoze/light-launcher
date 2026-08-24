@@ -85,68 +85,177 @@ export class SystemService {
 		}
 
 		// 3. GPU Usage
-		usage.gpu = await this.getGpuUsage();
+		const gpuResult = await this.getGpuUsages();
+		usage.gpu = gpuResult.primary;
+		usage.gpus = gpuResult.list;
 		return usage;
 	}
 
-	static async getGpuUsage(): Promise<string> {
-		if (this.isCommandAvailable("nvidia-smi")) {
-			try {
-				const { stdout } = await execAsync(
-					"nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits"
-				);
-				const trimmed = stdout.trim();
-				if (trimmed) return `${trimmed}%`;
-			} catch {}
-		}
+	static detectGpuDevices(): { name: string; pci?: string; rank: number }[] {
+		const gpus: { name: string; pci?: string; rank: number }[] = [];
 
+		// 1. Prefer real GPU names from lspci (VGA/3D controllers first, e.g. discrete GPUs)
 		try {
-			const drmPath = "/sys/class/drm";
-			if (fsSync.existsSync(drmPath)) {
-				const entries = await fs.readdir(drmPath);
-				for (const entry of entries) {
-					const busyFile = path.join(drmPath, entry, "device/gpu_busy_percent");
-					if (fsSync.existsSync(busyFile)) {
-						const val = (await fs.readFile(busyFile, "utf-8")).trim();
-						if (val) return `${val}%`;
-					}
-				}
+			const output = execSync("lspci | grep -i 'vga\\|3d\\|display'", { encoding: "utf-8" });
+			const lines = output.trim().split("\n").filter(Boolean);
+			for (const line of lines) {
+				const pciMatch = line.match(/^([0-9a-fA-F:.]+)\s+/);
+				const pci = pciMatch ? pciMatch[1] : undefined;
+				const colonIdx = line.indexOf(": ");
+				const name = colonIdx !== -1 ? line.substring(colonIdx + 2).trim() : line;
+				if (!name) continue;
+				const lower = line.toLowerCase();
+				const rank = lower.includes("vga") ? 0 : lower.includes("3d") ? 1 : 2;
+				gpus.push({ name, pci, rank });
 			}
+			gpus.sort((a, b) => a.rank - b.rank);
 		} catch {}
 
-		return "0%";
-	}
-
-	static getListGpus(): string[] {
-		const gpus: string[] = [];
-		try {
-			if (fsSync.existsSync("/sys/class/drm")) {
-				const entries = fsSync.readdirSync("/sys/class/drm");
-				for (const entry of entries) {
-					if (entry.startsWith("card") && !entry.includes("-")) {
-						const devicePath = path.join("/sys/class/drm", entry, "device");
-						if (fsSync.existsSync(devicePath)) {
-							gpus.push(entry);
-						}
-					}
-				}
-			}
-		} catch {}
-
+		// 2. Fallback: DRM card names
 		if (gpus.length === 0) {
 			try {
-				const output = execSync("lspci | grep -i 'vga\\|3d\\|display'", { encoding: "utf-8" });
-				const lines = output.trim().split("\n").filter(Boolean);
-				for (const line of lines) {
-					const parts = line.split(": ");
-					if (parts.length > 1) {
-						gpus.push(parts[1].trim());
+				if (fsSync.existsSync("/sys/class/drm")) {
+					const entries = fsSync.readdirSync("/sys/class/drm");
+					for (const entry of entries) {
+						if (entry.startsWith("card") && !entry.includes("-")) {
+							const devicePath = path.join("/sys/class/drm", entry, "device");
+							if (fsSync.existsSync(devicePath)) {
+								let name = "";
+								for (const file of ["product_name", "product"]) {
+									try {
+										const value = fsSync.readFileSync(path.join(devicePath, file), "utf-8").trim();
+										if (value) {
+											name = value;
+											break;
+										}
+									} catch {}
+								}
+								gpus.push({ name: name || entry, rank: 0 });
+							}
+						}
 					}
 				}
 			} catch {}
 		}
 
 		return gpus;
+	}
+
+	static async getGpuUsages(
+		devices?: { name: string; pci?: string; rank: number }[]
+	): Promise<{ primary: string; list: string[] }> {
+		const gpus = devices ?? this.detectGpuDevices();
+		if (gpus.length === 0) {
+			return { primary: "0%", list: [] };
+		}
+
+		const nvidiaMap: Record<string, string> = {};
+		if (this.isCommandAvailable("nvidia-smi")) {
+			try {
+				const { stdout } = await execAsync(
+					"nvidia-smi --query-gpu=pci.bus_id,utilization.gpu --format=csv,noheader,nounits"
+				);
+				for (const line of stdout.trim().split("\n")) {
+					const parts = line.split(",").map((s) => s.trim());
+					if (parts.length >= 2) {
+						nvidiaMap[parts[0].toLowerCase()] = `${parts[1]}%`;
+					}
+				}
+			} catch {}
+		}
+
+		const usages: string[] = [];
+		const drmPath = "/sys/class/drm";
+		let drmEntries: string[] = [];
+		try {
+			if (fsSync.existsSync(drmPath)) {
+				drmEntries = (await fs.readdir(drmPath)).filter(
+					(e) => e.startsWith("card") && !e.includes("-")
+				);
+			}
+		} catch {}
+
+		for (const gpu of gpus) {
+			let foundUsage: string | null = null;
+
+			// Check nvidia-smi match
+			if (gpu.pci && Object.keys(nvidiaMap).length > 0) {
+				const lowerPci = gpu.pci.toLowerCase();
+				for (const [bus, util] of Object.entries(nvidiaMap)) {
+					if (bus.includes(lowerPci)) {
+						foundUsage = util;
+						break;
+					}
+				}
+			}
+
+			// Check DRM sysfs
+			if (!foundUsage && drmEntries.length > 0) {
+				for (const entry of drmEntries) {
+					const cardPath = path.join(drmPath, entry);
+					const devPath = path.join(cardPath, "device");
+					let matches = false;
+					if (gpu.pci && fsSync.existsSync(devPath)) {
+						try {
+							const target = await fs.readlink(devPath);
+							if (target.includes(gpu.pci)) matches = true;
+						} catch {}
+					} else if (!gpu.pci) {
+						matches = true;
+					}
+
+					if (matches) {
+						// 1. AMD gpu_busy_percent
+						const busyFile = path.join(cardPath, "device/gpu_busy_percent");
+						if (fsSync.existsSync(busyFile)) {
+							try {
+								const val = (await fs.readFile(busyFile, "utf-8")).trim();
+								if (val) {
+									foundUsage = `${val}%`;
+									break;
+								}
+							} catch {}
+						}
+
+						// 2. Intel GT active freq
+						const actFile = path.join(cardPath, "gt_act_freq_mhz");
+						const maxFile = path.join(cardPath, "gt_max_freq_mhz");
+						const minFile = path.join(cardPath, "gt_min_freq_mhz");
+						if (fsSync.existsSync(actFile) && fsSync.existsSync(maxFile)) {
+							try {
+								const act = parseInt((await fs.readFile(actFile, "utf-8")).trim(), 10);
+								const max = parseInt((await fs.readFile(maxFile, "utf-8")).trim(), 10);
+								const min = fsSync.existsSync(minFile)
+									? parseInt((await fs.readFile(minFile, "utf-8")).trim(), 10)
+									: 0;
+								if (max > min && act > min) {
+									foundUsage = `${Math.round(((act - min) / (max - min)) * 100)}%`;
+								} else {
+									foundUsage = "0%";
+								}
+								break;
+							} catch {}
+						}
+					}
+				}
+			}
+
+			usages.push(foundUsage ?? "0%");
+		}
+
+		return {
+			primary: usages[0] ?? "0%",
+			list: usages
+		};
+	}
+
+	static async getGpuUsage(): Promise<string> {
+		const res = await this.getGpuUsages();
+		return res.primary;
+	}
+
+	static getListGpus(): string[] {
+		return this.detectGpuDevices().map((g) => g.name);
 	}
 
 	static async getSystemInfo(): Promise<SystemInfo> {
@@ -184,6 +293,7 @@ export class SystemService {
 		const gpus = this.getListGpus();
 		if (gpus.length > 0) {
 			info.gpu = gpus[0];
+			info.gpus = gpus;
 		}
 
 		try {

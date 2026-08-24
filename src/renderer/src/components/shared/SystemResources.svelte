@@ -1,9 +1,14 @@
 <script lang="ts">
+	import { fly } from "svelte/transition";
+	import MiniResourceGraph from "@components/shared/MiniResourceGraph.svelte";
+	import { ResourceHistoryTracker } from "@components/shared/ResourceHistoryTracker.svelte";
+
 	export let sysInfo: {
 		os: string;
 		kernel: string;
 		cpu: string;
 		gpu: string;
+		gpus?: string[];
 		ram: string;
 		driver: string;
 	};
@@ -11,7 +16,36 @@
 		cpu: string;
 		ram: string;
 		gpu: string;
+		gpus?: string[];
 	};
+
+	const history = new ResourceHistoryTracker(30);
+
+	$: if (sysUsage) {
+		history.push(sysUsage);
+	}
+
+	$: gpuList = sysInfo.gpus?.length ? sysInfo.gpus : sysInfo.gpu ? [sysInfo.gpu] : [];
+
+	let gpuIdx = 0;
+	let slideDir = 1;
+
+	$: if (gpuIdx >= gpuList.length) gpuIdx = 0;
+	$: currentGpu = gpuList[gpuIdx] ?? "";
+	$: currentGpuUsage = sysUsage.gpus?.[gpuIdx] ?? sysUsage.gpu ?? "0%";
+	$: currentGpuHistory = history.getGpuHistory(gpuIdx);
+
+	function nextGpu() {
+		if (gpuList.length < 2) return;
+		slideDir = 1;
+		gpuIdx = (gpuIdx + 1) % gpuList.length;
+	}
+
+	function prevGpu() {
+		if (gpuList.length < 2) return;
+		slideDir = -1;
+		gpuIdx = (gpuIdx - 1 + gpuList.length) % gpuList.length;
+	}
 </script>
 
 <div class="status-grid">
@@ -38,9 +72,11 @@
 			</div>
 			<span class="usage">{sysUsage.cpu}</span>
 		</div>
-		<div class="progress-bg">
-			<div class="progress-fill" style="width: {sysUsage.cpu}"></div>
-		</div>
+		<MiniResourceGraph
+			data={history.cpu}
+			color="var(--accent-primary, #64ffda)"
+			height={46}
+		/>
 		<span class="info-text" title={sysInfo.cpu}>{sysInfo.cpu}</span>
 	</div>
 
@@ -57,35 +93,61 @@
 					: "0%"}
 			</span>
 		</div>
-		<div class="progress-bg">
-			<div
-				class="progress-fill"
-				style="width: {sysUsage.ram.includes('(')
-					? sysUsage.ram.split('(').pop().replace(')', '')
-					: '0%'}"
-			></div>
-		</div>
+		<MiniResourceGraph
+			data={history.ram}
+			color="var(--accent-secondary, #b197fc)"
+			height={46}
+		/>
 		<span class="info-text">{sysUsage.ram.split(" / ")[0]} used</span>
 	</div>
 
 	<!-- GPU -->
-	<div class="status-box">
+	<div class="status-box gpu-box">
 		<div class="box-header">
 			<div class="icon-label">
 				<span class="material-icons mini-icon">videogame_asset</span>
 				<span class="label">GPU</span>
 			</div>
-			<span class="usage">{sysUsage.gpu}</span>
+			<span class="usage">{currentGpuUsage}</span>
 		</div>
-		<div class="progress-bg">
-			<div
-				class="progress-fill"
-				style="width: {sysUsage.gpu}; background: var(--accent-secondary, #b197fc)"
-			></div>
+		<MiniResourceGraph
+			data={currentGpuHistory}
+			color="var(--accent-secondary, #b197fc)"
+			height={46}
+		/>
+
+		<div class="gpu-slider">
+			{#if gpuList.length > 1}
+				<button class="gpu-arrow left" on:click={prevGpu} aria-label="Previous GPU">
+					<span class="material-icons">chevron_left</span>
+				</button>
+			{/if}
+			<div class="gpu-name-wrap">
+				{#key gpuIdx}
+					<span
+						class="info-text gpu-name"
+						title="{currentGpu} ({sysInfo.driver})"
+						in:fly={{ x: 14 * slideDir, duration: 180 }}
+						out:fly={{ x: -14 * slideDir, duration: 180 }}
+					>
+						{currentGpu}
+					</span>
+				{/key}
+			</div>
+			{#if gpuList.length > 1}
+				<button class="gpu-arrow right" on:click={nextGpu} aria-label="Next GPU">
+					<span class="material-icons">chevron_right</span>
+				</button>
+			{/if}
 		</div>
-		<span class="info-text" title="{sysInfo.gpu} ({sysInfo.driver})">
-			{sysInfo.gpu}
-		</span>
+
+		{#if gpuList.length > 1}
+			<div class="gpu-dots">
+				{#each gpuList as _, i}
+					<span class="gpu-dot" class:active={i === gpuIdx}></span>
+				{/each}
+			</div>
+		{/if}
 	</div>
 </div>
 
@@ -152,6 +214,77 @@
 			text-overflow: ellipsis;
 		}
 
+		.gpu-slider {
+			display: flex;
+			align-items: center;
+			gap: 4px;
+			margin-top: 6px;
+			min-width: 0;
+
+			.gpu-name-wrap {
+				position: relative;
+				flex: 1;
+				min-width: 0;
+				height: 22px;
+
+				.gpu-name {
+					position: absolute;
+					inset: 0;
+					margin-top: 0;
+					line-height: 22px;
+				}
+			}
+
+			.gpu-arrow {
+				flex-shrink: 0;
+				background: transparent;
+				border: none;
+				color: var(--text-muted);
+				width: 20px;
+				height: 22px;
+				padding: 0;
+				display: grid;
+				place-items: center;
+				cursor: pointer;
+				border-radius: var(--radius-sm);
+				opacity: 0;
+				transition: opacity var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
+
+				.material-icons {
+					font-size: 16px;
+				}
+
+				&:hover {
+					background: var(--accent-glow);
+					color: var(--text-main);
+				}
+			}
+		}
+
+		&:hover .gpu-arrow {
+			opacity: 1;
+		}
+
+		.gpu-dots {
+			display: flex;
+			justify-content: center;
+			gap: 5px;
+			margin-top: 6px;
+
+			.gpu-dot {
+				width: 5px;
+				height: 5px;
+				border-radius: 999px;
+				background: rgba(255, 255, 255, 0.15);
+				transition: background var(--transition-fast), width var(--transition-fast);
+
+				&.active {
+					background: var(--accent-secondary, #b197fc);
+					width: 14px;
+				}
+			}
+		}
+
 		.system-info {
 			display: flex;
 			flex-direction: column;
@@ -175,20 +308,6 @@
 				overflow: hidden;
 				text-overflow: ellipsis;
 			}
-		}
-	}
-
-	.progress-bg {
-		height: 6px;
-		background: var(--bg-input);
-		border-radius: var(--radius-pill);
-		overflow: hidden;
-
-		.progress-fill {
-			height: 100%;
-			background: var(--accent-primary);
-			box-shadow: 0 0 8px var(--accent-primary);
-			transition: width 0.3s ease;
 		}
 	}
 </style>

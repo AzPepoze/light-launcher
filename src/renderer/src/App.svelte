@@ -12,8 +12,8 @@
 	import { runState } from "@stores/runState";
 	import { settingsStore } from "@stores/settingsStore";
 	import { onMount } from "svelte";
-	import { backOut } from "svelte/easing";
-	import { fade, fly } from "svelte/transition";
+	import { cubicOut } from "svelte/easing";
+	import { fly } from "svelte/transition";
 	import EditLsfg from "./pages/EditLsfg.svelte";
 	import Home from "./pages/Home.svelte";
 	import GameManager from "./pages/GameManager.svelte";
@@ -52,8 +52,29 @@
 		}));
 	}
 
+	const PAGE_ORDER: Record<string, number> = {
+		home: 0,
+		manager: 1,
+		run: 2,
+		versions: 3,
+		prefix: 4,
+		utils: 5,
+		settings: 6,
+		editlsfg: 7,
+	};
+
 	let activePage = "home";
+	let navDirection = 1;
 	let editLsfgGamePath = "";
+
+	function changePage(newPage: string) {
+		if (!newPage || newPage === activePage) return;
+		const prevIndex = PAGE_ORDER[activePage] ?? 0;
+		const newIndex = PAGE_ORDER[newPage] ?? 0;
+		navDirection = newIndex >= prevIndex ? 1 : -1;
+		activePage = newPage;
+		scrolled = false;
+	}
 
 	onMount(async () => {
 		try {
@@ -68,7 +89,7 @@
 				const gamePath = await GetInitialGamePath();
 				if (gamePath) {
 					editLsfgGamePath = gamePath;
-					activePage = "editlsfg";
+					changePage("editlsfg");
 				}
 			} else if (launcherPath) {
 				runState.update((state) => ({
@@ -78,7 +99,7 @@
 						LauncherPath: launcherPath,
 					},
 				}));
-				activePage = "run";
+				changePage("run");
 			}
 		} catch (e) {
 			console.error("Error in App onMount:", e);
@@ -90,9 +111,9 @@
 		if (cmd) {
 			if (cmd.page === "editlsfg" && cmd.gamePath) {
 				editLsfgGamePath = cmd.gamePath;
-				activePage = "editlsfg";
+				changePage("editlsfg");
 			} else if (cmd.page) {
-				activePage = cmd.page;
+				changePage(cmd.page);
 			}
 			navigationCommand.set(null);
 		}
@@ -113,8 +134,7 @@
 	}
 
 	function handleNavigate(page: string) {
-		activePage = page;
-		scrolled = false;
+		changePage(page);
 	}
 
 	let scrolled = false;
@@ -166,14 +186,17 @@
 					class:home-mode={activePage === "home"}
 					on:scroll={handlePageScroll}
 					in:fly={{
-						y: 30,
-						duration: 400,
-						delay: 100,
-						easing: backOut,
+						y: 35 * navDirection,
+						duration: 280,
+						easing: cubicOut,
 					}}
-					out:fade={{ duration: 150 }}
+					out:fly={{
+						y: -35 * navDirection,
+						duration: 200,
+						easing: cubicOut,
+					}}
 				>
-					<div class="content-zone" class:full-width={activePage === "home" || activePage === "editlsfg"} class:home-zone={activePage === "home"}>
+					<div class="content-zone" class:full-width={activePage === "home" || activePage === "editlsfg" || activePage === "manager"} class:home-zone={activePage === "home"}>
 						{#if activePage === "home"}
 							<Home />
 						{:else if activePage === "manager"}
@@ -256,6 +279,7 @@
 		height: 100%;
 		position: relative;
 		background: transparent;
+		overflow: hidden;
 	}
 
 	.topbar-container {

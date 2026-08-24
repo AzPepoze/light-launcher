@@ -1,20 +1,179 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
-	import PageHeader from "@components/shared/PageHeader.svelte";
 	import StatusDrawer from "@components/shared/StatusDrawer.svelte";
-	import { GetRunningSessions, KillSession, GetAppSettings, GetGameActivity } from "@lib/api";
+	import HeatmapCard from "@components/manager/HeatmapCard.svelte";
+	import RunningRail from "@components/manager/RunningRail.svelte";
+	import ActivityTabs from "@components/manager/ActivityTabs.svelte";
+	import { GetRunningSessions, KillSession, GetAppSettings, GetGameActivity, GetAllGames, GetAutoScannedGames } from "@lib/api";
 	import { notifications } from "@stores/notificationStore";
-	import type { AppSettings, GameActivity, RunningSession } from "@shared";
+	import type { AppSettings, GameActivity, RunningSession, GameInfo, ScannedFolderGroup } from "@shared";
+
+	// ===== MOCK PREVIEW — set false for real data =====
+	const USE_MOCK = true;
+	const MIN = 60 * 1000;
+	const HOUR = 60 * MIN;
+	const DAY = 24 * HOUR;
+
+	type DaySession = { gameName: string; seconds: number };
+	type DaySessionMap = Record<string, DaySession[]>;
+
+	function dayKeyOf(ts: number): string {
+		const d = new Date(ts);
+		d.setHours(0, 0, 0, 0);
+		return d.toISOString().slice(0, 10);
+	}
+
+	function buildMockActivities(now: number): GameActivity[] {
+		const rows: [string, string, number, number, number][] = [
+			["Elden Ring", "/games/eldenring/eldenring.exe", 4523, 14, 0],
+			["Hades", "/games/hades/hades.exe", 12500, 32, 1],
+			["Cyberpunk 2077", "/games/cyberpunk/Cyberpunk2077.exe", 38200, 58, 2],
+			["Baldur's Gate 3", "/games/bg3/bg3_dx11.exe", 51200, 41, 4],
+			["Stardew Valley", "/games/stardew/Stardew Valley.exe", 22400, 87, 6],
+			["Hollow Knight", "/games/hollow/hollow_knight.exe", 9800, 21, 9],
+			["Celeste", "/games/celeste/Celeste.exe", 5400, 12, 13],
+			["Doom Eternal", "/games/doom/DOOMEternalx64vk.exe", 14700, 19, 18],
+			["Factorio", "/games/factorio/factorio.exe", 60100, 120, 24],
+			["Sekiro", "/games/sekiro/sekiro.exe", 30100, 26, 33],
+			["Portal 2", "/games/portal2/portal2.exe", 8200, 9, 47],
+			["Terraria", "/games/terraria/terraria.exe", 16800, 44, 62],
+			["The Witcher 3", "/games/witcher3/witcher3.exe", 41300, 37, 88],
+			["Dark Souls III", "/games/ds3/DarkSoulsIII.exe", 27600, 29, 130],
+			["Cuphead", "/games/cuphead/Cuphead.exe", 3900, 7, 168]
+		];
+		return rows.map(([name, path, total, count, daysAgo], i) => ({
+			gamePath: path,
+			gameName: name,
+			lastPlayedAt: now - daysAgo * DAY - (i % 5) * HOUR,
+			totalPlaytimeSeconds: total,
+			sessionCount: count,
+			...(daysAgo === 0 ? { activeSince: now - 14 * MIN } : {})
+		})) as GameActivity[];
+	}
+
+	const MOCK_GAME_NAMES = [
+		"Elden Ring", "Hades", "Cyberpunk 2077", "Baldur's Gate 3", "Stardew Valley",
+		"Hollow Knight", "Celeste", "Doom Eternal", "Factorio", "Sekiro",
+		"Portal 2", "Terraria", "The Witcher 3", "Dark Souls III", "Cuphead"
+	];
+
+	function buildMockDaySessions(now: number): DaySessionMap {
+		// per-day per-game playtime so heatmap + tooltip have real data
+		const today = new Date(now);
+		today.setHours(0, 0, 0, 0);
+		const map: DaySessionMap = {};
+		for (let d = 181; d >= 1; d--) {
+			const rnd = Math.abs(Math.sin(d * 12.9898) * 43758.5453) % 1;
+			const dayDate = new Date(today.getTime() - d * DAY);
+			const weekend = [0, 6].includes(dayDate.getDay());
+			let gameCount = 0;
+			if (rnd > 0.5) gameCount = 1;
+			if (rnd > 0.75) gameCount = 2;
+			if (rnd > 0.9) gameCount = 3;
+			if (weekend && rnd > 0.4) gameCount += 1;
+			if (gameCount === 0) continue;
+			const sessions: DaySession[] = [];
+			for (let g = 0; g < gameCount; g++) {
+				const seed = Math.abs(Math.sin((d * 7 + g * 13) * 4.231) * 15678.21) % 1;
+				const nameIdx = Math.floor(Math.abs(Math.sin((d + g * 31) * 7.777) * 9876.5) % 1 * MOCK_GAME_NAMES.length);
+				sessions.push({
+					gameName: MOCK_GAME_NAMES[nameIdx],
+					seconds: Math.floor((20 * 60) + seed * (2.5 * 3600 - 20 * 60)) // 20m .. ~2.5h
+				});
+			}
+			map[dayKeyOf(dayDate.getTime())] = sessions;
+		}
+		// today: matches the running mock sessions
+		map[dayKeyOf(now)] = [
+			{ gameName: "Elden Ring", seconds: 4523 },
+			{ gameName: "Hades", seconds: 3120 }
+		];
+		return map;
+	}
+
+	// Real mode: activity.json only stores lastPlayedAt + lifetime total, so per-day
+	// times fall back to the game's total playtime on its last-played day.
+	function buildDaySessionsFromActivities(acts: GameActivity[]): DaySessionMap {
+		const map: DaySessionMap = {};
+		for (const a of acts) {
+			const key = dayKeyOf(a.lastPlayedAt);
+			if (!map[key]) map[key] = [];
+			map[key].push({ gameName: a.gameName, seconds: a.totalPlaytimeSeconds });
+		}
+		return map;
+	}
+
+	const mockSessions = (now: number): RunningSession[] => [
+		{ pid: 4242, gamePath: "/games/eldenring/eldenring.exe", gameName: "Elden Ring", startedAt: now - 14 * MIN },
+		{ pid: 4243, gamePath: "/games/hades/hades.exe", gameName: "Hades", startedAt: now - 52 * MIN }
+	];
+
+	const mockGames: GameInfo[] = [
+		{ name: "Slay the Spire", path: "/games/sts/SlayTheSpire.exe", icon: "", config: {} as any, isRecent: false, isAutoScanned: false },
+		{ name: "RimWorld", path: "/games/rimworld/RimWorld.exe", icon: "", config: {} as any, isRecent: false, isAutoScanned: false }
+	];
+	// ===== end mock =====
 
 	let sessions: RunningSession[] = [];
 	let activities: GameActivity[] = [];
+	let daySessions: DaySessionMap = {};
 	let appSettings: AppSettings | null = null;
+	let games: GameInfo[] = [];
+	let scannedGroups: ScannedFolderGroup[] = [];
 	let refreshTimer: ReturnType<typeof setInterval> | null = null;
 	let clockTimer: ReturnType<typeof setInterval> | null = null;
 	let now = Date.now();
 
-	$: recentActivities = activities.slice(0, 12);
 	$: trackingEnabled = appSettings?.TrackPlaytime !== false;
+
+	// today derived
+	$: todayStart = (()=>{ const d=new Date(now); d.setHours(0,0,0,0); return d.getTime(); })();
+	$: todayKey = dayKeyOf(todayStart);
+	// persisted per-day time + live delta from running games launched today
+	$: todayPersisted = (daySessions[todayKey] || []).reduce((s, g) => s + g.seconds, 0);
+	$: liveDelta = activities.reduce((sum, a) => {
+		if (!a.activeSince || a.activeSince < todayStart) return sum;
+		return sum + Math.max(0, Math.floor((now - a.activeSince) / 1000));
+	}, 0);
+	$: todayPlaytimeSeconds = todayPersisted + liveDelta;
+	$: sessionsToday = activities.filter(a=> a.lastPlayedAt >= todayStart).length;
+	$: runningCount = sessions.length;
+
+	// recent: last 7 days
+	$: recent = activities.filter(a=> now - a.lastPlayedAt < 7*DAY).slice(0,12);
+	$: recentDisplay = recent.length>0 ? recent : activities.slice(0,8);
+
+	$: mostPlayed = [...activities].sort((a,b)=> b.totalPlaytimeSeconds - a.totalPlaytimeSeconds).slice(0,12);
+
+	// stale: library games never played or >30d
+	$: libraryPaths = (()=> {
+		const set = new Map<string,{name:string,path:string}>();
+		for(const g of games) set.set(g.path.toLowerCase(), {name:g.name, path:g.path});
+		for(const grp of scannedGroups) for(const g of grp.games) set.set(g.path.toLowerCase(), {name:g.name, path:g.path});
+		return set;
+	})();
+	$: stale = (()=> {
+		const THIRTY_D = 30*DAY;
+		const actMap = new Map<string, GameActivity>();
+		for(const a of activities) actMap.set(a.gamePath.toLowerCase(), a);
+		const out: GameActivity[] = [];
+		for(const [key, g] of libraryPaths){
+			const a = actMap.get(key);
+			if(!a){
+				out.push({ gamePath:g.path, gameName:g.name, lastPlayedAt:0, totalPlaytimeSeconds:0, sessionCount:0 } as GameActivity);
+			} else if(!a.activeSince && now - a.lastPlayedAt > THIRTY_D){
+				out.push(a);
+			}
+		}
+		for(const a of activities){
+			if(a.activeSince) continue;
+			if(now - a.lastPlayedAt > THIRTY_D && !out.find(x=> x.gamePath.toLowerCase()===a.gamePath.toLowerCase())){
+				if(!libraryPaths.has(a.gamePath.toLowerCase())) out.push(a);
+			}
+		}
+		out.sort((a,b)=> (a.lastPlayedAt||0) - (b.lastPlayedAt||0));
+		return out.slice(0,12);
+	})();
 
 	onMount(() => {
 		void refresh();
@@ -28,21 +187,39 @@
 	});
 
 	async function refresh() {
+		if (USE_MOCK) {
+			activities = buildMockActivities(now);
+			daySessions = buildMockDaySessions(now);
+			sessions = mockSessions(now);
+			games = mockGames;
+			scannedGroups = [];
+			appSettings = { TrackPlaytime: true } as AppSettings;
+			return;
+		}
 		try {
-			const [running, history, settings] = await Promise.all([
+			const [running, history, settings, allGames, groups] = await Promise.all([
 				GetRunningSessions(),
 				GetGameActivity(),
-				GetAppSettings()
+				GetAppSettings(),
+				GetAllGames().catch(()=>[] as GameInfo[]),
+				GetAutoScannedGames().catch(()=>[] as ScannedFolderGroup[])
 			]);
 			sessions = running || [];
 			activities = history || [];
+			daySessions = buildDaySessionsFromActivities(activities);
 			appSettings = settings;
+			games = allGames || [];
+			scannedGroups = groups || [];
 		} catch (err) {
 			console.error("Failed to refresh game manager:", err);
 		}
 	}
 
 	async function stopSession(session: RunningSession) {
+		if (USE_MOCK) {
+			notifications.add(`[mock] Stopping ${session.gameName}...`, "info");
+			return;
+		}
 		try {
 			await KillSession(session.pid);
 			notifications.add(`Stopping ${session.gameName}...`, "info");
@@ -52,193 +229,100 @@
 		}
 	}
 
-	function activityFor(session: RunningSession): GameActivity | undefined {
-		return activities.find((item) => item.gamePath === session.gamePath);
-	}
-
-	function sessionStartedAt(session: RunningSession): number {
-		return activityFor(session)?.activeSince || session.startedAt || now;
-	}
-
-	function totalSeconds(activity: GameActivity): number {
-		const active = activity.activeSince ? Math.max(0, Math.floor((now - activity.activeSince) / 1000)) : 0;
-		return activity.totalPlaytimeSeconds + active;
-	}
-
-	function formatDuration(totalSeconds: number): string {
-		const seconds = Math.max(0, Math.floor(totalSeconds));
-		const hours = Math.floor(seconds / 3600);
-		const minutes = Math.floor((seconds % 3600) / 60);
-		if (hours > 0) return `${hours}h ${minutes}m`;
-		if (minutes > 0) return `${minutes}m ${seconds % 60}s`;
-		return `${seconds}s`;
-	}
-
-	function formatDate(timestamp: number): string {
-		return new Intl.DateTimeFormat(undefined, {
-			month: "short",
-			day: "numeric",
-			hour: "2-digit",
-			minute: "2-digit"
-		}).format(new Date(timestamp));
+	function formatTodayDuration(sec:number){
+		const s=Math.max(0,Math.floor(sec));
+		const h=Math.floor(s/3600), m=Math.floor((s%3600)/60);
+		if(h>0) return `${h}h ${m}m`;
+		if(m>0) return `${m}m`;
+		return `${s}s`;
 	}
 </script>
 
 <div class="manager-container">
-	<PageHeader title="Game Manager" icon="monitor_heart" />
-
-	<section class="manager-section">
-		<div class="section-heading">
-			<div>
-				<h2>Running Games</h2>
-				<p>Live sessions managed by LightLauncher.</p>
-			</div>
-			<span class="count-badge">{sessions.length}</span>
+	<!-- Top: single transparent centered container -->
+	<div class="top-summary">
+		<div class="today-block">
+			<span class="today-label">Today</span>
+			<span class="today-value">{formatTodayDuration(todayPlaytimeSeconds)}</span>
+			<span class="today-sub">{sessionsToday} {sessionsToday===1?'session':'sessions'} · {runningCount} running</span>
 		</div>
-
-		{#if sessions.length > 0}
-			<div class="running-list">
-				{#each sessions as session}
-					<div class="running-card">
-						<div class="running-icon"><span class="material-icons">sports_esports</span></div>
-						<div class="running-info">
-							<strong>{session.gameName}</strong>
-							<span class="path" title={session.gamePath}>{session.gamePath}</span>
-							<span class="runtime">Running for {formatDuration((now - sessionStartedAt(session)) / 1000)} · PID {session.pid}</span>
-						</div>
-						<button class="stop-btn" on:click={() => stopSession(session)} title="Stop game">
-							<span class="material-icons">stop</span>
-							Stop
-						</button>
-					</div>
-				{/each}
-			</div>
-		{:else}
-			<div class="empty-state">
-				<span class="material-icons">bedtime</span>
-				<div><strong>No managed games are running</strong><p>Games launched from LightLauncher will appear here.</p></div>
-			</div>
-		{/if}
-	</section>
-
-	<section class="manager-section">
-		<div class="section-heading">
-			<div>
-				<h2>Recent & Playtime</h2>
-				<p>{trackingEnabled ? "Recent sessions and accumulated playtime." : "Playtime tracking is disabled in Settings."}</p>
-			</div>
-			<span class="material-icons heading-icon">history</span>
+		<div class="heatmap-block">
+			<HeatmapCard {daySessions} {now} />
 		</div>
+	</div>
 
-		{#if recentActivities.length > 0}
-			<div class="activity-list">
-				{#each recentActivities as activity}
-					<div class="activity-row">
-						<div class="activity-main">
-							<strong>{activity.gameName}</strong>
-							<span>{formatDate(activity.lastPlayedAt)} · {activity.sessionCount} {activity.sessionCount === 1 ? 'session' : 'sessions'}</span>
-						</div>
-						<div class="playtime">
-							<span class="material-icons">schedule</span>
-							{formatDuration(totalSeconds(activity))}
-						</div>
-					</div>
-				{/each}
+	<div class="manager-grid">
+		<div class="left-col">
+			<div class="card">
+				<RunningRail {sessions} {activities} {now} onStop={stopSession} />
 			</div>
-		{:else}
-			<div class="empty-state compact">
-				<span class="material-icons">history_toggle_off</span>
-				<div><strong>No play history yet</strong><p>Tracked launches will show up here.</p></div>
-			</div>
-		{/if}
-	</section>
-
-	<section class="manager-section status-section">
-		<div class="section-heading">
-			<div>
-				<h2>System Status & Utilities</h2>
-				<p>Resource monitoring and maintenance tools, now kept with game management.</p>
-			</div>
-			<span class="material-icons heading-icon">tune</span>
 		</div>
-		<StatusDrawer embedded={true} />
-	</section>
+		<div class="right-col">
+			<div class="card">
+				<ActivityTabs
+					recent={recentDisplay}
+					{mostPlayed}
+					{stale}
+					{now}
+					{trackingEnabled}
+				/>
+			</div>
+		</div>
+	</div>
+
+	<!-- System status as fixed bottom drawer (old main style) -->
+	<StatusDrawer />
 </div>
 
 <style lang="scss">
 	.manager-container {
 		display: flex;
 		flex-direction: column;
-		gap: 28px;
-		padding-bottom: 32px;
+		gap: 26px;
+		min-height: calc(100vh - 200px);
+		padding-bottom: 140px; // room for fixed drawer
+		box-sizing: border-box;
 	}
 
-	.manager-section {
-		background: var(--bg-surface);
-		border: 2px solid rgba(255, 255, 255, 0.05);
-		border-radius: var(--radius-lg);
-		padding: 28px;
-		box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
-	}
-
-	.section-heading {
+	.top-summary {
 		display: flex;
+		justify-content: center;
 		align-items: center;
-		justify-content: space-between;
-		gap: 20px;
-		margin-bottom: 20px;
-
-		h2 { margin: 0; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.8px; }
-		p { margin: 5px 0 0; color: var(--text-muted); font-size: 0.88rem; }
+		gap: 56px;
+		flex-wrap: wrap;
 	}
 
-	.count-badge, .heading-icon {
-		color: var(--accent-primary);
-		font-weight: 800;
-	}
-	.count-badge { background: var(--bg-elevated); border: 1px solid var(--glass-border); border-radius: var(--radius-pill); padding: 6px 12px; }
-
-	.running-list, .activity-list { display: flex; flex-direction: column; gap: 10px; }
-
-	.running-card, .activity-row {
+	.today-block {
 		display: flex;
-		align-items: center;
-		gap: 14px;
-		background: var(--bg-elevated);
-		border: 1px solid var(--glass-border);
-		border-radius: var(--radius-md);
-		padding: 14px 16px;
+		flex-direction: column;
+		gap: 4px;
+		.today-label{ font-size:0.7rem; letter-spacing:1px; text-transform:uppercase; color:var(--text-dim); font-weight:800; }
+		.today-value{ font-size:2rem; font-weight:900; letter-spacing:-1px; color:var(--text-main); line-height:1; }
+		.today-sub{ font-size:0.8rem; color:var(--text-muted); font-weight:600; }
 	}
 
-	.running-icon {
-		width: 42px; height: 42px; border-radius: var(--radius-md); display: grid; place-items: center;
-		background: var(--accent-glow); color: var(--accent-primary); flex-shrink: 0;
+	.heatmap-block { display:flex; }
+
+	.manager-grid {
+		display: grid;
+		grid-template-columns: 1.15fr 1fr;
+		gap: 22px;
+		align-items: stretch;
+		flex: 1;
+		min-height: 0;
 	}
 
-	.running-info, .activity-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
-	.running-info strong, .activity-main strong { color: var(--text-main); }
-	.path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-dim); font-family: monospace; font-size: 0.75rem; }
-	.runtime, .activity-main span { color: var(--text-muted); font-size: 0.8rem; }
-
-	.stop-btn {
-		display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(255, 80, 80, 0.25);
-		background: rgba(255, 80, 80, 0.08); color: var(--danger, #ff5f5f); border-radius: var(--radius-md);
-		padding: 9px 12px; cursor: pointer; font-weight: 800;
-		&:hover { background: rgba(255, 80, 80, 0.16); }
-		.material-icons { font-size: 18px; }
+	.card {
+		background: transparent;
+		border: none;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+		min-height: 0;
 	}
 
-	.playtime { display: flex; align-items: center; gap: 7px; color: var(--accent-primary); font-weight: 800; white-space: nowrap; }
-	.playtime .material-icons { font-size: 18px; }
-
-	.empty-state {
-		display: flex; align-items: center; justify-content: center; gap: 14px; min-height: 130px;
-		border: 1px dashed var(--glass-border); border-radius: var(--radius-md); color: var(--text-muted);
-		.material-icons { font-size: 30px; color: var(--text-dim); }
-		strong { color: var(--text-main); }
-		p { margin: 4px 0 0; font-size: 0.82rem; }
-		&.compact { min-height: 100px; }
+	@media (max-width: 980px) {
+		.manager-grid { grid-template-columns: 1fr; }
 	}
-
-	.status-section { padding-bottom: 28px; }
 </style>
