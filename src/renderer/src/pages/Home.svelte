@@ -93,14 +93,16 @@
 	.home-container {
 		display: flex;
 		flex-direction: column;
-		height: 100%;
-		width: 100%;
-		padding: 10px 0;
-		background-color: transparent;
-		gap: 36px;
-		box-sizing: border-box;
+		flex: 1;
 		min-height: 0;
-		overflow-x: hidden;
+		height: 100%;
+		max-height: 100%;
+		width: 100%;
+		padding: 10px 0 0 0;
+		background-color: transparent;
+		gap: 24px;
+		box-sizing: border-box;
+		overflow: hidden;
 	}
 
 	.quick-launch-section {
@@ -108,6 +110,9 @@
 		flex-direction: column;
 		flex: 1;
 		min-height: 0;
+		height: 100%;
+		max-height: 100%;
+		overflow: hidden;
 	}
 
 	.empty-state {

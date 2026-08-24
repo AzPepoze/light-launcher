@@ -30,8 +30,10 @@
 		subtitle={group.folderPath}
 		count={group.games.length}
 		hasMenu={true}
+		stuckBleed={17}
 		isMenuOpen={activeFolderMenu === group.folderPath}
 		onToggleMenu={(e) => toggleFolderMenu(e, group.folderPath)}
+		onCloseMenu={() => activeFolderMenu = null}
 		onRescan={handleRescan}
 		onConfigureFolder={() => handleConfigureFolder(group.folderPath)}
 		onRemoveFolder={() => handleRemoveFolder(group.folderPath)}
@@ -70,6 +72,7 @@
 		margin-bottom: 32px;
 		box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2), inset 0 0 20px rgba(255, 255, 255, 0.01);
 		transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+		overflow: visible;
 
 		&:hover {
 			border-color: rgba(255, 255, 255, 0.08);

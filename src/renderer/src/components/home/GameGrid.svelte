@@ -75,16 +75,6 @@
 		activeFolderMenu = null;
 	}
 
-	onMount(() => {
-		const handleGlobalClick = () => {
-			activeFolderMenu = null;
-		};
-		window.addEventListener("click", handleGlobalClick);
-		return () => {
-			window.removeEventListener("click", handleGlobalClick);
-		};
-	});
-
 	function handleRightClick(event: MouseEvent, game: any) {
 		if (isSelectionMode) return;
 		menuX = event.clientX;
@@ -173,6 +163,43 @@
 
 	let selectedGroupKey = "no-folder";
 
+	let scanHeaderEl: HTMLElement | null = null;
+	let isScanStuck = false;
+
+	function findScanScrollParent(el: HTMLElement | null): HTMLElement | null {
+		let p: HTMLElement | null = el?.parentElement ?? null;
+		while (p) {
+			const style = getComputedStyle(p);
+			if (style.overflowY === "auto" || style.overflowY === "scroll") return p;
+			p = p.parentElement;
+		}
+		return null;
+	}
+
+	onMount(() => {
+		const checkScan = () => {
+			if (!scanHeaderEl) return;
+			const parent = findScanScrollParent(scanHeaderEl);
+			const rect = scanHeaderEl.getBoundingClientRect();
+			const parentRect = parent ? parent.getBoundingClientRect() : { top: 0 } as DOMRect;
+			isScanStuck = rect.top <= parentRect.top + 1;
+		};
+		const scanParent = findScanScrollParent(scanHeaderEl);
+		const scanTarget = scanParent ?? window;
+		scanTarget.addEventListener("scroll", checkScan, { passive: true } as any);
+		window.addEventListener("scroll", checkScan, { passive: true } as any);
+		window.addEventListener("resize", checkScan);
+		// also observe when header appears
+		const id = setInterval(checkScan, 300);
+		checkScan();
+		return () => {
+			scanTarget.removeEventListener("scroll", checkScan as any);
+			window.removeEventListener("scroll", checkScan as any);
+			window.removeEventListener("resize", checkScan);
+			clearInterval(id);
+		};
+	});
+
 	$: {
 		if (selectedGroupKey !== "no-folder" && !scannedFolderGroups.some(g => g.folderPath === selectedGroupKey)) {
 			selectedGroupKey = "no-folder";
@@ -201,7 +228,7 @@
 		<!-- 1. Render Custom Profiles if visible -->
 		{#if showCustomProfiles}
 			{#if currentView !== "sidebar-grid" && scannedFolderGroups.length > 0}
-				<h2 class="scan-section-title">
+				<h2 bind:this={scanHeaderEl} class="scan-section-title" class:is-stuck={isScanStuck}>
 					<span class="material-icons">library_books</span>
 					Custom Profiles <span class="badge">{filteredGames.length}</span>
 				</h2>
@@ -314,22 +341,47 @@
 	.games-container {
 		flex: 1;
 		min-height: 0;
+		min-width: 0;
 		overflow-y: auto;
+		overflow-x: hidden;
 		padding-right: 8px;
+		box-sizing: border-box;
+		max-width: 100%;
+
+		.main-content-panel {
+			min-width: 0;
+			max-width: 100%;
+			overflow: visible;
+		}
 	}
 
 	.scan-section-title {
+		position: sticky;
+		top: 0;
+		z-index: 5;
 		display: flex;
 		align-items: center;
 		gap: 10px;
-		margin: 28px 12px 14px 12px;
+		box-sizing: border-box;
+		height: 64px;
+		margin: 12px;
+		padding: 12px 16px;
 		font-size: 1.1rem;
 		font-weight: 800;
 		color: var(--text-muted);
 		text-transform: uppercase;
 		letter-spacing: 0.5px;
-		border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-		padding-bottom: 8px;
+		border: 1px solid transparent;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+		background: transparent;
+		border-radius: 0;
+		transition: background var(--transition-fast), border-color var(--transition-fast), border-radius var(--transition-fast);
+
+		&.is-stuck {
+			background: var(--bg-base);
+			border: 1px solid rgba(255, 255, 255, 0.06);
+			border-radius: var(--radius-md);
+		}
 
 		.material-icons {
 			font-size: 20px;
@@ -388,13 +440,22 @@
 		display: flex;
 		flex-direction: row;
 		gap: 24px;
+		flex: 1;
+		min-height: 0;
+		height: 100%;
+		max-height: 100%;
 
 		.main-content-panel {
 			flex: 1;
+			min-height: 0;
+			height: 100%;
+			max-height: 100%;
 			overflow-y: auto;
+			overflow-x: hidden;
 			padding-right: 8px;
 			display: flex;
 			flex-direction: column;
+			box-sizing: border-box;
 		}
 	}
 </style>

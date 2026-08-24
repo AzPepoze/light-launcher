@@ -85,11 +85,15 @@
 		background: var(--bg-surface);
 		border: 2px solid rgba(255, 255, 255, 0.05);
 		border-radius: var(--radius-lg);
-		padding: 14px 24px;
-		gap: 20px;
+		padding: 8px 16px;
+		gap: 12px;
 		cursor: pointer;
 		transition: transform var(--transition-spring), background var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+		width: 100%;
 		max-width: 100%;
+		min-width: 0;
+		box-sizing: border-box;
+		overflow: visible;
 
 		&:hover {
 			border-color: var(--accent-primary);
@@ -117,19 +121,20 @@
 	}
 
 	.icon-section {
-		height: 80px;
+		height: 108px;
 		aspect-ratio: 1/1;
-		border-radius: var(--radius-md);
+		border-radius: var(--radius-lg);
 		overflow: hidden;
 		position: relative;
 		flex-shrink: 0;
 		background: var(--bg-base);
-		border: 2px solid rgba(255, 255, 255, 0.05);
+		border: none;
 
 		.game-icon {
 			width: 100%;
 			height: 100%;
 			object-fit: cover;
+			border-radius: var(--radius-lg);
 			transition: transform 0.4s var(--ease-spring);
 		}
 
@@ -140,6 +145,8 @@
 			align-items: center;
 			justify-content: center;
 			opacity: 1;
+			border-radius: var(--radius-lg);
+			overflow: hidden;
 		}
 	}
 
@@ -149,6 +156,8 @@
 		justify-content: space-between;
 		align-items: center;
 		min-width: 0;
+		overflow: visible;
+		gap: 12px;
 	}
 
 	.info {
@@ -156,6 +165,8 @@
 		flex-direction: column;
 		gap: 4px;
 		min-width: 0;
+		flex: 1;
+		overflow: hidden;
 
 		.game-name {
 			font-weight: 800;
@@ -165,6 +176,7 @@
 			overflow: hidden;
 			text-overflow: ellipsis;
 			letter-spacing: -0.3px;
+			max-width: 100%;
 		}
 
 		.game-path {
@@ -174,12 +186,15 @@
 			overflow: hidden;
 			text-overflow: ellipsis;
 			max-width: 100%;
+			min-width: 0;
+			word-break: break-all;
 		}
 	}
 
 	.actions {
 		display: flex;
 		gap: 10px;
+		flex-shrink: 0;
 	}
 
 	.action-btn {

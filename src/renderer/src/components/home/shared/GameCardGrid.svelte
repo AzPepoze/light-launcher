@@ -49,8 +49,17 @@
 		display: grid;
 		gap: 28px;
 		width: 100%;
+		max-width: 100%;
 		padding: 12px;
 		padding-bottom: 40px;
+		box-sizing: border-box;
+		min-width: 0;
+
+		& > div {
+			min-width: 0;
+			max-width: 100%;
+			overflow: visible;
+		}
 
 		&.grid-view {
 			grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -59,6 +68,8 @@
 		&.list-view {
 			grid-template-columns: 1fr;
 			gap: 16px;
+			min-width: 0;
+			overflow: visible;
 		}
 	}
 </style>

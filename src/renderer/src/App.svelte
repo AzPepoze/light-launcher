@@ -163,6 +163,7 @@
 			{#key activePage}
 				<div
 					class="page-wrapper"
+					class:home-mode={activePage === "home"}
 					on:scroll={handlePageScroll}
 					in:fly={{
 						y: 30,
@@ -172,7 +173,7 @@
 					}}
 					out:fade={{ duration: 150 }}
 				>
-					<div class="content-zone" class:full-width={activePage === "home" || activePage === "editlsfg"}>
+					<div class="content-zone" class:full-width={activePage === "home" || activePage === "editlsfg"} class:home-zone={activePage === "home"}>
 						{#if activePage === "home"}
 							<Home />
 						{:else if activePage === "manager"}
@@ -343,6 +344,13 @@
 		overflow-y: auto;
 		padding: 76px 48px 40px 84px;
 		box-sizing: border-box;
+
+		&.home-mode {
+			overflow: hidden;
+			display: flex;
+			flex-direction: column;
+			padding-bottom: 0;
+		}
 	}
 
 	.content-zone {
@@ -353,6 +361,16 @@
 
 		&.full-width {
 			max-width: 100%;
+		}
+
+		&.home-zone {
+			flex: 1;
+			min-height: 0;
+			display: flex;
+			flex-direction: column;
+			overflow: hidden;
+			height: 100%;
+			max-height: 100%;
 		}
 	}
 

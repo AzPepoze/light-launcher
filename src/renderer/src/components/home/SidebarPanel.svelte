@@ -44,7 +44,12 @@
 		flex-direction: column;
 		gap: 8px;
 		overflow-y: auto;
+		overflow-x: hidden;
 		padding-right: 8px;
+		box-sizing: border-box;
+		min-height: 0;
+		height: 100%;
+		max-height: 100%;
 	}
 
 	.sidebar-item {
