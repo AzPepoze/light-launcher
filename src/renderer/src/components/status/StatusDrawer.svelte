@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
-	import SystemResources from "@components/shared/SystemResources.svelte";
-	import CleanupActions from "@components/shared/CleanupActions.svelte";
+	import SystemResources from "./SystemResources.svelte";
+	import CleanupActions from "./CleanupActions.svelte";
 	import { StatusDrawerState } from "./StatusDrawerState.svelte";
 
-	export let embedded = false;
+	let { embedded = false }: { embedded?: boolean } = $props();
 	const state = new StatusDrawerState();
 
 	onMount(() => {
@@ -18,7 +18,7 @@
 
 <div class="status-drawer-wrapper" class:expanded={state.isExpanded} class:embedded>
 	{#if !embedded}
-		<button class="toggle-btn" on:click={() => (state.isExpanded = !state.isExpanded)}>
+		<button class="toggle-btn" onclick={() => (state.isExpanded = !state.isExpanded)}>
 			<span class="material-icons">tune</span>
 			<span class="trigger-text"
 				>{state.isExpanded
@@ -32,7 +32,13 @@
 	{/if}
 
 	<div class="drawer-content">
-		<SystemResources sysInfo={state.sysInfo} sysUsage={state.sysUsage} />
+		<SystemResources
+			sysInfo={state.sysInfo}
+			sysUsage={state.sysUsage}
+			cpuHistory={state.cpuHistory}
+			ramHistory={state.ramHistory}
+			gpuHistoryMap={state.gpuHistoryMap}
+		/>
 
 		<div class="divider"></div>
 

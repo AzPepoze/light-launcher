@@ -72,9 +72,11 @@ type SystemInfo struct {
 }
 
 type SystemUsage struct {
-	CPU string `json:"cpu"`
-	RAM string `json:"ram"`
-	GPU string `json:"gpu"`
+	CPU       float64   `json:"cpu"`
+	RAM       float64   `json:"ram"`
+	RamUsedGb float64   `json:"ramUsedGb"`
+	RamTotalGb float64  `json:"ramTotalGb"`
+	GPUs      []float64 `json:"gpus"`
 }
 
 type LsfgProfileData struct {

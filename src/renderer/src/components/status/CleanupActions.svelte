@@ -1,22 +1,37 @@
 <script lang="ts">
-	import StatusUtilityButton from "@components/shared/StatusUtilityButton.svelte";
+	import StatusUtilityButton from "./StatusUtilityButton.svelte";
 
-	export let isCleaning: boolean;
-	export let showCleanupSuccess: boolean;
-	export let handleCleanup: () => Promise<void>;
+	interface Props {
+		isCleaning: boolean;
+		showCleanupSuccess: boolean;
+		handleCleanup: () => Promise<void>;
+		isClearingCache: boolean;
+		showCacheSuccess: boolean;
+		handleClearCache: () => Promise<void>;
+		shaderCacheSize: string;
+		isDroppingCaches: boolean;
+		showDropSuccess: boolean;
+		handleDropCaches: () => Promise<void>;
+		isClearingSwap: boolean;
+		showSwapSuccess: boolean;
+		handleClearSwap: () => Promise<void>;
+	}
 
-	export let isClearingCache: boolean;
-	export let showCacheSuccess: boolean;
-	export let handleClearCache: () => Promise<void>;
-	export let shaderCacheSize: string;
-
-	export let isDroppingCaches: boolean;
-	export let showDropSuccess: boolean;
-	export let handleDropCaches: () => Promise<void>;
-
-	export let isClearingSwap: boolean;
-	export let showSwapSuccess: boolean;
-	export let handleClearSwap: () => Promise<void>;
+	let {
+		isCleaning,
+		showCleanupSuccess,
+		handleCleanup,
+		isClearingCache,
+		showCacheSuccess,
+		handleClearCache,
+		shaderCacheSize,
+		isDroppingCaches,
+		showDropSuccess,
+		handleDropCaches,
+		isClearingSwap,
+		showSwapSuccess,
+		handleClearSwap
+	}: Props = $props();
 </script>
 
 <div class="utilities-row">

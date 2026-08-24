@@ -11,6 +11,7 @@ const execAsync = promisify(exec);
 
 let lastTotal = 0;
 let lastIdle = 0;
+let cachedGpuDevices: { name: string; pci?: string; rank: number }[] | null = null;
 
 export class SystemService {
 	static isCommandAvailable(commandName: string): boolean {
@@ -31,10 +32,26 @@ export class SystemService {
 		};
 	}
 
-	static async getSystemUsage(): Promise<SystemUsage> {
-		const usage: SystemUsage = { cpu: "0%", ram: "0%", gpu: "0%" };
+	private static async parseMemInfo(): Promise<{ memTotal: number; memAvailable: number }> {
+		let memTotal = 0;
+		let memAvailable = 0;
+		try {
+			const memContent = await fs.readFile("/proc/meminfo", "utf-8");
+			for (const line of memContent.split("\n")) {
+				if (line.startsWith("MemTotal:")) {
+					memTotal = parseInt(line.replace(/\D/g, ""), 10);
+				} else if (line.startsWith("MemAvailable:")) {
+					memAvailable = parseInt(line.replace(/\D/g, ""), 10);
+				}
+				if (memTotal > 0 && memAvailable > 0) break;
+			}
+		} catch {}
+		return { memTotal, memAvailable };
+	}
 
-		// 1. CPU Usage via /proc/stat
+	static async getSystemUsage(): Promise<SystemUsage> {
+		const usage: SystemUsage = { cpu: 0, ram: 0, ramUsedGb: 0, ramTotalGb: 0, gpus: [] };
+
 		try {
 			const statContent = await fs.readFile("/proc/stat", "utf-8");
 			const lines = statContent.split("\n");
@@ -47,54 +64,33 @@ export class SystemService {
 					const totalDelta = total - lastTotal;
 					const idleDelta = idle - lastIdle;
 					if (totalDelta > 0) {
-						const cpuPercent = (100 * (totalDelta - idleDelta)) / totalDelta;
-						usage.cpu = `${cpuPercent.toFixed(1)}%`;
+						usage.cpu = Math.min(100, Math.max(0, (100 * (totalDelta - idleDelta)) / totalDelta));
 					}
 				}
 				lastTotal = total;
 				lastIdle = idle;
 			}
-		} catch (e) {
-			// ignore error
+		} catch {}
+
+		const { memTotal, memAvailable } = await this.parseMemInfo();
+		if (memTotal > 0) {
+			const used = memTotal - memAvailable;
+			usage.ramUsedGb = Math.round((used / 1024 / 1024) * 10) / 10;
+			usage.ramTotalGb = Math.round(memTotal / 1024 / 1024);
+			usage.ram = Math.min(100, Math.max(0, Math.round((used / memTotal) * 100)));
 		}
 
-		// 2. RAM Usage via /proc/meminfo
-		try {
-			const memContent = await fs.readFile("/proc/meminfo", "utf-8");
-			let memTotal = 0;
-			let memAvailable = 0;
-
-			for (const line of memContent.split("\n")) {
-				if (line.startsWith("MemTotal:")) {
-					memTotal = parseInt(line.replace(/\D/g, ""), 10);
-				} else if (line.startsWith("MemAvailable:")) {
-					memAvailable = parseInt(line.replace(/\D/g, ""), 10);
-				}
-				if (memTotal > 0 && memAvailable > 0) break;
-			}
-
-			if (memTotal > 0) {
-				const used = memTotal - memAvailable;
-				const usedGb = (used / 1024 / 1024).toFixed(1);
-				const totalGb = Math.round(memTotal / 1024 / 1024);
-				const percent = Math.round((used / memTotal) * 100);
-				usage.ram = `${usedGb} GB / ${totalGb} GB (${percent}%)`;
-			}
-		} catch (e) {
-			// ignore error
-		}
-
-		// 3. GPU Usage
-		const gpuResult = await this.getGpuUsages();
-		usage.gpu = gpuResult.primary;
-		usage.gpus = gpuResult.list;
+		usage.gpus = await this.getGpuUsages();
 		return usage;
 	}
 
-	static detectGpuDevices(): { name: string; pci?: string; rank: number }[] {
+	static detectGpuDevices(forceRefresh = false): { name: string; pci?: string; rank: number }[] {
+		if (cachedGpuDevices && !forceRefresh) {
+			return cachedGpuDevices;
+		}
+
 		const gpus: { name: string; pci?: string; rank: number }[] = [];
 
-		// 1. Prefer real GPU names from lspci (VGA/3D controllers first, e.g. discrete GPUs)
 		try {
 			const output = execSync("lspci | grep -i 'vga\\|3d\\|display'", { encoding: "utf-8" });
 			const lines = output.trim().split("\n").filter(Boolean);
@@ -111,7 +107,6 @@ export class SystemService {
 			gpus.sort((a, b) => a.rank - b.rank);
 		} catch {}
 
-		// 2. Fallback: DRM card names
 		if (gpus.length === 0) {
 			try {
 				if (fsSync.existsSync("/sys/class/drm")) {
@@ -138,18 +133,19 @@ export class SystemService {
 			} catch {}
 		}
 
+		cachedGpuDevices = gpus;
 		return gpus;
 	}
 
 	static async getGpuUsages(
 		devices?: { name: string; pci?: string; rank: number }[]
-	): Promise<{ primary: string; list: string[] }> {
+	): Promise<number[]> {
 		const gpus = devices ?? this.detectGpuDevices();
 		if (gpus.length === 0) {
-			return { primary: "0%", list: [] };
+			return [];
 		}
 
-		const nvidiaMap: Record<string, string> = {};
+		const nvidiaMap: Record<string, number> = {};
 		if (this.isCommandAvailable("nvidia-smi")) {
 			try {
 				const { stdout } = await execAsync(
@@ -158,13 +154,14 @@ export class SystemService {
 				for (const line of stdout.trim().split("\n")) {
 					const parts = line.split(",").map((s) => s.trim());
 					if (parts.length >= 2) {
-						nvidiaMap[parts[0].toLowerCase()] = `${parts[1]}%`;
+						const util = parseFloat(parts[1]);
+						if (!isNaN(util)) nvidiaMap[parts[0].toLowerCase()] = util;
 					}
 				}
 			} catch {}
 		}
 
-		const usages: string[] = [];
+		const usages: number[] = [];
 		const drmPath = "/sys/class/drm";
 		let drmEntries: string[] = [];
 		try {
@@ -176,9 +173,8 @@ export class SystemService {
 		} catch {}
 
 		for (const gpu of gpus) {
-			let foundUsage: string | null = null;
+			let foundUsage: number | null = null;
 
-			// Check nvidia-smi match
 			if (gpu.pci && Object.keys(nvidiaMap).length > 0) {
 				const lowerPci = gpu.pci.toLowerCase();
 				for (const [bus, util] of Object.entries(nvidiaMap)) {
@@ -189,8 +185,7 @@ export class SystemService {
 				}
 			}
 
-			// Check DRM sysfs
-			if (!foundUsage && drmEntries.length > 0) {
+			if (foundUsage === null && drmEntries.length > 0) {
 				for (const entry of drmEntries) {
 					const cardPath = path.join(drmPath, entry);
 					const devPath = path.join(cardPath, "device");
@@ -205,19 +200,17 @@ export class SystemService {
 					}
 
 					if (matches) {
-						// 1. AMD gpu_busy_percent
 						const busyFile = path.join(cardPath, "device/gpu_busy_percent");
 						if (fsSync.existsSync(busyFile)) {
 							try {
-								const val = (await fs.readFile(busyFile, "utf-8")).trim();
-								if (val) {
-									foundUsage = `${val}%`;
+								const val = parseInt((await fs.readFile(busyFile, "utf-8")).trim(), 10);
+								if (!isNaN(val)) {
+									foundUsage = Math.min(100, Math.max(0, val));
 									break;
 								}
 							} catch {}
 						}
 
-						// 2. Intel GT active freq
 						const actFile = path.join(cardPath, "gt_act_freq_mhz");
 						const maxFile = path.join(cardPath, "gt_max_freq_mhz");
 						const minFile = path.join(cardPath, "gt_min_freq_mhz");
@@ -229,9 +222,9 @@ export class SystemService {
 									? parseInt((await fs.readFile(minFile, "utf-8")).trim(), 10)
 									: 0;
 								if (max > min && act > min) {
-									foundUsage = `${Math.round(((act - min) / (max - min)) * 100)}%`;
+									foundUsage = Math.round(((act - min) / (max - min)) * 100);
 								} else {
-									foundUsage = "0%";
+									foundUsage = 0;
 								}
 								break;
 							} catch {}
@@ -240,18 +233,10 @@ export class SystemService {
 				}
 			}
 
-			usages.push(foundUsage ?? "0%");
+			usages.push(foundUsage ?? 0);
 		}
 
-		return {
-			primary: usages[0] ?? "0%",
-			list: usages
-		};
-	}
-
-	static async getGpuUsage(): Promise<string> {
-		const res = await this.getGpuUsages();
-		return res.primary;
+		return usages;
 	}
 
 	static getListGpus(): string[] {
@@ -296,16 +281,10 @@ export class SystemService {
 			info.gpus = gpus;
 		}
 
-		try {
-			const meminfo = await fs.readFile("/proc/meminfo", "utf-8");
-			for (const line of meminfo.split("\n")) {
-				if (line.startsWith("MemTotal:")) {
-					const memKb = parseInt(line.replace(/\D/g, ""), 10);
-					info.ram = `${Math.round(memKb / 1024 / 1024)} GB`;
-					break;
-				}
-			}
-		} catch {}
+		const { memTotal } = await this.parseMemInfo();
+		if (memTotal > 0) {
+			info.ram = `${Math.round(memTotal / 1024 / 1024)} GB`;
+		}
 
 		try {
 			const { stdout } = await execAsync(

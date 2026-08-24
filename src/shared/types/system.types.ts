@@ -10,17 +10,17 @@ export interface SystemInfo {
 	kernel: string;
 	cpu: string;
 	gpu: string;
-	/** All detected GPUs (primary first). `gpu` holds gpus[0] for backward compat. */
 	gpus?: string[];
 	ram: string;
 	driver: string;
 }
 
 export interface SystemUsage {
-	cpu: string;
-	ram: string;
-	gpu: string;
-	gpus?: string[];
+	cpu: number;
+	ram: number;
+	ramUsedGb: number;
+	ramTotalGb: number;
+	gpus: number[];
 }
 
 export interface UtilsStatus {

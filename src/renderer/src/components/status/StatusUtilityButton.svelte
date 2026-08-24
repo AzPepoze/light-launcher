@@ -1,19 +1,32 @@
 <script lang="ts">
 	import { fade, fly } from "svelte/transition";
 
-	export let icon: string;
-	export let title: string;
-	export let subtitle: string;
-	export let isPulsing = false;
-	export let showSuccess = false;
-	export let btnClass = "";
-	export let onclick: () => void = () => {};
+	interface Props {
+		icon: string;
+		title: string;
+		subtitle: string;
+		isPulsing?: boolean;
+		showSuccess?: boolean;
+		btnClass?: string;
+		onclick?: () => void | Promise<void>;
+	}
+
+	let {
+		icon,
+		title,
+		subtitle,
+		isPulsing = false,
+		showSuccess = false,
+		btnClass = "",
+		onclick = () => {}
+	}: Props = $props();
 </script>
 
 <button
 	class="util-btn {btnClass}"
 	class:pulsing={isPulsing}
-	on:click={onclick}
+	{onclick}
+	type="button"
 >
 	<div class="content-left">
 		<span class="material-icons util-icon">{icon}</span>
@@ -28,8 +41,7 @@
 			in:fly={{ x: 20, duration: 400 }}
 			out:fade={{ duration: 200 }}
 		>
-			<span class="material-icons" style="font-size: 14px;">check</span
-			>
+			<span class="material-icons" style="font-size: 14px;">check</span>
 		</div>
 	{/if}
 </button>

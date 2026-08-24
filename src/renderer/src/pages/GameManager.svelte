@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
-	import StatusDrawer from "@components/shared/StatusDrawer.svelte";
+	import StatusDrawer from "@components/status/StatusDrawer.svelte";
 	import HeatmapCard from "@components/manager/HeatmapCard.svelte";
 	import RunningRail from "@components/manager/RunningRail.svelte";
 	import ActivityTabs from "@components/manager/ActivityTabs.svelte";
