@@ -8,11 +8,7 @@
 	import { notifications } from "@stores/notificationStore";
 	import type { AppSettings, GameActivity, RunningSession, GameInfo, ScannedFolderGroup } from "@shared";
 
-	// ===== MOCK PREVIEW — set false for real data =====
-	const USE_MOCK = true;
-	const MIN = 60 * 1000;
-	const HOUR = 60 * MIN;
-	const DAY = 24 * HOUR;
+	const DAY = 24 * 60 * 60 * 1000;
 
 	type DaySession = { gameName: string; seconds: number };
 	type DaySessionMap = Record<string, DaySession[]>;
@@ -21,74 +17,6 @@
 		const d = new Date(ts);
 		d.setHours(0, 0, 0, 0);
 		return d.toISOString().slice(0, 10);
-	}
-
-	function buildMockActivities(now: number): GameActivity[] {
-		const rows: [string, string, number, number, number][] = [
-			["Elden Ring", "/games/eldenring/eldenring.exe", 4523, 14, 0],
-			["Hades", "/games/hades/hades.exe", 12500, 32, 1],
-			["Cyberpunk 2077", "/games/cyberpunk/Cyberpunk2077.exe", 38200, 58, 2],
-			["Baldur's Gate 3", "/games/bg3/bg3_dx11.exe", 51200, 41, 4],
-			["Stardew Valley", "/games/stardew/Stardew Valley.exe", 22400, 87, 6],
-			["Hollow Knight", "/games/hollow/hollow_knight.exe", 9800, 21, 9],
-			["Celeste", "/games/celeste/Celeste.exe", 5400, 12, 13],
-			["Doom Eternal", "/games/doom/DOOMEternalx64vk.exe", 14700, 19, 18],
-			["Factorio", "/games/factorio/factorio.exe", 60100, 120, 24],
-			["Sekiro", "/games/sekiro/sekiro.exe", 30100, 26, 33],
-			["Portal 2", "/games/portal2/portal2.exe", 8200, 9, 47],
-			["Terraria", "/games/terraria/terraria.exe", 16800, 44, 62],
-			["The Witcher 3", "/games/witcher3/witcher3.exe", 41300, 37, 88],
-			["Dark Souls III", "/games/ds3/DarkSoulsIII.exe", 27600, 29, 130],
-			["Cuphead", "/games/cuphead/Cuphead.exe", 3900, 7, 168]
-		];
-		return rows.map(([name, path, total, count, daysAgo], i) => ({
-			gamePath: path,
-			gameName: name,
-			lastPlayedAt: now - daysAgo * DAY - (i % 5) * HOUR,
-			totalPlaytimeSeconds: total,
-			sessionCount: count,
-			...(daysAgo === 0 ? { activeSince: now - 14 * MIN } : {})
-		})) as GameActivity[];
-	}
-
-	const MOCK_GAME_NAMES = [
-		"Elden Ring", "Hades", "Cyberpunk 2077", "Baldur's Gate 3", "Stardew Valley",
-		"Hollow Knight", "Celeste", "Doom Eternal", "Factorio", "Sekiro",
-		"Portal 2", "Terraria", "The Witcher 3", "Dark Souls III", "Cuphead"
-	];
-
-	function buildMockDaySessions(now: number): DaySessionMap {
-		// per-day per-game playtime so heatmap + tooltip have real data
-		const today = new Date(now);
-		today.setHours(0, 0, 0, 0);
-		const map: DaySessionMap = {};
-		for (let d = 181; d >= 1; d--) {
-			const rnd = Math.abs(Math.sin(d * 12.9898) * 43758.5453) % 1;
-			const dayDate = new Date(today.getTime() - d * DAY);
-			const weekend = [0, 6].includes(dayDate.getDay());
-			let gameCount = 0;
-			if (rnd > 0.5) gameCount = 1;
-			if (rnd > 0.75) gameCount = 2;
-			if (rnd > 0.9) gameCount = 3;
-			if (weekend && rnd > 0.4) gameCount += 1;
-			if (gameCount === 0) continue;
-			const sessions: DaySession[] = [];
-			for (let g = 0; g < gameCount; g++) {
-				const seed = Math.abs(Math.sin((d * 7 + g * 13) * 4.231) * 15678.21) % 1;
-				const nameIdx = Math.floor(Math.abs(Math.sin((d + g * 31) * 7.777) * 9876.5) % 1 * MOCK_GAME_NAMES.length);
-				sessions.push({
-					gameName: MOCK_GAME_NAMES[nameIdx],
-					seconds: Math.floor((20 * 60) + seed * (2.5 * 3600 - 20 * 60)) // 20m .. ~2.5h
-				});
-			}
-			map[dayKeyOf(dayDate.getTime())] = sessions;
-		}
-		// today: matches the running mock sessions
-		map[dayKeyOf(now)] = [
-			{ gameName: "Elden Ring", seconds: 4523 },
-			{ gameName: "Hades", seconds: 3120 }
-		];
-		return map;
 	}
 
 	// Real mode: activity.json only stores lastPlayedAt + lifetime total, so per-day
@@ -102,17 +30,6 @@
 		}
 		return map;
 	}
-
-	const mockSessions = (now: number): RunningSession[] => [
-		{ pid: 4242, gamePath: "/games/eldenring/eldenring.exe", gameName: "Elden Ring", startedAt: now - 14 * MIN },
-		{ pid: 4243, gamePath: "/games/hades/hades.exe", gameName: "Hades", startedAt: now - 52 * MIN }
-	];
-
-	const mockGames: GameInfo[] = [
-		{ name: "Slay the Spire", path: "/games/sts/SlayTheSpire.exe", icon: "", config: {} as any, isRecent: false, isAutoScanned: false },
-		{ name: "RimWorld", path: "/games/rimworld/RimWorld.exe", icon: "", config: {} as any, isRecent: false, isAutoScanned: false }
-	];
-	// ===== end mock =====
 
 	let sessions: RunningSession[] = [];
 	let activities: GameActivity[] = [];
@@ -187,15 +104,6 @@
 	});
 
 	async function refresh() {
-		if (USE_MOCK) {
-			activities = buildMockActivities(now);
-			daySessions = buildMockDaySessions(now);
-			sessions = mockSessions(now);
-			games = mockGames;
-			scannedGroups = [];
-			appSettings = { TrackPlaytime: true } as AppSettings;
-			return;
-		}
 		try {
 			const [running, history, settings, allGames, groups] = await Promise.all([
 				GetRunningSessions(),
@@ -216,10 +124,6 @@
 	}
 
 	async function stopSession(session: RunningSession) {
-		if (USE_MOCK) {
-			notifications.add(`[mock] Stopping ${session.gameName}...`, "info");
-			return;
-		}
 		try {
 			await KillSession(session.pid);
 			notifications.add(`Stopping ${session.gameName}...`, "info");

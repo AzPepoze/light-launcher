@@ -207,7 +207,7 @@
 	.list{ display:flex; flex-direction:column; gap:8px; flex:1; min-height:0; overflow-y:auto; padding-right:4px; }
 	.row{
 		display:flex; align-items:center; gap:12px; padding:12px 14px;
-		background: var(--bg-elevated); border:1px solid rgba(var(--row-rgb),0.0); border-left:3px solid rgba(var(--row-rgb),0.32);
+		background: var(--bg-elevated); border:1px solid rgba(var(--row-rgb),0.0);
 		border-radius:var(--radius-md);
 		transition: border-color var(--transition-fast), transform var(--transition-fast);
 		&:hover{ border-color: rgba(var(--row-rgb),0.22); transform: translateY(-1px); }
