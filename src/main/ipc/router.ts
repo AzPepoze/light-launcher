@@ -183,8 +183,7 @@ export class IpcRouter {
 			case "KillSession":
 				return SessionService.killSession(payload.pid);
 			case "GetGameActivity":
-				await SessionService.getRunningSessions();
-				return ActivityService.getActivities();
+				return ActivityService.getActivitiesWithSessionSync();
 
 			default:
 				throw new Error(`Unknown IPC method: ${method}`);

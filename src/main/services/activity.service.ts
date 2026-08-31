@@ -123,6 +123,12 @@ export class ActivityService {
 		return this.sortActivities(await this.loadStore());
 	}
 
+	static async getActivitiesWithSessionSync(): Promise<GameActivity[]> {
+		const { SessionService } = await import("./session.service.js");
+		await SessionService.getRunningSessions();
+		return this.getActivities();
+	}
+
 	private static sortActivities(store: ActivityStore): GameActivity[] {
 		return Object.values(store.games).sort((a, b) => b.lastPlayedAt - a.lastPlayedAt);
 	}
