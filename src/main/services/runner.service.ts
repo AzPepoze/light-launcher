@@ -235,7 +235,8 @@ export class RunnerService {
 			}
 		}
 
-		// Spawn detached instance using setsid so it survives parent process / concurrently termination
+		// Detached + setsid + unref keeps instance alive after Electron exits.
+		// Close is renderer-controlled via CloseWindow; no Settings flag.
 		const hasSetsid = fsSync.existsSync("/usr/bin/setsid");
 		const spawnCmd = hasSetsid ? "/usr/bin/setsid" : instancePath;
 		const spawnArgs = hasSetsid ? [instancePath, ...args] : args;
