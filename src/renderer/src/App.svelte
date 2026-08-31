@@ -184,6 +184,7 @@
 				<div
 					class="page-wrapper"
 					class:home-mode={activePage === "home"}
+					class:prefix-mode={activePage === "prefix"}
 					on:scroll={handlePageScroll}
 					in:fly={{
 						y: 35 * navDirection,
@@ -196,7 +197,7 @@
 						easing: cubicOut,
 					}}
 				>
-					<div class="content-zone" class:full-width={activePage === "home" || activePage === "editlsfg" || activePage === "manager"} class:home-zone={activePage === "home"}>
+					<div class="content-zone" class:full-width={activePage === "home" || activePage === "editlsfg" || activePage === "manager" || activePage === "prefix"} class:home-zone={activePage === "home"} class:prefix-zone={activePage === "prefix"}>
 						{#if activePage === "home"}
 							<Home />
 						{:else if activePage === "manager"}
@@ -375,6 +376,13 @@
 			flex-direction: column;
 			padding-bottom: 0;
 		}
+
+		&.prefix-mode {
+			overflow: hidden;
+			display: flex;
+			flex-direction: column;
+			padding-bottom: 20px;
+		}
 	}
 
 	.content-zone {
@@ -393,6 +401,15 @@
 			display: flex;
 			flex-direction: column;
 			overflow: hidden;
+			height: 100%;
+			max-height: 100%;
+		}
+
+		&.prefix-zone {
+			flex: 1;
+			min-height: 0;
+			display: flex;
+			flex-direction: column;
 			height: 100%;
 			max-height: 100%;
 		}

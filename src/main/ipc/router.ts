@@ -112,6 +112,10 @@ export class IpcRouter {
 				return PrefixService.createPrefix(payload.name);
 			case "GetPrefixBaseDir":
 				return PrefixService.getPrefixBaseDir();
+			case "GetPrefixCreatedAt":
+				return PrefixService.getPrefixCreatedAt(payload.prefixName);
+			case "GetPrefixStats":
+				return PrefixService.getPrefixStats(payload.prefixName);
 			case "RemovePrefix":
 				return PrefixService.removePrefix(payload.name);
 			case "SavePrefixConfig":

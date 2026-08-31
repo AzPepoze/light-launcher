@@ -13,6 +13,7 @@ import type {
 	LsfgProfileData,
 	ProtonTool,
 	PrefixConfigWithProton,
+	PrefixStats,
 	ProtonVariant,
 	GitHubRelease
 } from "../../../../shared/index";
@@ -117,6 +118,8 @@ export const GetListGpus = () => invoke<string[]>("GetListGpus");
 export const ListPrefixes = () => invoke<string[]>("ListPrefixes");
 export const CreatePrefix = (name: string) => invoke<void>("CreatePrefix", { name });
 export const GetPrefixBaseDir = () => invoke<string>("GetPrefixBaseDir");
+export const GetPrefixCreatedAt = (prefixName: string) => invoke<number | null>("GetPrefixCreatedAt", { prefixName });
+export const GetPrefixStats = (prefixName: string) => invoke<PrefixStats>("GetPrefixStats", { prefixName });
 export const RemovePrefix = (name: string) => invoke<void>("RemovePrefix", { name });
 export const SavePrefixConfig = (prefixName: string, options: LaunchOptions) =>
 	invoke<void>("SavePrefixConfig", { prefixName, options });

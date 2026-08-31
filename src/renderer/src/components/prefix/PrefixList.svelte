@@ -8,6 +8,22 @@
 	export let onSelectPrefix: (name: string) => void;
 	export let onCreatePrefix: () => void;
 	export let onRemovePrefix: (name: string) => void;
+	export let runningMap: Record<string, string[]> = {};
+	export let prefixStats: Record<string, import("@shared").PrefixStats> = {};
+
+	function formatBytes(bytes: number | null | undefined): string {
+		if (bytes == null) return "--";
+		if (bytes < 1024) return `${bytes} B`;
+		if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+		if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+		return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+	}
+
+	function getSizeLabel(name: string): string {
+		const stats = prefixStats[name];
+		if (stats?.sizeBytes != null) return formatBytes(stats.sizeBytes);
+		return "--";
+	}
 
 	let showCreateForm = false;
 
@@ -43,6 +59,8 @@
 				{currentPrefixName}
 				{onSelectPrefix}
 				{onRemovePrefix}
+				subtitle={getSizeLabel(name)}
+				runningGames={runningMap[name] || []}
 			/>
 		{/each}
 

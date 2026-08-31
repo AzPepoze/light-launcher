@@ -1,12 +1,15 @@
 import fs from "fs/promises";
 import fsSync from "fs";
 import path from "path";
-import { spawn } from "child_process";
+import { spawn, exec } from "child_process";
+import { promisify } from "util";
 import { PathsService } from "./paths.service";
 import { ConfigService } from "./config.service";
 import { ProtonService } from "./proton.service";
 import type { LaunchOptions } from "../../shared/types/config.types";
-import type { PrefixConfigWithProton } from "../../shared/types/prefix.types";
+import type { PrefixConfigWithProton, PrefixStats } from "../../shared/types/prefix.types";
+
+const execAsync = promisify(exec);
 
 export class PrefixService {
 	static async getPrefixBaseDir(): Promise<string> {
@@ -50,6 +53,62 @@ export class PrefixService {
 		if (fsSync.existsSync(prefixPath)) {
 			await fs.rm(prefixPath, { recursive: true, force: true });
 		}
+	}
+
+	static async getDirectorySize(dir: string): Promise<number | null> {
+		try {
+			const { stdout } = await execAsync(`du -sb "${dir.replace(/"/g, '\\"')}"`);
+			const bytes = parseInt(stdout.trim().split("\t")[0], 10);
+			if (!Number.isNaN(bytes)) return bytes;
+		} catch {
+			// fall through to manual walk
+		}
+		try {
+			let total = 0;
+			const entries = await fs.readdir(dir, { withFileTypes: true });
+			for (const e of entries) {
+				const full = path.join(dir, e.name);
+				try {
+					if (e.isDirectory()) {
+						const sub = await this.getDirectorySize(full);
+						if (sub !== null) total += sub;
+					} else if (e.isFile() || e.isSymbolicLink()) {
+						const st = await fs.lstat(full);
+						total += st.size;
+					}
+				} catch {
+					continue;
+				}
+			}
+			return total;
+		} catch {
+			return null;
+		}
+	}
+
+	static async getPrefixStats(prefixName: string): Promise<PrefixStats> {
+		const baseDir = await this.getPrefixBaseDir();
+		const prefixPath = path.join(baseDir, prefixName);
+		let createdAt: number | null = null;
+		let sizeBytes: number | null = null;
+
+		if (fsSync.existsSync(prefixPath)) {
+			try {
+				const stat = await fs.stat(prefixPath);
+				const t = (stat.birthtimeMs && stat.birthtimeMs > 0 ? stat.birthtimeMs : 0) || stat.ctimeMs || stat.mtimeMs;
+				createdAt = t || null;
+			} catch {
+				createdAt = null;
+			}
+			sizeBytes = await this.getDirectorySize(prefixPath);
+		}
+
+		return { name: prefixName, createdAt, sizeBytes };
+	}
+
+	static async getPrefixCreatedAt(prefixName: string): Promise<number | null> {
+		const stats = await this.getPrefixStats(prefixName);
+		return stats.createdAt;
 	}
 
 	static async savePrefixConfig(prefixName: string, options: LaunchOptions): Promise<void> {

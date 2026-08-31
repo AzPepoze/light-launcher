@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ScanProtonVersions } from "@lib/api";
+	import { ScanProtonVersions, GetRunningSessions, GetAllGames, GetPrefixStats } from "@lib/api";
 	import * as core from "@shared";
 	import PrefixList from "@components/prefix/PrefixList.svelte";
 	import PrefixTools from "@components/prefix/PrefixTools.svelte";
@@ -9,7 +9,7 @@
 	import { createLaunchOptions } from "@lib/formService";
 	import { createLogger } from "@lib/logger";
 	import * as service from "@lib/prefixService";
-	import { onMount } from "svelte";
+	import { onMount, onDestroy } from "svelte";
 
 	const log = createLogger("Prefix");
 
@@ -27,6 +27,11 @@
 	let isToolRunning = false;
 
 	let prefixOptions: core.LaunchOptions = createLaunchOptions();
+	let activeTab: "tools" | "config" | "advanced" = "tools";
+	let runningMap: Record<string, string[]> = {};
+	let runningPoll: ReturnType<typeof setInterval> | null = null;
+	let prefixStatsMap: Record<string, core.PrefixStats> = {};
+	let prefixGameCounts: Record<string, number> = {};
 
 	$: if (chosenProtonName) {
 		chosenProton =
@@ -37,6 +42,96 @@
 	$: currentPrefixName = prefixPath.startsWith(baseDir)
 		? prefixPath.replace(baseDir + "/", "")
 		: prefixPath.split("/").filter(Boolean).pop() || "Custom";
+
+	function formatBytes(bytes: number | null | undefined): string {
+		if (bytes == null) return "--";
+		if (bytes < 1024) return `${bytes} B`;
+		if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+		if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+		return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+	}
+
+	function formatCreated(ts: number | null | undefined): string {
+		if (!ts) return "Created --";
+		try {
+			const d = new Date(ts);
+			return `Created ${d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}`;
+		} catch {
+			return "Created --";
+		}
+	}
+
+	function formatGamesCount(n: number): string {
+		if (n === 0) return "0 games";
+		if (n === 1) return "1 game linked";
+		return `${n} games linked`;
+	}
+
+	$: currentStats = prefixStatsMap[currentPrefixName];
+	$: currentGameCount = prefixGameCounts[currentPrefixName] ?? 0;
+	$: heroInfo = {
+		size: formatBytes(currentStats?.sizeBytes),
+		games: formatGamesCount(currentGameCount),
+		created: formatCreated(currentStats?.createdAt)
+	};
+
+	function extractPrefixName(prefixPath: string): string {
+		if (!prefixPath) return "";
+		const parts = prefixPath.split("/").filter(Boolean);
+		return parts[parts.length - 1] || "";
+	}
+
+	async function refreshRunningMap() {
+		try {
+			const [sessions, games] = await Promise.all([GetRunningSessions(), GetAllGames()]);
+			const gamePrefixMap = new Map<string, string>();
+			for (const g of games || []) {
+				const pName = extractPrefixName((g as core.GameInfo).config?.PrefixPath || "");
+				if (g.path) gamePrefixMap.set(g.path, pName);
+				// also map by name fallback
+				if ((g as core.GameInfo).name) gamePrefixMap.set((g as core.GameInfo).name, pName);
+			}
+			const next: Record<string, string[]> = {};
+			for (const s of sessions || []) {
+				const pName = gamePrefixMap.get(s.gamePath) || gamePrefixMap.get(s.gameName) || "";
+				if (!pName) continue;
+				if (!next[pName]) next[pName] = [];
+				next[pName].push(s.gameName || s.gamePath.split("/").pop() || "Game");
+			}
+			runningMap = next;
+		} catch (e) {
+			// silent - running check is best effort
+		}
+	}
+
+	async function refreshPrefixMeta() {
+		try {
+			const games = await GetAllGames();
+			const counts: Record<string, number> = {};
+			for (const g of games || []) {
+				const pName = extractPrefixName((g as core.GameInfo).config?.PrefixPath || "");
+				if (!pName) continue;
+				counts[pName] = (counts[pName] || 0) + 1;
+			}
+			prefixGameCounts = counts;
+
+			const statsEntries = await Promise.all(
+				availablePrefixes.map(async (name) => {
+					try {
+						const s = await GetPrefixStats(name);
+						return [name, s] as const;
+					} catch {
+						return [name, { name, createdAt: null, sizeBytes: null }] as const;
+					}
+				})
+			);
+			const nextMap: Record<string, core.PrefixStats> = {};
+			for (const [name, stats] of statsEntries) nextMap[name] = stats;
+			prefixStatsMap = nextMap;
+		} catch {
+			// best effort
+		}
+	}
 
 	async function refreshPrefixes(autoSelect = true) {
 		const data = await service.getPrefixData();
@@ -50,6 +145,7 @@
 				prefixPath = baseDir + "/Default";
 			}
 		}
+		await refreshPrefixMeta();
 	}
 
 	onMount(async () => {
@@ -59,11 +155,17 @@
 			protonVersions = tools;
 			protonDisplayNames = protonVersions.map((t) => t.DisplayName);
 			await refreshPrefixes();
+			await refreshRunningMap();
+			runningPoll = setInterval(refreshRunningMap, 2000);
 		} catch (err) {
 			log.error("onMount error", err);
 		} finally {
 			isPageLoading = false;
 		}
+	});
+
+	onDestroy(() => {
+		if (runningPoll) clearInterval(runningPoll);
 	});
 
 	async function selectPrefix(name: string) {
@@ -145,7 +247,7 @@
 		subtitle="Wine/Proton prefixes, runtime, and default launch options"
 	/>
 
-	{#if isPageLoading}
+		{#if isPageLoading}
 		<div class="loading-state">
 			<span class="material-icons spin">progress_activity</span>
 			<span>Loading prefixes…</span>
@@ -160,6 +262,8 @@
 					onSelectPrefix={selectPrefix}
 					onCreatePrefix={handleCreatePrefix}
 					onRemovePrefix={handleRemovePrefix}
+					{runningMap}
+					prefixStats={prefixStatsMap}
 				/>
 			</aside>
 
@@ -169,43 +273,99 @@
 					{protonDisplayNames}
 					bind:chosenProtonName
 					bind:prefixPath
+					heroSize={heroInfo.size}
+					heroGamesLinked={heroInfo.games}
+					heroCreated={heroInfo.created}
 				/>
 
-				<section class="panel tools-panel">
-					<header class="panel-header">
-						<span class="material-icons panel-icon">build</span>
-						<div>
-							<h3>Wine tools</h3>
-							<p>Launch utilities inside the selected prefix</p>
-						</div>
-					</header>
-					<PrefixTools {runningToolName} onRunTool={runTool} />
-				</section>
-
-				<section class="panel config-panel">
-					<header class="panel-header">
-						<span class="material-icons panel-icon">tune</span>
-						<div>
-							<h3>Default configuration</h3>
-							<p>Applied when launching games with this prefix</p>
-						</div>
-					</header>
-					<ConfigForm bind:options={prefixOptions} />
-				</section>
-
-				<div class="save-bar">
-					<button
-						class="btn primary save-btn"
-						type="button"
-						on:click={handleSaveConfig}
-						disabled={isSaving}
-					>
-						<span class="material-icons btn-icon" class:spin={isSaving}
-							>{isSaving ? "sync" : "save"}</span
+				<section class="panel tab-panel-wrapper">
+					<div class="tabs" role="tablist">
+						<button
+							type="button"
+							class="tab"
+							class:active={activeTab === 'tools'}
+							on:click={() => (activeTab = 'tools')}
+							role="tab"
+							aria-selected={activeTab === 'tools'}
 						>
-						{isSaving ? "Saving…" : "Save Defaults"}
-					</button>
-				</div>
+							<span class="material-icons">build</span>
+							Wine Tools
+						</button>
+						<button
+							type="button"
+							class="tab"
+							class:active={activeTab === 'config'}
+							on:click={() => (activeTab = 'config')}
+							role="tab"
+							aria-selected={activeTab === 'config'}
+						>
+							<span class="material-icons">tune</span>
+							Defaults
+						</button>
+						<button
+							type="button"
+							class="tab"
+							class:active={activeTab === 'advanced'}
+							on:click={() => (activeTab = 'advanced')}
+							role="tab"
+							aria-selected={activeTab === 'advanced'}
+						>
+							<span class="material-icons">settings</span>
+							Advanced
+						</button>
+						<span class="tabs-meta">6 tools · 5 toggles</span>
+					</div>
+
+					{#if activeTab === 'tools'}
+						<div class="tab-content" role="tabpanel">
+							<p class="tab-hint">Launch utilities inside the selected prefix — uses your selected Proton + <span class="kbd">umu-run</span></p>
+							<PrefixTools {runningToolName} onRunTool={runTool} />
+						</div>
+					{:else if activeTab === 'config'}
+						<div class="tab-content" role="tabpanel">
+							<header class="panel-header" style="margin-bottom: 16px">
+								<span class="material-icons panel-icon">tune</span>
+								<div>
+									<h3>Default configuration</h3>
+									<p>Applied when launching games with this prefix</p>
+								</div>
+							</header>
+							<ConfigForm bind:options={prefixOptions} />
+							<div class="save-bar">
+								<button
+									class="btn primary save-btn"
+									type="button"
+									on:click={handleSaveConfig}
+									disabled={isSaving}
+								>
+									<span class="material-icons btn-icon" class:spin={isSaving}
+										>{isSaving ? "sync" : "save"}</span
+									>
+									{isSaving ? "Saving…" : "Save Defaults"}
+								</button>
+							</div>
+						</div>
+					{:else}
+						<div class="tab-content" role="tabpanel">
+							<div class="advanced-grid">
+								<div class="advanced-card">
+									<h4>Symlinks</h4>
+									<p>Repair broken prefix symlinks after moving storage.</p>
+									<button class="btn sm" type="button">Repair</button>
+								</div>
+								<div class="advanced-card">
+									<h4>Duplicate Prefix</h4>
+									<p>Clone config + Wine bottle into a new prefix.</p>
+									<button class="btn sm" type="button" on:click={() => {
+										const base = currentPrefixName.replace(/[^a-zA-Z0-9_-]/g, '') || 'Default';
+										newPrefixName = `${base}-copy`;
+										handleCreatePrefix();
+									}}>Duplicate "{currentPrefixName}"</button>
+								</div>
+							</div>
+						</div>
+					{/if}
+				</section>
 			</main>
 		</div>
 	{/if}
@@ -216,7 +376,10 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0;
+		flex: 1;
 		min-height: 0;
+		height: 100%;
+		max-height: 100%;
 	}
 
 	.btn-icon {
@@ -243,6 +406,11 @@
 		}
 	}
 
+	@keyframes fadeIn {
+		from { opacity: 0; transform: translateY(4px); }
+		to { opacity: 1; transform: translateY(0); }
+	}
+
 	.loading-state {
 		display: flex;
 		align-items: center;
@@ -261,20 +429,56 @@
 
 	.prefix-layout {
 		display: grid;
-		grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
-		gap: 24px;
+		grid-template-columns: minmax(260px, 280px) minmax(0, 1fr);
+		gap: 20px;
+		flex: 1;
+		min-height: 0;
+		overflow: hidden;
 		align-items: stretch;
 	}
 
 	.prefix-sidebar {
 		height: 100%;
+		min-height: 0;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+		align-self: stretch;
+		/* keep visible while right scrolls */
+		position: sticky;
+		top: 0;
+
+		:global(.prefix-list-panel) {
+			flex: 1;
+			min-height: 0;
+			height: 100%;
+		}
 	}
 
 	.prefix-main {
 		display: flex;
 		flex-direction: column;
-		gap: 20px;
+		gap: 16px;
 		min-width: 0;
+		height: 100%;
+		min-height: 0;
+		overflow-y: auto;
+		overflow-x: hidden;
+		padding-right: 6px;
+		padding-bottom: 20px;
+		scrollbar-width: thin;
+		scrollbar-color: var(--glass-border-bright) transparent;
+
+		&::-webkit-scrollbar {
+			width: 8px;
+		}
+		&::-webkit-scrollbar-track {
+			background: transparent;
+		}
+		&::-webkit-scrollbar-thumb {
+			background: var(--glass-border-bright);
+			border-radius: 10px;
+		}
 	}
 
 	.panel {
@@ -313,34 +517,138 @@
 		}
 	}
 
-	.tools-panel :global(.tools-grid) {
-		margin-bottom: 0;
+	.tab-panel-wrapper {
+		padding: 14px 16px 18px;
 	}
 
-	.config-panel :global(.config-form) {
-		margin-top: 0;
+	.tabs {
+		display: flex;
+		align-items: flex-end;
+		gap: 8px;
+		border-bottom: 2px solid var(--glass-border);
+		padding-bottom: 0;
+		margin-bottom: 18px;
+		flex-shrink: 0;
+	}
+
+	.tab {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 10px 16px;
+		border-radius: 12px 12px 0 0;
+		border: 2px solid transparent;
+		border-bottom: none;
+		background: transparent;
+		color: var(--text-muted);
+		font-weight: 800;
+		font-size: 0.8rem;
+		letter-spacing: 0.5px;
+		text-transform: uppercase;
+		cursor: pointer;
+		transition: all var(--transition-fast);
+
+		.material-icons {
+			font-size: 18px;
+		}
+
+		&:hover {
+			color: var(--text-main);
+		}
+
+		&.active {
+			background: var(--bg-surface);
+			border-color: var(--glass-border);
+			color: var(--text-main);
+			transform: translateY(2px);
+		}
+	}
+
+	.tabs-meta {
+		margin-left: auto;
+		align-self: center;
+		font-size: 0.7rem;
+		font-weight: 700;
+		color: var(--text-muted);
+		background: var(--bg-elevated);
+		padding: 4px 8px;
+		border-radius: var(--radius-pill);
+		border: 1px solid var(--glass-border);
+		white-space: nowrap;
+	}
+
+	.tab-content {
+		animation: fadeIn 150ms ease;
+	}
+
+	.tab-hint {
+		margin: 0 0 12px;
+		font-size: 0.78rem;
+		font-weight: 600;
+		color: var(--text-muted);
+
+		.kbd {
+			font-family: monospace;
+			font-size: 0.7rem;
+			background: rgba(255, 255, 255, 0.06);
+			border: 1px solid rgba(255, 255, 255, 0.1);
+			padding: 2px 6px;
+			border-radius: 6px;
+			color: var(--text-dim);
+		}
+	}
+
+	.advanced-grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 12px;
+	}
+
+	.advanced-card {
+		padding: 16px;
+		background: var(--bg-elevated);
+		border: 2px solid var(--glass-border);
+		border-radius: var(--radius-md);
+
+		h4 {
+			margin: 0 0 6px;
+			font-size: 0.85rem;
+			font-weight: 800;
+			letter-spacing: 0.5px;
+			text-transform: uppercase;
+		}
+
+		p {
+			margin: 0 0 10px;
+			font-size: 0.78rem;
+			font-weight: 600;
+			color: var(--text-muted);
+			line-height: 1.5;
+		}
 	}
 
 	.save-bar {
-		position: sticky;
-		bottom: 0;
 		display: flex;
 		justify-content: flex-end;
-		padding: 24px 0 8px;
+		padding: 16px 0 4px;
 		margin-top: 8px;
-		z-index: 10;
-		background: transparent;
-		pointer-events: none;
+		z-index: 1;
 	}
 
 	.save-btn {
-		pointer-events: auto;
-		min-width: 200px;
+		min-width: 180px;
 	}
 
 	@media (max-width: 900px) {
+		.prefix-page {
+			height: auto;
+			min-height: 0;
+		}
+
 		.prefix-layout {
 			grid-template-columns: 1fr;
+			overflow: visible;
+			flex: none;
 		}
 
 		.prefix-sidebar {
@@ -348,7 +656,18 @@
 			height: auto;
 			max-height: 320px;
 			min-height: 0;
+			overflow: hidden;
 		}
 
+		.prefix-main {
+			height: auto;
+			overflow: visible;
+			padding-right: 0;
+			padding-bottom: 0;
+		}
+
+		.advanced-grid {
+			grid-template-columns: 1fr;
+		}
 	}
 </style>
