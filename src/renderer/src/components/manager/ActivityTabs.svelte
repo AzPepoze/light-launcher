@@ -28,9 +28,9 @@
 	}
 	function subtitleFor(activity: GameActivity, which:string){
 		if(which==="stale"){
-			return activity.lastPlayedAt ? `Last ${formatDate(activity.lastPlayedAt)} · ${activity.sessionCount} sessions` : "Never played";
+			return activity.lastPlayedAt ? `Last ${formatDate(activity.lastPlayedAt)}` : "Never played";
 		}
-		return `${formatDate(activity.lastPlayedAt)} · ${activity.sessionCount} ${activity.sessionCount===1?'session':'sessions'}`;
+		return formatDate(activity.lastPlayedAt);
 	}
 
 	let iconMap: Record<string,string> = {};

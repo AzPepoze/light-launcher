@@ -50,7 +50,6 @@ func Finalize(gamePath, gameName string, startedAt, endedAt time.Time) error {
 			GamePath:     cleanPath,
 			GameName:     gameName,
 			LastPlayedAt: startedAt.UnixMilli(),
-			SessionCount: 1,
 		}
 		current.Games[key] = entry
 	}
@@ -67,6 +66,7 @@ func Finalize(gamePath, gameName string, startedAt, endedAt time.Time) error {
 	if gameName != "" {
 		entry.GameName = gameName
 	}
+	entry.LastPlayedAt = endedAt.UnixMilli()
 	entry.TotalPlaytimeSeconds += int64(endedAt.Sub(actualStart).Seconds())
 	entry.ActiveSince = nil
 

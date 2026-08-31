@@ -121,7 +121,6 @@ type GameActivity struct {
 	CustomIconPath       string `json:"customIconPath,omitempty"`
 	LastPlayedAt         int64  `json:"lastPlayedAt"`
 	TotalPlaytimeSeconds int64  `json:"totalPlaytimeSeconds"`
-	SessionCount         int    `json:"sessionCount"`
 	ActiveSince          *int64 `json:"activeSince,omitempty"`
 }
 

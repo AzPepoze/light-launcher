@@ -58,9 +58,8 @@ export class ActivityService {
 			profileId: options.ID || previous?.profileId,
 			customIconPath: options.CustomIconPath || previous?.customIconPath,
 			lastPlayedAt: now,
-			totalPlaytimeSeconds: previous?.totalPlaytimeSeconds || 0,
-			sessionCount: previous?.activeSince ? previous.sessionCount : (previous?.sessionCount || 0) + 1,
-			activeSince: previous?.activeSince || now
+			totalPlaytimeSeconds: previous?.totalPlaytimeSeconds ?? 0,
+			activeSince: previous?.activeSince ?? now
 		};
 
 		await this.saveStore(store);
@@ -101,16 +100,14 @@ export class ActivityService {
 				store.games[key] = {
 					gamePath: session.gamePath,
 					gameName: session.gameName,
-					lastPlayedAt: session.startedAt || now,
+					lastPlayedAt: session.startedAt ?? now,
 					totalPlaytimeSeconds: 0,
-					sessionCount: 1,
-					activeSince: session.startedAt || now
+					activeSince: session.startedAt ?? now
 				};
 				changed = true;
 			} else if (!existing.activeSince) {
-				existing.activeSince = session.startedAt || now;
-				existing.lastPlayedAt = Math.max(existing.lastPlayedAt, session.startedAt || now);
-				existing.sessionCount += 1;
+				existing.activeSince = session.startedAt ?? now;
+				existing.lastPlayedAt = Math.max(existing.lastPlayedAt, session.startedAt ?? now);
 				changed = true;
 			}
 		}

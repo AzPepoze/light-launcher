@@ -29,6 +29,5 @@ export interface GameActivity {
 	customIconPath?: string;
 	lastPlayedAt: number;
 	totalPlaytimeSeconds: number;
-	sessionCount: number;
 	activeSince?: number;
 }

@@ -77,7 +77,7 @@
 		for(const [key, g] of libraryPaths){
 			const a = actMap.get(key);
 			if(!a){
-				out.push({ gamePath:g.path, gameName:g.name, lastPlayedAt:0, totalPlaytimeSeconds:0, sessionCount:0 } as GameActivity);
+				out.push({ gamePath:g.path, gameName:g.name, lastPlayedAt:0, totalPlaytimeSeconds:0 } as GameActivity);
 			} else if(!a.activeSince && now - a.lastPlayedAt > THIRTY_D){
 				out.push(a);
 			}
