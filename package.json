@@ -45,6 +45,7 @@
 	},
 	"trustedDependencies": [
 		"@parcel/watcher",
+		"electron",
 		"svelte-preprocess"
 	]
 }
