@@ -15,36 +15,45 @@ export class IconLoaderState {
 		}
 	}
 
-	async enqueueIconLoad(path: string, customIconPath?: string | null) {
-		const explicitSource = customIconPath !== undefined;
-		const source = customIconPath ? `custom:${customIconPath}` : `exe:${path}`;
+	async enqueueIconLoad(gamePath: string, customIconPath?: string | null) {
+		const isExplicitSync = customIconPath !== undefined;
+		const requestedSource = customIconPath ? `custom:${customIconPath}` : `exe:${gamePath}`;
+		const exeSource = `exe:${gamePath}`;
+		const loadingKey = gamePath;
 
-		// Lazy card requests do not know the custom path. If syncGames already loaded a
-		// custom icon, keep it instead of replacing it with the executable icon.
-		if (!explicitSource && this.iconSources.get(path)?.startsWith("custom:")) return;
-		if (this.gameIcons[path] && this.iconSources.get(path) === source) return;
-		if (this.loadingIcons.has(source)) return;
+		if (!isExplicitSync && this.iconSources.get(gamePath)?.startsWith("custom:")) return;
+		if (this.gameIcons[gamePath] && this.iconSources.get(gamePath) === requestedSource) return;
+		if (this.loadingIcons.has(loadingKey)) return;
 
-		this.loadingIcons.add(source);
+		this.loadingIcons.add(loadingKey);
 		try {
 			let icon = "";
+			let resolvedSource: string | null = null;
+
 			if (customIconPath) {
 				try {
 					icon = (await GetImageBase64(customIconPath)) || "";
+					if (icon) resolvedSource = requestedSource;
 				} catch {
-					// Missing custom files gracefully fall back to the executable icon.
+					// custom file missing — clear stale marker and fall through to exe
 				}
 			}
-			if (!icon) icon = (await loadExeIcon(path)) || "";
 
-			if (icon) {
-				this.gameIcons[path] = icon;
-				this.iconSources.set(path, icon && customIconPath ? source : `exe:${path}`);
+			if (!icon) {
+				icon = (await loadExeIcon(gamePath)) || "";
+				if (icon) resolvedSource = exeSource;
 			}
-		} catch (err) {
-			console.error("Queue icon load error:", err);
+
+			if (icon && resolvedSource) {
+				this.gameIcons[gamePath] = icon;
+				this.iconSources.set(gamePath, resolvedSource);
+			} else if (customIconPath && this.iconSources.get(gamePath) === requestedSource) {
+				this.iconSources.delete(gamePath);
+			}
+		} catch (error) {
+			console.error("Queue icon load error:", error);
 		} finally {
-			this.loadingIcons.delete(source);
+			this.loadingIcons.delete(loadingKey);
 		}
 	}
 }
