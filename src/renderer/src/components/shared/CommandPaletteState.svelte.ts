@@ -15,6 +15,7 @@ export class CommandPaletteState {
 
 	inputElement = $state<HTMLInputElement | null>(null);
 	resultsContainer = $state<HTMLDivElement | null>(null);
+	previousFocusElement = $state<HTMLElement | null>(null);
 
 	readonly PAGES = [
 		{ name: "Go to Home", icon: "home", action: () => this.navigateTo("home") },
@@ -116,6 +117,13 @@ export class CommandPaletteState {
 		this.show = false;
 		this.searchQuery = "";
 		this.selectedIndex = 0;
+		const previousFocusElement = this.previousFocusElement;
+		this.previousFocusElement = null;
+		if (previousFocusElement && document.contains(previousFocusElement)) {
+			previousFocusElement.focus();
+		} else if (document.activeElement instanceof HTMLElement) {
+			document.activeElement.blur();
+		}
 		this.onCloseCallback();
 	}
 
@@ -161,9 +169,29 @@ export class CommandPaletteState {
 		if (newShow === this.show) return;
 		this.show = newShow;
 		if (newShow) {
+			if (!this.previousFocusElement) {
+				const activeElement = document.activeElement as HTMLElement | null;
+				if (
+					activeElement &&
+					activeElement !== this.inputElement &&
+					activeElement instanceof HTMLElement
+				) {
+					this.previousFocusElement = activeElement;
+				}
+			}
 			this.selectedIndex = 0;
 			this.loadGames();
 			setTimeout(() => this.focusInput(), 0);
+		} else {
+			if (this.previousFocusElement || document.activeElement === this.inputElement) {
+				const previousFocusElement = this.previousFocusElement;
+				this.previousFocusElement = null;
+				if (previousFocusElement && document.contains(previousFocusElement)) {
+					previousFocusElement.focus();
+				} else if (document.activeElement instanceof HTMLElement) {
+					document.activeElement.blur();
+				}
+			}
 		}
 	}
 

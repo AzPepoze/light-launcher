@@ -122,6 +122,18 @@
 	let showCommandPalette = false;
 
 	function openCommandPalette() {
+		if (showCommandPalette) {
+			commandPaletteState.focusInput();
+			return;
+		}
+		const activeElement = document.activeElement as HTMLElement | null;
+		if (
+			activeElement &&
+			activeElement !== commandPaletteState.inputElement &&
+			activeElement instanceof HTMLElement
+		) {
+			commandPaletteState.previousFocusElement = activeElement;
+		}
 		showCommandPalette = true;
 		setTimeout(() => commandPaletteState.focusInput(), 0);
 	}
@@ -161,7 +173,14 @@
 		<div class="content-container">
 			{#if activePage !== "editlsfg"}
 				<div class="topbar-container">
-					<div class="global-search-trigger" class:open={showCommandPalette} class:scrolled={scrolled} role="search">
+					<div
+						class="global-search-trigger"
+						class:open={showCommandPalette}
+						class:scrolled={scrolled}
+						role="search"
+						on:click={openCommandPalette}
+						on:mousedown={openCommandPalette}
+					>
 						<span class="material-icons">search</span>
 						<input
 							bind:this={commandPaletteState.inputElement}
@@ -174,7 +193,7 @@
 							on:focus={openCommandPalette}
 							on:input={openCommandPalette}
 						/>
-						<button class="shortcut-kbd" on:click={openCommandPalette} aria-label="Open command palette">Ctrl K</button>
+						<button class="shortcut-kbd" on:click|stopPropagation={openCommandPalette} aria-label="Open command palette">Ctrl K</button>
 					</div>
 					<CommandPalette bind:show={showCommandPalette} onClose={() => showCommandPalette = false} />
 				</div>
