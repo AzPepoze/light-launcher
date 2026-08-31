@@ -1,15 +1,12 @@
 import fs from "fs/promises";
 import fsSync from "fs";
 import path from "path";
-import { spawn, exec } from "child_process";
-import { promisify } from "util";
+import { spawn } from "child_process";
 import { PathsService } from "./paths.service";
 import { ConfigService } from "./config.service";
 import { ProtonService } from "./proton.service";
 import type { LaunchOptions } from "../../shared/types/config.types";
 import type { PrefixConfigWithProton, PrefixStats } from "../../shared/types/prefix.types";
-
-const execAsync = promisify(exec);
 
 export class PrefixService {
 	static async getPrefixBaseDir(): Promise<string> {
@@ -55,26 +52,19 @@ export class PrefixService {
 		}
 	}
 
-	static async getDirectorySize(dir: string): Promise<number | null> {
-		try {
-			const { stdout } = await execAsync(`du -sb "${dir.replace(/"/g, '\\"')}"`);
-			const bytes = parseInt(stdout.trim().split("\t")[0], 10);
-			if (!Number.isNaN(bytes)) return bytes;
-		} catch {
-			// fall through to manual walk
-		}
+	static async getDirectorySize(prefixDirectory: string): Promise<number | null> {
 		try {
 			let total = 0;
-			const entries = await fs.readdir(dir, { withFileTypes: true });
-			for (const e of entries) {
-				const full = path.join(dir, e.name);
+			const entries = await fs.readdir(prefixDirectory, { withFileTypes: true });
+			for (const entry of entries) {
+				const fullPath = path.join(prefixDirectory, entry.name);
 				try {
-					if (e.isDirectory()) {
-						const sub = await this.getDirectorySize(full);
-						if (sub !== null) total += sub;
-					} else if (e.isFile() || e.isSymbolicLink()) {
-						const st = await fs.lstat(full);
-						total += st.size;
+					if (entry.isDirectory()) {
+						const subSize = await this.getDirectorySize(fullPath);
+						if (subSize !== null) total += subSize;
+					} else if (entry.isFile() || entry.isSymbolicLink()) {
+						const directoryStats = await fs.lstat(fullPath);
+						total += directoryStats.size;
 					}
 				} catch {
 					continue;
@@ -94,9 +84,13 @@ export class PrefixService {
 
 		if (fsSync.existsSync(prefixPath)) {
 			try {
-				const stat = await fs.stat(prefixPath);
-				const t = (stat.birthtimeMs && stat.birthtimeMs > 0 ? stat.birthtimeMs : 0) || stat.ctimeMs || stat.mtimeMs;
-				createdAt = t || null;
+				const directoryStats = await fs.stat(prefixPath);
+				const birthtimeMs = directoryStats.birthtimeMs;
+				const ctimeMs = directoryStats.ctimeMs;
+				const mtimeMs = directoryStats.mtimeMs;
+				const hasValidBirthtime =
+					birthtimeMs >= 1 && birthtimeMs !== ctimeMs && birthtimeMs !== mtimeMs;
+				createdAt = hasValidBirthtime ? birthtimeMs : null;
 			} catch {
 				createdAt = null;
 			}
@@ -181,8 +175,9 @@ export class PrefixService {
 				stdio: "ignore"
 			});
 			child.unref();
-		} catch (err: any) {
-			throw new Error(`Failed to launch prefix tool "${toolName}": ${err?.message || err}`);
+		} catch (error: unknown) {
+			const message = error instanceof Error ? error.message : String(error);
+			throw new Error(`Failed to launch prefix tool "${toolName}": ${message}`);
 		}
 	}
 }
