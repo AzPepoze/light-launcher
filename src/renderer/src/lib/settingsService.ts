@@ -10,6 +10,7 @@ import {
 } from "@lib/api";
 import { notifications } from "@stores/notificationStore";
 import { settingsStore } from "@stores/settingsStore";
+import type { AppSettings } from "@shared";
 
 /**
  * Loads application settings from the backend
@@ -21,6 +22,20 @@ export async function loadAppSettings(): Promise<any> {
 	} catch (err) {
 		console.error("Failed to load app settings", err);
 		return null;
+	}
+}
+
+/** Save settings that apply immediately without restarting Electron. */
+export async function saveAppSettings(
+	settings: AppSettings,
+	successMessage = "Settings saved"
+): Promise<void> {
+	try {
+		await SaveAppSettings(settings);
+		notifications.add(successMessage, "success");
+	} catch (err) {
+		notifications.add(`Failed to save settings: ${err}`, "error");
+		throw err;
 	}
 }
 

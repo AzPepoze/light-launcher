@@ -1,7 +1,7 @@
-import { GetAllGames, RunGame } from "@lib/api";
+import { GetAllGames, GetImageBase64 } from "@lib/api";
 import { navigationCommand } from "@stores/navigationStore";
-import { notifications } from "@stores/notificationStore";
 import { loadExeIcon } from "@lib/iconService";
+import { launchGame } from "@lib/gameLaunchService";
 import protonIcon from "@icons/protron_forked.png";
 
 export class CommandPaletteState {
@@ -15,9 +15,15 @@ export class CommandPaletteState {
 
 	inputElement = $state<HTMLInputElement | null>(null);
 	resultsContainer = $state<HTMLDivElement | null>(null);
+	previousFocusElement = $state<HTMLElement | null>(null);
 
 	readonly PAGES = [
 		{ name: "Go to Home", icon: "home", action: () => this.navigateTo("home") },
+		{
+			name: "Go to Game Manager",
+			icon: "monitor_heart",
+			action: () => this.navigateTo("manager")
+		},
 		{
 			name: "Go to Launch Configuration",
 			icon: "play_arrow",
@@ -44,13 +50,17 @@ export class CommandPaletteState {
 			this.games = fetched || [];
 
 			for (const game of this.games) {
-				const path = game.path || game.config?.LauncherPath;
-				if (path && !this.gameIcons[path]) {
-					loadExeIcon(path).then((icon) => {
-						if (icon) {
-							this.gameIcons[path] = icon;
-						}
-					});
+				const gamePath = game.path || game.config?.LauncherPath;
+				if (!gamePath) continue;
+				const customIconPath = game.config?.CustomIconPath;
+				try {
+					let icon = "";
+					if (customIconPath) icon = (await GetImageBase64(customIconPath)) || "";
+					if (!icon) icon = (await loadExeIcon(gamePath)) || "";
+					if (icon) this.gameIcons[gamePath] = icon;
+				} catch {
+					const fallback = await loadExeIcon(gamePath).catch(() => "");
+					if (fallback) this.gameIcons[gamePath] = fallback;
 				}
 			}
 
@@ -95,17 +105,25 @@ export class CommandPaletteState {
 			item.action();
 		} else if (item.type === "game") {
 			try {
-				notifications.add(`Launching ${item.game.name}...`, "info");
 				this.close();
-				await RunGame(item.game.config, false);
-			} catch (err) {
-				notifications.add(`Launch failed: ${err}`, "error");
+				await launchGame(item.game.config, { showLogs: false });
+			} catch {
+				// Shared launch service already reports the error.
 			}
 		}
 	}
 
 	close() {
 		this.show = false;
+		this.searchQuery = "";
+		this.selectedIndex = 0;
+		const previousFocusElement = this.previousFocusElement;
+		this.previousFocusElement = null;
+		if (previousFocusElement && document.contains(previousFocusElement)) {
+			previousFocusElement.focus();
+		} else if (document.activeElement instanceof HTMLElement) {
+			document.activeElement.blur();
+		}
 		this.onCloseCallback();
 	}
 
@@ -148,15 +166,37 @@ export class CommandPaletteState {
 	}
 
 	onShowChange(newShow: boolean) {
+		if (newShow === this.show) return;
 		this.show = newShow;
 		if (newShow) {
-			this.searchQuery = "";
+			if (!this.previousFocusElement) {
+				const activeElement = document.activeElement as HTMLElement | null;
+				if (
+					activeElement &&
+					activeElement !== this.inputElement &&
+					activeElement instanceof HTMLElement
+				) {
+					this.previousFocusElement = activeElement;
+				}
+			}
 			this.selectedIndex = 0;
 			this.loadGames();
-			setTimeout(() => {
-				if (this.inputElement) this.inputElement.focus();
-			}, 50);
+			setTimeout(() => this.focusInput(), 0);
+		} else {
+			if (this.previousFocusElement || document.activeElement === this.inputElement) {
+				const previousFocusElement = this.previousFocusElement;
+				this.previousFocusElement = null;
+				if (previousFocusElement && document.contains(previousFocusElement)) {
+					previousFocusElement.focus();
+				} else if (document.activeElement instanceof HTMLElement) {
+					document.activeElement.blur();
+				}
+			}
 		}
+	}
+
+	focusInput() {
+		this.inputElement?.focus();
 	}
 }
 

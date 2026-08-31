@@ -6,6 +6,9 @@
 	export let protonDisplayNames: string[];
 	export let chosenProtonName: string;
 	export let prefixPath: string;
+	export let heroSize: string = "--";
+	export let heroGamesLinked: string = "0 games";
+	export let heroCreated: string = "Created --";
 </script>
 
 <section class="panel hero-panel">
@@ -37,6 +40,12 @@
 			placeholder="Path to WINE prefix..."
 			type="folder"
 		/>
+	</div>
+
+	<div class="hero-badges">
+		<span class="hero-badge">{heroSize}</span>
+		<span class="hero-badge">{heroGamesLinked}</span>
+		<span class="hero-badge">{heroCreated}</span>
 	</div>
 </section>
 
@@ -124,6 +133,27 @@
 
 	.runtime-dropdown {
 		width: 100%;
+	}
+
+	.hero-badges {
+		display: flex;
+		gap: 8px;
+		flex-wrap: wrap;
+		margin-top: 14px;
+	}
+
+	.hero-badge {
+		display: inline-flex;
+		align-items: center;
+		padding: 4px 10px;
+		border-radius: var(--radius-pill);
+		background: var(--bg-elevated);
+		border: 1px solid var(--glass-border);
+		font-size: 0.68rem;
+		font-weight: 800;
+		letter-spacing: 0.4px;
+		color: var(--text-muted);
+		white-space: nowrap;
 	}
 
 	@media (max-width: 900px) {

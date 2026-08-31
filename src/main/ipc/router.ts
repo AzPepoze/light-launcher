@@ -8,6 +8,7 @@ import { ProtonService } from "../services/proton.service";
 import { RunnerService } from "../services/runner.service";
 import { SessionService } from "../services/session.service";
 import { SystemService } from "../services/system.service";
+import { ActivityService } from "../services/activity.service";
 
 export class IpcRouter {
 	static async dispatch(method: string, payload: any, sender: WebContents): Promise<any> {
@@ -111,6 +112,10 @@ export class IpcRouter {
 				return PrefixService.createPrefix(payload.name);
 			case "GetPrefixBaseDir":
 				return PrefixService.getPrefixBaseDir();
+			case "GetPrefixCreatedAt":
+				return PrefixService.getPrefixCreatedAt(payload.prefixName);
+			case "GetPrefixStats":
+				return PrefixService.getPrefixStats(payload.prefixName);
 			case "RemovePrefix":
 				return PrefixService.removePrefix(payload.name);
 			case "SavePrefixConfig":
@@ -172,11 +177,13 @@ export class IpcRouter {
 			case "UninstallLsfg":
 				return LsfgService.uninstallLsfg();
 
-			// Session Service
+			// Session & Activity Service
 			case "GetRunningSessions":
 				return SessionService.getRunningSessions();
 			case "KillSession":
 				return SessionService.killSession(payload.pid);
+			case "GetGameActivity":
+				return ActivityService.getActivitiesWithSessionSync();
 
 			default:
 				throw new Error(`Unknown IPC method: ${method}`);

@@ -119,6 +119,9 @@ export class AppService {
 				case ".webp":
 					mimeType = "image/webp";
 					break;
+				case ".ico":
+					mimeType = "image/x-icon";
+					break;
 			}
 			return `data:${mimeType};base64,${data.toString("base64")}`;
 		} catch {

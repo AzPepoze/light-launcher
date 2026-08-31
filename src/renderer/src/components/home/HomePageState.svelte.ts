@@ -69,6 +69,12 @@ export class HomePageState {
 		this.sessions = data.sessions;
 		this.prefixes = data.prefixes;
 		this.scannedFolderGroups = scannedGroups || [];
+
+		const visibleForIcons = [
+			...this.games,
+			...this.scannedFolderGroups.flatMap((group) => group.games || [])
+		];
+		void this.icons.syncGames(visibleForIcons);
 	}
 
 	initialize() {
@@ -91,9 +97,9 @@ export class HomePageState {
 		if (this.dropUnsubscribe) this.dropUnsubscribe();
 	}
 
-	async handleQuickLaunch(game: any) {
+	async handleQuickLaunch(game: any, showLogs = false) {
 		try {
-			await service.quickLaunchGame(game);
+			await service.quickLaunchGame(game, showLogs);
 			this.refreshData();
 		} catch (err) {
 			// Error handled in service
@@ -109,7 +115,7 @@ export class HomePageState {
 	}
 
 	isGameRunning(game: any, sessionsList: any[]) {
-		const path = game.path || game.config.LauncherPath;
+		const path = game.path || game.config.GamePath || game.config.LauncherPath;
 		return sessionsList.some((s) => s.gamePath === path);
 	}
 

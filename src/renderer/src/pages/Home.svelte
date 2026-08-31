@@ -4,9 +4,7 @@
 	import { HomePageState } from "@components/home/HomePageState.svelte";
 
 	import GameGrid from "@components/home/GameGrid.svelte";
-	import StatusDrawer from "@components/shared/StatusDrawer.svelte";
 	import AddGameModal from "@components/home/addgame/AddGameModal.svelte";
-	import RunningSessions from "@components/home/RunningSessions.svelte";
 	import QuickLaunchHeader from "@components/home/QuickLaunchHeader.svelte";
 	import HowItWorksModal from "@components/home/HowItWorksModal.svelte";
 	import BulkRemoveModal from "@components/home/BulkRemoveModal.svelte";
@@ -23,8 +21,6 @@
 </script>
 
 <div class="home-container" data-file-drop-target>
-	<RunningSessions sessions={state.sessions} onKill={(pid, name) => state.handleKillSession(pid, name)} />
-
 	<div class="quick-launch-section">
 		<QuickLaunchHeader
 			isSelectionMode={state.selection.isSelectionMode}
@@ -68,7 +64,7 @@
 				selectedPaths={state.selection.selectedPaths}
 				sessions={state.sessions}
 				isGameRunning={state.isGameRunning}
-				handleQuickLaunch={(game) => state.handleQuickLaunch(game)}
+				handleQuickLaunch={(game, showLogs) => state.handleQuickLaunch(game, showLogs)}
 				handleConfigure={(game) => state.handleConfigure(game)}
 				toggleGameSelection={(game, shiftKey) => state.selection.toggleGameSelection(game, shiftKey)}
 				onRefresh={() => state.refreshData(true)}
@@ -93,20 +89,20 @@
 	onRefresh={() => state.refreshData()}
 />
 
-<StatusDrawer />
-
 <style lang="scss">
 	.home-container {
 		display: flex;
 		flex-direction: column;
-		height: 100%;
-		width: 100%;
-		padding: 10px 0;
-		background-color: transparent;
-		gap: 36px;
-		box-sizing: border-box;
+		flex: 1;
 		min-height: 0;
-		overflow-x: hidden;
+		height: 100%;
+		max-height: 100%;
+		width: 100%;
+		padding: 10px 0 0 0;
+		background-color: transparent;
+		gap: 24px;
+		box-sizing: border-box;
+		overflow: hidden;
 	}
 
 	.quick-launch-section {
@@ -114,6 +110,9 @@
 		flex-direction: column;
 		flex: 1;
 		min-height: 0;
+		height: 100%;
+		max-height: 100%;
+		overflow: hidden;
 	}
 
 	.empty-state {

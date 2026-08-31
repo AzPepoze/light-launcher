@@ -6,7 +6,7 @@ import { PathsService } from "./paths.service";
 import { ConfigService } from "./config.service";
 import { ProtonService } from "./proton.service";
 import type { LaunchOptions } from "../../shared/types/config.types";
-import type { PrefixConfigWithProton } from "../../shared/types/prefix.types";
+import type { PrefixConfigWithProton, PrefixStats } from "../../shared/types/prefix.types";
 
 export class PrefixService {
 	static async getPrefixBaseDir(): Promise<string> {
@@ -50,6 +50,59 @@ export class PrefixService {
 		if (fsSync.existsSync(prefixPath)) {
 			await fs.rm(prefixPath, { recursive: true, force: true });
 		}
+	}
+
+	static async getDirectorySize(prefixDirectory: string): Promise<number | null> {
+		try {
+			let total = 0;
+			const entries = await fs.readdir(prefixDirectory, { withFileTypes: true });
+			for (const entry of entries) {
+				const fullPath = path.join(prefixDirectory, entry.name);
+				try {
+					if (entry.isDirectory()) {
+						const subSize = await this.getDirectorySize(fullPath);
+						if (subSize !== null) total += subSize;
+					} else if (entry.isFile() || entry.isSymbolicLink()) {
+						const directoryStats = await fs.lstat(fullPath);
+						total += directoryStats.size;
+					}
+				} catch {
+					continue;
+				}
+			}
+			return total;
+		} catch {
+			return null;
+		}
+	}
+
+	static async getPrefixStats(prefixName: string): Promise<PrefixStats> {
+		const baseDir = await this.getPrefixBaseDir();
+		const prefixPath = path.join(baseDir, prefixName);
+		let createdAt: number | null = null;
+		let sizeBytes: number | null = null;
+
+		if (fsSync.existsSync(prefixPath)) {
+			try {
+				const directoryStats = await fs.stat(prefixPath);
+				const birthtimeMs = directoryStats.birthtimeMs;
+				const ctimeMs = directoryStats.ctimeMs;
+				const mtimeMs = directoryStats.mtimeMs;
+				const hasValidBirthtime =
+					birthtimeMs >= 1 && birthtimeMs !== ctimeMs && birthtimeMs !== mtimeMs;
+				createdAt = hasValidBirthtime ? birthtimeMs : null;
+			} catch {
+				createdAt = null;
+			}
+			sizeBytes = await this.getDirectorySize(prefixPath);
+		}
+
+		return { name: prefixName, createdAt, sizeBytes };
+	}
+
+	static async getPrefixCreatedAt(prefixName: string): Promise<number | null> {
+		const stats = await this.getPrefixStats(prefixName);
+		return stats.createdAt;
 	}
 
 	static async savePrefixConfig(prefixName: string, options: LaunchOptions): Promise<void> {
@@ -122,8 +175,9 @@ export class PrefixService {
 				stdio: "ignore"
 			});
 			child.unref();
-		} catch (err: any) {
-			throw new Error(`Failed to launch prefix tool "${toolName}": ${err?.message || err}`);
+		} catch (error: unknown) {
+			const message = error instanceof Error ? error.message : String(error);
+			throw new Error(`Failed to launch prefix tool "${toolName}": ${message}`);
 		}
 	}
 }

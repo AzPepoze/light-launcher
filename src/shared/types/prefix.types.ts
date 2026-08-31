@@ -15,6 +15,12 @@ export interface PrefixConfigWithProton {
 	protonIsSteam: boolean;
 }
 
+export interface PrefixStats {
+	name: string;
+	createdAt: number | null;
+	sizeBytes: number | null;
+}
+
 export interface ProtonVariant {
 	ID: string;
 	Name: string;

@@ -1,4 +1,8 @@
 <script lang="ts">
+	import { onMount } from "svelte";
+	import AppMenu from "@components/shared/AppMenu.svelte";
+	import MenuTrigger from "@components/shared/MenuTrigger.svelte";
+
 	export let icon: string = "folder";
 	export let name: string = "";
 	export let subtitle: string = "";
@@ -6,12 +10,54 @@
 	export let hasMenu: boolean = false;
 	export let isMenuOpen: boolean = false;
 	export let onToggleMenu: (event: MouseEvent) => void = () => {};
+	export let onCloseMenu: () => void = () => {};
 	export let onRescan: () => void = () => {};
 	export let onConfigureFolder: () => void = () => {};
 	export let onRemoveFolder: () => void = () => {};
+	/** Horizontal px to bleed out of a padded parent container when stuck, so the bar matches the Custom Profiles header width. */
+	export let stuckBleed = 0;
+
+	let headerEl: HTMLDivElement;
+	let isStuck = false;
+
+	function findScrollParent(el: HTMLElement | null): HTMLElement | null {
+		let p: HTMLElement | null = el?.parentElement ?? null;
+		while (p) {
+			const style = getComputedStyle(p);
+			if (style.overflowY === "auto" || style.overflowY === "scroll") return p;
+			p = p.parentElement;
+		}
+		return null;
+	}
+
+	onMount(() => {
+		const scrollParent = findScrollParent(headerEl);
+		const target = scrollParent ?? window;
+		const check = () => {
+			if (!headerEl) return;
+			const rect = headerEl.getBoundingClientRect();
+			const parentRect = scrollParent ? scrollParent.getBoundingClientRect() : { top: 0 } as DOMRect;
+			isStuck = rect.top <= parentRect.top + 1;
+		};
+		const scrollOptions: AddEventListenerOptions = { passive: true };
+		target.addEventListener("scroll", check as EventListener, scrollOptions);
+		window.addEventListener("scroll", check as EventListener, scrollOptions);
+		window.addEventListener("resize", check);
+		check();
+		return () => {
+			target.removeEventListener("scroll", check as EventListener);
+			window.removeEventListener("scroll", check as EventListener);
+			window.removeEventListener("resize", check);
+		};
+	});
 </script>
 
-<div class="folder-group-header">
+<div
+	bind:this={headerEl}
+	class="folder-group-header"
+	class:is-stuck={isStuck}
+	style:--stuck-bleed="{stuckBleed}px"
+>
 	<div class="folder-title" title={subtitle || name}>
 		<span class="material-icons folder-icon-main">{icon}</span>
 		<div class="folder-metadata">
@@ -25,47 +71,54 @@
 
 	{#if hasMenu}
 		<div class="folder-actions-wrapper">
-			<button
-				class="folder-menu-trigger"
-				title="Folder Options"
-				on:click|stopPropagation={onToggleMenu}
-			>
-				<span class="material-icons">more_vert</span>
-			</button>
-			{#if isMenuOpen}
-				<div class="folder-dropdown-menu">
-					<!-- svelte-ignore a11y_click_events_have_key_events -->
-					<!-- svelte-ignore a11y_no_static_element_interactions -->
-					<div class="dropdown-item" on:click={onRescan}>
-						<span class="material-icons">refresh</span>
-						<span>Rescan Folder</span>
-					</div>
-					<!-- svelte-ignore a11y_click_events_have_key_events -->
-					<!-- svelte-ignore a11y_no_static_element_interactions -->
-					<div class="dropdown-item" on:click={onConfigureFolder}>
-						<span class="material-icons">settings</span>
-						<span>Folder Settings</span>
-					</div>
-					<!-- svelte-ignore a11y_click_events_have_key_events -->
-					<!-- svelte-ignore a11y_no_static_element_interactions -->
-					<div class="dropdown-item danger" on:click={onRemoveFolder}>
-						<span class="material-icons">delete_outline</span>
-						<span>Remove Watch</span>
-					</div>
-				</div>
-			{/if}
+			<MenuTrigger
+				active={isMenuOpen}
+				label="Folder Options"
+				on:click={onToggleMenu}
+			/>
+			<AppMenu visible={isMenuOpen} mode="anchor" onClose={onCloseMenu}>
+				<button class="menu-item" on:click={onRescan}>
+					<span class="material-icons">refresh</span>
+					<span>Rescan Folder</span>
+				</button>
+				<button class="menu-item" on:click={onConfigureFolder}>
+					<span class="material-icons">settings</span>
+					<span>Folder Settings</span>
+				</button>
+				<button class="menu-item danger" on:click={onRemoveFolder}>
+					<span class="material-icons">delete_outline</span>
+					<span>Remove Watch</span>
+				</button>
+			</AppMenu>
 		</div>
 	{/if}
 </div>
 
 <style lang="scss">
 	.folder-group-header {
+		position: sticky;
+		top: 0;
+		z-index: 7;
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		margin: 24px 12px 16px 12px;
-		padding-bottom: 12px;
-		border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+		box-sizing: border-box;
+		height: 64px;
+		margin: 12px;
+		padding: 12px 16px;
+		border: 1px solid transparent;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+		background: transparent;
+		border-radius: 0;
+		transition: background var(--transition-fast), border-color var(--transition-fast), border-radius var(--transition-fast);
+
+		&.is-stuck {
+			background: var(--bg-base);
+			border: 1px solid rgba(255, 255, 255, 0.06);
+			border-radius: var(--radius-md);
+			margin-left: calc(12px - var(--stuck-bleed, 0px));
+			margin-right: calc(12px - var(--stuck-bleed, 0px));
+		}
 	}
 
 	.folder-title {
@@ -91,6 +144,7 @@
 
 	.folder-name {
 		font-size: 1.15rem;
+		line-height: 22px;
 		font-weight: 800;
 		color: var(--text-main);
 		letter-spacing: -0.3px;
@@ -98,6 +152,7 @@
 
 	.folder-path {
 		font-size: 0.75rem;
+		line-height: 14px;
 		color: var(--text-muted);
 		opacity: 0.6;
 		white-space: nowrap;
@@ -118,76 +173,5 @@
 
 	.folder-actions-wrapper {
 		position: relative;
-	}
-
-	.folder-menu-trigger {
-		background: transparent;
-		border: none;
-		color: var(--text-muted);
-		width: 32px;
-		height: 32px;
-		border-radius: var(--radius-md);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		cursor: pointer;
-		transition: all var(--transition-fast);
-
-		&:hover {
-			background: rgba(255, 255, 255, 0.08);
-			color: var(--text-main);
-		}
-	}
-
-	.folder-dropdown-menu {
-		position: absolute;
-		right: 0;
-		top: calc(100% + 4px);
-		background: var(--bg-surface);
-		border: 1px solid rgba(255, 255, 255, 0.1);
-		border-radius: var(--radius-md);
-		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-		min-width: 160px;
-		padding: 4px;
-		z-index: 100;
-		backdrop-filter: blur(16px);
-
-		.dropdown-item {
-			display: flex;
-			align-items: center;
-			gap: 10px;
-			padding: 8px 12px;
-			font-size: 0.85rem;
-			font-weight: 600;
-			color: var(--text-main);
-			border-radius: var(--radius-sm);
-			cursor: pointer;
-			transition: background var(--transition-fast);
-
-			.material-icons {
-				font-size: 18px;
-				color: var(--text-muted);
-			}
-
-			&:hover {
-				background: rgba(255, 255, 255, 0.08);
-
-				.material-icons {
-					color: var(--text-main);
-				}
-			}
-
-			&.danger {
-				color: var(--danger);
-
-				.material-icons {
-					color: var(--danger);
-				}
-
-				&:hover {
-					background: rgba(255, 59, 48, 0.12);
-				}
-			}
-		}
 	}
 </style>

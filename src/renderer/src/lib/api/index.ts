@@ -5,6 +5,7 @@ import type {
 	GameInfo,
 	ScannedFolderGroup,
 	RunningSession,
+	GameActivity,
 	SystemInfo,
 	SystemUsage,
 	SystemToolsStatus,
@@ -12,6 +13,7 @@ import type {
 	LsfgProfileData,
 	ProtonTool,
 	PrefixConfigWithProton,
+	PrefixStats,
 	ProtonVariant,
 	GitHubRelease
 } from "../../../../shared/index";
@@ -116,6 +118,8 @@ export const GetListGpus = () => invoke<string[]>("GetListGpus");
 export const ListPrefixes = () => invoke<string[]>("ListPrefixes");
 export const CreatePrefix = (name: string) => invoke<void>("CreatePrefix", { name });
 export const GetPrefixBaseDir = () => invoke<string>("GetPrefixBaseDir");
+export const GetPrefixCreatedAt = (prefixName: string) => invoke<number | null>("GetPrefixCreatedAt", { prefixName });
+export const GetPrefixStats = (prefixName: string) => invoke<PrefixStats>("GetPrefixStats", { prefixName });
 export const RemovePrefix = (name: string) => invoke<void>("RemovePrefix", { name });
 export const SavePrefixConfig = (prefixName: string, options: LaunchOptions) =>
 	invoke<void>("SavePrefixConfig", { prefixName, options });
@@ -168,6 +172,7 @@ export const RemoveProfile = (mainExecutablePath: string) =>
 export const InstallLsfg = () => invoke<void>("InstallLsfg");
 export const UninstallLsfg = () => invoke<void>("UninstallLsfg");
 
-// Sessions
+// Sessions & Activity
 export const GetRunningSessions = () => invoke<RunningSession[]>("GetRunningSessions");
 export const KillSession = (pid: number) => invoke<void>("KillSession", { pid });
+export const GetGameActivity = () => invoke<GameActivity[]>("GetGameActivity");

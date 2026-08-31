@@ -105,12 +105,12 @@
 			</div>
 		{:else}
 			<div class="skeleton-grid-card">
-				<div class="skeleton-icon-large">
+				<div class="skeleton-icon-large skeleton-shimmer">
 					<span class="material-icons skeleton-logo">sports_esports</span>
 				</div>
 				<div class="skeleton-footer">
-					<div class="skeleton-line name"></div>
-					<div class="skeleton-button"></div>
+					<div class="skeleton-line name skeleton-shimmer"></div>
+					<div class="skeleton-button skeleton-shimmer"></div>
 				</div>
 			</div>
 		{/if}
@@ -120,6 +120,16 @@
 <style lang="scss">
 	.lazy-card-container {
 		width: 100%;
+		max-width: 100%;
+		min-width: 0;
+		box-sizing: border-box;
+		overflow: visible;
+
+		&.list-grid {
+			min-width: 0;
+			max-width: 100%;
+			overflow: visible;
+		}
 	}
 
 	@keyframes skeleton-pulse {
@@ -128,6 +138,15 @@
 		}
 		50% {
 			opacity: 0.35;
+		}
+	}
+
+	@keyframes shimmer-sweep {
+		0% {
+			background-position: 200% 0;
+		}
+		100% {
+			background-position: -200% 0;
 		}
 	}
 
@@ -252,6 +271,25 @@
 			display: flex;
 			align-items: center;
 			justify-content: center;
+		}
+	}
+
+	// Apple-style shimmer — only grid skeleton (placed after base rules so it overrides)
+	.skeleton-grid-card .skeleton-shimmer {
+		background: linear-gradient(
+			90deg,
+			rgba(255, 255, 255, 0.04) 25%,
+			rgba(255, 255, 255, 0.09) 37%,
+			rgba(255, 255, 255, 0.04) 63%
+		) !important;
+		background-size: 400% 100% !important;
+		animation: shimmer-sweep 1.6s infinite linear !important;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.skeleton-grid-card .skeleton-shimmer {
+			animation: none !important;
+			background: rgba(255, 255, 255, 0.04) !important;
 		}
 	}
 </style>

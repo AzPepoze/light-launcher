@@ -12,7 +12,9 @@ import (
 	"syscall"
 	"time"
 
+	activityStore "light-launcher/core/internal/activity"
 	"light-launcher/core/internal/config"
+	"light-launcher/core/internal/discordrpc"
 	"light-launcher/core/internal/executor"
 	"light-launcher/core/internal/executor/builder"
 	"light-launcher/core/internal/logger"
@@ -46,6 +48,9 @@ func onReady(logPath string) {
 	opts := buildLaunchOptions()
 	exeName := filepath.Base(opts.GamePath)
 	exeNameClean := strings.TrimSuffix(exeName, filepath.Ext(exeName))
+	if strings.TrimSpace(gameName) != "" {
+		exeNameClean = strings.TrimSpace(gameName)
+	}
 	launcherName := filepath.Base(opts.LauncherPath)
 
 	systray.SetIcon(applicationIconData)
@@ -102,8 +107,25 @@ func onReady(logPath string) {
 		return
 	}
 
+	gameStartedAt := time.Now()
+	shouldTrackPlaytime := trackPlaytime && activityStore.TrackingEnabled()
 	logger.Info("Runner", "Game started successfully (PID: %d). Running: %s", gameCmd.Process.Pid, exeNameClean)
 	sendNotification("LightLauncher Running", fmt.Sprintf("%s is now running (PID: %d)", exeNameClean, gameCmd.Process.Pid))
+
+	// Discord Rich Presence is per-game so it survives launcher close.
+	var discordClient *discordrpc.Client
+	if strings.TrimSpace(discordClientID) != "" {
+		client, err := discordrpc.Connect(strings.TrimSpace(discordClientID))
+		if err != nil {
+			logger.Info("Discord", "Rich Presence unavailable: %v", err)
+		} else if err := client.SetActivity(exeNameClean, gameStartedAt); err != nil {
+			logger.Info("Discord", "Failed to set Rich Presence: %v", err)
+			_ = client.Close()
+		} else {
+			discordClient = client
+			logger.Info("Discord", "Rich Presence active for %s", exeNameClean)
+		}
+	}
 
 	// Internal helper to kill game gracefully
 	killGame := func() {
@@ -157,8 +179,17 @@ func onReady(logPath string) {
 	// Wait for game to exit
 	go func() {
 		err := gameCmd.Wait()
+		endedAt := time.Now()
 		if logFileHandle != nil {
 			logFileHandle.Close()
+		}
+		if discordClient != nil {
+			_ = discordClient.Close()
+		}
+		if shouldTrackPlaytime {
+			if err := activityStore.Finalize(opts.GamePath, exeNameClean, gameStartedAt, endedAt); err != nil {
+				logger.Info("Activity", "Failed to finalize playtime: %v", err)
+			}
 		}
 
 		if err != nil {

@@ -10,6 +10,8 @@ export async function loadConfigForGame(
 	protonVersions: core.ProtonTool[],
 	updateOptions: (newOpts: core.LaunchOptions, pPath: string, pName: string, proton: string) => void
 ) {
+	let effectivePrefixPath = prefixPath;
+	let effectivePrefixName = selectedPrefixName;
 	try {
 		const config = await GetConfig(path);
 		if (config) {
@@ -21,6 +23,9 @@ export async function loadConfigForGame(
 				newPrefixName = newPrefixPath.split("/").filter(Boolean).pop() || "Custom";
 			}
 			const updatedProton = applyConfigToOptions(config, options, protonVersions);
+			options.PrefixPath = newPrefixPath;
+			effectivePrefixPath = newPrefixPath;
+			effectivePrefixName = newPrefixName;
 			updateOptions(options, newPrefixPath, newPrefixName, updatedProton);
 		} else {
 			await loadConfigForPrefix(
@@ -31,21 +36,24 @@ export async function loadConfigForGame(
 				protonVersions,
 				updateOptions
 			);
+			effectivePrefixPath = options.PrefixPath || prefixPath;
 		}
 
-		// Auto-detect Lossless.dll if not already set
+		// Keep newly selected prefix; don't replay old profile prefix.
 		if (!options.Extras.Lsfg.DllPath) {
 			try {
 				const dll = await DetectLosslessDll();
 				if (dll) {
 					options.Extras.Lsfg.DllPath = dll;
-					updateOptions(options, prefixPath, selectedPrefixName, ""); // triggers reactivity
+					updateOptions(options, effectivePrefixPath, effectivePrefixName, "");
 				}
 			} catch (err) {
 				console.error("Failed to detect Lossless.dll:", err);
 			}
 		}
-	} catch (err) {}
+	} catch (err) {
+		console.error("Failed to load game configuration:", err);
+	}
 }
 
 export async function loadConfigForPrefix(
@@ -63,12 +71,12 @@ export async function loadConfigForPrefix(
 			const savedGamePath = options.GamePath;
 			const savedLauncherPath = options.LauncherPath;
 			const savedUseGamePath = options.UseGamePath;
-			const savedPrefixPath = options.PrefixPath;
 			const savedUseCustomProton = options.UseCustomProton;
 			const savedProtonPath = options.ProtonPath;
 
 			let updatedProton = applyConfigToOptions(config, options, protonVersions);
 
+			// Prefix env defaults must not override selected game/launcher.
 			if (savedGamePath) options.GamePath = savedGamePath;
 			if (savedLauncherPath) options.LauncherPath = savedLauncherPath;
 			options.UseGamePath = savedUseGamePath;
@@ -79,14 +87,13 @@ export async function loadConfigForPrefix(
 				updatedProton = savedProtonPath;
 			}
 
-			let newPrefixPath = prefixPath;
-			if (savedPrefixPath) {
-				options.PrefixPath = savedPrefixPath;
-				newPrefixPath = savedPrefixPath;
-			}
-			updateOptions(options, newPrefixPath, name, updatedProton);
+			// Already on new prefix; no restore from old profile.
+			options.PrefixPath = prefixPath;
+			updateOptions(options, prefixPath, name, updatedProton);
 		}
-	} catch (err) {}
+	} catch (err) {
+		console.error(`Failed to load prefix configuration for ${name}:`, err);
+	}
 }
 
 export function applyConfigToOptions(
@@ -109,6 +116,7 @@ export function applyConfigToOptions(
 	options.Name = config.Name || options.Name;
 	options.CustomArgs = config.CustomArgs || "";
 	options.UseCustomProton = config.UseCustomProton || false;
+	options.CustomIconPath = config.CustomIconPath || "";
 
 	// Copy Extras
 	if (config.Extras) {

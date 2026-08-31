@@ -12,16 +12,18 @@
 	import { runState } from "@stores/runState";
 	import { settingsStore } from "@stores/settingsStore";
 	import { onMount } from "svelte";
-	import { backOut } from "svelte/easing";
-	import { fade, fly } from "svelte/transition";
+	import { cubicOut } from "svelte/easing";
+	import { fly } from "svelte/transition";
 	import EditLsfg from "./pages/EditLsfg.svelte";
 	import Home from "./pages/Home.svelte";
+	import GameManager from "./pages/GameManager.svelte";
 	import Prefix from "./pages/Prefix.svelte";
 	import Run from "./pages/Run.svelte";
 	import Settings from "./pages/Settings.svelte";
 	import Utils from "./pages/Utils.svelte";
 	import Versions from "./pages/Versions.svelte";
 	import CommandPalette from "@components/shared/CommandPalette.svelte";
+	import { commandPaletteState } from "@components/shared/CommandPaletteState.svelte";
 
 	let bgBase64 = "";
 	let transparency = 1.0;
@@ -50,8 +52,29 @@
 		}));
 	}
 
+	const PAGE_ORDER: Record<string, number> = {
+		home: 0,
+		manager: 1,
+		run: 2,
+		versions: 3,
+		prefix: 4,
+		utils: 5,
+		settings: 6,
+		editlsfg: 7,
+	};
+
 	let activePage = "home";
+	let navDirection = 1;
 	let editLsfgGamePath = "";
+
+	function changePage(newPage: string) {
+		if (!newPage || newPage === activePage) return;
+		const prevIndex = PAGE_ORDER[activePage] ?? 0;
+		const newIndex = PAGE_ORDER[newPage] ?? 0;
+		navDirection = newIndex >= prevIndex ? 1 : -1;
+		activePage = newPage;
+		scrolled = false;
+	}
 
 	onMount(async () => {
 		try {
@@ -66,7 +89,7 @@
 				const gamePath = await GetInitialGamePath();
 				if (gamePath) {
 					editLsfgGamePath = gamePath;
-					activePage = "editlsfg";
+					changePage("editlsfg");
 				}
 			} else if (launcherPath) {
 				runState.update((state) => ({
@@ -76,7 +99,7 @@
 						LauncherPath: launcherPath,
 					},
 				}));
-				activePage = "run";
+				changePage("run");
 			}
 		} catch (e) {
 			console.error("Error in App onMount:", e);
@@ -88,9 +111,9 @@
 		if (cmd) {
 			if (cmd.page === "editlsfg" && cmd.gamePath) {
 				editLsfgGamePath = cmd.gamePath;
-				activePage = "editlsfg";
+				changePage("editlsfg");
 			} else if (cmd.page) {
-				activePage = cmd.page;
+				changePage(cmd.page);
 			}
 			navigationCommand.set(null);
 		}
@@ -98,15 +121,38 @@
 
 	let showCommandPalette = false;
 
+	function openCommandPalette() {
+		if (showCommandPalette) {
+			commandPaletteState.focusInput();
+			return;
+		}
+		const activeElement = document.activeElement as HTMLElement | null;
+		if (
+			activeElement &&
+			activeElement !== commandPaletteState.inputElement &&
+			activeElement instanceof HTMLElement
+		) {
+			commandPaletteState.previousFocusElement = activeElement;
+		}
+		showCommandPalette = true;
+		setTimeout(() => commandPaletteState.focusInput(), 0);
+	}
+
 	function handleGlobalKeydown(e: KeyboardEvent) {
 		if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
-			showCommandPalette = !showCommandPalette;
+			openCommandPalette();
 			e.preventDefault();
 		}
 	}
 
 	function handleNavigate(page: string) {
-		activePage = page;
+		changePage(page);
+	}
+
+	let scrolled = false;
+
+	function handlePageScroll(e: Event) {
+		scrolled = (e.currentTarget as HTMLElement).scrollTop > 0;
 	}
 </script>
 
@@ -127,28 +173,54 @@
 		<div class="content-container">
 			{#if activePage !== "editlsfg"}
 				<div class="topbar-container">
-					<button class="global-search-trigger" on:click={() => showCommandPalette = true} aria-label="Search games and actions">
+					<div
+						class="global-search-trigger"
+						class:open={showCommandPalette}
+						class:scrolled={scrolled}
+						role="search"
+						on:click={openCommandPalette}
+						on:mousedown={openCommandPalette}
+					>
 						<span class="material-icons">search</span>
-						<span class="placeholder-text">Search...</span>
-						<span class="shortcut-kbd">Ctrl K</span>
-					</button>
+						<input
+							bind:this={commandPaletteState.inputElement}
+							bind:value={commandPaletteState.searchQuery}
+							type="text"
+							placeholder="Search games, pages, and actions..."
+							aria-label="Search games and actions"
+							autocomplete="off"
+							spellcheck="false"
+							on:focus={openCommandPalette}
+							on:input={openCommandPalette}
+						/>
+						<button class="shortcut-kbd" on:click|stopPropagation={openCommandPalette} aria-label="Open command palette">Ctrl K</button>
+					</div>
+					<CommandPalette bind:show={showCommandPalette} onClose={() => showCommandPalette = false} />
 				</div>
 			{/if}
 
 			{#key activePage}
 				<div
 					class="page-wrapper"
+					class:home-mode={activePage === "home"}
+					class:prefix-mode={activePage === "prefix"}
+					on:scroll={handlePageScroll}
 					in:fly={{
-						y: 30,
-						duration: 400,
-						delay: 100,
-						easing: backOut,
+						y: 35 * navDirection,
+						duration: 280,
+						easing: cubicOut,
 					}}
-					out:fade={{ duration: 150 }}
+					out:fly={{
+						y: -35 * navDirection,
+						duration: 200,
+						easing: cubicOut,
+					}}
 				>
-					<div class="content-zone" class:full-width={activePage === "home" || activePage === "editlsfg"}>
+					<div class="content-zone" class:full-width={activePage === "home" || activePage === "editlsfg" || activePage === "manager" || activePage === "prefix"} class:home-zone={activePage === "home"} class:prefix-zone={activePage === "prefix"}>
 						{#if activePage === "home"}
 							<Home />
+						{:else if activePage === "manager"}
+							<GameManager />
 						{:else if activePage === "run"}
 							<Run />
 						{:else if activePage === "versions"}
@@ -173,7 +245,6 @@
 	</div>
 
 	<NotificationHost />
-	<CommandPalette bind:show={showCommandPalette} onClose={() => showCommandPalette = false} />
 </main>
 
 <style lang="scss">
@@ -228,6 +299,7 @@
 		height: 100%;
 		position: relative;
 		background: transparent;
+		overflow: hidden;
 	}
 
 	.topbar-container {
@@ -236,34 +308,43 @@
 		left: 50%;
 		transform: translateX(-50%);
 		width: 100%;
-		max-width: 480px;
+		max-width: 520px;
 		display: flex;
-		justify-content: center;
+		flex-direction: column;
+		align-items: center;
 		z-index: 150;
 		pointer-events: none;
 	}
 
 	.global-search-trigger {
 		pointer-events: auto;
-		display: inline-flex;
+		display: flex;
 		align-items: center;
 		width: 100%;
 		gap: 8px;
-		background: var(--bg-surface);
-		border: 2px solid rgba(255, 255, 255, 0.05);
+		border: 2px solid transparent;
 		border-radius: var(--radius-md);
-		padding: 8px 16px;
+		padding: 6px 10px 6px 14px;
 		color: var(--text-muted);
-		cursor: pointer;
-		font-size: 0.85rem;
-		font-weight: 600;
-		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-		transition: border-color var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
+		transition: border-color var(--transition-fast), background var(--transition-fast), box-shadow var(--transition-fast);
 
-		&:hover {
-			border-color: rgba(255, 255, 255, 0.15);
+		&.scrolled, &.open {
+			background: var(--bg-surface);
+			border-color: rgba(255, 255, 255, 0.05);
+			box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+		}
+
+		&.open {
+			border-color: rgba(255, 255, 255, 0.16);
+			border-bottom-left-radius: 0;
+			border-bottom-right-radius: 0;
+			box-shadow: none;
+		}
+
+		&:focus-within, &:hover {
+			border-color: rgba(255, 255, 255, 0.16);
 			background: var(--bg-elevated);
-			color: var(--text-main);
+			box-shadow: 0 6px 24px rgba(0, 0, 0, 0.22);
 		}
 
 		.material-icons {
@@ -271,9 +352,19 @@
 			color: var(--text-dim);
 		}
 
-		.placeholder-text {
+		input {
 			flex: 1;
-			text-align: left;
+			min-width: 0;
+			border: 0;
+			outline: 0;
+			background: transparent;
+			color: var(--text-main);
+			font: inherit;
+			font-size: 0.88rem;
+			font-weight: 650;
+			user-select: text;
+
+			&::placeholder { color: var(--text-dim); }
 		}
 
 		.shortcut-kbd {
@@ -281,10 +372,10 @@
 			font-family: monospace;
 			background: rgba(255, 255, 255, 0.05);
 			border: 1px solid rgba(255, 255, 255, 0.1);
-			padding: 2px 6px;
+			padding: 4px 7px;
 			border-radius: var(--radius-sm);
 			color: var(--text-dim);
-			margin-left: 12px;
+			cursor: pointer;
 		}
 	}
 
@@ -297,6 +388,20 @@
 		overflow-y: auto;
 		padding: 76px 48px 40px 84px;
 		box-sizing: border-box;
+
+		&.home-mode {
+			overflow: hidden;
+			display: flex;
+			flex-direction: column;
+			padding-bottom: 0;
+		}
+
+		&.prefix-mode {
+			overflow: hidden;
+			display: flex;
+			flex-direction: column;
+			padding-bottom: 20px;
+		}
 	}
 
 	.content-zone {
@@ -307,6 +412,25 @@
 
 		&.full-width {
 			max-width: 100%;
+		}
+
+		&.home-zone {
+			flex: 1;
+			min-height: 0;
+			display: flex;
+			flex-direction: column;
+			overflow: hidden;
+			height: 100%;
+			max-height: 100%;
+		}
+
+		&.prefix-zone {
+			flex: 1;
+			min-height: 0;
+			display: flex;
+			flex-direction: column;
+			height: 100%;
+			max-height: 100%;
 		}
 	}
 
