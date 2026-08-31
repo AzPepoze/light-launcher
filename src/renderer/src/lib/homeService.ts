@@ -12,10 +12,11 @@ import {
 import { notifications } from "@stores/notificationStore";
 import { createLaunchOptions } from "./formService";
 import { launchGame } from "./gameLaunchService";
+import type { GameInfo, RunningSession } from "@shared";
 
 export interface HomeData {
-	games: any[];
-	sessions: any[];
+	games: GameInfo[];
+	sessions: RunningSession[];
 	prefixes: string[];
 }
 
@@ -45,7 +46,7 @@ export async function refreshHomeData(): Promise<HomeData> {
  * Handles quick launch of a game through the same shared launch pipeline used by
  * command/context actions. Prefix and Proton normalization is finalized in the backend.
  */
-export async function quickLaunchGame(game: any, showLogs = false): Promise<void> {
+export async function quickLaunchGame(game: GameInfo, showLogs = false): Promise<void> {
 	await launchGame(game.config, { showLogs });
 }
 

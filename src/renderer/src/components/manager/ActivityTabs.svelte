@@ -1,36 +1,36 @@
 <script lang="ts">
 	import { getDominantColor } from "@lib/dominantColor";
 	import { GetImageBase64, GetExeIcon } from "@lib/api";
+	import type { GameActivity } from "@shared";
 
-	export let recent: any[] = [];
-	export let mostPlayed: any[] = [];
-	export let stale: any[] = [];
+	export let recent: GameActivity[] = [];
+	export let mostPlayed: GameActivity[] = [];
+	export let stale: GameActivity[] = [];
 	export let now: number = Date.now();
 	export let trackingEnabled: boolean = true;
 
-	// "tabs" = one group at a time, "scroll" = 3 stacked scrollable sections
 	let mode: "tabs" | "scroll" = "tabs";
 	let tab: "recent" | "played" | "stale" = "recent";
 
-	function formatDuration(sec:number){
-		const s=Math.max(0,Math.floor(sec));
-		const h=Math.floor(s/3600), m=Math.floor((s%3600)/60);
-		if(h>0) return `${h}h ${m}m`;
-		if(m>0) return `${m}m`;
-		return `${s}s`;
+	function formatDuration(totalSeconds:number){
+		const clampedSeconds=Math.max(0,Math.floor(totalSeconds));
+		const hours=Math.floor(clampedSeconds/3600), minutes=Math.floor((clampedSeconds%3600)/60);
+		if(hours>0) return `${hours}h ${minutes}m`;
+		if(minutes>0) return `${minutes}m`;
+		return `${clampedSeconds}s`;
 	}
 	function formatDate(ts:number){
 		return new Intl.DateTimeFormat(undefined,{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"}).format(new Date(ts));
 	}
-	function totalSeconds(a:any){
-		const active = a.activeSince ? Math.max(0, Math.floor((now - a.activeSince)/1000)) : 0;
-		return a.totalPlaytimeSeconds + active;
+	function totalSeconds(activity: GameActivity){
+		const active = activity.activeSince ? Math.max(0, Math.floor((now - activity.activeSince)/1000)) : 0;
+		return activity.totalPlaytimeSeconds + active;
 	}
-	function subtitleFor(a:any, which:string){
+	function subtitleFor(activity: GameActivity, which:string){
 		if(which==="stale"){
-			return a.lastPlayedAt ? `Last ${formatDate(a.lastPlayedAt)} · ${a.sessionCount} sessions` : "Never played";
+			return activity.lastPlayedAt ? `Last ${formatDate(activity.lastPlayedAt)} · ${activity.sessionCount} sessions` : "Never played";
 		}
-		return `${formatDate(a.lastPlayedAt)} · ${a.sessionCount} ${a.sessionCount===1?'session':'sessions'}`;
+		return `${formatDate(activity.lastPlayedAt)} · ${activity.sessionCount} ${activity.sessionCount===1?'session':'sessions'}`;
 	}
 
 	// icon cache per gamePath
@@ -39,22 +39,22 @@
 
 	$: all = [...recent, ...mostPlayed, ...stale];
 	$: {
-		for(const a of all){
-			const key=a.gamePath;
+		for(const activity of all){
+			const key=activity.gamePath;
 			if(iconMap[key]!==undefined) continue;
 			iconMap[key]=""; // mark loading
-			loadIcon(a);
+			loadIcon(activity);
 		}
 	}
-	async function loadIcon(a:any){
+	async function loadIcon(activity: GameActivity){
 		try{
 			let b64="";
-			if(a.customIconPath){ try{ b64=await GetImageBase64(a.customIconPath);}catch{}}
-			if(!b64){ try{ b64=await GetExeIcon(a.gamePath);}catch{}}
+			if(activity.customIconPath){ try{ b64=await GetImageBase64(activity.customIconPath);}catch{}}
+			if(!b64){ try{ b64=await GetExeIcon(activity.gamePath);}catch{}}
 			if(!b64) return;
-			iconMap[a.gamePath]=b64; iconMap={...iconMap};
+			iconMap[activity.gamePath]=b64; iconMap={...iconMap};
 			const rgb=await getDominantColor(b64);
-			if(rgb){ colorMap[a.gamePath]=`${rgb[0]},${rgb[1]},${rgb[2]}`; colorMap={...colorMap}; }
+			if(rgb){ colorMap[activity.gamePath]=`${rgb[0]},${rgb[1]},${rgb[2]}`; colorMap={...colorMap}; }
 		}catch{}
 	}
 
@@ -70,7 +70,7 @@
 		{ key:"played", label:"Interest" },
 		{ key:"stale", label:"Stale" }
 	] as const;
-	$: sectionLists = { recent, played: mostPlayed, stale } as Record<string, any[]>;
+	$: sectionLists = { recent, played: mostPlayed, stale } as Record<string, GameActivity[]>;
 </script>
 
 <section class="panel">
@@ -106,9 +106,9 @@
 	{#if mode==="tabs"}
 		{#if list.length>0}
 			<div class="list">
-				{#each list as a (a.gamePath)}
-					{@const rgb = colorMap[a.gamePath] || "255,255,255"}
-					{@const icon = iconMap[a.gamePath]}
+				{#each list as activity (activity.gamePath)}
+					{@const rgb = colorMap[activity.gamePath] || "255,255,255"}
+					{@const icon = iconMap[activity.gamePath]}
 					<div class="row" style="--row-rgb:{rgb}">
 						<div class="row-icon">
 							{#if icon}
@@ -118,12 +118,12 @@
 							{/if}
 						</div>
 						<div class="row-main">
-							<strong>{a.gameName}</strong>
-							<span>{subtitleFor(a, tab)}</span>
+							<strong>{activity.gameName}</strong>
+							<span>{subtitleFor(activity, tab)}</span>
 						</div>
 						<div class="row-meta">
 							<span class="material-icons">schedule</span>
-							{formatDuration(totalSeconds(a))}
+							{formatDuration(totalSeconds(activity))}
 						</div>
 					</div>
 				{/each}
@@ -136,18 +136,18 @@
 		{/if}
 	{:else}
 		<div class="scroll-sections">
-			{#each sections as s}
-				{@const items = sectionLists[s.key]}
+			{#each sections as section}
+				{@const items = sectionLists[section.key]}
 				<div class="scroll-section">
 					<div class="section-title">
-						<span>{s.label}</span>
+						<span>{section.label}</span>
 						<span class="count">{items.length}</span>
 					</div>
 					{#if items.length>0}
 						<div class="section-list">
-							{#each items as a (a.gamePath)}
-								{@const rgb = colorMap[a.gamePath] || "255,255,255"}
-								{@const icon = iconMap[a.gamePath]}
+							{#each items as activity (activity.gamePath)}
+								{@const rgb = colorMap[activity.gamePath] || "255,255,255"}
+								{@const icon = iconMap[activity.gamePath]}
 								<div class="row compact" style="--row-rgb:{rgb}">
 									<div class="row-icon">
 										{#if icon}
@@ -157,12 +157,12 @@
 										{/if}
 									</div>
 									<div class="row-main">
-										<strong>{a.gameName}</strong>
-										<span>{subtitleFor(a, s.key)}</span>
+										<strong>{activity.gameName}</strong>
+										<span>{subtitleFor(activity, section.key)}</span>
 									</div>
 									<div class="row-meta">
 										<span class="material-icons">schedule</span>
-										{formatDuration(totalSeconds(a))}
+										{formatDuration(totalSeconds(activity))}
 									</div>
 								</div>
 							{/each}

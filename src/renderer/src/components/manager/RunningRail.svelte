@@ -2,20 +2,21 @@
 	import { onMount } from "svelte";
 	import { getDominantColor } from "@lib/dominantColor";
 	import { GetImageBase64, GetExeIcon } from "@lib/api";
+	import type { GameActivity, RunningSession } from "@shared";
 
-	export let sessions: any[] = [];
-	export let activities: any[] = [];
+	export let sessions: RunningSession[] = [];
+	export let activities: GameActivity[] = [];
 	export let now: number = Date.now();
-	export let onStop: (s:any)=>void = ()=>{};
+	export let onStop: (s: RunningSession)=>void = ()=>{};
 
-	function activityFor(s:any) { return activities.find((a:any)=> a.gamePath === s.gamePath); }
-	function sessionStartedAt(s:any) { return activityFor(s)?.activeSince || s.startedAt || now; }
-	function formatDuration(sec:number){
-		const s=Math.max(0,Math.floor(sec));
-		const h=Math.floor(s/3600), m=Math.floor((s%3600)/60);
-		if(h>0) return `${h}h ${m}m`;
-		if(m>0) return `${m}m ${s%60}s`;
-		return `${s}s`;
+	function activityFor(session: RunningSession) { return activities.find((activity)=> activity.gamePath === session.gamePath); }
+	function sessionStartedAt(session: RunningSession) { return activityFor(session)?.activeSince || session.startedAt || now; }
+	function formatDuration(totalSeconds:number){
+		const clampedSeconds=Math.max(0,Math.floor(totalSeconds));
+		const hours=Math.floor(clampedSeconds/3600), minutes=Math.floor((clampedSeconds%3600)/60);
+		if(hours>0) return `${hours}h ${minutes}m`;
+		if(minutes>0) return `${minutes}m ${clampedSeconds%60}s`;
+		return `${clampedSeconds}s`;
 	}
 
 	// icon + color per session
@@ -24,28 +25,28 @@
 
 	$: {
 		// trigger load when sessions change
-		for(const s of sessions){
-			if(icons[s.pid]) continue;
-			loadIcon(s);
+		for(const session of sessions){
+			if(icons[session.pid]) continue;
+			loadIcon(session);
 		}
 	}
 
-	async function loadIcon(s:any){
+	async function loadIcon(session: RunningSession){
 		try{
-			const act = activityFor(s);
-			let b64 = "";
-			if(act?.customIconPath){
-				try{ b64 = await GetImageBase64(act.customIconPath);}catch{}
+			const activity = activityFor(session);
+			let iconBase64 = "";
+			if(activity?.customIconPath){
+				try{ iconBase64 = await GetImageBase64(activity.customIconPath);}catch{}
 			}
-			if(!b64){
-				try{ b64 = await GetExeIcon(s.gamePath);}catch{}
+			if(!iconBase64){
+				try{ iconBase64 = await GetExeIcon(session.gamePath);}catch{}
 			}
-			if(!b64) return;
-			icons[s.pid]=b64;
+			if(!iconBase64) return;
+			icons[session.pid]=iconBase64;
 			icons={...icons};
-			const rgb = await getDominantColor(b64);
-			if(rgb) {
-				colors[s.pid]=`${rgb[0]},${rgb[1]},${rgb[2]}`;
+			const dominantRgb = await getDominantColor(iconBase64);
+			if(dominantRgb) {
+				colors[session.pid]=`${dominantRgb[0]},${dominantRgb[1]},${dominantRgb[2]}`;
 				colors={...colors};
 			}
 		}catch{}
@@ -63,26 +64,26 @@
 
 	{#if sessions.length>0}
 		<div class="rail-list">
-			{#each sessions as s (s.pid)}
-				{@const rgb = colors[s.pid] || "255,255,255"}
+			{#each sessions as session (session.pid)}
+				{@const rgb = colors[session.pid] || "255,255,255"}
 				<div class="running-card" style="--card-rgb: {rgb}">
 					<div class="card-bg"></div>
 					<div class="card-inner">
 						<div class="icon-wrap">
 							<div class="icon-tilt">
-								{#if icons[s.pid]}
-									<img src={icons[s.pid]} alt="" />
+								{#if icons[session.pid]}
+									<img src={icons[session.pid]} alt="" />
 								{:else}
 									<span class="material-icons fallback">sports_esports</span>
 								{/if}
 							</div>
 						</div>
 						<div class="info">
-							<strong class="name">{s.gameName}</strong>
-							<span class="path" title={s.gamePath}>{s.gamePath}</span>
-							<span class="runtime">Running for {formatDuration((now - sessionStartedAt(s))/1000)} · PID {s.pid}</span>
+							<strong class="name">{session.gameName}</strong>
+							<span class="path" title={session.gamePath}>{session.gamePath}</span>
+							<span class="runtime">Running for {formatDuration((now - sessionStartedAt(session))/1000)} · PID {session.pid}</span>
 						</div>
-						<button class="stop-btn" on:click={()=>onStop(s)} title="Stop game" aria-label={`Stop ${s.gameName}`}>
+						<button class="stop-btn" on:click={()=>onStop(session)} title="Stop game" aria-label={`Stop ${session.gameName}`}>
 							<span class="material-icons">close</span>
 						</button>
 					</div>

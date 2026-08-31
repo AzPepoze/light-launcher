@@ -1,12 +1,13 @@
 import { GetImageBase64 } from "@lib/api";
 import { loadExeIcon } from "@lib/iconService";
+import type { GameInfo } from "@shared";
 
 export class IconLoaderState {
 	gameIcons = $state<Record<string, string>>({});
 	loadingIcons = new Set<string>();
 	iconSources = new Map<string, string>();
 
-	async syncGames(games: any[]) {
+	async syncGames(games: GameInfo[]) {
 		for (const game of games) {
 			const gamePath = game?.path || game?.config?.LauncherPath;
 			if (!gamePath) continue;

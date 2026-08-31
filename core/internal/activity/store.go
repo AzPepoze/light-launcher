@@ -8,25 +8,11 @@ import (
 	"time"
 
 	"light-launcher/core/internal/config"
+	"light-launcher/core/internal/types"
 )
 
-type gameActivity struct {
-	GamePath             string `json:"gamePath"`
-	GameName             string `json:"gameName"`
-	ProfileID            string `json:"profileId,omitempty"`
-	CustomIconPath       string `json:"customIconPath,omitempty"`
-	LastPlayedAt         int64  `json:"lastPlayedAt"`
-	TotalPlaytimeSeconds int64  `json:"totalPlaytimeSeconds"`
-	SessionCount         int    `json:"sessionCount"`
-	ActiveSince          *int64 `json:"activeSince,omitempty"`
-}
-
 type store struct {
-	Games map[string]*gameActivity `json:"games"`
-}
-
-type appSettings struct {
-	TrackPlaytime *bool `json:"TrackPlaytime"`
+	Games map[string]*types.GameActivity `json:"games"`
 }
 
 func TrackingEnabled() bool {
@@ -34,7 +20,7 @@ func TrackingEnabled() bool {
 	if err != nil {
 		return true
 	}
-	var settings appSettings
+	var settings types.AppSettings
 	if err := json.Unmarshal(data, &settings); err != nil {
 		return true
 	}
@@ -49,11 +35,11 @@ func Finalize(gamePath, gameName string, startedAt, endedAt time.Time) error {
 	}
 
 	storePath := filepath.Join(config.GetBaseDirectory(), "activity.json")
-	current := store{Games: map[string]*gameActivity{}}
+	current := store{Games: map[string]*types.GameActivity{}}
 	if data, err := os.ReadFile(storePath); err == nil {
 		_ = json.Unmarshal(data, &current)
 		if current.Games == nil {
-			current.Games = map[string]*gameActivity{}
+			current.Games = map[string]*types.GameActivity{}
 		}
 	}
 
@@ -61,7 +47,7 @@ func Finalize(gamePath, gameName string, startedAt, endedAt time.Time) error {
 	key := strings.ToLower(cleanPath)
 	entry := current.Games[key]
 	if entry == nil {
-		entry = &gameActivity{
+		entry = &types.GameActivity{
 			GamePath:     cleanPath,
 			GameName:     gameName,
 			LastPlayedAt: startedAt.UnixMilli(),

@@ -20,8 +20,8 @@ export async function launchGame(
 
 	try {
 		await RunGame(launchOptions, showLogs);
-	} catch (error) {
-		const message = (error as any)?.message || String(error);
+	} catch (error: unknown) {
+		const message = error instanceof Error ? error.message : String(error);
 		notifications.add(`Launch failed: ${message}`, "error");
 		throw error;
 	}

@@ -39,13 +39,14 @@
 			const parentRect = scrollParent ? scrollParent.getBoundingClientRect() : { top: 0 } as DOMRect;
 			isStuck = rect.top <= parentRect.top + 1;
 		};
-		target.addEventListener("scroll", check, { passive: true } as any);
-		window.addEventListener("scroll", check, { passive: true } as any);
+		const scrollOptions: AddEventListenerOptions = { passive: true };
+		target.addEventListener("scroll", check as EventListener, scrollOptions);
+		window.addEventListener("scroll", check as EventListener, scrollOptions);
 		window.addEventListener("resize", check);
 		check();
 		return () => {
-			target.removeEventListener("scroll", check as any);
-			window.removeEventListener("scroll", check as any);
+			target.removeEventListener("scroll", check as EventListener);
+			window.removeEventListener("scroll", check as EventListener);
 			window.removeEventListener("resize", check);
 		};
 	});

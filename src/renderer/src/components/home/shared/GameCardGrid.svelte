@@ -1,19 +1,20 @@
 <script lang="ts">
 	import GameCard from "@components/home/GameCard.svelte";
 	import { getGamePath } from "@lib/gameUtils";
+	import type { GameInfo, RunningSession } from "@shared";
 
-	export let games: any[] = [];
+	export let games: GameInfo[] = [];
 	export let view: "grid" | "list-grid" | "sidebar-grid" = "grid";
 	export let gameIcons: Record<string, string> = {};
-	export let isGameRunning: (game: any, sessionsList: any[]) => boolean;
-	export let sessions: any[] = [];
+	export let isGameRunning: (game: GameInfo, sessionsList: RunningSession[]) => boolean;
+	export let sessions: RunningSession[] = [];
 	export let isSelectionMode: boolean = false;
 	export let selectedPaths: Set<string> = new Set();
 
-	export let handleRightClick: (event: MouseEvent, game: any) => void = () => {};
-	export let handleQuickLaunch: (game: any) => Promise<void> = async () => {};
-	export let handleConfigure: (game: any) => void = () => {};
-	export let toggleGameSelection: (game: any, shiftKey: boolean) => void = () => {};
+	export let handleRightClick: (event: MouseEvent, game: GameInfo) => void = () => {};
+	export let handleQuickLaunch: (game: GameInfo) => Promise<void> = async () => {};
+	export let handleConfigure: (game: GameInfo) => void = () => {};
+	export let toggleGameSelection: (game: GameInfo, shiftKey: boolean) => void = () => {};
 	export let loadIcon: (path: string) => void = () => {};
 
 	$: cardView = view === "sidebar-grid" ? "grid" : view;

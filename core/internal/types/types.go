@@ -52,6 +52,7 @@ type LaunchOptions struct {
 	ProtonPath      string       `json:"ProtonPath"`
 	UseCustomProton bool         `json:"UseCustomProton"`
 	CustomArgs      string       `json:"CustomArgs"`
+	CustomIconPath  string       `json:"CustomIconPath,omitempty"`
 	Extras          ExtrasConfig `json:"Extras"`
 }
 
@@ -63,12 +64,13 @@ type SystemToolsStatus struct {
 }
 
 type SystemInfo struct {
-	OS     string `json:"os"`
-	Kernel string `json:"kernel"`
-	CPU    string `json:"cpu"`
-	GPU    string `json:"gpu"`
-	RAM    string `json:"ram"`
-	Driver string `json:"driver"`
+	OS     string   `json:"os"`
+	Kernel string   `json:"kernel"`
+	CPU    string   `json:"cpu"`
+	GPU    string   `json:"gpu"`
+	Gpus   []string `json:"gpus,omitempty"`
+	RAM    string   `json:"ram"`
+	Driver string   `json:"driver"`
 }
 
 type SystemUsage struct {
@@ -106,9 +108,21 @@ type ScannedFolderGroup struct {
 }
 
 type RunningSession struct {
-	Pid      int    `json:"pid"`
-	GamePath string `json:"gamePath"`
-	GameName string `json:"gameName"`
+	Pid       int    `json:"pid"`
+	GamePath  string `json:"gamePath"`
+	GameName  string `json:"gameName"`
+	StartedAt int64  `json:"startedAt,omitempty"`
+}
+
+type GameActivity struct {
+	GamePath             string `json:"gamePath"`
+	GameName             string `json:"gameName"`
+	ProfileID            string `json:"profileId,omitempty"`
+	CustomIconPath       string `json:"customIconPath,omitempty"`
+	LastPlayedAt         int64  `json:"lastPlayedAt"`
+	TotalPlaytimeSeconds int64  `json:"totalPlaytimeSeconds"`
+	SessionCount         int    `json:"sessionCount"`
+	ActiveSince          *int64 `json:"activeSince,omitempty"`
 }
 
 type UtilsStatus struct {
@@ -138,9 +152,13 @@ type ScanFolderConfig struct {
 }
 
 type AppSettings struct {
-	TransparentMode   bool               `json:"TransparentMode"`
-	NativeWayland     bool               `json:"NativeWayland"`
-	ScanFolders       []string           `json:"ScanFolders"`
-	ScanFolderConfigs []ScanFolderConfig `json:"ScanFolderConfigs"`
-	Blacklist         []string           `json:"Blacklist"`
+	TransparentMode     bool               `json:"TransparentMode"`
+	NativeWayland       bool               `json:"NativeWayland"`
+	ScanFolders         []string           `json:"ScanFolders"`
+	ScanFolderConfigs   []ScanFolderConfig `json:"ScanFolderConfigs"`
+	Blacklist           []string           `json:"Blacklist"`
+	CustomPrefixDir     string             `json:"CustomPrefixDir,omitempty"`
+	TrackPlaytime       *bool              `json:"TrackPlaytime,omitempty"`
+	DiscordRichPresence *bool              `json:"DiscordRichPresence,omitempty"`
+	DiscordClientId     string             `json:"DiscordClientId,omitempty"`
 }
