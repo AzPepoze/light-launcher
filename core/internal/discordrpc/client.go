@@ -130,7 +130,6 @@ func (c *Client) Close() error {
 	if c == nil || c.conn == nil {
 		return nil
 	}
-	_ = c.ClearActivity()
 	err := c.conn.Close()
 	c.conn = nil
 	return err
