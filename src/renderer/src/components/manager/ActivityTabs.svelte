@@ -33,7 +33,6 @@
 		return `${formatDate(activity.lastPlayedAt)} · ${activity.sessionCount} ${activity.sessionCount===1?'session':'sessions'}`;
 	}
 
-	// icon cache per gamePath
 	let iconMap: Record<string,string> = {};
 	let colorMap: Record<string,string> = {};
 
@@ -42,7 +41,7 @@
 		for(const activity of all){
 			const key=activity.gamePath;
 			if(iconMap[key]!==undefined) continue;
-			iconMap[key]=""; // mark loading
+			iconMap[key]="";
 			loadIcon(activity);
 		}
 	}

@@ -36,8 +36,7 @@ export class RunnerService {
 	}
 
 	static async runGame(options: LaunchOptions, showLogs: boolean): Promise<void> {
-		// Renderer callers must not be able to mutate their saved object as the backend
-		// normalizes paths/runtime selections for this launch.
+		// Clone to avoid mutating renderer state during normalization.
 		options = structuredClone(options);
 
 		if (!options.UseGamePath && options.LauncherPath) {
@@ -68,9 +67,7 @@ export class RunnerService {
 			throw new Error(`Game executable not found at: ${options.GamePath}`);
 		}
 
-		// Runtime selection is authoritative here so every entry point (Run page,
-		// library quick launch, command palette, context menu) gets identical behavior.
-		// A game-level custom Proton wins. Otherwise use the selected prefix default.
+		// Resolve runtime: custom Proton wins, else prefix default, else first available.
 		if (!options.UseCustomProton) {
 			options.ProtonPath = "";
 			const prefixConfigPath = path.join(options.PrefixPath, "light-launcher.json");
@@ -114,7 +111,7 @@ export class RunnerService {
 			proton: options.ProtonPath || "default"
 		});
 
-		// Save the normalized configuration so future launches use valid current paths.
+		// Persist normalized launch config.
 		await ConfigService.saveGameConfig(options);
 
 		// Handle LSFG profile

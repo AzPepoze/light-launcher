@@ -27,8 +27,7 @@ func TrackingEnabled() bool {
 	return settings.TrackPlaytime == nil || *settings.TrackPlaytime
 }
 
-// Finalize records the exact game lifetime from the long-lived instance process.
-// This keeps playtime correct even when the Electron launcher quits immediately after launch.
+// Finalize persists playtime using the instance's actual exit time.
 func Finalize(gamePath, gameName string, startedAt, endedAt time.Time) error {
 	if !TrackingEnabled() {
 		return nil

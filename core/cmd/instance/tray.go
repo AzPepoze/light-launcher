@@ -112,8 +112,7 @@ func onReady(logPath string) {
 	logger.Info("Runner", "Game started successfully (PID: %d). Running: %s", gameCmd.Process.Pid, exeNameClean)
 	sendNotification("LightLauncher Running", fmt.Sprintf("%s is now running (PID: %d)", exeNameClean, gameCmd.Process.Pid))
 
-	// Rich Presence lives in the per-game instance so it survives the Electron window
-	// being closed after launch. Discord is optional and failures never block the game.
+	// Discord Rich Presence is per-game so it survives launcher close.
 	var discordClient *discordrpc.Client
 	if strings.TrimSpace(discordClientID) != "" {
 		client, err := discordrpc.Connect(strings.TrimSpace(discordClientID))

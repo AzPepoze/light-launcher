@@ -39,8 +39,7 @@ export async function loadConfigForGame(
 			effectivePrefixPath = options.PrefixPath || prefixPath;
 		}
 
-		// Auto-detect Lossless.dll if not already set. Keep the prefix that was just
-		// loaded instead of replaying the stale function arguments back into state.
+		// Keep newly selected prefix; don't replay old profile prefix.
 		if (!options.Extras.Lsfg.DllPath) {
 			try {
 				const dll = await DetectLosslessDll();
@@ -77,8 +76,7 @@ export async function loadConfigForPrefix(
 
 			let updatedProton = applyConfigToOptions(config, options, protonVersions);
 
-			// Prefix profiles provide environment defaults, but selecting a prefix must not
-			// replace the currently selected game/launcher.
+			// Prefix env defaults must not override selected game/launcher.
 			if (savedGamePath) options.GamePath = savedGamePath;
 			if (savedLauncherPath) options.LauncherPath = savedLauncherPath;
 			options.UseGamePath = savedUseGamePath;
@@ -89,8 +87,7 @@ export async function loadConfigForPrefix(
 				updatedProton = savedProtonPath;
 			}
 
-			// The caller has already changed prefixPath to the newly selected prefix.
-			// Never restore options.PrefixPath from the previous game profile here.
+			// Already on new prefix; no restore from old profile.
 			options.PrefixPath = prefixPath;
 			updateOptions(options, prefixPath, name, updatedProton);
 		}

@@ -19,12 +19,10 @@
 		return `${clampedSeconds}s`;
 	}
 
-	// icon + color per session
 	let icons: Record<number,string> = {};
 	let colors: Record<number,string> = {};
 
 	$: {
-		// trigger load when sessions change
 		for(const session of sessions){
 			if(icons[session.pid]) continue;
 			loadIcon(session);

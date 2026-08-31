@@ -74,8 +74,7 @@ func Connect(clientID string) (*Client, error) {
 			continue
 		}
 
-		// Discord answers the handshake with READY. Reading it before SET_ACTIVITY
-		// keeps the sequence deterministic while still failing gracefully.
+		// Read READY reply before SET_ACTIVITY.
 		_ = conn.SetReadDeadline(time.Now().Add(2 * time.Second))
 		if _, _, err := client.readPacket(); err != nil {
 			_ = conn.Close()
