@@ -1,7 +1,7 @@
 import { GetAllGames, GetImageBase64 } from "@lib/api";
 import { navigationCommand } from "@stores/navigationStore";
 import { loadExeIcon } from "@lib/iconService";
-import { launchGame } from "@lib/gameLaunchService";
+import { quickLaunchGame } from "@lib/homeService";
 import protonIcon from "@icons/protron_forked.png";
 
 export class CommandPaletteState {
@@ -106,7 +106,7 @@ export class CommandPaletteState {
 		} else if (item.type === "game") {
 			try {
 				this.close();
-				await launchGame(item.game.config, { showLogs: false });
+				await quickLaunchGame(item.game, false);
 			} catch {
 				// Shared launch service already reports the error.
 			}

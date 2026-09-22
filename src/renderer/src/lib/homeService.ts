@@ -1,5 +1,6 @@
 import {
 	GetAllGames,
+	GetConfig,
 	GetRunningSessions,
 	ListPrefixes,
 	KillSession,
@@ -43,11 +44,23 @@ export async function refreshHomeData(): Promise<HomeData> {
 }
 
 /**
- * Handles quick launch of a game through the same shared launch pipeline used by
- * command/context actions. Prefix and Proton normalization is finalized in the backend.
+ * Handles quick launch of a game through the shared Run-page pipeline
+ * (see gameLaunchService.launchGame). Fetches the fresh saved config so
+ * Home uses the same prefix/settings as the Run page instead of stale
+ * in-memory data. Prefix and Proton normalization is finalized in the backend.
  */
 export async function quickLaunchGame(game: GameInfo, showLogs = false): Promise<void> {
-	await launchGame(game.config, { showLogs });
+	const gamePath = game.path || game.config?.LauncherPath || game.config?.GamePath || "";
+	let options = game.config;
+	if (gamePath) {
+		try {
+			const fresh = await GetConfig(gamePath);
+			if (fresh) options = fresh;
+		} catch {
+			// Fall back to the in-memory config.
+		}
+	}
+	await launchGame(options, { showLogs });
 }
 
 /**

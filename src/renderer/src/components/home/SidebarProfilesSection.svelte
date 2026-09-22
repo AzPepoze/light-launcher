@@ -10,7 +10,7 @@
 	export let isSelectionMode: boolean = false;
 	export let selectedPaths = new Set<string>();
 	export let handleRightClick: (event: MouseEvent, game: any) => void;
-	export let handleQuickLaunch: (game: any) => Promise<void>;
+	export let handleQuickLaunch: (game: any, showLogs?: boolean) => Promise<void>;
 	export let handleConfigure: (game: any) => void;
 	export let toggleGameSelection: (game: any, shiftKey: boolean) => void;
 	export let loadIcon: (path: string) => void = () => {};

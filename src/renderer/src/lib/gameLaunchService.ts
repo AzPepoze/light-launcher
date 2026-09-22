@@ -1,6 +1,12 @@
-import { CloseWindow, RunGame } from "@lib/api";
+import { GetSystemToolsStatus, ScanProtonVersions } from "@lib/api";
 import { notifications } from "@stores/notificationStore";
 import type { LaunchOptions } from "@shared";
+import {
+	executeLaunch,
+	getMissingTools,
+	resolveLibraryProton,
+	validateLaunchPrerequisites
+} from "./runService";
 
 export interface LaunchRequest {
 	showLogs?: boolean;
@@ -8,6 +14,11 @@ export interface LaunchRequest {
 	closeLauncher?: boolean;
 }
 
+/**
+ * Shared launch entry used by Home cards, context menu, and command palette.
+ * Uses the same prerequisites, missing-tools check, Proton resolution, and
+ * executor as the Run page. Missing tools surface as a toast (no modal).
+ */
 export async function launchGame(
 	options: LaunchOptions,
 	request: LaunchRequest = {}
@@ -18,16 +29,27 @@ export async function launchGame(
 	const launchOptions = structuredClone(options);
 	const name = launchOptions.Name || "game";
 
+	const prerequisiteError = validateLaunchPrerequisites(launchOptions);
+	if (prerequisiteError) {
+		notifications.add(prerequisiteError, "error");
+		throw new Error(prerequisiteError);
+	}
+
+	const [systemStatus, protonVersions] = await Promise.all([
+		GetSystemToolsStatus(),
+		ScanProtonVersions()
+	]);
+
+	const missingTools = getMissingTools(launchOptions, systemStatus);
+	if (missingTools.length > 0) {
+		const message = `Missing tools: ${missingTools.join(", ")}. Install them or disable the integration.`;
+		notifications.add(message, "error");
+		throw new Error(message);
+	}
+
+	const selectedProton = await resolveLibraryProton(launchOptions, protonVersions || []);
+
 	if (announce) notifications.add(`Launching ${name}...`, "info");
 
-	try {
-		await RunGame(launchOptions, showLogs);
-		if (closeLauncher) {
-			await CloseWindow();
-		}
-	} catch (error: unknown) {
-		const message = error instanceof Error ? error.message : String(error);
-		notifications.add(`Launch failed: ${message}`, "error");
-		throw error;
-	}
+	await executeLaunch(launchOptions, selectedProton, protonVersions || [], showLogs, closeLauncher);
 }

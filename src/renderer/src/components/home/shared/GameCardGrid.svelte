@@ -12,7 +12,7 @@
 	export let selectedPaths: Set<string> = new Set();
 
 	export let handleRightClick: (event: MouseEvent, game: GameInfo) => void = () => {};
-	export let handleQuickLaunch: (game: GameInfo) => Promise<void> = async () => {};
+	export let handleQuickLaunch: (game: GameInfo, showLogs?: boolean) => Promise<void> = async () => {};
 	export let handleConfigure: (game: GameInfo) => void = () => {};
 	export let toggleGameSelection: (game: GameInfo, shiftKey: boolean) => void = () => {};
 	export let loadIcon: (path: string) => void = () => {};

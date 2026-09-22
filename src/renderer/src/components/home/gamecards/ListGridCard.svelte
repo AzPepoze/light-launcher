@@ -64,7 +64,11 @@
 		</div>
 
 		<div class="actions">
-			<button class="action-btn play" title="Play Now">
+			<button
+				class="action-btn play"
+				title="Play Now"
+				on:click|stopPropagation={(e) => handleLaunch(e)}
+			>
 				<span class="material-icons">play_arrow</span>
 			</button>
 			<button

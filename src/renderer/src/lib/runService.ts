@@ -4,6 +4,7 @@ import {
 	DetectLosslessDll,
 	ScanProtonVersions,
 	GetInitialLauncherPath,
+	LoadPrefixConfig,
 	ListPrefixes,
 	GetSystemToolsStatus,
 	RunGame,
@@ -156,6 +157,75 @@ export async function initializeRunPage(
 }
 
 /**
+ * Shared validation: LauncherPath + LSFG DLL prerequisites.
+ * Returns an error message when launch must be blocked, otherwise null.
+ * Used by both the Run page and Home quick launch.
+ */
+export function validateLaunchPrerequisites(launchOptions: core.LaunchOptions): string | null {
+	if (!launchOptions.LauncherPath) {
+		return "Please select a launcher executable.";
+	}
+
+	if (launchOptions.Extras.Lsfg.Enabled && !launchOptions.Extras.Lsfg.DllPath) {
+		return "LSFG-VK requires Lossless.dll.";
+	}
+
+	return null;
+}
+
+/**
+ * Shared missing-tools check. Single source for Gamescope/MangoHud/GameMode/Vulkan.
+ */
+export function getMissingTools(
+	launchOptions: core.LaunchOptions,
+	systemStatus: core.SystemToolsStatus
+): string[] {
+	const missingTools: string[] = [];
+	if (launchOptions.Extras.Gamescope.Enabled && !systemStatus.hasGamescope)
+		missingTools.push("Gamescope");
+	if (launchOptions.Extras.EnableMangoHud && !systemStatus.hasMangoHud)
+		missingTools.push("MangoHud");
+	if (launchOptions.Extras.EnableGamemode && !systemStatus.hasGameMode)
+		missingTools.push("GameMode");
+	if (launchOptions.Extras.Lsfg.Enabled && !systemStatus.hasVulkanInfo)
+		missingTools.push("Vulkan-Tools");
+	return missingTools;
+}
+
+/**
+ * Resolves the Proton display name/path for a library launch.
+ * Mirrors the Run page fallback: custom Proton wins, otherwise the prefix
+ * default, otherwise the first available runtime.
+ */
+export async function resolveLibraryProton(
+	launchOptions: core.LaunchOptions,
+	protonVersions: core.ProtonTool[]
+): Promise<string> {
+	if (launchOptions.UseCustomProton && launchOptions.ProtonPath) {
+		return launchOptions.ProtonPath;
+	}
+
+	const prefixName = (launchOptions.PrefixPath || "").split(/[/\\]/).filter(Boolean).pop();
+	if (prefixName) {
+		try {
+			const prefixConfig = await LoadPrefixConfig(prefixName);
+			if (prefixConfig?.ProtonPath) {
+				const match = protonVersions.find((p) => p.Path === prefixConfig.ProtonPath);
+				if (match) return match.DisplayName;
+				return prefixConfig.ProtonPath;
+			}
+		} catch {
+			// Fall through to first available runtime.
+		}
+	}
+
+	if (protonVersions.length > 0) {
+		return protonVersions[0].DisplayName;
+	}
+	return launchOptions.ProtonPath || "";
+}
+
+/**
  * Validates dependencies and environment before launching the game.
  * Returns true if the validation modal should be shown to the user.
  */
@@ -167,26 +237,14 @@ export async function validateAndLaunch(
 	showLogsWindow: boolean,
 	closeLauncher = true
 ): Promise<boolean> {
-	if (!launchOptions.LauncherPath) {
-		notifications.add("Please select a launcher executable.", "error");
-		return false;
-	}
-
-	if (launchOptions.Extras.Lsfg.Enabled && !launchOptions.Extras.Lsfg.DllPath) {
-		notifications.add("LSFG-VK requires Lossless.dll.", "error");
+	const prerequisiteError = validateLaunchPrerequisites(launchOptions);
+	if (prerequisiteError) {
+		notifications.add(prerequisiteError, "error");
 		return false;
 	}
 
 	// Check for missing system tools
-	const missingTools: string[] = [];
-	if (launchOptions.Extras.Gamescope.Enabled && !systemStatus.hasGamescope)
-		missingTools.push("Gamescope");
-	if (launchOptions.Extras.EnableMangoHud && !systemStatus.hasMangoHud)
-		missingTools.push("MangoHud");
-	if (launchOptions.Extras.EnableGamemode && !systemStatus.hasGameMode)
-		missingTools.push("GameMode");
-	if (launchOptions.Extras.Lsfg.Enabled && !systemStatus.hasVulkanInfo)
-		missingTools.push("Vulkan-Tools");
+	const missingTools = getMissingTools(launchOptions, systemStatus);
 
 	if (missingTools.length > 0) {
 		return true; // Show modal
