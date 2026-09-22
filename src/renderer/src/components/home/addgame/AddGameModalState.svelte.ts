@@ -9,14 +9,18 @@ import {
 	GetScanFolderConfig
 } from "@lib/api";
 import { notifications } from "@stores/notificationStore";
+import { DefaultExcludeNames } from "@shared";
 import { loadExeIcon } from "@lib/iconService";
 import { getDefaultPrefixName } from "@lib/prefixService";
+import { createLogger } from "@lib/logger";
 import * as service from "@lib/gameService";
+
+const log = createLogger("AddGameModal");
 
 export class AddGameModalState {
 	addMode = $state<"select" | "folder-config" | "folder-review">("select");
 	searchDepth = $state("2");
-	excludeNames = $state("UnityCrashHandler64, uninstall, redist");
+	excludeNames = $state(DefaultExcludeNames.join(", "));
 	selectedFolder = $state("");
 	foundExecutables = $state<service.ScannedExecutable[]>([]);
 	discardedExecutables = $state(new Set<string>());
@@ -33,7 +37,7 @@ export class AddGameModalState {
 			this.prefixBaseDir = await GetPrefixBaseDir();
 			this.selectedPrefix = getDefaultPrefixName(this.prefixes);
 		} catch (err) {
-			console.error("Failed to load prefixes:", err);
+			log.error("Failed to load prefixes", err);
 		}
 	}
 
@@ -52,7 +56,7 @@ export class AddGameModalState {
 				this.excludeNames = config.ExcludeNames ? config.ExcludeNames.join(", ") : "";
 			}
 		} catch (error) {
-			console.error("Failed to load folder config:", error);
+			log.error("Failed to load folder config", error);
 		}
 	}
 
@@ -62,7 +66,7 @@ export class AddGameModalState {
 		this.foundExecutables = [];
 		this.discardedExecutables = new Set<string>();
 		this.searchDepth = "2";
-		this.excludeNames = "UnityCrashHandler64, uninstall, redist";
+		this.excludeNames = DefaultExcludeNames.join(", ");
 		this.isSearching = false;
 		this.loadPrefixes();
 	}

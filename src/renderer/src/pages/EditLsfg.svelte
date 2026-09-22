@@ -12,7 +12,10 @@
 	import * as core from "@shared";
 	import { onMount } from "svelte";
 	import { loadLsfgResources, createLaunchOptions } from "@lib/formService";
+	import { createLogger } from "@lib/logger";
 	import { notifications } from "@stores/notificationStore";
+
+	const log = createLogger("EditLsfg");
 
 	export let gamePath = "";
 
@@ -54,7 +57,7 @@
 			const { gpus, dll } = await loadLsfgResources();
 			if (dll && !options.Extras.Lsfg.DllPath) {
 				options.Extras.Lsfg.DllPath = dll;
-				console.log("Auto-detected DLL:", dll);
+				log.debug("Auto-detected DLL", dll);
 			}
 			if (gpus && gpus.length > 0) {
 				gpuList = gpus;
@@ -109,7 +112,7 @@
 			]);
 			if (path) options.Extras.Lsfg.DllPath = path;
 		} catch (err) {
-			console.error(err);
+			log.error("Failed to browse for DLL", err);
 		}
 	}
 

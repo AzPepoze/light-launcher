@@ -1,5 +1,8 @@
 <script lang="ts">
 	import { PickFolder, PickFile } from "@lib/api";
+	import { createLogger } from "@lib/logger";
+
+	const log = createLogger("BrowseInput");
 
 	export let value = "";
 	export let placeholder = "Select path...";
@@ -14,7 +17,7 @@
 			try {
 				await browseHandler();
 			} catch (err) {
-				console.error("Error executing custom browse handler:", err);
+				log.error("Error executing custom browse handler", err);
 			}
 			return;
 		}
@@ -24,7 +27,7 @@
 				value = selected;
 			}
 		} catch (err) {
-			console.error(`Error picking ${type}:`, err);
+			log.error(`Error picking ${type}`, err);
 		}
 	}
 </script>

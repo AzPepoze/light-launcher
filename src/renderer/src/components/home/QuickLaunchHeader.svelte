@@ -11,6 +11,7 @@
 
 	export let onBulkRemove: () => void;
 	export let onToggleSelectionMode: () => void;
+	export let onSelectAll: () => void;
 	export let onShowAddModal: () => void;
 	export let onShowHelpModal: () => void;
 </script>
@@ -19,7 +20,7 @@
 	<h2 class="section-title">Quick Launch</h2>
 
 	{#if isSelectionMode}
-		<SelectionActions {selectedCount} {onBulkRemove} {onToggleSelectionMode} />
+		<SelectionActions {selectedCount} {onBulkRemove} {onToggleSelectionMode} {onSelectAll} />
 	{:else}
 		<button class="add-btn" on:click={onShowAddModal} title="Add Game">
 			<span class="material-icons" style="font-size: 20px;">add</span>

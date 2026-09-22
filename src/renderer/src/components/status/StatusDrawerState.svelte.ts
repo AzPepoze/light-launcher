@@ -8,7 +8,10 @@ import {
 	ClearSwap
 } from "@lib/api";
 import * as core from "@shared";
+import { createLogger } from "@lib/logger";
 import { ResourceHistoryTracker } from "./ResourceHistoryTracker.svelte";
+
+const log = createLogger("StatusDrawer");
 
 export class StatusDrawerState {
 	isExpanded = $state(false);
@@ -67,7 +70,7 @@ export class StatusDrawerState {
 			this.pushUsage(usage);
 			this.shaderCacheSize = cache;
 		} catch (err) {
-			console.error("Failed to fetch status drawer data:", err);
+			log.error("Failed to fetch status drawer data", err);
 		}
 	}
 
@@ -107,7 +110,7 @@ export class StatusDrawerState {
 				}, 2000);
 			}, 100);
 		} catch (err) {
-			console.error(`Action ${loadingKey} failed:`, err);
+			log.error(`Action ${loadingKey} failed`, err);
 		} finally {
 			setTimeout(() => {
 				this[loadingKey] = false;

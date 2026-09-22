@@ -1,5 +1,8 @@
 import * as core from "@shared";
 import { GetConfig, LoadPrefixConfig, DetectLosslessDll } from "@lib/api";
+import { createLogger } from "./logger";
+
+const log = createLogger("runConfig");
 
 export async function loadConfigForGame(
 	path: string,
@@ -48,11 +51,11 @@ export async function loadConfigForGame(
 					updateOptions(options, effectivePrefixPath, effectivePrefixName, "");
 				}
 			} catch (err) {
-				console.error("Failed to detect Lossless.dll:", err);
+				log.error("Failed to detect Lossless.dll", err);
 			}
 		}
 	} catch (err) {
-		console.error("Failed to load game configuration:", err);
+		log.error("Failed to load game configuration", err);
 	}
 }
 
@@ -92,7 +95,7 @@ export async function loadConfigForPrefix(
 			updateOptions(options, prefixPath, name, updatedProton);
 		}
 	} catch (err) {
-		console.error(`Failed to load prefix configuration for ${name}:`, err);
+		log.error(`Failed to load prefix configuration for ${name}`, err);
 	}
 }
 

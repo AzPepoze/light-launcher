@@ -26,5 +26,7 @@ describe("Shared Constants", () => {
 		expect(DefaultExcludeNames.length).toBeGreaterThan(5);
 		expect(DefaultExcludeNames).toContain("unins*.exe");
 		expect(DefaultExcludeNames).toContain("DXSETUP.exe");
+		expect(DefaultExcludeNames).toContain("UnityCrashHandler*.exe");
+		expect(DefaultExcludeNames).toContain("Steam.exe");
 	});
 });

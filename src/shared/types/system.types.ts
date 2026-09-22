@@ -27,3 +27,9 @@ export interface UtilsStatus {
 	isLsfgInstalled: boolean;
 	lsfgVersion: string;
 }
+
+export interface IconCacheEntry {
+	mtimeMs: number;
+	size: number;
+	icon: string;
+}

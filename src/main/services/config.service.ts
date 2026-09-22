@@ -79,6 +79,17 @@ export class ConfigService {
 					}
 				}
 
+				// Backfill defaults for untouched folders only.
+				for (const cfg of settings.ScanFolderConfigs) {
+					if (!cfg.ExcludeNames || cfg.ExcludeNames.length === 0) {
+						cfg.ExcludeNames = [...DefaultExcludeNames];
+						modified = true;
+					} else if (isLegacyDefaultExcludeList(cfg.ExcludeNames)) {
+						cfg.ExcludeNames = [...DefaultExcludeNames];
+						modified = true;
+					}
+				}
+
 				if (modified) {
 					await this.saveJson(settingsPath, settings);
 				}
@@ -114,21 +125,23 @@ export class ConfigService {
 
 		try {
 			const entries = await fs.readdir(configDir, { withFileTypes: true });
-			const configs: LaunchOptions[] = [];
-
-			for (const entry of entries) {
-				if (!entry.isDirectory()) continue;
-				const configPath = path.join(configDir, entry.name, "config.json");
-				if (fsSync.existsSync(configPath)) {
-					try {
-						const options = await this.loadJson<LaunchOptions>(configPath);
-						configs.push(options);
-					} catch (e) {
-						LoggerService.error("Config", `Failed to parse ${configPath}: ${e}`);
-					}
-				}
-			}
-			return configs;
+			const results = await Promise.all(
+				entries
+					.filter((entry) => entry.isDirectory())
+					.map(async (entry): Promise<LaunchOptions | null> => {
+						const configPath = path.join(configDir, entry.name, "config.json");
+						if (!fsSync.existsSync(configPath)) {
+							return null;
+						}
+						try {
+							return await this.loadJson<LaunchOptions>(configPath);
+						} catch (e) {
+							LoggerService.error("Config", `Failed to parse ${configPath}: ${e}`);
+							return null;
+						}
+					})
+			);
+			return results.filter((cfg): cfg is LaunchOptions => cfg !== null);
 		} catch (err) {
 			LoggerService.error("Config", `Error listing game configs: ${err}`);
 			return [];
@@ -230,4 +243,16 @@ export class ConfigService {
 			}
 		};
 	}
+}
+
+/** Pre-expansion default sets eligible for backfill. */
+const LegacyDefaultExcludeSets: string[][] = [["UnityCrashHandler64", "uninstall", "redist"]];
+
+export function isLegacyDefaultExcludeList(excludeNames: string[]): boolean {
+	const normalized = excludeNames.map((e) => e.trim().toLowerCase()).filter(Boolean);
+	return LegacyDefaultExcludeSets.some(
+		(legacy) =>
+			legacy.length === normalized.length &&
+			legacy.every((entry) => normalized.includes(entry.toLowerCase()))
+	);
 }

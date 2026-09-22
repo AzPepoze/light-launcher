@@ -3,6 +3,7 @@
 	import CardSelectionCheckbox from "./shared/CardSelectionCheckbox.svelte";
 	import AnimatedPlayIcon from "./shared/AnimatedPlayIcon.svelte";
 	import { getDominantColor } from "@lib/dominantColor";
+	import { iconFade } from "@lib/iconReveal";
 
 	export let game: any;
 	export let icon: string = "";
@@ -11,36 +12,32 @@
 	export let isSelected: boolean = false;
 	export let onLaunch: (game: any) => void = () => {};
 	export let onConfigure: (game: any) => void = () => {};
-	export let onSelect: (game: any, shiftKey: boolean) => void = () => {};
+	export let onSelect: (game: any, shiftKey: boolean, ctrlKey?: boolean) => void = () => {};
 
 	let cardElement: HTMLElement;
 	let spotlightX = 50;
 	let spotlightY = 50;
-	let tiltX = 0;
-	let tiltY = 0;
 	let isHovering = false;
 	let rafId: number | null = null;
 	let pendingX = 50;
 	let pendingY = 50;
-	let pendingTiltX = 0;
-	let pendingTiltY = 0;
 
 	let dominantRGB = "255,255,255";
-	let iconNonce = 0;
+	let colorFetched = false;
+	let iconImgEl: HTMLImageElement | undefined;
+	let colorNonce = 0;
+	let lastIcon = "";
 
-	$: if (icon) {
-		const current = ++iconNonce;
-		getDominantColor(icon).then((c) => {
-			if (current !== iconNonce) return;
-			if (c) dominantRGB = `${c[0]},${c[1]},${c[2]}`;
-		});
-	} else {
+	$: if (icon !== lastIcon) {
+		lastIcon = icon;
+		colorFetched = false;
 		dominantRGB = "255,255,255";
+		iconImgEl = undefined;
 	}
 
 	function handleLaunch(event?: MouseEvent) {
 		if (isSelectionMode) {
-			onSelect(game, event ? event.shiftKey : false);
+			onSelect(game, !!event?.shiftKey, !!(event?.ctrlKey || event?.metaKey));
 			return;
 		}
 		onLaunch(game);
@@ -56,8 +53,6 @@
 			rafId = null;
 			spotlightX = pendingX;
 			spotlightY = pendingY;
-			tiltX = pendingTiltX;
-			tiltY = pendingTiltY;
 		});
 	}
 
@@ -68,31 +63,27 @@
 		const y = ((event.clientY - rect.top) / rect.height) * 100;
 		pendingX = Math.max(0, Math.min(100, x));
 		pendingY = Math.max(0, Math.min(100, y));
-
-		// subtle 3D tilt ±4deg
-		const centerX = rect.left + rect.width / 2;
-		const centerY = rect.top + rect.height / 2;
-		pendingTiltY = ((event.clientX - centerX) / rect.width) * 8;
-		pendingTiltX = ((centerY - event.clientY) / rect.height) * 8;
-		pendingTiltX = Math.max(-4, Math.min(4, pendingTiltX));
-		pendingTiltY = Math.max(-4, Math.min(4, pendingTiltY));
 		scheduleFrame();
 	}
 
 	function handleMouseEnter() {
 		isHovering = true;
+		if (icon && !colorFetched) {
+			colorFetched = true;
+			const nonce = ++colorNonce;
+			getDominantColor(icon, iconImgEl).then((c) => {
+				if (nonce !== colorNonce) return;
+				if (c) dominantRGB = `${c[0]},${c[1]},${c[2]}`;
+			});
+		}
 	}
 
 	function handleMouseLeave() {
 		isHovering = false;
-		pendingTiltX = 0;
-		pendingTiltY = 0;
 		if (rafId !== null) {
 			cancelAnimationFrame(rafId);
 			rafId = null;
 		}
-		tiltX = 0;
-		tiltY = 0;
 	}
 </script>
 
@@ -103,7 +94,7 @@
 	class:selection-mode={isSelectionMode}
 	class:selected={isSelected}
 	class:hovering={isHovering}
-	style="--mx: {spotlightX}%; --my: {spotlightY}%; --tilt-x: {tiltX}deg; --tilt-y: {tiltY}deg; --spotlight-rgb: {dominantRGB};"
+	style="--mx: {spotlightX}%; --my: {spotlightY}%; --spotlight-rgb: {dominantRGB};"
 	on:mousemove={handleMouseMove}
 	on:mouseenter={handleMouseEnter}
 	on:mouseleave={handleMouseLeave}
@@ -127,17 +118,27 @@
 
 		<div class="icon-wrapper">
 			{#if icon}
-				<img src={icon} alt={game.name} class="game-icon" loading="lazy" />
+				<img
+					bind:this={iconImgEl}
+					use:iconFade={icon}
+					src={icon}
+					alt={game.name}
+					class="game-icon"
+					decoding="async"
+					draggable="false"
+				/>
 			{:else}
 				<span class="material-icons system-icon">rocket_launch</span>
 			{/if}
 		</div>
 
 		<div class="play-overlay">
-			<span class="play-ripple" aria-hidden="true"></span>
-			<span class="launch-icon-large">
-				<AnimatedPlayIcon size={64} />
-			</span>
+			{#if isHovering}
+				<span class="play-ripple" aria-hidden="true"></span>
+				<span class="launch-icon-large">
+					<AnimatedPlayIcon size={64} />
+				</span>
+			{/if}
 		</div>
 	</div>
 
@@ -163,8 +164,6 @@
 		width: 100%;
 		max-width: 200px;
 		margin: 6px;
-		perspective: 900px;
-		transform-style: preserve-3d;
 		--mx: 50%;
 		--my: 50%;
 		--spotlight-rgb: 255, 255, 255;
@@ -178,7 +177,7 @@
 
 		&:hover,
 		&:focus-within {
-			transform: perspective(900px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y));
+			transform: translateY(-6px) scale(1.03);
 
 			.game-icon-container {
 				border-color: rgba(var(--spotlight-rgb), 0.25);
@@ -215,18 +214,46 @@
 		}
 
 		&:active {
-			transform: perspective(900px) scale(0.98) rotateX(var(--tilt-x)) rotateY(var(--tilt-y));
+			transform: scale(0.98);
 		}
 
-		&.selection-mode:hover {
+		// :focus-within too, or the clicked card keeps the play overlay stuck.
+		&.selection-mode:hover,
+		&.selection-mode:focus-within {
 			transform: none;
 
-			.game-icon-container::before {
-				opacity: 0 !important;
+			.game-icon-container {
+				border-color: var(--accent-primary);
+				box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+
+				&::before {
+					opacity: 0 !important;
+				}
+
+				.play-overlay {
+					opacity: 0 !important;
+				}
+
+				img.game-icon {
+					transform: none;
+					filter: none;
+				}
 			}
 
-			.play-overlay {
-				opacity: 0 !important;
+			&.selected .game-icon-container {
+				box-shadow:
+					0 2px 8px rgba(0, 0, 0, 0.25),
+					0 0 24px var(--accent-glow);
+			}
+
+			:global(.selection-overlay .checkbox) {
+				border-color: var(--accent-primary);
+				transform: scale(1.12);
+			}
+
+			.launch-icon-large,
+			.play-ripple {
+				animation: none;
 			}
 		}
 
@@ -295,7 +322,14 @@
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
-		transition: transform 0.5s var(--ease-spring), filter var(--transition-fast);
+		opacity: 0;
+		transform: scale(0.96);
+		transition: opacity 240ms var(--ease-out), transform 320ms var(--ease-spring);
+
+		&:global(.loaded) {
+			opacity: 1;
+			transform: none;
+		}
 	}
 
 	.system-icon {
@@ -450,6 +484,8 @@
 
 		.game-icon {
 			transition: none;
+			transform: none;
+			opacity: 1;
 		}
 
 		.play-ripple {

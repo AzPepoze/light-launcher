@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { iconFade } from "@lib/iconReveal";
+
 	export let game: any;
 	export let icon: string = "";
 	export let isRunning: boolean = false;
@@ -27,7 +29,14 @@
 
 		<div class="image-container">
 			{#if icon}
-				<img src={icon} alt={game.name} class="game-icon" loading="lazy" />
+				<img
+					use:iconFade={icon}
+					src={icon}
+					alt={game.name}
+					class="game-icon"
+					decoding="async"
+					draggable="false"
+				/>
 			{:else}
 				<div class="fallback">
 					<span class="material-icons">rocket_launch</span>
@@ -131,6 +140,14 @@
 			width: 100%;
 			height: 100%;
 			object-fit: cover;
+			opacity: 0;
+			transform: scale(0.96);
+			transition: opacity 240ms var(--ease-out), transform 320ms var(--ease-spring);
+
+			&:global(.loaded) {
+				opacity: 1;
+				transform: none;
+			}
 		}
 
 		.fallback {
@@ -201,6 +218,14 @@
 			font-size: 0.7rem;
 			font-weight: 900;
 			letter-spacing: 1px;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.image-container .game-icon {
+			transition: none;
+			transform: none;
+			opacity: 1;
 		}
 	}
 </style>

@@ -2,6 +2,7 @@
 	import CardRunningIndicator from "./shared/CardRunningIndicator.svelte";
 	import CardSelectionCheckbox from "./shared/CardSelectionCheckbox.svelte";
 	import { getGamePath } from "@lib/gameUtils";
+	import { iconFade } from "@lib/iconReveal";
 
 	export let game: any;
 	export let icon: string = "";
@@ -10,11 +11,11 @@
 	export let isSelected: boolean = false;
 	export let onLaunch: (game: any) => void = () => {};
 	export let onConfigure: (game: any) => void = () => {};
-	export let onSelect: (game: any, shiftKey: boolean) => void = () => {};
+	export let onSelect: (game: any, shiftKey: boolean, ctrlKey?: boolean) => void = () => {};
 
 	function handleLaunch(event?: MouseEvent) {
 		if (isSelectionMode) {
-			onSelect(game, event ? event.shiftKey : false);
+			onSelect(game, !!event?.shiftKey, !!(event?.ctrlKey || event?.metaKey));
 			return;
 		}
 		onLaunch(game);
@@ -41,7 +42,14 @@
 
 	<div class="icon-section">
 		{#if icon}
-			<img src={icon} alt={game.name} class="game-icon" loading="lazy" />
+			<img
+				use:iconFade={icon}
+				src={icon}
+				alt={game.name}
+				class="game-icon"
+				decoding="async"
+				draggable="false"
+			/>
 		{:else}
 			<div class="fallback-wrapper">
 				<span
@@ -64,7 +72,11 @@
 		</div>
 
 		<div class="actions">
-			<button class="action-btn play" title="Play Now">
+			<button
+				class="action-btn play"
+				title="Play Now"
+				on:click|stopPropagation={(e) => handleLaunch(e)}
+			>
 				<span class="material-icons">play_arrow</span>
 			</button>
 			<button
@@ -99,12 +111,24 @@
 			border-color: var(--accent-primary);
 			box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 
-			.game-icon {
+			.icon-section .game-icon {
 				transform: scale(1.1);
 			}
 
 			.play .material-icons {
 				transform: scale(1.15);
+			}
+		}
+
+		// Selection mode: checkbox gets the hover emphasis, not launch zoom.
+		&.selection-mode:hover {
+			.icon-section .game-icon {
+				transform: none;
+			}
+
+			:global(.selection-checkbox .checkbox) {
+				border-color: var(--accent-primary);
+				transform: scale(1.1);
 			}
 		}
 
@@ -135,7 +159,14 @@
 			height: 100%;
 			object-fit: cover;
 			border-radius: var(--radius-lg);
-			transition: transform 0.4s var(--ease-spring);
+			opacity: 0;
+			transform: scale(0.96);
+			transition: opacity 240ms var(--ease-out), transform 320ms var(--ease-spring);
+
+			&:global(.loaded) {
+				opacity: 1;
+				transform: none;
+			}
 		}
 
 		.fallback-wrapper {
@@ -231,6 +262,14 @@
 			border-color: var(--accent-primary);
 			color: #ffffff;
 			box-shadow: 0 4px 10px var(--accent-glow);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.icon-section .game-icon {
+			transition: none;
+			transform: none;
+			opacity: 1;
 		}
 	}
 </style>

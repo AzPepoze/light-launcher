@@ -1,64 +1,76 @@
 import { GetExeIcon } from "@lib/api";
+import { createLogger } from "./logger";
 
-// Promise-based in-flight and result cache
+const log = createLogger("iconService");
+
+export type IconPriority = "high" | "low";
+
 const iconPromises = new Map<string, Promise<string>>();
 
 interface QueueItem {
 	filePath: string;
 	resolve: (value: string) => void;
-	reject: (err: any) => void;
+	priority: IconPriority;
 }
 
 const queue: QueueItem[] = [];
-let activeCount = 0;
-const CONCURRENCY_LIMIT = 4;
+let active = 0;
+let activeLow = 0;
+let paused = false;
+const CONCURRENCY_LIMIT = 8;
+const LOW_CONCURRENCY_LIMIT = 2;
+
+/** Pause extraction while the user scrolls so spawned extractors don't steal CPU from rendering. */
+export function setIconQueuePaused(value: boolean): void {
+	if (paused === value) return;
+	paused = value;
+	if (!paused) processQueue();
+}
+
+function start(item: QueueItem) {
+	active++;
+	if (item.priority === "low") activeLow++;
+	(async () => {
+		try {
+			item.resolve((await GetExeIcon(item.filePath)) || "");
+		} catch (err) {
+			log.error("Failed to load exe icon", err);
+			item.resolve("");
+		} finally {
+			active--;
+			if (item.priority === "low") activeLow--;
+			processQueue();
+		}
+	})();
+}
 
 function processQueue() {
-	if (activeCount >= CONCURRENCY_LIMIT || queue.length === 0) {
-		return;
+	if (paused) return;
+
+	while (active < CONCURRENCY_LIMIT) {
+		const index = queue.findIndex((item) => item.priority === "high");
+		if (index === -1) break;
+		start(queue.splice(index, 1)[0]);
 	}
 
-	while (activeCount < CONCURRENCY_LIMIT && queue.length > 0) {
-		const item = queue.shift();
-		if (!item) continue;
-
-		activeCount++;
-		(async () => {
-			try {
-				const icon = await GetExeIcon(item.filePath);
-				item.resolve(icon || "");
-			} catch (err) {
-				console.error("Failed to load exe icon:", err);
-				item.resolve("");
-			} finally {
-				activeCount--;
-				processQueue();
-			}
-		})();
+	while (active < CONCURRENCY_LIMIT && activeLow < LOW_CONCURRENCY_LIMIT) {
+		const index = queue.findIndex((item) => item.priority === "low");
+		if (index === -1) break;
+		start(queue.splice(index, 1)[0]);
 	}
 }
 
-/**
- * Loads an executable icon asynchronously through a concurrency-limited queue.
- * Reuses promises to cache results and prevent duplicate concurrent requests.
- */
-export function loadExeIcon(filePath: string): Promise<string> {
+/** Loads an exe icon through the concurrency-limited queue, reusing in-flight promises. */
+export function loadExeIcon(filePath: string, priority: IconPriority = "high"): Promise<string> {
 	if (!filePath) return Promise.resolve("");
 
 	let promise = iconPromises.get(filePath);
 	if (!promise) {
-		promise = new Promise<string>((resolve, reject) => {
-			queue.push({ filePath, resolve, reject });
+		promise = new Promise<string>((resolve) => {
+			queue.push({ filePath, resolve, priority });
 			processQueue();
 		});
 		iconPromises.set(filePath, promise);
 	}
 	return promise;
-}
-
-/**
- * Loads multiple exe icons in parallel (still throttled by the concurrency-limited queue)
- */
-export async function loadExeIcons(...filePaths: string[]): Promise<(string | null)[]> {
-	return Promise.all(filePaths.map((path) => loadExeIcon(path).catch(() => "")));
 }

@@ -11,6 +11,9 @@
 	import * as core from "@shared";
 	import { onMount } from "svelte";
 	import { loadLsfgResources, parseMemoryValue } from "@lib/formService";
+	import { createLogger } from "@lib/logger";
+
+	const log = createLogger("ConfigForm");
 
 	export let options: core.LaunchOptions;
 	export let showLogsWindow = false;
@@ -41,10 +44,10 @@
 			}
 			if (dll && !options.Extras.Lsfg.DllPath) {
 				options.Extras.Lsfg.DllPath = dll;
-				console.log("[ConfigForm] Auto-detected DLL:", dll);
+				log.debug("Auto-detected DLL", dll);
 			}
 		} catch (e) {
-			console.error(e);
+			log.error("Failed to initialize config form", e);
 		}
 	});
 
@@ -55,7 +58,7 @@
 			]);
 			if (path) options.Extras.Lsfg.DllPath = path;
 		} catch (err) {
-			console.error(err);
+			log.error("Failed to browse for DLL", err);
 		}
 	}
 </script>

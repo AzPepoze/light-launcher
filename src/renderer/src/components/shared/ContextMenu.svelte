@@ -12,6 +12,7 @@
 	export let onLaunchWithLogs: () => void = () => {};
 	export let onKill: () => void = () => {};
 	export let onConfigure: () => void;
+	export let onOpenLocation: () => void = () => {};
 	export let onSetCustomIcon: () => void = () => {};
 	export let onClearCustomIcon: () => void = () => {};
 	export let onAction: () => void; // Blacklist or Delete
@@ -39,6 +40,11 @@
 	<button class="menu-item" on:click={() => { onConfigure(); onClose(); }}>
 		<span class="material-icons">settings</span>
 		<span>Configure Profile</span>
+	</button>
+
+	<button class="menu-item" on:click={() => { onOpenLocation(); onClose(); }}>
+		<span class="material-icons">folder_open</span>
+		<span>Open File Location</span>
 	</button>
 
 	{#if !isAutoScanned}

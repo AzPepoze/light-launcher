@@ -1,5 +1,6 @@
 import {
 	GetAllGames,
+	GetConfig,
 	GetRunningSessions,
 	ListPrefixes,
 	KillSession,
@@ -11,8 +12,11 @@ import {
 } from "@lib/api";
 import { notifications } from "@stores/notificationStore";
 import { createLaunchOptions } from "./formService";
+import { createLogger } from "./logger";
 import { launchGame } from "./gameLaunchService";
 import type { GameInfo, RunningSession } from "@shared";
+
+const log = createLogger("homeService");
 
 export interface HomeData {
 	games: GameInfo[];
@@ -37,17 +41,24 @@ export async function refreshHomeData(): Promise<HomeData> {
 			prefixes: ["All Prefixes", ...(fetchedPrefixes || [])]
 		};
 	} catch (error) {
-		console.error("Failed to refresh home data:", error);
+		log.error("Failed to refresh home data", error);
 		return { games: [], sessions: [], prefixes: ["All Prefixes"] };
 	}
 }
 
-/**
- * Handles quick launch of a game through the same shared launch pipeline used by
- * command/context actions. Prefix and Proton normalization is finalized in the backend.
- */
+/** Quick launch via the shared pipeline with fresh saved config. */
 export async function quickLaunchGame(game: GameInfo, showLogs = false): Promise<void> {
-	await launchGame(game.config, { showLogs });
+	const gamePath = game.path || game.config?.LauncherPath || game.config?.GamePath || "";
+	let options = game.config;
+	if (gamePath) {
+		try {
+			const fresh = await GetConfig(gamePath);
+			if (fresh) options = fresh;
+		} catch {
+			// Keep stored config when fresh load fails.
+		}
+	}
+	await launchGame(options, { showLogs });
 }
 
 /**
@@ -108,7 +119,7 @@ export async function processDroppedFiles(filePaths: string[]): Promise<number> 
 			}
 		}
 	} catch (error) {
-		console.error("Failed to process dropped files:", error);
+		log.error("Failed to process dropped files", error);
 	}
 	return addedCount;
 }

@@ -2,7 +2,10 @@
 	import { notifications } from "@stores/notificationStore";
 	import Modal from "@components/shared/Modal.svelte";
 	import FolderConfiguration from "@components/shared/FolderConfiguration.svelte";
-	import { GetScanFolderConfig, UpdateScanFolderConfig } from "@lib/api";
+	import { GetScanFolderConfig, RenameScanFolder } from "@lib/api";
+	import { createLogger } from "@lib/logger";
+
+	const log = createLogger("FolderSettings");
 
 	export let show = false;
 	export let folderPath = "";
@@ -11,6 +14,7 @@
 
 	let searchDepth = "2";
 	let excludeNames = "";
+	let editablePath = "";
 	let isLoading = false;
 
 	$: if (show && folderPath) {
@@ -20,13 +24,14 @@
 	async function loadFolderConfig() {
 		isLoading = true;
 		try {
+			editablePath = folderPath;
 			const config = await GetScanFolderConfig(folderPath);
 			if (config) {
 				searchDepth = config.Depth.toString();
 				excludeNames = config.ExcludeNames ? config.ExcludeNames.join(", ") : "";
 			}
 		} catch (error) {
-			console.error("Failed to load folder config:", error);
+			log.error("Failed to load folder config", error);
 			notifications.add(`Failed to load folder config: ${error}`, "error");
 		} finally {
 			isLoading = false;
@@ -35,18 +40,27 @@
 
 	async function handleSave() {
 		try {
+			const newPath = editablePath.trim();
+			if (!newPath) {
+				notifications.add("Folder path cannot be empty", "error");
+				return;
+			}
 			const depth = parseInt(searchDepth);
+			if (isNaN(depth)) {
+				notifications.add("Search depth must be a number", "error");
+				return;
+			}
 			const excludes = excludeNames
 				.split(",")
 				.map((item) => item.trim())
 				.filter((item) => item.length > 0);
 
-			await UpdateScanFolderConfig(folderPath, depth, excludes);
+			await RenameScanFolder(folderPath, newPath, depth, excludes);
 			notifications.add("Folder settings saved successfully", "success");
 			onSave();
 			onClose();
 		} catch (error) {
-			console.error("Failed to save folder config:", error);
+			log.error("Failed to save folder config", error);
 			notifications.add(`Failed to save folder config: ${error}`, "error");
 		}
 	}
@@ -65,10 +79,10 @@
 		</div>
 	{:else}
 		<FolderConfiguration
-			selectedFolder={folderPath}
+			bind:selectedFolder={editablePath}
 			bind:searchDepth
 			bind:excludeNames
-			showFolderInput={false}
+			showFolderInput={true}
 			showPrefixInput={false}
 		/>
 	{/if}

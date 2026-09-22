@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from "svelte";
+	import { afterUpdate, onDestroy, onMount } from "svelte";
 	import ContextMenu from "@components/shared/ContextMenu.svelte";
 	import SidebarPanel from "@components/home/SidebarPanel.svelte";
 	import FolderGroup from "@components/home/FolderGroup.svelte";
@@ -12,9 +12,13 @@
 		RemoveScanFolder,
 		KillSession,
 		PickFileCustom,
-		SaveGameConfig
+		SaveGameConfig,
+		OpenFileLocation
 	} from "@lib/api";
 	import { notifications } from "@stores/notificationStore";
+	import { saveHomeScroll, getHomeScroll } from "@stores/homeScrollStore";
+	import Marquee from "@components/home/shared/Marquee.svelte";
+	import { setIconQueuePaused } from "@lib/iconService";
 
 	export let currentView: "grid" | "list-grid" | "sidebar-grid" = "grid";
 	export let games: any[] = [];
@@ -30,9 +34,13 @@
 	export let sessions: any[] = [];
 	export let handleQuickLaunch: (game: any, showLogs?: boolean) => Promise<void>;
 	export let handleConfigure: (game: any) => void;
-	export let toggleGameSelection: (game: any, shiftKey: boolean) => void;
+	export let toggleGameSelection: (game: any, shiftKey: boolean, ctrlKey?: boolean) => void;
 	export let onRefresh: () => void = () => {};
-	export let loadIcon: (path: string) => void = () => {};
+	export let loadIcon: (path: string, customIconPath?: string | null) => void = () => {};
+	export let onMarqueeSelect: (paths: string[], additive: boolean) => void = () => {};
+	export let onSelectAll: () => void = () => {};
+	export let onCancelSelection: () => void = () => {};
+	export let modalOpen: boolean = false;
 
 	let menuX = 0;
 	let menuY = 0;
@@ -85,6 +93,21 @@
 
 	function getGamePath(game: any): string {
 		return game?.path || game?.config?.GamePath || game?.config?.LauncherPath || "";
+	}
+
+	async function handleOpenFileLocation() {
+		if (!activeMenuGame) return;
+		const targetPath = getGamePath(activeMenuGame);
+		if (!targetPath) {
+			notifications.add("No file location found for this game.", "error");
+			return;
+		}
+
+		try {
+			await OpenFileLocation(targetPath);
+		} catch (err) {
+			notifications.add(`Failed to open file location: ${err}`, "error");
+		}
 	}
 
 	async function handleKillActiveGame() {
@@ -163,42 +186,310 @@
 
 	let selectedGroupKey = "no-folder";
 
+	let gamesScrollerEl: HTMLElement | null = null;
+	let sidebarScrollerEl: HTMLElement | null = null;
+	let restoredForView: string | null = null;
 	let scanHeaderEl: HTMLElement | null = null;
 	let isScanStuck = false;
+	let stuckByFolder: Record<string, boolean> = {};
+	let scrollSaveRaf: number | null = null;
+	let pendingScrollTop = 0;
+	let stuckRaf: number | null = null;
+	let iconResumeTimer: ReturnType<typeof setTimeout> | null = null;
+	let userScrolling = false;
 
-	function findScanScrollParent(el: HTMLElement | null): HTMLElement | null {
-		let p: HTMLElement | null = el?.parentElement ?? null;
-		while (p) {
-			const style = getComputedStyle(p);
-			if (style.overflowY === "auto" || style.overflowY === "scroll") return p;
-			p = p.parentElement;
+	function markUserScroll() {
+		userScrolling = true;
+	}
+
+	function getScroller(): HTMLElement | null {
+		return currentView === "sidebar-grid" ? sidebarScrollerEl : gamesScrollerEl;
+	}
+
+	function updateStuck() {
+		const scroller = getScroller();
+		if (!scroller) return;
+		const scrollerTop = scroller.getBoundingClientRect().top;
+		if (scanHeaderEl) {
+			const stuck = scanHeaderEl.getBoundingClientRect().top <= scrollerTop + 1;
+			if (stuck !== isScanStuck) isScanStuck = stuck;
 		}
-		return null;
+		const next: Record<string, boolean> = {};
+		for (const header of scroller.querySelectorAll<HTMLElement>("[data-sticky-header][data-stuck-key]")) {
+			const key = header.dataset.stuckKey;
+			if (!key) continue;
+			next[key] = header.getBoundingClientRect().top <= scrollerTop + 1;
+		}
+		let changed = false;
+		for (const key of Object.keys(next)) {
+			if (next[key] !== stuckByFolder[key]) {
+				changed = true;
+				break;
+			}
+		}
+		if (!changed) {
+			for (const key of Object.keys(stuckByFolder)) {
+				if (!(key in next)) {
+					changed = true;
+					break;
+				}
+			}
+		}
+		if (changed) stuckByFolder = next;
+	}
+
+	function scheduleStuckCheck() {
+		if (stuckRaf !== null) return;
+		stuckRaf = requestAnimationFrame(() => {
+			stuckRaf = null;
+			updateStuck();
+		});
+	}
+
+	function handleScrollerScroll(e: Event) {
+		const scroller = e.currentTarget as HTMLElement;
+		if (scroller !== getScroller()) return;
+		pendingScrollTop = scroller.scrollTop;
+		if (scrollSaveRaf === null) {
+			scrollSaveRaf = requestAnimationFrame(() => {
+				scrollSaveRaf = null;
+				saveHomeScroll(pendingScrollTop);
+			});
+		}
+		if (userScrolling) {
+			// Hold icon extraction during user scroll; resume shortly after it stops.
+			setIconQueuePaused(true);
+			if (iconResumeTimer !== null) clearTimeout(iconResumeTimer);
+			iconResumeTimer = setTimeout(() => {
+				iconResumeTimer = null;
+				setIconQueuePaused(false);
+			}, 160);
+		}
+		scheduleStuckCheck();
+	}
+
+	function handleResize() {
+		scheduleStuckCheck();
 	}
 
 	onMount(() => {
-		const checkScan = () => {
-			if (!scanHeaderEl) return;
-			const parent = findScanScrollParent(scanHeaderEl);
-			const rect = scanHeaderEl.getBoundingClientRect();
-			const parentRect = parent ? parent.getBoundingClientRect() : { top: 0 } as DOMRect;
-			isScanStuck = rect.top <= parentRect.top + 1;
-		};
-		const scanParent = findScanScrollParent(scanHeaderEl);
-		const scanTarget = scanParent ?? window;
-		scanTarget.addEventListener("scroll", checkScan, { passive: true } as any);
-		window.addEventListener("scroll", checkScan, { passive: true } as any);
-		window.addEventListener("resize", checkScan);
-		// also observe when header appears
-		const id = setInterval(checkScan, 300);
-		checkScan();
-		return () => {
-			scanTarget.removeEventListener("scroll", checkScan as any);
-			window.removeEventListener("scroll", checkScan as any);
-			window.removeEventListener("resize", checkScan);
-			clearInterval(id);
-		};
+		window.addEventListener("resize", handleResize);
+		window.addEventListener("wheel", markUserScroll, { passive: true });
+		window.addEventListener("touchstart", markUserScroll, { passive: true });
+		window.addEventListener("pointerdown", markUserScroll, { passive: true });
+		scheduleStuckCheck();
 	});
+
+	onDestroy(() => {
+		window.removeEventListener("resize", handleResize);
+		window.removeEventListener("wheel", markUserScroll);
+		window.removeEventListener("touchstart", markUserScroll);
+		window.removeEventListener("pointerdown", markUserScroll);
+		if (scrollSaveRaf !== null) {
+			cancelAnimationFrame(scrollSaveRaf);
+			scrollSaveRaf = null;
+		}
+		if (stuckRaf !== null) {
+			cancelAnimationFrame(stuckRaf);
+			stuckRaf = null;
+		}
+		if (iconResumeTimer !== null) {
+			clearTimeout(iconResumeTimer);
+			iconResumeTimer = null;
+		}
+		setIconQueuePaused(false);
+	});
+
+	afterUpdate(() => {
+		if (restoredForView !== currentView) {
+			const el = getScroller();
+			if (el) {
+				restoredForView = currentView;
+				const saved = getHomeScroll();
+				if (saved > 0 && el.scrollTop !== saved) {
+					el.scrollTop = saved;
+				}
+			}
+		}
+		scheduleStuckCheck();
+	});
+
+	// Rubber-band marquee: pointerdown arms it, >5px movement starts it.
+	type MarqueeRect = { x: number; y: number; w: number; h: number };
+	const DRAG_THRESHOLD = 5;
+
+	let marqueeRect: MarqueeRect | null = null;
+	let dragPending = false;
+	let dragActive = false;
+	let dragScroller: HTMLElement | null = null;
+	let dragStartX = 0; // container content coords
+	let dragStartY = 0;
+	let pointerX = 0; // viewport coords
+	let pointerY = 0;
+	let moveRaf: number | null = null;
+	let scrollRaf: number | null = null;
+	let suppressClicksUntil = 0;
+
+	function handleScrollerPointerDown(e: PointerEvent) {
+		if (!isSelectionMode || e.button !== 0) return;
+		const scroller = e.currentTarget as HTMLElement;
+		if (scroller !== getScroller()) return;
+		// Leave scrollbar drags alone.
+		const rect = scroller.getBoundingClientRect();
+		if (e.clientX - rect.left >= scroller.clientWidth || e.clientY - rect.top >= scroller.clientHeight) return;
+
+		dragPending = true;
+		dragActive = false;
+		dragScroller = scroller;
+		dragStartX = e.clientX - rect.left + scroller.scrollLeft;
+		dragStartY = e.clientY - rect.top + scroller.scrollTop;
+		pointerX = e.clientX;
+		pointerY = e.clientY;
+
+		window.addEventListener("pointermove", handleDragMove);
+		window.addEventListener("pointerup", handleDragUp);
+		window.addEventListener("pointercancel", cancelDrag);
+		window.addEventListener("blur", cancelDrag);
+	}
+
+	function handleDragMove(e: PointerEvent) {
+		if (!dragPending || !dragScroller) return;
+		pointerX = e.clientX;
+		pointerY = e.clientY;
+
+		if (!dragActive) {
+			const rect = dragScroller.getBoundingClientRect();
+			const startX = rect.left + dragStartX - dragScroller.scrollLeft;
+			const startY = rect.top + dragStartY - dragScroller.scrollTop;
+			if (Math.hypot(e.clientX - startX, e.clientY - startY) < DRAG_THRESHOLD) return;
+			dragActive = true;
+			marqueeRect = { x: 0, y: 0, w: 0, h: 0 };
+			startAutoscroll();
+		}
+
+		if (moveRaf === null) {
+			moveRaf = requestAnimationFrame(() => {
+				moveRaf = null;
+				updateMarquee();
+			});
+		}
+	}
+
+	function updateMarquee() {
+		if (!dragActive || !dragScroller) return;
+		const scroller = dragScroller;
+		const rect = scroller.getBoundingClientRect();
+		// Origin is content-anchored so it follows the list while autoscrolling;
+		// the live corner sticks to the pointer.
+		const originX = rect.left + dragStartX - scroller.scrollLeft;
+		const originY = rect.top + dragStartY - scroller.scrollTop;
+		let x1 = Math.min(originX, pointerX);
+		let x2 = Math.max(originX, pointerX);
+		let y1 = Math.min(originY, pointerY);
+		let y2 = Math.max(originY, pointerY);
+		x1 = Math.max(x1, rect.left);
+		x2 = Math.min(x2, rect.right);
+		y1 = Math.max(y1, rect.top);
+		y2 = Math.min(y2, rect.bottom);
+		marqueeRect = { x: x1, y: y1, w: Math.max(0, x2 - x1), h: Math.max(0, y2 - y1) };
+	}
+
+	function startAutoscroll() {
+		if (scrollRaf !== null) return;
+		const EDGE = 70;
+		const MAX = 18;
+		const tick = () => {
+			scrollRaf = null;
+			if (!dragActive || !dragScroller) return;
+			const rect = dragScroller.getBoundingClientRect();
+			let delta = 0;
+			if (pointerY < rect.top + EDGE) {
+				delta = -MAX * Math.min(1, (rect.top + EDGE - pointerY) / EDGE);
+			} else if (pointerY > rect.bottom - EDGE) {
+				delta = MAX * Math.min(1, (pointerY - (rect.bottom - EDGE)) / EDGE);
+			}
+			if (delta !== 0) {
+				const before = dragScroller.scrollTop;
+				dragScroller.scrollTop += delta;
+				if (dragScroller.scrollTop !== before) updateMarquee();
+			}
+			scrollRaf = requestAnimationFrame(tick);
+		};
+		scrollRaf = requestAnimationFrame(tick);
+	}
+
+	function collectIntersecting(scroller: HTMLElement, r: MarqueeRect): string[] {
+		const paths: string[] = [];
+		for (const el of scroller.querySelectorAll<HTMLElement>("[data-game-path]")) {
+			const b = el.getBoundingClientRect();
+			if (b.width === 0 || b.height === 0) continue;
+			if (b.left < r.x + r.w && b.right > r.x && b.top < r.y + r.h && b.bottom > r.y) {
+				paths.push(el.dataset.gamePath!);
+			}
+		}
+		return paths;
+	}
+
+	function teardownDrag() {
+		window.removeEventListener("pointermove", handleDragMove);
+		window.removeEventListener("pointerup", handleDragUp);
+		window.removeEventListener("pointercancel", cancelDrag);
+		window.removeEventListener("blur", cancelDrag);
+		if (moveRaf !== null) cancelAnimationFrame(moveRaf);
+		if (scrollRaf !== null) cancelAnimationFrame(scrollRaf);
+		moveRaf = null;
+		scrollRaf = null;
+		dragPending = false;
+		dragActive = false;
+		dragScroller = null;
+	}
+
+	function cancelDrag() {
+		if (!dragPending) return;
+		teardownDrag();
+		marqueeRect = null;
+	}
+
+	function handleDragUp(e: PointerEvent) {
+		if (!dragPending) return;
+		const wasActive = dragActive;
+		const scroller = dragScroller;
+		const rect = marqueeRect;
+		const additive = e.ctrlKey || e.metaKey;
+		teardownDrag();
+		marqueeRect = null;
+		if (!wasActive || !scroller || !rect) return;
+		onMarqueeSelect(collectIntersecting(scroller, rect), additive);
+		// The click that follows this pointerup would toggle a card — swallow it.
+		suppressClicksUntil = Date.now() + 500;
+	}
+
+	function handleWindowClickCapture(e: MouseEvent) {
+		if (Date.now() > suppressClicksUntil) return;
+		suppressClicksUntil = 0;
+		e.preventDefault();
+		e.stopImmediatePropagation();
+	}
+
+	function handleKeydown(e: KeyboardEvent) {
+		if (!isSelectionMode) return;
+		const target = e.target as HTMLElement | null;
+		if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
+		if (e.key === "Escape") {
+			if (dragPending) {
+				cancelDrag();
+				e.preventDefault();
+			} else if (!modalOpen) {
+				onCancelSelection();
+			}
+			return;
+		}
+		if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "a") {
+			if (modalOpen) return;
+			e.preventDefault();
+			onSelectAll();
+		}
+	}
 
 	$: {
 		if (selectedGroupKey !== "no-folder" && !scannedFolderGroups.some(g => g.folderPath === selectedGroupKey)) {
@@ -210,11 +501,17 @@
 	$: foldersToRender = currentView !== "sidebar-grid" ? scannedFolderGroups : scannedFolderGroups.filter(g => g.folderPath === selectedGroupKey);
 </script>
 
+<svelte:window on:keydown={handleKeydown} on:click|capture={handleWindowClickCapture} />
+
 <div
 	class="games-container"
 	class:grid-view={currentView === "grid"}
 	class:list-view={currentView === "list-grid"}
 	class:sidebar-layout-view={currentView === "sidebar-grid"}
+	class:selecting={isSelectionMode}
+	bind:this={gamesScrollerEl}
+	on:scroll={handleScrollerScroll}
+	on:pointerdown={handleScrollerPointerDown}
 >
 	{#if currentView === "sidebar-grid"}
 		<SidebarPanel
@@ -224,8 +521,12 @@
 		/>
 	{/if}
 
-	<div class="main-content-panel">
-		<!-- 1. Render Custom Profiles if visible -->
+	<div
+		class="main-content-panel"
+		bind:this={sidebarScrollerEl}
+		on:scroll={handleScrollerScroll}
+		on:pointerdown={handleScrollerPointerDown}
+	>
 		{#if showCustomProfiles}
 			{#if currentView !== "sidebar-grid" && scannedFolderGroups.length > 0}
 				<h2 bind:this={scanHeaderEl} class="scan-section-title" class:is-stuck={isScanStuck}>
@@ -266,8 +567,7 @@
 			{/if}
 		{/if}
 
-		<!-- 2. Render Folder Groups -->
-		{#each foldersToRender as group}
+		{#each foldersToRender as group (group.folderPath)}
 			<FolderGroup
 				{group}
 				{currentView}
@@ -276,6 +576,7 @@
 				{sessions}
 				{isSelectionMode}
 				{selectedPaths}
+				isStuck={!!stuckByFolder[group.folderPath]}
 				bind:activeFolderMenu
 				{toggleFolderMenu}
 				{handleRescan}
@@ -289,7 +590,6 @@
 			/>
 		{/each}
 
-		<!-- 3. Show "no results" if both custom profiles and folder groups are empty -->
 		{#if filteredGames.length === 0 && scannedFolderGroups.every(g => g.games.length === 0) && (games.length > 0 || scannedFolderGroups.length > 0)}
 			<div class="no-results">
 				<p>
@@ -311,6 +611,8 @@
 	</div>
 </div>
 
+<Marquee rect={marqueeRect} />
+
 {#if activeMenuGame}
 	<ContextMenu
 		bind:x={menuX}
@@ -323,6 +625,7 @@
 		onLaunchWithLogs={() => handleQuickLaunch(activeMenuGame, true)}
 		onKill={handleKillActiveGame}
 		onConfigure={() => handleConfigure(activeMenuGame)}
+		onOpenLocation={handleOpenFileLocation}
 		onSetCustomIcon={handleSetCustomIcon}
 		onClearCustomIcon={handleClearCustomIcon}
 		onAction={handleAction}
@@ -338,6 +641,15 @@
 />
 
 <style lang="scss">
+	@keyframes games-mount {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
 	.games-container {
 		flex: 1;
 		min-height: 0;
@@ -347,11 +659,16 @@
 		padding-right: 8px;
 		box-sizing: border-box;
 		max-width: 100%;
+		animation: games-mount 260ms cubic-bezier(0.215, 0.61, 0.355, 1);
 
 		.main-content-panel {
 			min-width: 0;
 			max-width: 100%;
 			overflow: visible;
+		}
+
+		&.selecting {
+			cursor: crosshair;
 		}
 	}
 
@@ -456,6 +773,12 @@
 			display: flex;
 			flex-direction: column;
 			box-sizing: border-box;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.games-container {
+			animation: none;
 		}
 	}
 </style>

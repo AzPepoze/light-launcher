@@ -1,5 +1,8 @@
 <script lang="ts">
 	import { onMount } from "svelte";
+	import { fade } from "svelte/transition";
+	import { cubicOut } from "svelte/easing";
+	import { observeOnce } from "@lib/lazyObserver";
 	import GridCard from "@components/home/gamecards/GridCard.svelte";
 	import ListGridCard from "@components/home/gamecards/ListGridCard.svelte";
 	import PerspectiveCard from "@components/home/gamecards/PerspectiveCard.svelte";
@@ -13,80 +16,67 @@
 	export let isSelected: boolean = false;
 	export let onLaunch: (game: any) => void = () => {};
 	export let onConfigure: (game: any) => void = () => {};
-	export let onSelect: (game: any, shiftKey: boolean) => void = () => {};
-	export let loadIcon: (path: string) => void = () => {};
+	export let onSelect: (game: any, shiftKey: boolean, ctrlKey?: boolean) => void = () => {};
+	export let loadIcon: (path: string, customIconPath?: string | null) => void = () => {};
 
 	let containerElement: HTMLElement;
 	let isIntersecting = false;
+	const prefersReducedMotion =
+		typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 	onMount(() => {
 		if (!containerElement) return;
-
-		const observer = new IntersectionObserver(
-			(entries) => {
-				if (entries[0].isIntersecting) {
-					isIntersecting = true;
-					const path = game.path || game.config.LauncherPath;
-					if (path) {
-						loadIcon(path);
-					}
-					observer.disconnect();
-				}
-			},
-			{
-				rootMargin: "250px", // Preload cards that are 250px below the viewport
-			}
-		);
-
-		observer.observe(containerElement);
-		return () => observer.disconnect();
+		return observeOnce(containerElement, () => {
+			isIntersecting = true;
+		});
 	});
 
-	// If the game path changes and we have already intersected, load the new icon
 	$: if (isIntersecting) {
 		const path = game.path || game.config.LauncherPath;
-		if (path) {
-			loadIcon(path);
-		}
+		if (path) loadIcon(path, game.config?.CustomIconPath ?? null);
 	}
 </script>
 
 <div bind:this={containerElement} class="lazy-card-container {view}">
 	{#if isIntersecting}
-		{#if view === "grid"}
-			<GridCard
-				{game}
-				{icon}
-				{isRunning}
-				{isSelectionMode}
-				{isSelected}
-				{onLaunch}
-				{onConfigure}
-				{onSelect}
-			/>
-		{:else if view === "list-grid"}
-			<ListGridCard
-				{game}
-				{icon}
-				{isRunning}
-				{isSelectionMode}
-				{isSelected}
-				{onLaunch}
-				{onConfigure}
-				{onSelect}
-			/>
-		{:else}
-			<PerspectiveCard
-				{game}
-				{icon}
-				{isRunning}
-				{active}
-				{onLaunch}
-				{onConfigure}
-			/>
-		{/if}
+		<div
+			class="card-enter"
+			in:fade={{ duration: prefersReducedMotion ? 0 : 180, easing: cubicOut }}
+		>
+			{#if view === "grid"}
+				<GridCard
+					{game}
+					{icon}
+					{isRunning}
+					{isSelectionMode}
+					{isSelected}
+					{onLaunch}
+					{onConfigure}
+					{onSelect}
+				/>
+			{:else if view === "list-grid"}
+				<ListGridCard
+					{game}
+					{icon}
+					{isRunning}
+					{isSelectionMode}
+					{isSelected}
+					{onLaunch}
+					{onConfigure}
+					{onSelect}
+				/>
+			{:else}
+				<PerspectiveCard
+					{game}
+					{icon}
+					{isRunning}
+					{active}
+					{onLaunch}
+					{onConfigure}
+				/>
+			{/if}
+		</div>
 	{:else}
-		<!-- Beautiful dark-mode skeleton screens matching the exact layouts -->
 		{#if view === "list-grid"}
 			<div class="skeleton-list-card">
 				<div class="skeleton-icon-box">
@@ -132,6 +122,11 @@
 		}
 	}
 
+	.card-enter {
+		width: 100%;
+		min-width: 0;
+	}
+
 	@keyframes skeleton-pulse {
 		0%, 100% {
 			opacity: 0.15;
@@ -163,7 +158,6 @@
 		width: 100%;
 		max-width: 200px;
 		margin: 6px;
-		aspect-ratio: 1;
 		box-sizing: border-box;
 
 		.skeleton-icon-large {
@@ -182,7 +176,7 @@
 			justify-content: space-between;
 			align-items: center;
 			padding: 0 4px;
-			height: 32px;
+			height: 36px;
 		}
 
 		.skeleton-line.name {
@@ -208,15 +202,14 @@
 		background: var(--bg-surface, rgba(255, 255, 255, 0.02));
 		border: 2px solid rgba(255, 255, 255, 0.05);
 		border-radius: var(--radius-lg, 12px);
-		padding: 14px 24px;
-		gap: 20px;
+		padding: 8px 16px;
+		gap: 12px;
 		width: 100%;
-		height: 110px;
 		box-sizing: border-box;
 
 		.skeleton-icon-box {
-			height: 80px;
-			width: 80px;
+			height: 108px;
+			width: 108px;
 			border-radius: var(--radius-md, 8px);
 			background: rgba(0, 0, 0, 0.2);
 			border: 2px solid rgba(255, 255, 255, 0.05);
@@ -274,7 +267,7 @@
 		}
 	}
 
-	// Apple-style shimmer — only grid skeleton (placed after base rules so it overrides)
+	// Placed after base rules so it overrides
 	.skeleton-grid-card .skeleton-shimmer {
 		background: linear-gradient(
 			90deg,

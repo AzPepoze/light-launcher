@@ -5,7 +5,10 @@ import { runState } from "@stores/runState";
 import { createLaunchOptions } from "@lib/formService";
 import * as service from "@lib/runService";
 import { loadConfigForGame, loadConfigForPrefix } from "@lib/runConfig";
+import { createLogger } from "@lib/logger";
 import { ProtonState } from "./ProtonState.svelte";
+
+const log = createLogger("RunPage");
 
 export class RunPageState {
 	mounted = $state(false);
@@ -110,7 +113,7 @@ export class RunPageState {
 				await this.doLoadConfigForPrefix("Default");
 			}
 		} catch (err) {
-			console.error("Failed to initialize:", err);
+			log.error("Failed to initialize", err);
 		} finally {
 			this.proton.isLoadingProton = false;
 			this.mounted = true;
@@ -180,7 +183,7 @@ export class RunPageState {
 				this.options = { ...this.options, GamePath: path };
 			}
 		} catch (err) {
-			console.error("[GAME] Error loading game:", err);
+			log.error("[GAME] Error loading game", err);
 		}
 	}
 
@@ -202,7 +205,7 @@ export class RunPageState {
 				await this.doLoadConfigForGame(path);
 			}
 		} catch (err) {
-			console.error("[LAUNCHER] Error selecting launcher:", err);
+			log.error("[LAUNCHER] Error selecting launcher", err);
 		}
 	}
 
@@ -214,7 +217,7 @@ export class RunPageState {
 				this.selectedPrefixName = path.split("/").filter(Boolean).pop() || "Custom";
 			}
 		} catch (err) {
-			console.error(err);
+			log.error("Failed to browse for prefix", err);
 		}
 	}
 

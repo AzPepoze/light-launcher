@@ -1,10 +1,41 @@
-import { GetAutoScannedGames, onEvent } from "@lib/api";
+import { GetAutoScannedGames, GetRunningSessions, onEvent } from "@lib/api";
 import * as service from "@lib/homeService";
+import { createLogger } from "@lib/logger";
 import { navigationCommand } from "@stores/navigationStore";
 import { notifications } from "@stores/notificationStore";
 import { runState } from "@stores/runState";
 import { IconLoaderState } from "./IconLoaderState.svelte";
 import { SelectionState } from "./SelectionState.svelte";
+
+const log = createLogger("HomePage");
+
+function gameIdentity(game: any): string {
+	return game?.path || game?.config?.LauncherPath || game?.config?.GamePath || game?.name || "";
+}
+
+function sessionsSignature(sessions: any[]): string {
+	return sessions
+		.map((s) => `${s?.pid ?? "?"}:${s?.gamePath ?? ""}`)
+		.sort()
+		.join("|");
+}
+
+function gamesSignature(games: any[]): string {
+	return games
+		.map(
+			(game) =>
+				`${gameIdentity(game)}|${game?.name ?? ""}|${game?.config?.PrefixPath ?? ""}|${game?.config?.CustomIconPath ?? ""}|${game?.isAutoScanned ? "1" : "0"}`
+		)
+		.sort()
+		.join(";");
+}
+
+function groupsSignature(groups: any[]): string {
+	return groups
+		.map((group) => `${group?.folderPath ?? ""}#${gamesSignature(group?.games || [])}`)
+		.sort()
+		.join(";");
+}
 
 export class HomePageState {
 	games = $state<any[]>([]);
@@ -15,10 +46,10 @@ export class HomePageState {
 	sessionInterval: any = null;
 	showHelpModal = $state(false);
 	showAddModal = $state(false);
+	isLoading = $state(true);
 	currentView = $state<"grid" | "list-grid" | "sidebar-grid">("grid");
 	searchQuery = $state("");
 
-	// Sub-states
 	icons = new IconLoaderState();
 	selection = new SelectionState(() => this.getVisibleGames());
 
@@ -56,29 +87,72 @@ export class HomePageState {
 	});
 
 	dropUnsubscribe: (() => void) | null = null;
+	sessionPollInFlight = false;
+	iconWarmTimer: ReturnType<typeof setTimeout> | null = null;
 
 	async refreshData(forceScan = false) {
-		const shouldScan = forceScan || this.scannedFolderGroups.length === 0;
+		// Kick the heavier folder scan off now so it overlaps the library fetch.
+		const scannedPromise = GetAutoScannedGames(forceScan).catch((error) => {
+			log.error("Failed to load scanned folders", error);
+			return null;
+		});
 
-		const [data, scannedGroups] = await Promise.all([
-			service.refreshHomeData(),
-			shouldScan ? GetAutoScannedGames() : Promise.resolve(this.scannedFolderGroups)
-		]);
+		try {
+			const data = await service.refreshHomeData();
 
-		this.games = data.games;
-		this.sessions = data.sessions;
-		this.prefixes = data.prefixes;
-		this.scannedFolderGroups = scannedGroups || [];
+			if (gamesSignature(data.games) !== gamesSignature(this.games)) {
+				this.games = data.games;
+			}
+			if (sessionsSignature(data.sessions) !== sessionsSignature(this.sessions)) {
+				this.sessions = data.sessions;
+			}
+			const nextPrefixes = data.prefixes || ["All Prefixes"];
+			if (nextPrefixes.join("|") !== this.prefixes.join("|")) {
+				this.prefixes = nextPrefixes;
+			}
+		} catch (error) {
+			log.error("Failed to load library", error);
+			notifications.add("Failed to load your library", "error");
+		}
 
-		const visibleForIcons = [
-			...this.games,
-			...this.scannedFolderGroups.flatMap((group) => group.games || [])
-		];
-		void this.icons.syncGames(visibleForIcons);
+		// Render the library before waiting on the scan.
+		this.isLoading = false;
+
+		const scannedGroups = await scannedPromise;
+		if (scannedGroups && groupsSignature(scannedGroups) !== groupsSignature(this.scannedFolderGroups)) {
+			this.scannedFolderGroups = scannedGroups;
+		}
+
+		this.scheduleIconWarm();
+	}
+
+	private scheduleIconWarm() {
+		if (this.iconWarmTimer) return;
+		this.iconWarmTimer = setTimeout(() => {
+			this.iconWarmTimer = null;
+			this.icons.warm([
+				...this.games,
+				...this.scannedFolderGroups.flatMap((group) => group.games || [])
+			]);
+		}, 1200);
+	}
+
+	async refreshSessions() {
+		if (this.sessionPollInFlight) return;
+		this.sessionPollInFlight = true;
+		try {
+			const sessions = (await GetRunningSessions()) || [];
+			if (sessionsSignature(sessions) !== sessionsSignature(this.sessions)) {
+				this.sessions = sessions;
+			}
+		} catch {
+		} finally {
+			this.sessionPollInFlight = false;
+		}
 	}
 
 	initialize() {
-		this.refreshData(true);
+		this.refreshData(false);
 
 		this.dropUnsubscribe = onEvent("FilesDropped", async (event: any) => {
 			const files = (event?.data || event) as string[];
@@ -89,12 +163,13 @@ export class HomePageState {
 			}
 		});
 
-		this.sessionInterval = setInterval(() => this.refreshData(false), 3000);
+		this.sessionInterval = setInterval(() => this.refreshSessions(), 3000);
 	}
 
 	destroy() {
 		if (this.sessionInterval) clearInterval(this.sessionInterval);
 		if (this.dropUnsubscribe) this.dropUnsubscribe();
+		if (this.iconWarmTimer) clearTimeout(this.iconWarmTimer);
 	}
 
 	async handleQuickLaunch(game: any, showLogs = false) {

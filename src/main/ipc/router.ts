@@ -36,6 +36,8 @@ export class IpcRouter {
 				return AppService.pickFileCustom(payload.title, payload.filters);
 			case "OpenURL":
 				return AppService.openExternal(payload.url);
+			case "OpenFileLocation":
+				return AppService.openFileLocation(payload.path);
 			case "CloseWindow":
 				return AppService.closeWindow();
 			case "RestartApp":
@@ -63,7 +65,7 @@ export class IpcRouter {
 					payload.excludeNames
 				);
 			case "GetAutoScannedGames":
-				return GamesService.getAutoScannedGames();
+				return GamesService.getAutoScannedGames(Boolean(payload?.force));
 			case "AddScanFolder":
 				return GamesService.addScanFolder(payload.folderPath);
 			case "RemoveScanFolder":
@@ -71,6 +73,13 @@ export class IpcRouter {
 			case "UpdateScanFolderConfig":
 				return GamesService.updateScanFolderConfig(
 					payload.folderPath,
+					payload.depth,
+					payload.excludeNames
+				);
+			case "RenameScanFolder":
+				return GamesService.renameScanFolder(
+					payload.oldPath,
+					payload.newPath,
 					payload.depth,
 					payload.excludeNames
 				);
