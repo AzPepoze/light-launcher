@@ -90,6 +90,12 @@ export class HomePageState {
 	sessionPollInFlight = false;
 
 	async refreshData(forceScan = false) {
+		// Kick the heavier folder scan off now so it overlaps the library fetch.
+		const scannedPromise = GetAutoScannedGames(forceScan).catch((error) => {
+			log.error("Failed to load scanned folders", error);
+			return null;
+		});
+
 		try {
 			const data = await service.refreshHomeData();
 
@@ -106,20 +112,14 @@ export class HomePageState {
 		} catch (error) {
 			log.error("Failed to load library", error);
 			notifications.add("Failed to load your library", "error");
-			this.isLoading = false;
-			return;
 		}
 
-		// Let the UI render before the heavier folder scan resolves.
+		// Render the library before waiting on the scan.
 		this.isLoading = false;
 
-		try {
-			const scannedGroups = (await GetAutoScannedGames(forceScan)) || [];
-			if (groupsSignature(scannedGroups) !== groupsSignature(this.scannedFolderGroups)) {
-				this.scannedFolderGroups = scannedGroups;
-			}
-		} catch (error) {
-			log.error("Failed to load scanned folders", error);
+		const scannedGroups = await scannedPromise;
+		if (scannedGroups && groupsSignature(scannedGroups) !== groupsSignature(this.scannedFolderGroups)) {
+			this.scannedFolderGroups = scannedGroups;
 		}
 	}
 

@@ -196,6 +196,11 @@
 	let pendingScrollTop = 0;
 	let stuckRaf: number | null = null;
 	let iconResumeTimer: ReturnType<typeof setTimeout> | null = null;
+	let userScrolling = false;
+
+	function markUserScroll() {
+		userScrolling = true;
+	}
 
 	function getScroller(): HTMLElement | null {
 		return currentView === "sidebar-grid" ? sidebarScrollerEl : gamesScrollerEl;
@@ -251,13 +256,15 @@
 				saveHomeScroll(pendingScrollTop);
 			});
 		}
-		// Hold icon extraction during scroll; resume shortly after it stops.
-		setIconQueuePaused(true);
-		if (iconResumeTimer !== null) clearTimeout(iconResumeTimer);
-		iconResumeTimer = setTimeout(() => {
-			iconResumeTimer = null;
-			setIconQueuePaused(false);
-		}, 160);
+		if (userScrolling) {
+			// Hold icon extraction during user scroll; resume shortly after it stops.
+			setIconQueuePaused(true);
+			if (iconResumeTimer !== null) clearTimeout(iconResumeTimer);
+			iconResumeTimer = setTimeout(() => {
+				iconResumeTimer = null;
+				setIconQueuePaused(false);
+			}, 160);
+		}
 		scheduleStuckCheck();
 	}
 
@@ -267,11 +274,17 @@
 
 	onMount(() => {
 		window.addEventListener("resize", handleResize);
+		window.addEventListener("wheel", markUserScroll, { passive: true });
+		window.addEventListener("touchstart", markUserScroll, { passive: true });
+		window.addEventListener("pointerdown", markUserScroll, { passive: true });
 		scheduleStuckCheck();
 	});
 
 	onDestroy(() => {
 		window.removeEventListener("resize", handleResize);
+		window.removeEventListener("wheel", markUserScroll);
+		window.removeEventListener("touchstart", markUserScroll);
+		window.removeEventListener("pointerdown", markUserScroll);
 		if (scrollSaveRaf !== null) {
 			cancelAnimationFrame(scrollSaveRaf);
 			scrollSaveRaf = null;

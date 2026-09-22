@@ -325,32 +325,30 @@ function parseIcoFrames(ico: Buffer): IcoFrame[] {
 	return frames;
 }
 
-/** Largest ICO frame as a small PNG, falling back to the raw ICO when no converter exists. */
+/** Largest ICO frame as PNG; BMP frames are converted, else null to fall back to the raw ICO. */
 async function extractIconPng(ico: Buffer, icoPath: string, tempDir: string): Promise<Buffer | null> {
 	const frames = parseIcoFrames(ico);
 	if (!frames.length) return null;
 
 	const largest = frames.reduce((a, b) => (b.width * b.height > a.width * a.height ? b : a));
-
-	const converter = await converterResolver.get();
-	if (converter) {
-		const outPng = path.join(tempDir, "icon.png");
-		try {
-			await execFileAsync(converter, [
-				`${icoPath}[${largest.index}]`,
-				"-resize",
-				`${IconPngSize}x${IconPngSize}>`,
-				`PNG32:${outPng}`
-			]);
-			const png = await fs.readFile(outPng);
-			if (png.length) return png;
-		} catch {
-			converterResolver.reset();
-		}
-	}
-
 	if (largest.png) {
 		return Buffer.from(ico.subarray(largest.offset, largest.offset + largest.size));
 	}
-	return null;
+
+	const converter = await converterResolver.get();
+	if (!converter) return null;
+	const outPng = path.join(tempDir, "icon.png");
+	try {
+		await execFileAsync(converter, [
+			`${icoPath}[${largest.index}]`,
+			"-resize",
+			`${IconPngSize}x${IconPngSize}>`,
+			`PNG32:${outPng}`
+		]);
+		const png = await fs.readFile(outPng);
+		return png.length ? png : null;
+	} catch {
+		converterResolver.reset();
+		return null;
+	}
 }
