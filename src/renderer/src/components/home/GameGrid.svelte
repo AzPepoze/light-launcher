@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, afterUpdate } from "svelte";
+	import { afterUpdate, onDestroy, onMount } from "svelte";
 	import ContextMenu from "@components/shared/ContextMenu.svelte";
 	import SidebarPanel from "@components/home/SidebarPanel.svelte";
 	import FolderGroup from "@components/home/FolderGroup.svelte";
@@ -185,28 +185,106 @@
 
 	let selectedGroupKey = "no-folder";
 
-	// Restored once per view when the grid remounts after navigating back.
 	let gamesScrollerEl: HTMLElement | null = null;
 	let sidebarScrollerEl: HTMLElement | null = null;
 	let restoredForView: string | null = null;
+	let scanHeaderEl: HTMLElement | null = null;
+	let isScanStuck = false;
+	let stuckByFolder: Record<string, boolean> = {};
+	let scrollSaveRaf: number | null = null;
+	let pendingScrollTop = 0;
+	let stuckRaf: number | null = null;
 
 	function getScroller(): HTMLElement | null {
 		return currentView === "sidebar-grid" ? sidebarScrollerEl : gamesScrollerEl;
 	}
 
-	function handleScrollerScroll(e: Event) {
-		saveHomeScroll((e.currentTarget as HTMLElement).scrollTop);
+	function updateStuck() {
+		const scroller = getScroller();
+		if (!scroller) return;
+		const scrollerTop = scroller.getBoundingClientRect().top;
+		if (scanHeaderEl) {
+			const stuck = scanHeaderEl.getBoundingClientRect().top <= scrollerTop + 1;
+			if (stuck !== isScanStuck) isScanStuck = stuck;
+		}
+		const next: Record<string, boolean> = {};
+		for (const header of scroller.querySelectorAll<HTMLElement>("[data-sticky-header][data-stuck-key]")) {
+			const key = header.dataset.stuckKey;
+			if (!key) continue;
+			next[key] = header.getBoundingClientRect().top <= scrollerTop + 1;
+		}
+		let changed = false;
+		for (const key of Object.keys(next)) {
+			if (next[key] !== stuckByFolder[key]) {
+				changed = true;
+				break;
+			}
+		}
+		if (!changed) {
+			for (const key of Object.keys(stuckByFolder)) {
+				if (!(key in next)) {
+					changed = true;
+					break;
+				}
+			}
+		}
+		if (changed) stuckByFolder = next;
 	}
 
-	afterUpdate(() => {
-		if (restoredForView === currentView) return;
-		const el = getScroller();
-		if (!el) return;
-		restoredForView = currentView;
-		const saved = getHomeScroll();
-		if (saved > 0 && el.scrollTop !== saved) {
-			el.scrollTop = saved;
+	function scheduleStuckCheck() {
+		if (stuckRaf !== null) return;
+		stuckRaf = requestAnimationFrame(() => {
+			stuckRaf = null;
+			updateStuck();
+		});
+	}
+
+	function handleScrollerScroll(e: Event) {
+		const scroller = e.currentTarget as HTMLElement;
+		if (scroller !== getScroller()) return;
+		pendingScrollTop = scroller.scrollTop;
+		if (scrollSaveRaf === null) {
+			scrollSaveRaf = requestAnimationFrame(() => {
+				scrollSaveRaf = null;
+				saveHomeScroll(pendingScrollTop);
+			});
 		}
+		scheduleStuckCheck();
+	}
+
+	function handleResize() {
+		scheduleStuckCheck();
+	}
+
+	onMount(() => {
+		window.addEventListener("resize", handleResize);
+		scheduleStuckCheck();
+	});
+
+	onDestroy(() => {
+		window.removeEventListener("resize", handleResize);
+		if (scrollSaveRaf !== null) {
+			cancelAnimationFrame(scrollSaveRaf);
+			scrollSaveRaf = null;
+		}
+		if (stuckRaf !== null) {
+			cancelAnimationFrame(stuckRaf);
+			stuckRaf = null;
+		}
+	});
+
+	afterUpdate(() => {
+		if (restoredForView !== currentView) {
+			const el = getScroller();
+			if (el) {
+				restoredForView = currentView;
+				const saved = getHomeScroll();
+				if (saved > 0 && el.scrollTop !== saved) {
+					el.scrollTop = saved;
+				}
+			}
+		}
+		scheduleStuckCheck();
 	});
 
 	// Rubber-band marquee: pointerdown arms it, >5px movement starts it.
@@ -386,43 +464,6 @@
 		}
 	}
 
-	let scanHeaderEl: HTMLElement | null = null;
-	let isScanStuck = false;
-
-	function findScanScrollParent(el: HTMLElement | null): HTMLElement | null {
-		let p: HTMLElement | null = el?.parentElement ?? null;
-		while (p) {
-			const style = getComputedStyle(p);
-			if (style.overflowY === "auto" || style.overflowY === "scroll") return p;
-			p = p.parentElement;
-		}
-		return null;
-	}
-
-	onMount(() => {
-		const checkScan = () => {
-			if (!scanHeaderEl) return;
-			const parent = findScanScrollParent(scanHeaderEl);
-			const rect = scanHeaderEl.getBoundingClientRect();
-			const parentRect = parent ? parent.getBoundingClientRect() : { top: 0 } as DOMRect;
-			isScanStuck = rect.top <= parentRect.top + 1;
-		};
-		const scanParent = findScanScrollParent(scanHeaderEl);
-		const scanTarget = scanParent ?? window;
-		scanTarget.addEventListener("scroll", checkScan, { passive: true } as any);
-		window.addEventListener("scroll", checkScan, { passive: true } as any);
-		window.addEventListener("resize", checkScan);
-		// also observe when header appears
-		const id = setInterval(checkScan, 300);
-		checkScan();
-		return () => {
-			scanTarget.removeEventListener("scroll", checkScan as any);
-			window.removeEventListener("scroll", checkScan as any);
-			window.removeEventListener("resize", checkScan);
-			clearInterval(id);
-		};
-	});
-
 	$: {
 		if (selectedGroupKey !== "no-folder" && !scannedFolderGroups.some(g => g.folderPath === selectedGroupKey)) {
 			selectedGroupKey = "no-folder";
@@ -501,7 +542,7 @@
 		{/if}
 
 		<!-- 2. Render Folder Groups -->
-		{#each foldersToRender as group}
+		{#each foldersToRender as group (group.folderPath)}
 			<FolderGroup
 				{group}
 				{currentView}
@@ -510,6 +551,7 @@
 				{sessions}
 				{isSelectionMode}
 				{selectedPaths}
+				isStuck={!!stuckByFolder[group.folderPath]}
 				bind:activeFolderMenu
 				{toggleFolderMenu}
 				{handleRescan}

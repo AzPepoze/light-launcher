@@ -21,6 +21,7 @@
 	export let handleConfigure: (game: any) => void;
 	export let toggleGameSelection: (game: any, shiftKey: boolean, ctrlKey?: boolean) => void;
 	export let loadIcon: (path: string) => void = () => {};
+	export let isStuck: boolean = false;
 </script>
 
 <div class="folder-group-container">
@@ -31,6 +32,8 @@
 		count={group.games.length}
 		hasMenu={true}
 		stuckBleed={17}
+		stuckKey={group.folderPath}
+		{isStuck}
 		isMenuOpen={activeFolderMenu === group.folderPath}
 		onToggleMenu={(e) => toggleFolderMenu(e, group.folderPath)}
 		onCloseMenu={() => activeFolderMenu = null}

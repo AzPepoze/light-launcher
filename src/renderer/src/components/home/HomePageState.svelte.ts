@@ -1,10 +1,38 @@
-import { GetAutoScannedGames, onEvent } from "@lib/api";
+import { GetAutoScannedGames, GetRunningSessions, onEvent } from "@lib/api";
 import * as service from "@lib/homeService";
 import { navigationCommand } from "@stores/navigationStore";
 import { notifications } from "@stores/notificationStore";
 import { runState } from "@stores/runState";
 import { IconLoaderState } from "./IconLoaderState.svelte";
 import { SelectionState } from "./SelectionState.svelte";
+
+function gameIdentity(game: any): string {
+	return game?.path || game?.config?.LauncherPath || game?.config?.GamePath || game?.name || "";
+}
+
+function sessionsSignature(sessions: any[]): string {
+	return sessions
+		.map((s) => `${s?.pid ?? "?"}:${s?.gamePath ?? ""}`)
+		.sort()
+		.join("|");
+}
+
+function gamesSignature(games: any[]): string {
+	return games
+		.map(
+			(game) =>
+				`${gameIdentity(game)}|${game?.name ?? ""}|${game?.config?.PrefixPath ?? ""}|${game?.config?.CustomIconPath ?? ""}|${game?.isAutoScanned ? "1" : "0"}`
+		)
+		.sort()
+		.join(";");
+}
+
+function groupsSignature(groups: any[]): string {
+	return groups
+		.map((group) => `${group?.folderPath ?? ""}#${gamesSignature(group?.games || [])}`)
+		.sort()
+		.join(";");
+}
 
 export class HomePageState {
 	games = $state<any[]>([]);
@@ -56,6 +84,7 @@ export class HomePageState {
 	});
 
 	dropUnsubscribe: (() => void) | null = null;
+	sessionPollInFlight = false;
 
 	async refreshData(forceScan = false) {
 		const shouldScan = forceScan || this.scannedFolderGroups.length === 0;
@@ -65,16 +94,46 @@ export class HomePageState {
 			shouldScan ? GetAutoScannedGames() : Promise.resolve(this.scannedFolderGroups)
 		]);
 
-		this.games = data.games;
-		this.sessions = data.sessions;
-		this.prefixes = data.prefixes;
-		this.scannedFolderGroups = scannedGroups || [];
+		let gamesChanged = false;
+		if (gamesSignature(data.games) !== gamesSignature(this.games)) {
+			this.games = data.games;
+			gamesChanged = true;
+		}
+		if (sessionsSignature(data.sessions) !== sessionsSignature(this.sessions)) {
+			this.sessions = data.sessions;
+		}
+		const nextPrefixes = data.prefixes || ["All Prefixes"];
+		if (nextPrefixes.join("|") !== this.prefixes.join("|")) {
+			this.prefixes = nextPrefixes;
+		}
+		const nextGroups = scannedGroups || [];
+		if (groupsSignature(nextGroups) !== groupsSignature(this.scannedFolderGroups)) {
+			this.scannedFolderGroups = nextGroups;
+			gamesChanged = true;
+		}
 
-		const visibleForIcons = [
-			...this.games,
-			...this.scannedFolderGroups.flatMap((group) => group.games || [])
-		];
-		void this.icons.syncGames(visibleForIcons);
+		// Icons load lazily on intersect; eager-sync only when the set changed.
+		if (gamesChanged || forceScan) {
+			const visibleForIcons = [
+				...this.games,
+				...this.scannedFolderGroups.flatMap((group) => group.games || [])
+			];
+			void this.icons.syncGames(visibleForIcons);
+		}
+	}
+
+	async refreshSessions() {
+		if (this.sessionPollInFlight) return;
+		this.sessionPollInFlight = true;
+		try {
+			const sessions = (await GetRunningSessions()) || [];
+			if (sessionsSignature(sessions) !== sessionsSignature(this.sessions)) {
+				this.sessions = sessions;
+			}
+		} catch {
+		} finally {
+			this.sessionPollInFlight = false;
+		}
 	}
 
 	initialize() {
@@ -89,7 +148,7 @@ export class HomePageState {
 			}
 		});
 
-		this.sessionInterval = setInterval(() => this.refreshData(false), 3000);
+		this.sessionInterval = setInterval(() => this.refreshSessions(), 3000);
 	}
 
 	destroy() {

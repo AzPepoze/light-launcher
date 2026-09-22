@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount } from "svelte";
 	import AppMenu from "@components/shared/AppMenu.svelte";
 	import MenuTrigger from "@components/shared/MenuTrigger.svelte";
 
@@ -14,49 +13,17 @@
 	export let onRescan: () => void = () => {};
 	export let onConfigureFolder: () => void = () => {};
 	export let onRemoveFolder: () => void = () => {};
-	/** Horizontal px to bleed out of a padded parent container when stuck, so the bar matches the Custom Profiles header width. */
 	export let stuckBleed = 0;
-
-	let headerEl: HTMLDivElement;
-	let isStuck = false;
-
-	function findScrollParent(el: HTMLElement | null): HTMLElement | null {
-		let p: HTMLElement | null = el?.parentElement ?? null;
-		while (p) {
-			const style = getComputedStyle(p);
-			if (style.overflowY === "auto" || style.overflowY === "scroll") return p;
-			p = p.parentElement;
-		}
-		return null;
-	}
-
-	onMount(() => {
-		const scrollParent = findScrollParent(headerEl);
-		const target = scrollParent ?? window;
-		const check = () => {
-			if (!headerEl) return;
-			const rect = headerEl.getBoundingClientRect();
-			const parentRect = scrollParent ? scrollParent.getBoundingClientRect() : { top: 0 } as DOMRect;
-			isStuck = rect.top <= parentRect.top + 1;
-		};
-		const scrollOptions: AddEventListenerOptions = { passive: true };
-		target.addEventListener("scroll", check as EventListener, scrollOptions);
-		window.addEventListener("scroll", check as EventListener, scrollOptions);
-		window.addEventListener("resize", check);
-		check();
-		return () => {
-			target.removeEventListener("scroll", check as EventListener);
-			window.removeEventListener("scroll", check as EventListener);
-			window.removeEventListener("resize", check);
-		};
-	});
+	export let isStuck: boolean = false;
+	export let stuckKey: string = "";
 </script>
 
 <div
-	bind:this={headerEl}
 	class="folder-group-header"
 	class:is-stuck={isStuck}
 	style:--stuck-bleed="{stuckBleed}px"
+	data-sticky-header=""
+	data-stuck-key={stuckKey}
 >
 	<div class="folder-title" title={subtitle || name}>
 		<span class="material-icons folder-icon-main">{icon}</span>
