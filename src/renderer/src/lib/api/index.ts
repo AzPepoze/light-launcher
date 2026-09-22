@@ -92,6 +92,12 @@ export const RemoveScanFolder = (folderPath: string) =>
 	invoke<void>("RemoveScanFolder", { folderPath });
 export const UpdateScanFolderConfig = (folderPath: string, depth: number, excludeNames: string[]) =>
 	invoke<void>("UpdateScanFolderConfig", { folderPath, depth, excludeNames });
+export const RenameScanFolder = (
+	oldPath: string,
+	newPath: string,
+	depth: number,
+	excludeNames: string[]
+) => invoke<string>("RenameScanFolder", { oldPath, newPath, depth, excludeNames });
 export const GetScanFolderConfig = (folderPath: string) =>
 	invoke<ScanFolderConfig>("GetScanFolderConfig", { folderPath });
 export const BlacklistGame = (executablePath: string) =>
@@ -118,8 +124,10 @@ export const GetListGpus = () => invoke<string[]>("GetListGpus");
 export const ListPrefixes = () => invoke<string[]>("ListPrefixes");
 export const CreatePrefix = (name: string) => invoke<void>("CreatePrefix", { name });
 export const GetPrefixBaseDir = () => invoke<string>("GetPrefixBaseDir");
-export const GetPrefixCreatedAt = (prefixName: string) => invoke<number | null>("GetPrefixCreatedAt", { prefixName });
-export const GetPrefixStats = (prefixName: string) => invoke<PrefixStats>("GetPrefixStats", { prefixName });
+export const GetPrefixCreatedAt = (prefixName: string) =>
+	invoke<number | null>("GetPrefixCreatedAt", { prefixName });
+export const GetPrefixStats = (prefixName: string) =>
+	invoke<PrefixStats>("GetPrefixStats", { prefixName });
 export const RemovePrefix = (name: string) => invoke<void>("RemovePrefix", { name });
 export const SavePrefixConfig = (prefixName: string, options: LaunchOptions) =>
 	invoke<void>("SavePrefixConfig", { prefixName, options });

@@ -74,6 +74,13 @@ export class IpcRouter {
 					payload.depth,
 					payload.excludeNames
 				);
+			case "RenameScanFolder":
+				return GamesService.renameScanFolder(
+					payload.oldPath,
+					payload.newPath,
+					payload.depth,
+					payload.excludeNames
+				);
 			case "GetScanFolderConfig":
 				return GamesService.getScanFolderConfig(payload.folderPath);
 			case "BlacklistGame":

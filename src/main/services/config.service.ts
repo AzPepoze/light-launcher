@@ -79,6 +79,18 @@ export class ConfigService {
 					}
 				}
 
+				// Backfill full defaults for folders still on a known-old default set.
+				// User-customized lists are never touched.
+				for (const cfg of settings.ScanFolderConfigs) {
+					if (!cfg.ExcludeNames || cfg.ExcludeNames.length === 0) {
+						cfg.ExcludeNames = [...DefaultExcludeNames];
+						modified = true;
+					} else if (isLegacyDefaultExcludeList(cfg.ExcludeNames)) {
+						cfg.ExcludeNames = [...DefaultExcludeNames];
+						modified = true;
+					}
+				}
+
 				if (modified) {
 					await this.saveJson(settingsPath, settings);
 				}
@@ -230,4 +242,19 @@ export class ConfigService {
 			}
 		};
 	}
+}
+
+/**
+ * Known pre-expansion default exclusion sets. Folders still exactly on one of
+ * these (or with an empty list) get backfilled to the full DefaultExcludeNames.
+ */
+const LegacyDefaultExcludeSets: string[][] = [["UnityCrashHandler64", "uninstall", "redist"]];
+
+export function isLegacyDefaultExcludeList(excludeNames: string[]): boolean {
+	const normalized = excludeNames.map((e) => e.trim().toLowerCase()).filter(Boolean);
+	return LegacyDefaultExcludeSets.some(
+		(legacy) =>
+			legacy.length === normalized.length &&
+			legacy.every((entry) => normalized.includes(entry.toLowerCase()))
+	);
 }

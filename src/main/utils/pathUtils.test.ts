@@ -20,4 +20,19 @@ describe("pathUtils", () => {
 		expect(regexes[0].test("game.txt")).toBe(false);
 		expect(regexes[1].test("unins000.exe")).toBe(true);
 	});
+
+	it("compileWildcardPatterns treats extension-less names as prefix matches", () => {
+		const regexes = compileWildcardPatterns(["UnityCrashHandler"]);
+		expect(regexes.length).toBe(1);
+		expect(regexes[0].test("UnityCrashHandler64.exe")).toBe(true);
+		expect(regexes[0].test("UnityCrashHandler.exe")).toBe(true);
+		expect(regexes[0].test("MyUnityCrashHandler.exe")).toBe(false);
+	});
+
+	it("compileWildcardPatterns keeps dotted names as exact matches", () => {
+		const regexes = compileWildcardPatterns(["Steam.exe"]);
+		expect(regexes.length).toBe(1);
+		expect(regexes[0].test("Steam.exe")).toBe(true);
+		expect(regexes[0].test("SteamTmp.exe")).toBe(false);
+	});
 });

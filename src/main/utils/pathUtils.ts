@@ -21,12 +21,16 @@ export function cleanPath(targetPath: string): string {
 
 /**
  * Converts glob-like wildcard string patterns (e.g. "*.exe", "unins*") to Case-Insensitive RegExps.
+ * Bare names without an extension are treated as prefix matches, so "UnityCrashHandler"
+ * behaves like "UnityCrashHandler*".
  */
 export function compileWildcardPatterns(patterns: string[]): RegExp[] {
 	const regexes: RegExp[] = [];
-	for (const pattern of patterns) {
+	for (const raw of patterns) {
+		const pattern = raw?.trim();
 		if (!pattern) continue;
-		const regexStr = pattern.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*");
+		const effective = !pattern.includes("*") && !pattern.includes(".") ? `${pattern}*` : pattern;
+		const regexStr = effective.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*");
 		try {
 			regexes.push(new RegExp(`^${regexStr}$`, "i"));
 		} catch {

@@ -9,6 +9,7 @@ import {
 	GetScanFolderConfig
 } from "@lib/api";
 import { notifications } from "@stores/notificationStore";
+import { DefaultExcludeNames } from "@shared";
 import { loadExeIcon } from "@lib/iconService";
 import { getDefaultPrefixName } from "@lib/prefixService";
 import * as service from "@lib/gameService";
@@ -16,7 +17,7 @@ import * as service from "@lib/gameService";
 export class AddGameModalState {
 	addMode = $state<"select" | "folder-config" | "folder-review">("select");
 	searchDepth = $state("2");
-	excludeNames = $state("UnityCrashHandler64, uninstall, redist");
+	excludeNames = $state(DefaultExcludeNames.join(", "));
 	selectedFolder = $state("");
 	foundExecutables = $state<service.ScannedExecutable[]>([]);
 	discardedExecutables = $state(new Set<string>());
@@ -62,7 +63,7 @@ export class AddGameModalState {
 		this.foundExecutables = [];
 		this.discardedExecutables = new Set<string>();
 		this.searchDepth = "2";
-		this.excludeNames = "UnityCrashHandler64, uninstall, redist";
+		this.excludeNames = DefaultExcludeNames.join(", ");
 		this.isSearching = false;
 		this.loadPrefixes();
 	}

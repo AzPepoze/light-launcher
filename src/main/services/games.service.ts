@@ -226,6 +226,60 @@ export class GamesService {
 		await ConfigService.saveAppSettings(settings);
 	}
 
+	static async renameScanFolder(
+		oldPath: string,
+		newPath: string,
+		depth: number,
+		excludeNames: string[]
+	): Promise<string> {
+		const cleanedOld = cleanPath(oldPath);
+		const cleanedNew = cleanPath(newPath);
+		if (!cleanedNew) {
+			throw new Error("Folder path cannot be empty");
+		}
+		if (!fsSync.existsSync(cleanedNew)) {
+			throw new Error(`Folder not found: ${cleanedNew}`);
+		}
+
+		const settings = await ConfigService.loadAppSettings();
+		const existing = settings.ScanFolderConfigs.find((cfg) => cleanPath(cfg.Path) === cleanedOld);
+		if (!existing) {
+			throw new Error(`Watched folder not found: ${cleanedOld}`);
+		}
+		if (
+			cleanedNew.toLowerCase() !== cleanedOld.toLowerCase() &&
+			settings.ScanFolderConfigs.some(
+				(cfg) => cleanPath(cfg.Path).toLowerCase() === cleanedNew.toLowerCase()
+			)
+		) {
+			throw new Error("That folder is already watched");
+		}
+
+		existing.Path = cleanedNew;
+		existing.Depth = depth;
+		existing.ExcludeNames = excludeNames;
+		settings.ScanFolders = settings.ScanFolders.map((f) =>
+			cleanPath(f) === cleanedOld ? cleanedNew : f
+		);
+		if (!settings.ScanFolders.some((f) => cleanPath(f) === cleanedNew)) {
+			settings.ScanFolders.push(cleanedNew);
+		}
+
+		// Remap blacklist entries that live under the old folder path.
+		settings.Blacklist = (settings.Blacklist || []).map((p) => {
+			const cleaned = cleanPath(p);
+			if (cleaned.toLowerCase() === cleanedOld.toLowerCase()) return cleanedNew;
+			const rel = path.relative(cleanedOld, cleaned);
+			if (rel && !rel.startsWith("..") && !path.isAbsolute(rel)) {
+				return path.join(cleanedNew, rel);
+			}
+			return p;
+		});
+
+		await ConfigService.saveAppSettings(settings);
+		return cleanedNew;
+	}
+
 	static async removeScanFolder(folderPath: string): Promise<void> {
 		const settings = await ConfigService.loadAppSettings();
 		const cleaned = cleanPath(folderPath);
