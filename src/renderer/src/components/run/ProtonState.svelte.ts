@@ -1,5 +1,8 @@
 import { LoadPrefixConfig } from "@lib/api";
+import { createLogger } from "@lib/logger";
 import * as core from "@shared";
+
+const log = createLogger("ProtonState");
 
 export class ProtonState {
 	protonVersions = $state<core.ProtonTool[]>([]);
@@ -25,7 +28,7 @@ export class ProtonState {
 				}
 			}
 		} catch (e) {
-			console.error("Failed to load prefix config for default proton:", e);
+			log.error("Failed to load prefix config for default proton", e);
 			if (this.protonVersions.length > 0) {
 				this.prefixDefaultProton = this.protonVersions[0].DisplayName;
 			}

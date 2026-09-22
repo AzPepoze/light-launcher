@@ -17,6 +17,9 @@ import { runState } from "@stores/runState";
 import { get } from "svelte/store";
 import { mergeOptions } from "./formService";
 import { loadConfigForGame } from "./runConfig";
+import { createLogger } from "./logger";
+
+const log = createLogger("runService");
 
 export interface RunPageInitData {
 	baseDir: string;
@@ -268,7 +271,7 @@ export async function executeLaunch(
 			CloseWindow();
 		}
 	} catch (error) {
-		console.error("[EXECUTE] Launch failed:", error);
+		log.error("[EXECUTE] Launch failed", error);
 		const message = (error as any)?.message || String(error);
 		notifications.add(`Launch failed: ${message}`, "error");
 	}

@@ -4,9 +4,12 @@
 	import * as core from "@shared";
 	import { notifications } from "@stores/notificationStore";
 	import { onMount } from "svelte";
+	import { createLogger } from "@lib/logger";
 
 	import externalIcon from "@icons/protron_forked.png";
 	import steamIcon from "@icons/steam.png";
+
+	const log = createLogger("Versions");
 
 	let protonVersions: core.ProtonTool[] = [];
 	let isLoading = true;
@@ -20,7 +23,7 @@
 		try {
 			protonVersions = await ScanProtonVersions();
 		} catch (err) {
-			console.error(err);
+			log.error("Failed to scan versions", err);
 			notifications.error("Failed to scan versions");
 		} finally {
 			isLoading = false;

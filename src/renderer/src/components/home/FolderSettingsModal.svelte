@@ -3,6 +3,9 @@
 	import Modal from "@components/shared/Modal.svelte";
 	import FolderConfiguration from "@components/shared/FolderConfiguration.svelte";
 	import { GetScanFolderConfig, RenameScanFolder } from "@lib/api";
+	import { createLogger } from "@lib/logger";
+
+	const log = createLogger("FolderSettings");
 
 	export let show = false;
 	export let folderPath = "";
@@ -28,7 +31,7 @@
 				excludeNames = config.ExcludeNames ? config.ExcludeNames.join(", ") : "";
 			}
 		} catch (error) {
-			console.error("Failed to load folder config:", error);
+			log.error("Failed to load folder config", error);
 			notifications.add(`Failed to load folder config: ${error}`, "error");
 		} finally {
 			isLoading = false;
@@ -57,7 +60,7 @@
 			onSave();
 			onClose();
 		} catch (error) {
-			console.error("Failed to save folder config:", error);
+			log.error("Failed to save folder config", error);
 			notifications.add(`Failed to save folder config: ${error}`, "error");
 		}
 	}

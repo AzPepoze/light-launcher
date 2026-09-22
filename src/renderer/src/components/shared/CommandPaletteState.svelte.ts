@@ -2,7 +2,10 @@ import { GetAllGames, GetImageBase64 } from "@lib/api";
 import { navigationCommand } from "@stores/navigationStore";
 import { loadExeIcon } from "@lib/iconService";
 import { quickLaunchGame } from "@lib/homeService";
+import { createLogger } from "@lib/logger";
 import protonIcon from "@icons/protron_forked.png";
+
+const log = createLogger("CommandPalette");
 
 export class CommandPaletteState {
 	show = $state(false);
@@ -66,7 +69,7 @@ export class CommandPaletteState {
 
 			this.filterItems();
 		} catch (e) {
-			console.error("Failed to load games for command palette", e);
+			log.error("Failed to load games for command palette", e);
 		}
 	}
 

@@ -24,6 +24,9 @@
 	import Versions from "./pages/Versions.svelte";
 	import CommandPalette from "@components/shared/CommandPalette.svelte";
 	import { commandPaletteState } from "@components/shared/CommandPaletteState.svelte";
+	import { createLogger } from "@lib/logger";
+
+	const log = createLogger("App");
 
 	let bgBase64 = "";
 	let transparency = 1.0;
@@ -102,7 +105,7 @@
 				changePage("run");
 			}
 		} catch (e) {
-			console.error("Error in App onMount:", e);
+			log.error("Error in App onMount", e);
 		}
 	});
 

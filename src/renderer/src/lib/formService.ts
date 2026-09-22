@@ -1,6 +1,9 @@
 import * as core from "@shared";
 import { GetListGpus, DetectLosslessDll } from "@lib/api";
 import { DEFAULT_LAUNCH_OPTIONS } from "@lib/constants";
+import { createLogger } from "./logger";
+
+const log = createLogger("formService");
 
 export interface FormState<T> {
 	data: T;
@@ -92,7 +95,7 @@ export async function loadLsfgResources(): Promise<{ gpus: string[]; dll: string
 			gpus.push(...loadedGpus);
 		}
 	} catch (e) {
-		console.error("Failed to load GPUs:", e);
+		log.error("Failed to load GPUs", e);
 	}
 
 	try {
@@ -101,7 +104,7 @@ export async function loadLsfgResources(): Promise<{ gpus: string[]; dll: string
 			dll = detected;
 		}
 	} catch (e) {
-		console.error("Failed to detect DLL:", e);
+		log.error("Failed to detect DLL", e);
 	}
 
 	return { gpus, dll };

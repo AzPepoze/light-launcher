@@ -10,7 +10,10 @@ import {
 } from "@lib/api";
 import { notifications } from "@stores/notificationStore";
 import { settingsStore } from "@stores/settingsStore";
+import { createLogger } from "./logger";
 import type { AppSettings } from "@shared";
+
+const log = createLogger("settingsService");
 
 /**
  * Loads application settings from the backend
@@ -20,7 +23,7 @@ export async function loadAppSettings(): Promise<any> {
 		const settings = await GetAppSettings();
 		return settings;
 	} catch (err) {
-		console.error("Failed to load app settings", err);
+		log.error("Failed to load app settings", err);
 		return null;
 	}
 }

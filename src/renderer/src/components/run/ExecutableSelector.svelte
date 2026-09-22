@@ -2,6 +2,9 @@
 	import { loadExeIcon } from "@lib/iconService";
 	import SlideButton from "@components/shared/SlideButton.svelte";
 	import BrowseInput from "@components/shared/BrowseInput.svelte";
+	import { createLogger } from "@lib/logger";
+
+	const log = createLogger("ExecutableSelector");
 
 	export let launcherPath = "";
 	export let gamePath = "";
@@ -22,18 +25,12 @@
 
 	// When props change, update internal state
 	$: if (launcherPath !== internalLauncherPath) {
-		console.log(
-			"ExecutableSelector: launcherPath prop changed to:",
-			launcherPath,
-		);
+		log.debug("launcherPath prop changed", launcherPath);
 		internalLauncherPath = launcherPath;
 	}
 
 	$: if (gamePath !== internalGamePath) {
-		console.log(
-			"ExecutableSelector: gamePath prop changed to:",
-			gamePath,
-		);
+		log.debug("gamePath prop changed", gamePath);
 		internalGamePath = gamePath;
 	}
 

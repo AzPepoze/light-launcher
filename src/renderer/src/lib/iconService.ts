@@ -1,4 +1,7 @@
 import { GetExeIcon } from "@lib/api";
+import { createLogger } from "./logger";
+
+const log = createLogger("iconService");
 
 // Promise-based in-flight and result cache
 const iconPromises = new Map<string, Promise<string>>();
@@ -28,7 +31,7 @@ function processQueue() {
 				const icon = await GetExeIcon(item.filePath);
 				item.resolve(icon || "");
 			} catch (err) {
-				console.error("Failed to load exe icon:", err);
+				log.error("Failed to load exe icon", err);
 				item.resolve("");
 			} finally {
 				activeCount--;

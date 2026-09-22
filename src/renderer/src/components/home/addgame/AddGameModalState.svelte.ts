@@ -12,7 +12,10 @@ import { notifications } from "@stores/notificationStore";
 import { DefaultExcludeNames } from "@shared";
 import { loadExeIcon } from "@lib/iconService";
 import { getDefaultPrefixName } from "@lib/prefixService";
+import { createLogger } from "@lib/logger";
 import * as service from "@lib/gameService";
+
+const log = createLogger("AddGameModal");
 
 export class AddGameModalState {
 	addMode = $state<"select" | "folder-config" | "folder-review">("select");
@@ -34,7 +37,7 @@ export class AddGameModalState {
 			this.prefixBaseDir = await GetPrefixBaseDir();
 			this.selectedPrefix = getDefaultPrefixName(this.prefixes);
 		} catch (err) {
-			console.error("Failed to load prefixes:", err);
+			log.error("Failed to load prefixes", err);
 		}
 	}
 
@@ -53,7 +56,7 @@ export class AddGameModalState {
 				this.excludeNames = config.ExcludeNames ? config.ExcludeNames.join(", ") : "";
 			}
 		} catch (error) {
-			console.error("Failed to load folder config:", error);
+			log.error("Failed to load folder config", error);
 		}
 	}
 

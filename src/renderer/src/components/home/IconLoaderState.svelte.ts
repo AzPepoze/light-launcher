@@ -1,6 +1,9 @@
 import { GetImageBase64 } from "@lib/api";
 import { loadExeIcon } from "@lib/iconService";
+import { createLogger } from "@lib/logger";
 import type { GameInfo } from "@shared";
+
+const log = createLogger("IconLoader");
 
 export class IconLoaderState {
 	gameIcons = $state<Record<string, string>>({});
@@ -53,7 +56,7 @@ export class IconLoaderState {
 				this.iconSources.delete(gamePath);
 			}
 		} catch (error) {
-			console.error("Queue icon load error:", error);
+			log.error("Queue icon load error", error);
 		} finally {
 			this.loadingIcons.delete(loadingKey);
 		}

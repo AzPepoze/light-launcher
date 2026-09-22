@@ -1,6 +1,9 @@
 import { SearchExecutables, SaveGameConfig, DetectLosslessDll } from "@lib/api";
 import { notifications } from "@stores/notificationStore";
 import { createLaunchOptions } from "./formService";
+import { createLogger } from "./logger";
+
+const log = createLogger("gameService");
 
 export interface ScannedExecutable {
 	path: string;
@@ -27,7 +30,7 @@ export async function scanFolderForExecutables(
 			}));
 		}
 	} catch (error) {
-		console.error("Failed to search folder:", error);
+		log.error("Failed to search folder", error);
 		notifications.add(`Failed to search folder: ${error}`, "error");
 	}
 	return [];
@@ -59,7 +62,7 @@ export async function registerGame(executablePath: string, prefixPath: string): 
 	try {
 		await SaveGameConfig(gameConfig);
 	} catch (error) {
-		console.error(`Failed to save game config for ${gameName}:`, error);
+		log.error(`Failed to save game config for ${gameName}`, error);
 		throw error;
 	}
 }
@@ -80,7 +83,7 @@ export async function batchRegisterGames(
 			await registerGame(game.path, targetPrefixPath);
 			successfullyAddedCount++;
 		} catch (error) {
-			console.error(`Failed to register ${game.name}:`, error);
+			log.error(`Failed to register ${game.name}`, error);
 		}
 	}
 

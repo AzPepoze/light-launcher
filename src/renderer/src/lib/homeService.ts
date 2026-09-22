@@ -12,8 +12,11 @@ import {
 } from "@lib/api";
 import { notifications } from "@stores/notificationStore";
 import { createLaunchOptions } from "./formService";
+import { createLogger } from "./logger";
 import { launchGame } from "./gameLaunchService";
 import type { GameInfo, RunningSession } from "@shared";
+
+const log = createLogger("homeService");
 
 export interface HomeData {
 	games: GameInfo[];
@@ -38,7 +41,7 @@ export async function refreshHomeData(): Promise<HomeData> {
 			prefixes: ["All Prefixes", ...(fetchedPrefixes || [])]
 		};
 	} catch (error) {
-		console.error("Failed to refresh home data:", error);
+		log.error("Failed to refresh home data", error);
 		return { games: [], sessions: [], prefixes: ["All Prefixes"] };
 	}
 }
@@ -116,7 +119,7 @@ export async function processDroppedFiles(filePaths: string[]): Promise<number> 
 			}
 		}
 	} catch (error) {
-		console.error("Failed to process dropped files:", error);
+		log.error("Failed to process dropped files", error);
 	}
 	return addedCount;
 }

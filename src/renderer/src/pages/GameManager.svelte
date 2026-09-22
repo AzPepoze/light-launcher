@@ -7,6 +7,9 @@
 	import { GetRunningSessions, KillSession, GetAppSettings, GetGameActivity, GetAllGames, GetAutoScannedGames } from "@lib/api";
 	import { notifications } from "@stores/notificationStore";
 	import type { AppSettings, GameActivity, RunningSession, GameInfo, ScannedFolderGroup } from "@shared";
+	import { createLogger } from "@lib/logger";
+
+	const log = createLogger("GameManager");
 
 	const DAY = 24 * 60 * 60 * 1000;
 
@@ -119,7 +122,7 @@
 			games = allGames || [];
 			scannedGroups = groups || [];
 		} catch (err) {
-			console.error("Failed to refresh game manager:", err);
+			log.error("Failed to refresh game manager", err);
 		}
 	}
 
