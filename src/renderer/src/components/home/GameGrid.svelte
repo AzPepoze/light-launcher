@@ -180,8 +180,7 @@
 
 	let selectedGroupKey = "no-folder";
 
-	// Home scroll position: saved while scrolling, restored once per view
-	// when the grid mounts again after navigating back to Home.
+	// Restored once per view when the grid remounts after navigating back.
 	let gamesScrollerEl: HTMLElement | null = null;
 	let sidebarScrollerEl: HTMLElement | null = null;
 	let restoredForView: string | null = null;

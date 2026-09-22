@@ -112,8 +112,7 @@
 			}
 		}
 
-		// Selection mode: no launch affordances (icon zoom), the checkbox
-		// gets the hover emphasis instead.
+		// Selection mode: checkbox gets the hover emphasis, not launch zoom.
 		&.selection-mode:hover {
 			.icon-section .game-icon {
 				transform: none;

@@ -224,9 +224,7 @@
 			transform: perspective(900px) scale(0.98) rotateX(var(--tilt-x)) rotateY(var(--tilt-y));
 		}
 
-		// Selection mode: clicking selects, so no launch affordances.
-		// Covers :focus-within too — otherwise the clicked card keeps the
-		// play overlay stuck after the cursor leaves.
+		// :focus-within too, or the clicked card keeps the play overlay stuck.
 		&.selection-mode:hover,
 		&.selection-mode:focus-within {
 			transform: none;
@@ -255,7 +253,6 @@
 					0 0 24px var(--accent-glow);
 			}
 
-			// Hover/focus feedback that says "click to select".
 			:global(.selection-overlay .checkbox) {
 				border-color: var(--accent-primary);
 				transform: scale(1.12);
