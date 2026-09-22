@@ -10,11 +10,11 @@
 	export let isSelected: boolean = false;
 	export let onLaunch: (game: any) => void = () => {};
 	export let onConfigure: (game: any) => void = () => {};
-	export let onSelect: (game: any, shiftKey: boolean) => void = () => {};
+	export let onSelect: (game: any, shiftKey: boolean, ctrlKey?: boolean) => void = () => {};
 
 	function handleLaunch(event?: MouseEvent) {
 		if (isSelectionMode) {
-			onSelect(game, event ? event.shiftKey : false);
+			onSelect(game, !!event?.shiftKey, !!(event?.ctrlKey || event?.metaKey));
 			return;
 		}
 		onLaunch(game);
@@ -41,7 +41,7 @@
 
 	<div class="icon-section">
 		{#if icon}
-			<img src={icon} alt={game.name} class="game-icon" loading="lazy" />
+			<img src={icon} alt={game.name} class="game-icon" loading="lazy" draggable="false" />
 		{:else}
 			<div class="fallback-wrapper">
 				<span

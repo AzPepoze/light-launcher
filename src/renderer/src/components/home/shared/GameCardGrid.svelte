@@ -14,7 +14,7 @@
 	export let handleRightClick: (event: MouseEvent, game: GameInfo) => void = () => {};
 	export let handleQuickLaunch: (game: GameInfo, showLogs?: boolean) => Promise<void> = async () => {};
 	export let handleConfigure: (game: GameInfo) => void = () => {};
-	export let toggleGameSelection: (game: GameInfo, shiftKey: boolean) => void = () => {};
+	export let toggleGameSelection: (game: GameInfo, shiftKey: boolean, ctrlKey?: boolean) => void = () => {};
 	export let loadIcon: (path: string) => void = () => {};
 
 	$: cardView = view === "sidebar-grid" ? "grid" : view;
@@ -39,7 +39,7 @@
 	{#each visibleGames as game (getGameId(game))}
 		{@const gamePath = getGamePath(game)}
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<div on:contextmenu|preventDefault|stopPropagation={(e) => handleRightClick(e, game)}>
+		<div on:contextmenu|preventDefault|stopPropagation={(e) => handleRightClick(e, game)} data-game-path={gamePath}>
 			<GameCard
 				{game}
 				icon={gameIcons[gamePath]}

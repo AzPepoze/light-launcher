@@ -11,7 +11,7 @@
 	export let isSelected: boolean = false;
 	export let onLaunch: (game: any) => void = () => {};
 	export let onConfigure: (game: any) => void = () => {};
-	export let onSelect: (game: any, shiftKey: boolean) => void = () => {};
+	export let onSelect: (game: any, shiftKey: boolean, ctrlKey?: boolean) => void = () => {};
 
 	let cardElement: HTMLElement;
 	let spotlightX = 50;
@@ -46,7 +46,7 @@
 
 	function handleLaunch(event?: MouseEvent) {
 		if (isSelectionMode) {
-			onSelect(game, event ? event.shiftKey : false);
+			onSelect(game, !!event?.shiftKey, !!(event?.ctrlKey || event?.metaKey));
 			return;
 		}
 		onLaunch(game);
@@ -133,7 +133,7 @@
 
 		<div class="icon-wrapper">
 			{#if icon}
-				<img src={icon} alt={game.name} class="game-icon" loading="lazy" />
+				<img src={icon} alt={game.name} class="game-icon" loading="lazy" draggable="false" />
 			{:else}
 				<span class="material-icons system-icon">rocket_launch</span>
 			{/if}

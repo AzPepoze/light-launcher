@@ -31,6 +31,7 @@
 			bind:currentView={state.currentView}
 			onBulkRemove={() => state.selection.handleBulkRemove()}
 			onToggleSelectionMode={() => state.selection.toggleSelectionMode()}
+			onSelectAll={() => state.selection.selectAll()}
 			onShowAddModal={() => (state.showAddModal = true)}
 			onShowHelpModal={() => (state.showHelpModal = true)}
 		/>
@@ -66,9 +67,13 @@
 				isGameRunning={state.isGameRunning}
 				handleQuickLaunch={(game, showLogs) => state.handleQuickLaunch(game, showLogs)}
 				handleConfigure={(game) => state.handleConfigure(game)}
-				toggleGameSelection={(game, shiftKey) => state.selection.toggleGameSelection(game, shiftKey)}
+				toggleGameSelection={(game, shiftKey, ctrlKey) => state.selection.toggleGameSelection(game, shiftKey, ctrlKey)}
 				onRefresh={() => state.refreshData(true)}
 				loadIcon={(path) => state.icons.enqueueIconLoad(path)}
+				onMarqueeSelect={(paths, additive) => state.selection.applyMarquee(paths, additive)}
+				onSelectAll={() => state.selection.selectAll()}
+				onCancelSelection={() => state.selection.toggleSelectionMode()}
+				modalOpen={state.showAddModal || state.showHelpModal || state.selection.showBulkRemoveModal}
 			/>
 		{/if}
 	</div>

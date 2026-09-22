@@ -4,10 +4,14 @@
 	export let selectedCount: number;
 	export let onBulkRemove: () => void;
 	export let onToggleSelectionMode: () => void;
+	export let onSelectAll: () => void;
 </script>
 
 <div class="selection-actions" in:fade>
 	<span class="selection-count">{selectedCount} selected</span>
+	<button class="select-all-btn" on:click={onSelectAll}>
+		Select All
+	</button>
 	<button
 		class="bulk-remove-btn"
 		on:click={onBulkRemove}
@@ -42,6 +46,22 @@
 			color: var(--accent-primary);
 			text-transform: uppercase;
 			letter-spacing: 0.5px;
+		}
+
+		.select-all-btn {
+			background: none;
+			border: none;
+			color: var(--accent-primary);
+			font-size: 0.85rem;
+			font-weight: 800;
+			cursor: pointer;
+			text-transform: uppercase;
+			letter-spacing: 0.5px;
+			transition: color var(--transition-fast);
+
+			&:hover {
+				color: var(--text-main);
+			}
 		}
 
 		.bulk-remove-btn {

@@ -13,7 +13,7 @@
 	export let isSelected: boolean = false;
 	export let onLaunch: (game: any) => void = () => {};
 	export let onConfigure: (game: any) => void = () => {};
-	export let onSelect: (game: any, shiftKey: boolean) => void = () => {};
+	export let onSelect: (game: any, shiftKey: boolean, ctrlKey?: boolean) => void = () => {};
 	export let loadIcon: (path: string) => void = () => {};
 
 	let containerElement: HTMLElement;
