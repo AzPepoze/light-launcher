@@ -14,10 +14,18 @@ interface QueueItem {
 
 const queue: QueueItem[] = [];
 let activeCount = 0;
-const CONCURRENCY_LIMIT = 4;
+let paused = false;
+const CONCURRENCY_LIMIT = 8;
+
+/** Pause extraction while the user scrolls so spawned extractors don't steal CPU from rendering. */
+export function setIconQueuePaused(value: boolean): void {
+	if (paused === value) return;
+	paused = value;
+	if (!paused) processQueue();
+}
 
 function processQueue() {
-	if (activeCount >= CONCURRENCY_LIMIT || queue.length === 0) {
+	if (paused || activeCount >= CONCURRENCY_LIMIT || queue.length === 0) {
 		return;
 	}
 

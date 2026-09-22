@@ -65,7 +65,7 @@ export class IpcRouter {
 					payload.excludeNames
 				);
 			case "GetAutoScannedGames":
-				return GamesService.getAutoScannedGames();
+				return GamesService.getAutoScannedGames(Boolean(payload?.force));
 			case "AddScanFolder":
 				return GamesService.addScanFolder(payload.folderPath);
 			case "RemoveScanFolder":

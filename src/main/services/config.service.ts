@@ -125,21 +125,23 @@ export class ConfigService {
 
 		try {
 			const entries = await fs.readdir(configDir, { withFileTypes: true });
-			const configs: LaunchOptions[] = [];
-
-			for (const entry of entries) {
-				if (!entry.isDirectory()) continue;
-				const configPath = path.join(configDir, entry.name, "config.json");
-				if (fsSync.existsSync(configPath)) {
-					try {
-						const options = await this.loadJson<LaunchOptions>(configPath);
-						configs.push(options);
-					} catch (e) {
-						LoggerService.error("Config", `Failed to parse ${configPath}: ${e}`);
-					}
-				}
-			}
-			return configs;
+			const results = await Promise.all(
+				entries
+					.filter((entry) => entry.isDirectory())
+					.map(async (entry): Promise<LaunchOptions | null> => {
+						const configPath = path.join(configDir, entry.name, "config.json");
+						if (!fsSync.existsSync(configPath)) {
+							return null;
+						}
+						try {
+							return await this.loadJson<LaunchOptions>(configPath);
+						} catch (e) {
+							LoggerService.error("Config", `Failed to parse ${configPath}: ${e}`);
+							return null;
+						}
+					})
+			);
+			return results.filter((cfg): cfg is LaunchOptions => cfg !== null);
 		} catch (err) {
 			LoggerService.error("Config", `Error listing game configs: ${err}`);
 			return [];

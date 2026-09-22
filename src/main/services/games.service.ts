@@ -16,6 +16,8 @@ import {
 	DefaultWidth
 } from "../../shared/constants";
 
+let cachedScannedGroups: ScannedFolderGroup[] | null = null;
+
 export class GamesService {
 	static async getAllGames(): Promise<GameInfo[]> {
 		const configs = await ConfigService.listGameConfigs();
@@ -50,6 +52,7 @@ export class GamesService {
 	}
 
 	static async removeGame(executablePath: string): Promise<void> {
+		cachedScannedGroups = null;
 		if (!executablePath) {
 			throw new Error("Executable path cannot be empty");
 		}
@@ -91,20 +94,26 @@ export class GamesService {
 		});
 	}
 
-	static async getAutoScannedGames(): Promise<ScannedFolderGroup[]> {
+	static async getAutoScannedGames(force = false): Promise<ScannedFolderGroup[]> {
+		if (!force && cachedScannedGroups) {
+			return cachedScannedGroups;
+		}
+
 		const settings = await ConfigService.loadAppSettings();
 		if (!settings || !settings.ScanFolderConfigs) {
 			return [];
 		}
 
-		const manualGames = await this.getAllGames();
-		const manualPaths = new Set(
-			manualGames.filter((g) => !g.isAutoScanned).map((g) => cleanPath(g.path).toLowerCase())
-		);
-
+		const scanFolders = settings.ScanFolders || [];
 		const existingConfigsList = await ConfigService.listGameConfigs();
+
+		const manualPaths = new Set<string>();
 		const existingConfigsMap = new Map<string, LaunchOptions>();
 		for (const cfg of existingConfigsList) {
+			const p = cleanPath(cfg.LauncherPath || cfg.GamePath);
+			if (p && !scanFolders.some((sf) => isSubPath(sf, p))) {
+				manualPaths.add(p.toLowerCase());
+			}
 			if (cfg.GamePath) existingConfigsMap.set(cleanPath(cfg.GamePath).toLowerCase(), cfg);
 			if (cfg.LauncherPath) existingConfigsMap.set(cleanPath(cfg.LauncherPath).toLowerCase(), cfg);
 		}
@@ -203,10 +212,12 @@ export class GamesService {
 			});
 		}
 
+		cachedScannedGroups = groups;
 		return groups;
 	}
 
 	static async addScanFolder(folderPath: string): Promise<void> {
+		cachedScannedGroups = null;
 		const settings = await ConfigService.loadAppSettings();
 		const cleaned = cleanPath(folderPath);
 
@@ -232,6 +243,7 @@ export class GamesService {
 		depth: number,
 		excludeNames: string[]
 	): Promise<string> {
+		cachedScannedGroups = null;
 		const cleanedOld = cleanPath(oldPath);
 		const cleanedNew = cleanPath(newPath);
 		if (!cleanedNew) {
@@ -281,6 +293,7 @@ export class GamesService {
 	}
 
 	static async removeScanFolder(folderPath: string): Promise<void> {
+		cachedScannedGroups = null;
 		const settings = await ConfigService.loadAppSettings();
 		const cleaned = cleanPath(folderPath);
 
@@ -297,6 +310,7 @@ export class GamesService {
 		depth: number,
 		excludeNames: string[]
 	): Promise<void> {
+		cachedScannedGroups = null;
 		const settings = await ConfigService.loadAppSettings();
 		const cleaned = cleanPath(folderPath);
 
@@ -339,6 +353,7 @@ export class GamesService {
 	}
 
 	static async blacklistGame(executablePath: string): Promise<void> {
+		cachedScannedGroups = null;
 		const settings = await ConfigService.loadAppSettings();
 		const cleaned = cleanPath(executablePath);
 
@@ -349,6 +364,7 @@ export class GamesService {
 	}
 
 	static async unblacklistGame(executablePath: string): Promise<void> {
+		cachedScannedGroups = null;
 		const settings = await ConfigService.loadAppSettings();
 		const cleaned = cleanPath(executablePath);
 

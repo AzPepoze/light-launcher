@@ -2,6 +2,7 @@
 	import CardRunningIndicator from "./shared/CardRunningIndicator.svelte";
 	import CardSelectionCheckbox from "./shared/CardSelectionCheckbox.svelte";
 	import { getGamePath } from "@lib/gameUtils";
+	import { tick } from "svelte";
 
 	export let game: any;
 	export let icon: string = "";
@@ -11,6 +12,25 @@
 	export let onLaunch: (game: any) => void = () => {};
 	export let onConfigure: (game: any) => void = () => {};
 	export let onSelect: (game: any, shiftKey: boolean, ctrlKey?: boolean) => void = () => {};
+
+	let iconLoaded = false;
+	let lastIcon = "";
+	let iconImgEl: HTMLImageElement | undefined;
+
+	$: if (icon !== lastIcon) {
+		lastIcon = icon;
+		iconLoaded = false;
+		iconImgEl = undefined;
+		const current = icon;
+		if (current) {
+			// Reveal even if the load event was missed (cached/decoded image).
+			tick().then(() => {
+				if (current !== lastIcon) return;
+				const img = iconImgEl;
+				if (img && img.complete && img.naturalWidth > 0) iconLoaded = true;
+			});
+		}
+	}
 
 	function handleLaunch(event?: MouseEvent) {
 		if (isSelectionMode) {
@@ -41,7 +61,17 @@
 
 	<div class="icon-section">
 		{#if icon}
-			<img src={icon} alt={game.name} class="game-icon" loading="lazy" draggable="false" />
+			<img
+				bind:this={iconImgEl}
+				src={icon}
+				alt={game.name}
+				class="game-icon"
+				class:loaded={iconLoaded}
+				decoding="async"
+				draggable="false"
+				on:load={() => (iconLoaded = true)}
+				on:error={() => (iconLoaded = true)}
+			/>
 		{:else}
 			<div class="fallback-wrapper">
 				<span
@@ -103,7 +133,7 @@
 			border-color: var(--accent-primary);
 			box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 
-			.game-icon {
+			.icon-section .game-icon {
 				transform: scale(1.1);
 			}
 
@@ -151,7 +181,14 @@
 			height: 100%;
 			object-fit: cover;
 			border-radius: var(--radius-lg);
-			transition: transform 0.4s var(--ease-spring);
+			opacity: 0;
+			transform: scale(0.96);
+			transition: opacity 240ms var(--ease-out), transform 320ms var(--ease-spring);
+
+			&.loaded {
+				opacity: 1;
+				transform: none;
+			}
 		}
 
 		.fallback-wrapper {
@@ -247,6 +284,14 @@
 			border-color: var(--accent-primary);
 			color: #ffffff;
 			box-shadow: 0 4px 10px var(--accent-glow);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.icon-section .game-icon {
+			transition: none;
+			transform: none;
+			opacity: 1;
 		}
 	}
 </style>

@@ -9,7 +9,7 @@ export const DefaultRefreshRate = "60";
 export const DefaultMultiplier = "2";
 export const DefaultMemoryValue = "4G";
 
-export const IconPngSize = 256;
+export const IconPngSize = 128;
 export const IconCacheMaxEntries = 1000;
 
 export const DefaultExcludeNames = [

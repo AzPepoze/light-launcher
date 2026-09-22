@@ -2,10 +2,11 @@ import fs from "fs/promises";
 import fsSync from "fs";
 import path from "path";
 import os from "os";
-import { app, BrowserWindow, dialog, nativeImage, shell } from "electron";
+import { app, BrowserWindow, dialog, shell } from "electron";
 import { execFile } from "child_process";
 import { promisify } from "util";
 import { IconCacheMaxEntries, IconPngSize } from "../../shared/constants";
+import { IconCacheService } from "./iconCache.service";
 import type { IconCacheEntry } from "../../shared/types/system.types";
 
 const execFileAsync = promisify(execFile);
@@ -15,6 +16,9 @@ let initialGamePath = "";
 let shouldEditLsfg = false;
 
 const iconMemoryCache = new Map<string, IconCacheEntry>();
+
+type Extractor = "wrestool" | "icoextract" | null;
+let resolvedExtractor: Extractor | undefined;
 
 export class AppService {
 	static setInitialArgs(launcherPath: string, gamePath: string, editLsfg: boolean) {
@@ -55,16 +59,25 @@ export class AppService {
 			return cached.icon;
 		}
 
+		const diskIcon = await IconCacheService.get(executablePath, stat);
+		if (diskIcon) {
+			AppService.rememberIcon(executablePath, stat, diskIcon);
+			return diskIcon;
+		}
+
 		const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "light-launcher-icon-"));
 		try {
 			const icoPath = await AppService.extractIco(executablePath, tempDir);
 			if (!icoPath) {
 				return "";
 			}
-			const icon = AppService.icoToPngDataUrl(icoPath) ?? (await AppService.rawIcoDataUrl(icoPath));
-			if (icon) {
-				AppService.rememberIcon(executablePath, stat, icon);
-			}
+			const ico = await fs.readFile(icoPath);
+			const png = await extractIconPng(ico, icoPath, tempDir);
+			const bytes = png ?? ico;
+			const mime = png ? "image/png" : "image/x-icon";
+			const icon = `data:${mime};base64,${bytes.toString("base64")}`;
+			AppService.rememberIcon(executablePath, stat, icon);
+			await IconCacheService.put(executablePath, stat, bytes, png ? "png" : "ico");
 			return icon;
 		} finally {
 			try {
@@ -82,46 +95,50 @@ export class AppService {
 		}
 	}
 
-	private static async extractIco(executablePath: string, tempDir: string): Promise<string> {
+	private static async resolveExtractor(): Promise<Extractor> {
+		if (resolvedExtractor !== undefined) {
+			return resolvedExtractor;
+		}
 		try {
-			await execFileAsync("wrestool", ["-x", `--output=${tempDir}`, executablePath]);
-			const files = await fs.readdir(tempDir);
-			const icoFile = files.find((f) => f.toLowerCase().endsWith(".ico"));
-			if (icoFile) {
-				return path.join(tempDir, icoFile);
-			}
+			await execFileAsync("wrestool", ["--version"]);
+			resolvedExtractor = "wrestool";
+			return resolvedExtractor;
 		} catch {}
-
 		try {
-			const outIco = path.join(tempDir, "icon.ico");
-			await execFileAsync("icoextract", [executablePath, outIco]);
-			if (fsSync.existsSync(outIco)) {
-				return outIco;
-			}
+			await execFileAsync("icoextract", ["--help"]);
+			resolvedExtractor = "icoextract";
+			return resolvedExtractor;
 		} catch {}
-		return "";
+		resolvedExtractor = null;
+		return resolvedExtractor;
 	}
 
-	// Small PNG instead of the full multi-image ICO, so scrolling ships kilobytes.
-	private static icoToPngDataUrl(icoPath: string): string | null {
-		try {
-			const image = nativeImage.createFromBuffer(fsSync.readFileSync(icoPath));
-			if (image.isEmpty()) {
-				return null;
-			}
-			const { width, height } = image.getSize();
-			const sized =
-				Math.max(width, height) > IconPngSize
-					? image.resize({ width: IconPngSize, height: IconPngSize })
-					: image;
-			const png = sized.toPNG();
-			if (png.length === 0) {
-				return null;
-			}
-			return `data:image/png;base64,${png.toString("base64")}`;
-		} catch {
-			return null;
+	private static async extractIco(executablePath: string, tempDir: string): Promise<string> {
+		const extractor = await AppService.resolveExtractor();
+		if (!extractor) {
+			return "";
 		}
+
+		try {
+			if (extractor === "wrestool") {
+				await execFileAsync("wrestool", ["-x", `--output=${tempDir}`, executablePath]);
+				const files = await fs.readdir(tempDir);
+				const icoFile = files.find((f) => f.toLowerCase().endsWith(".ico"));
+				if (icoFile) {
+					return path.join(tempDir, icoFile);
+				}
+			} else {
+				const outIco = path.join(tempDir, "icon.ico");
+				await execFileAsync("icoextract", [executablePath, outIco]);
+				if (fsSync.existsSync(outIco)) {
+					return outIco;
+				}
+			}
+		} catch {
+			// Tool failed at runtime; re-probe on the next call.
+			resolvedExtractor = undefined;
+		}
+		return "";
 	}
 
 	private static rememberIcon(executablePath: string, stat: fsSync.Stats, icon: string): void {
@@ -132,16 +149,6 @@ export class AppService {
 			}
 		}
 		iconMemoryCache.set(executablePath, { mtimeMs: stat.mtimeMs, size: stat.size, icon });
-	}
-
-	private static async rawIcoDataUrl(icoPath: string): Promise<string> {
-		try {
-			const data = await fs.readFile(icoPath);
-			if (data.length > 0) {
-				return `data:image/x-icon;base64,${data.toString("base64")}`;
-			}
-		} catch {}
-		return "";
 	}
 
 	static async getTotalRam(): Promise<number> {
@@ -260,4 +267,83 @@ export class AppService {
 		app.relaunch();
 		app.exit(0);
 	}
+}
+
+type Converter = "magick" | "convert" | null;
+let resolvedConverter: Converter | undefined;
+
+async function resolveConverter(): Promise<Converter> {
+	if (resolvedConverter !== undefined) return resolvedConverter;
+	for (const tool of ["magick", "convert"] as const) {
+		try {
+			await execFileAsync(tool, ["-version"]);
+			resolvedConverter = tool;
+			return resolvedConverter;
+		} catch {}
+	}
+	resolvedConverter = null;
+	return resolvedConverter;
+}
+
+interface IcoFrame {
+	index: number;
+	width: number;
+	height: number;
+	size: number;
+	offset: number;
+	png: boolean;
+}
+
+function parseIcoFrames(ico: Buffer): IcoFrame[] {
+	if (ico.length < 6 || ico.readUInt16LE(0) !== 0 || ico.readUInt16LE(2) !== 1) return [];
+	const count = ico.readUInt16LE(4);
+	const pngSignature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+	const frames: IcoFrame[] = [];
+
+	for (let i = 0; i < count; i++) {
+		const entry = 6 + i * 16;
+		if (entry + 16 > ico.length) break;
+		const size = ico.readUInt32LE(entry + 8);
+		const offset = ico.readUInt32LE(entry + 12);
+		if (size < 8 || offset + size > ico.length) continue;
+		frames.push({
+			index: i,
+			width: ico[entry] || 256,
+			height: ico[entry + 1] || 256,
+			size,
+			offset,
+			png: ico.subarray(offset, offset + 8).equals(pngSignature)
+		});
+	}
+	return frames;
+}
+
+/** Largest ICO frame as a small PNG, falling back to the raw ICO when no converter exists. */
+async function extractIconPng(ico: Buffer, icoPath: string, tempDir: string): Promise<Buffer | null> {
+	const frames = parseIcoFrames(ico);
+	if (!frames.length) return null;
+
+	const largest = frames.reduce((a, b) => (b.width * b.height > a.width * a.height ? b : a));
+
+	const converter = await resolveConverter();
+	if (converter) {
+		const outPng = path.join(tempDir, "icon.png");
+		try {
+			await execFileAsync(converter, [
+				`${icoPath}[${largest.index}]`,
+				"-resize",
+				`${IconPngSize}x${IconPngSize}>`,
+				`PNG32:${outPng}`
+			]);
+			const png = await fs.readFile(outPng);
+			if (png.length) return png;
+		} catch {
+			resolvedConverter = undefined;
+		}
+	}
+
+	if (largest.png) {
+		return Buffer.from(ico.subarray(largest.offset, largest.offset + largest.size));
+	}
+	return null;
 }

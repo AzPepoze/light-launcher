@@ -20,7 +20,7 @@
 	export let handleQuickLaunch: (game: any, showLogs?: boolean) => Promise<void>;
 	export let handleConfigure: (game: any) => void;
 	export let toggleGameSelection: (game: any, shiftKey: boolean, ctrlKey?: boolean) => void;
-	export let loadIcon: (path: string) => void = () => {};
+	export let loadIcon: (path: string, customIconPath?: string | null) => void = () => {};
 	export let isStuck: boolean = false;
 </script>
 

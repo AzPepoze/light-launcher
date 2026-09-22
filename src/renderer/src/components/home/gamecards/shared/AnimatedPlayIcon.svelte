@@ -25,8 +25,7 @@
 	.animated-play {
 		display: block;
 		overflow: visible;
-		filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.8))
-			drop-shadow(0 0 20px rgba(var(--spotlight-rgb, 255, 255, 255), 0.55));
+		filter: drop-shadow(0 0 12px rgba(var(--spotlight-rgb, 255, 255, 255), 0.55));
 	}
 
 	.play-edge {

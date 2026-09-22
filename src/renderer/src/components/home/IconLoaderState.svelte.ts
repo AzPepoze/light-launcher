@@ -1,7 +1,6 @@
 import { GetImageBase64 } from "@lib/api";
 import { loadExeIcon } from "@lib/iconService";
 import { createLogger } from "@lib/logger";
-import type { GameInfo } from "@shared";
 
 const log = createLogger("IconLoader");
 
@@ -9,16 +8,6 @@ export class IconLoaderState {
 	gameIcons = $state<Record<string, string>>({});
 	loadingIcons = new Set<string>();
 	iconSources = new Map<string, string>();
-
-	async syncGames(games: GameInfo[]) {
-		await Promise.allSettled(
-			games.map((game) => {
-				const gamePath = game?.path || game?.config?.LauncherPath;
-				if (!gamePath) return Promise.resolve();
-				return this.enqueueIconLoad(gamePath, game?.config?.CustomIconPath || null);
-			})
-		);
-	}
 
 	async enqueueIconLoad(gamePath: string, customIconPath?: string | null) {
 		const isExplicitSync = customIconPath !== undefined;

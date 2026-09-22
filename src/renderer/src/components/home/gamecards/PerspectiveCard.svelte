@@ -1,10 +1,31 @@
 <script lang="ts">
+	import { tick } from "svelte";
+
 	export let game: any;
 	export let icon: string = "";
 	export let isRunning: boolean = false;
 	export let active: boolean = false;
 	export let onLaunch: (game: any) => void = () => {};
 	export let onConfigure: (game: any) => void = () => {};
+
+	let iconLoaded = false;
+	let lastIcon = "";
+	let iconImgEl: HTMLImageElement | undefined;
+
+	$: if (icon !== lastIcon) {
+		lastIcon = icon;
+		iconLoaded = false;
+		iconImgEl = undefined;
+		const current = icon;
+		if (current) {
+			// Reveal even if the load event was missed (cached/decoded image).
+			tick().then(() => {
+				if (current !== lastIcon) return;
+				const img = iconImgEl;
+				if (img && img.complete && img.naturalWidth > 0) iconLoaded = true;
+			});
+		}
+	}
 
 	function handleLaunch() {
 		onLaunch(game);
@@ -27,7 +48,17 @@
 
 		<div class="image-container">
 			{#if icon}
-				<img src={icon} alt={game.name} class="game-icon" loading="lazy" draggable="false" />
+				<img
+					bind:this={iconImgEl}
+					src={icon}
+					alt={game.name}
+					class="game-icon"
+					class:loaded={iconLoaded}
+					decoding="async"
+					draggable="false"
+					on:load={() => (iconLoaded = true)}
+					on:error={() => (iconLoaded = true)}
+				/>
 			{:else}
 				<div class="fallback">
 					<span class="material-icons">rocket_launch</span>
@@ -131,6 +162,14 @@
 			width: 100%;
 			height: 100%;
 			object-fit: cover;
+			opacity: 0;
+			transform: scale(0.96);
+			transition: opacity 240ms var(--ease-out), transform 320ms var(--ease-spring);
+
+			&.loaded {
+				opacity: 1;
+				transform: none;
+			}
 		}
 
 		.fallback {
@@ -201,6 +240,14 @@
 			font-size: 0.7rem;
 			font-weight: 900;
 			letter-spacing: 1px;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.image-container .game-icon {
+			transition: none;
+			transform: none;
+			opacity: 1;
 		}
 	}
 </style>

@@ -15,7 +15,7 @@
 	export let handleQuickLaunch: (game: GameInfo, showLogs?: boolean) => Promise<void> = async () => {};
 	export let handleConfigure: (game: GameInfo) => void = () => {};
 	export let toggleGameSelection: (game: GameInfo, shiftKey: boolean, ctrlKey?: boolean) => void = () => {};
-	export let loadIcon: (path: string) => void = () => {};
+	export let loadIcon: (path: string, customIconPath?: string | null) => void = () => {};
 
 	$: cardView = view === "sidebar-grid" ? "grid" : view;
 

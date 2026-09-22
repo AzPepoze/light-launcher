@@ -18,6 +18,7 @@
 	import { notifications } from "@stores/notificationStore";
 	import { saveHomeScroll, getHomeScroll } from "@stores/homeScrollStore";
 	import Marquee from "@components/home/shared/Marquee.svelte";
+	import { setIconQueuePaused } from "@lib/iconService";
 
 	export let currentView: "grid" | "list-grid" | "sidebar-grid" = "grid";
 	export let games: any[] = [];
@@ -35,7 +36,7 @@
 	export let handleConfigure: (game: any) => void;
 	export let toggleGameSelection: (game: any, shiftKey: boolean, ctrlKey?: boolean) => void;
 	export let onRefresh: () => void = () => {};
-	export let loadIcon: (path: string) => void = () => {};
+	export let loadIcon: (path: string, customIconPath?: string | null) => void = () => {};
 	export let onMarqueeSelect: (paths: string[], additive: boolean) => void = () => {};
 	export let onSelectAll: () => void = () => {};
 	export let onCancelSelection: () => void = () => {};
@@ -194,6 +195,7 @@
 	let scrollSaveRaf: number | null = null;
 	let pendingScrollTop = 0;
 	let stuckRaf: number | null = null;
+	let iconResumeTimer: ReturnType<typeof setTimeout> | null = null;
 
 	function getScroller(): HTMLElement | null {
 		return currentView === "sidebar-grid" ? sidebarScrollerEl : gamesScrollerEl;
@@ -249,6 +251,13 @@
 				saveHomeScroll(pendingScrollTop);
 			});
 		}
+		// Hold icon extraction during scroll; resume shortly after it stops.
+		setIconQueuePaused(true);
+		if (iconResumeTimer !== null) clearTimeout(iconResumeTimer);
+		iconResumeTimer = setTimeout(() => {
+			iconResumeTimer = null;
+			setIconQueuePaused(false);
+		}, 160);
 		scheduleStuckCheck();
 	}
 
@@ -271,6 +280,11 @@
 			cancelAnimationFrame(stuckRaf);
 			stuckRaf = null;
 		}
+		if (iconResumeTimer !== null) {
+			clearTimeout(iconResumeTimer);
+			iconResumeTimer = null;
+		}
+		setIconQueuePaused(false);
 	});
 
 	afterUpdate(() => {

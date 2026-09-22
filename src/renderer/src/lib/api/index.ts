@@ -88,7 +88,8 @@ export const RemoveGame = (executablePath: string) =>
 	invoke<void>("RemoveGame", { executablePath });
 export const SearchExecutables = (folderPath: string, maxDepth: number, excludeNames: string[]) =>
 	invoke<string[]>("SearchExecutables", { folderPath, maxDepth, excludeNames });
-export const GetAutoScannedGames = () => invoke<ScannedFolderGroup[]>("GetAutoScannedGames");
+export const GetAutoScannedGames = (force = false) =>
+	invoke<ScannedFolderGroup[]>("GetAutoScannedGames", { force });
 export const AddScanFolder = (folderPath: string) => invoke<void>("AddScanFolder", { folderPath });
 export const RemoveScanFolder = (folderPath: string) =>
 	invoke<void>("RemoveScanFolder", { folderPath });

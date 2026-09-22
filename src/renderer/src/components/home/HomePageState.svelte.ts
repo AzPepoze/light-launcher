@@ -92,17 +92,10 @@ export class HomePageState {
 
 	async refreshData(forceScan = false) {
 		try {
-			const shouldScan = forceScan || this.scannedFolderGroups.length === 0;
+			const data = await service.refreshHomeData();
 
-			const [data, scannedGroups] = await Promise.all([
-				service.refreshHomeData(),
-				shouldScan ? GetAutoScannedGames() : Promise.resolve(this.scannedFolderGroups)
-			]);
-
-			let gamesChanged = false;
 			if (gamesSignature(data.games) !== gamesSignature(this.games)) {
 				this.games = data.games;
-				gamesChanged = true;
 			}
 			if (sessionsSignature(data.sessions) !== sessionsSignature(this.sessions)) {
 				this.sessions = data.sessions;
@@ -111,25 +104,23 @@ export class HomePageState {
 			if (nextPrefixes.join("|") !== this.prefixes.join("|")) {
 				this.prefixes = nextPrefixes;
 			}
-			const nextGroups = scannedGroups || [];
-			if (groupsSignature(nextGroups) !== groupsSignature(this.scannedFolderGroups)) {
-				this.scannedFolderGroups = nextGroups;
-				gamesChanged = true;
-			}
-
-			// Icons load lazily on intersect; eager-sync only when the set changed.
-			if (gamesChanged || forceScan) {
-				const visibleForIcons = [
-					...this.games,
-					...this.scannedFolderGroups.flatMap((group) => group.games || [])
-				];
-				void this.icons.syncGames(visibleForIcons);
-			}
 		} catch (error) {
 			log.error("Failed to load library", error);
 			notifications.add("Failed to load your library", "error");
-		} finally {
 			this.isLoading = false;
+			return;
+		}
+
+		// Let the UI render before the heavier folder scan resolves.
+		this.isLoading = false;
+
+		try {
+			const scannedGroups = (await GetAutoScannedGames(forceScan)) || [];
+			if (groupsSignature(scannedGroups) !== groupsSignature(this.scannedFolderGroups)) {
+				this.scannedFolderGroups = scannedGroups;
+			}
+		} catch (error) {
+			log.error("Failed to load scanned folders", error);
 		}
 	}
 
@@ -148,7 +139,7 @@ export class HomePageState {
 	}
 
 	initialize() {
-		this.refreshData(true);
+		this.refreshData(false);
 
 		this.dropUnsubscribe = onEvent("FilesDropped", async (event: any) => {
 			const files = (event?.data || event) as string[];

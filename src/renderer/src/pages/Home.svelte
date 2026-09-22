@@ -79,7 +79,7 @@
 				handleConfigure={(game) => state.handleConfigure(game)}
 				toggleGameSelection={(game, shiftKey, ctrlKey) => state.selection.toggleGameSelection(game, shiftKey, ctrlKey)}
 				onRefresh={() => state.refreshData(true)}
-				loadIcon={(path) => state.icons.enqueueIconLoad(path)}
+				loadIcon={(path, customIconPath) => state.icons.enqueueIconLoad(path, customIconPath)}
 				onMarqueeSelect={(paths, additive) => state.selection.applyMarquee(paths, additive)}
 				onSelectAll={() => state.selection.selectAll()}
 				onCancelSelection={() => state.selection.toggleSelectionMode()}
