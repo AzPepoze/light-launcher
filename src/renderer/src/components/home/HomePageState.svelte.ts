@@ -88,6 +88,7 @@ export class HomePageState {
 
 	dropUnsubscribe: (() => void) | null = null;
 	sessionPollInFlight = false;
+	iconWarmTimer: ReturnType<typeof setTimeout> | null = null;
 
 	async refreshData(forceScan = false) {
 		// Kick the heavier folder scan off now so it overlaps the library fetch.
@@ -121,6 +122,19 @@ export class HomePageState {
 		if (scannedGroups && groupsSignature(scannedGroups) !== groupsSignature(this.scannedFolderGroups)) {
 			this.scannedFolderGroups = scannedGroups;
 		}
+
+		this.scheduleIconWarm();
+	}
+
+	private scheduleIconWarm() {
+		if (this.iconWarmTimer) return;
+		this.iconWarmTimer = setTimeout(() => {
+			this.iconWarmTimer = null;
+			this.icons.warm([
+				...this.games,
+				...this.scannedFolderGroups.flatMap((group) => group.games || [])
+			]);
+		}, 1200);
 	}
 
 	async refreshSessions() {
@@ -155,6 +169,7 @@ export class HomePageState {
 	destroy() {
 		if (this.sessionInterval) clearInterval(this.sessionInterval);
 		if (this.dropUnsubscribe) this.dropUnsubscribe();
+		if (this.iconWarmTimer) clearTimeout(this.iconWarmTimer);
 	}
 
 	async handleQuickLaunch(game: any, showLogs = false) {
