@@ -235,6 +235,23 @@ export class AppService {
 		}
 	}
 
+	static async openFileLocation(targetPath: string): Promise<void> {
+		if (!targetPath) {
+			throw new Error("No path provided");
+		}
+
+		const stat = await fs.stat(targetPath).catch(() => null);
+		if (!stat) {
+			throw new Error(`Path does not exist: ${targetPath}`);
+		}
+
+		if (stat.isDirectory()) {
+			await shell.openPath(targetPath);
+		} else {
+			shell.showItemInFolder(targetPath);
+		}
+	}
+
 	static closeWindow(): void {
 		app.quit();
 	}

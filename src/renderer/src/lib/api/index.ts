@@ -68,6 +68,8 @@ export const PickFileCustom = (
 	filters: { displayName: string; pattern: string }[]
 ) => invoke<string>("PickFileCustom", { title, filters });
 export const OpenURL = (url: string) => invoke<void>("OpenURL", { url });
+export const OpenFileLocation = (targetPath: string) =>
+	invoke<void>("OpenFileLocation", { path: targetPath });
 export const CloseWindow = () => invoke<void>("CloseWindow");
 export const RestartApp = () => invoke<void>("RestartApp");
 

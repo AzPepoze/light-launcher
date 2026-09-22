@@ -36,6 +36,8 @@ export class IpcRouter {
 				return AppService.pickFileCustom(payload.title, payload.filters);
 			case "OpenURL":
 				return AppService.openExternal(payload.url);
+			case "OpenFileLocation":
+				return AppService.openFileLocation(payload.path);
 			case "CloseWindow":
 				return AppService.closeWindow();
 			case "RestartApp":

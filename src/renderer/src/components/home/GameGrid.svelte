@@ -12,7 +12,8 @@
 		RemoveScanFolder,
 		KillSession,
 		PickFileCustom,
-		SaveGameConfig
+		SaveGameConfig,
+		OpenFileLocation
 	} from "@lib/api";
 	import { notifications } from "@stores/notificationStore";
 
@@ -85,6 +86,21 @@
 
 	function getGamePath(game: any): string {
 		return game?.path || game?.config?.GamePath || game?.config?.LauncherPath || "";
+	}
+
+	async function handleOpenFileLocation() {
+		if (!activeMenuGame) return;
+		const targetPath = getGamePath(activeMenuGame);
+		if (!targetPath) {
+			notifications.add("No file location found for this game.", "error");
+			return;
+		}
+
+		try {
+			await OpenFileLocation(targetPath);
+		} catch (err) {
+			notifications.add(`Failed to open file location: ${err}`, "error");
+		}
 	}
 
 	async function handleKillActiveGame() {
@@ -323,6 +339,7 @@
 		onLaunchWithLogs={() => handleQuickLaunch(activeMenuGame, true)}
 		onKill={handleKillActiveGame}
 		onConfigure={() => handleConfigure(activeMenuGame)}
+		onOpenLocation={handleOpenFileLocation}
 		onSetCustomIcon={handleSetCustomIcon}
 		onClearCustomIcon={handleClearCustomIcon}
 		onAction={handleAction}
