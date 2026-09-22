@@ -10,14 +10,7 @@
 		"resolveJsonModule": true,
 		"declaration": false,
 		"outDir": "./dist",
-		"rootDir": "./src",
-		"baseUrl": ".",
-		"paths": {
-			"@shared": ["src/shared/index.ts"],
-			"@shared/*": ["src/shared/*"],
-			"@services/*": ["src/main/services/*"],
-			"@ipc/*": ["src/main/ipc/*"]
-		}
+		"rootDir": "./src"
 	},
 	"include": ["src/main/**/*", "src/preload/**/*", "src/shared/**/*"],
 	"exclude": ["src/renderer/**/*", "dist", "bin", "node_modules"]
