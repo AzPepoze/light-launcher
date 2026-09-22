@@ -74,8 +74,6 @@ export async function initializeRunPage(
 	const activeRunState = get(runState);
 	if (activeRunState) {
 		if (activeRunState.mainExePath) mainExecutablePath = activeRunState.mainExePath;
-		if (activeRunState.gameIcon) gameIcon = activeRunState.gameIcon;
-		if (activeRunState.launcherIcon) launcherIcon = activeRunState.launcherIcon;
 		if (activeRunState.prefixPath) prefixPath = activeRunState.prefixPath;
 		if (activeRunState.selectedPrefixName) selectedPrefixName = activeRunState.selectedPrefixName;
 		if (activeRunState.options) {
