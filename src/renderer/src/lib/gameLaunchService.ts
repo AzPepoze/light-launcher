@@ -14,11 +14,7 @@ export interface LaunchRequest {
 	closeLauncher?: boolean;
 }
 
-/**
- * Shared launch entry used by Home cards, context menu, and command palette.
- * Uses the same prerequisites, missing-tools check, Proton resolution, and
- * executor as the Run page. Missing tools surface as a toast (no modal).
- */
+/** Same pipeline as the Run page; missing tools surface as a toast. */
 export async function launchGame(
 	options: LaunchOptions,
 	request: LaunchRequest = {}

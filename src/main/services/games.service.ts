@@ -265,7 +265,7 @@ export class GamesService {
 			settings.ScanFolders.push(cleanedNew);
 		}
 
-		// Remap blacklist entries that live under the old folder path.
+		// Remap blacklist entries under the old path.
 		settings.Blacklist = (settings.Blacklist || []).map((p) => {
 			const cleaned = cleanPath(p);
 			if (cleaned.toLowerCase() === cleanedOld.toLowerCase()) return cleanedNew;

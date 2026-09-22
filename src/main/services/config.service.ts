@@ -79,8 +79,7 @@ export class ConfigService {
 					}
 				}
 
-				// Backfill full defaults for folders still on a known-old default set.
-				// User-customized lists are never touched.
+				// Backfill defaults for untouched folders only.
 				for (const cfg of settings.ScanFolderConfigs) {
 					if (!cfg.ExcludeNames || cfg.ExcludeNames.length === 0) {
 						cfg.ExcludeNames = [...DefaultExcludeNames];
@@ -244,10 +243,7 @@ export class ConfigService {
 	}
 }
 
-/**
- * Known pre-expansion default exclusion sets. Folders still exactly on one of
- * these (or with an empty list) get backfilled to the full DefaultExcludeNames.
- */
+/** Pre-expansion default sets eligible for backfill. */
 const LegacyDefaultExcludeSets: string[][] = [["UnityCrashHandler64", "uninstall", "redist"]];
 
 export function isLegacyDefaultExcludeList(excludeNames: string[]): boolean {

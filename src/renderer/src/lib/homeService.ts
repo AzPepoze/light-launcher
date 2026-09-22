@@ -43,12 +43,7 @@ export async function refreshHomeData(): Promise<HomeData> {
 	}
 }
 
-/**
- * Handles quick launch of a game through the shared Run-page pipeline
- * (see gameLaunchService.launchGame). Fetches the fresh saved config so
- * Home uses the same prefix/settings as the Run page instead of stale
- * in-memory data. Prefix and Proton normalization is finalized in the backend.
- */
+/** Quick launch via the shared pipeline with fresh saved config. */
 export async function quickLaunchGame(game: GameInfo, showLogs = false): Promise<void> {
 	const gamePath = game.path || game.config?.LauncherPath || game.config?.GamePath || "";
 	let options = game.config;
@@ -57,7 +52,7 @@ export async function quickLaunchGame(game: GameInfo, showLogs = false): Promise
 			const fresh = await GetConfig(gamePath);
 			if (fresh) options = fresh;
 		} catch {
-			// Fall back to the in-memory config.
+			// Keep stored config when fresh load fails.
 		}
 	}
 	await launchGame(options, { showLogs });

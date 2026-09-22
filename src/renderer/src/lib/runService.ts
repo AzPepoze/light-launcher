@@ -156,11 +156,7 @@ export async function initializeRunPage(
 	};
 }
 
-/**
- * Shared validation: LauncherPath + LSFG DLL prerequisites.
- * Returns an error message when launch must be blocked, otherwise null.
- * Used by both the Run page and Home quick launch.
- */
+/** LauncherPath + LSFG prerequisites; error message or null. */
 export function validateLaunchPrerequisites(launchOptions: core.LaunchOptions): string | null {
 	if (!launchOptions.LauncherPath) {
 		return "Please select a launcher executable.";
@@ -173,9 +169,7 @@ export function validateLaunchPrerequisites(launchOptions: core.LaunchOptions): 
 	return null;
 }
 
-/**
- * Shared missing-tools check. Single source for Gamescope/MangoHud/GameMode/Vulkan.
- */
+/** Missing Gamescope/MangoHud/GameMode/Vulkan tools. */
 export function getMissingTools(
 	launchOptions: core.LaunchOptions,
 	systemStatus: core.SystemToolsStatus
@@ -192,11 +186,7 @@ export function getMissingTools(
 	return missingTools;
 }
 
-/**
- * Resolves the Proton display name/path for a library launch.
- * Mirrors the Run page fallback: custom Proton wins, otherwise the prefix
- * default, otherwise the first available runtime.
- */
+/** Library Proton: custom wins, then prefix default, then first available. */
 export async function resolveLibraryProton(
 	launchOptions: core.LaunchOptions,
 	protonVersions: core.ProtonTool[]
@@ -215,7 +205,7 @@ export async function resolveLibraryProton(
 				return prefixConfig.ProtonPath;
 			}
 		} catch {
-			// Fall through to first available runtime.
+			// No prefix default; fall back below.
 		}
 	}
 
