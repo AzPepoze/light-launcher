@@ -112,6 +112,19 @@
 			}
 		}
 
+		// Selection mode: no launch affordances (icon zoom), the checkbox
+		// gets the hover emphasis instead.
+		&.selection-mode:hover {
+			.icon-section .game-icon {
+				transform: none;
+			}
+
+			:global(.selection-checkbox .checkbox) {
+				border-color: var(--accent-primary);
+				transform: scale(1.1);
+			}
+		}
+
 		&.running {
 			border-color: var(--success, #44ffaa);
 			background: var(--bg-surface);

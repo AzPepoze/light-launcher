@@ -224,15 +224,46 @@
 			transform: perspective(900px) scale(0.98) rotateX(var(--tilt-x)) rotateY(var(--tilt-y));
 		}
 
-		&.selection-mode:hover {
+		// Selection mode: clicking selects, so no launch affordances.
+		// Covers :focus-within too — otherwise the clicked card keeps the
+		// play overlay stuck after the cursor leaves.
+		&.selection-mode:hover,
+		&.selection-mode:focus-within {
 			transform: none;
 
-			.game-icon-container::before {
-				opacity: 0 !important;
+			.game-icon-container {
+				border-color: var(--accent-primary);
+				box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+
+				&::before {
+					opacity: 0 !important;
+				}
+
+				.play-overlay {
+					opacity: 0 !important;
+				}
+
+				img.game-icon {
+					transform: none;
+					filter: none;
+				}
 			}
 
-			.play-overlay {
-				opacity: 0 !important;
+			&.selected .game-icon-container {
+				box-shadow:
+					0 2px 8px rgba(0, 0, 0, 0.25),
+					0 0 24px var(--accent-glow);
+			}
+
+			// Hover/focus feedback that says "click to select".
+			:global(.selection-overlay .checkbox) {
+				border-color: var(--accent-primary);
+				transform: scale(1.12);
+			}
+
+			.launch-icon-large,
+			.play-ripple {
+				animation: none;
 			}
 		}
 
