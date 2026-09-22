@@ -7,6 +7,7 @@ import { execFile } from "child_process";
 import { promisify } from "util";
 import { IconCacheMaxEntries, IconPngSize } from "../../shared/constants";
 import { IconCacheService } from "./iconCache.service";
+import { LoggerService } from "./logger.service";
 import type { IconCacheEntry } from "../../shared/types/system.types";
 
 const execFileAsync = promisify(execFile);
@@ -86,27 +87,34 @@ export class AppService {
 		if (!stat) {
 			return "";
 		}
+		const name = path.basename(executablePath);
 
 		const cached = iconMemoryCache.get(executablePath);
 		if (cached && cached.mtimeMs === stat.mtimeMs && cached.size === stat.size) {
+			LoggerService.debug("Icon", `hit memory ${name}`);
 			return cached.icon;
 		}
 
 		const diskIcon = await IconCacheService.get(executablePath, stat);
 		if (diskIcon !== null) {
 			if (diskIcon) AppService.rememberIcon(executablePath, stat, diskIcon);
+			LoggerService.debug("Icon", diskIcon ? `hit disk ${name}` : `hit disk (no icon) ${name}`);
 			return diskIcon;
 		}
 
+		LoggerService.debug("Icon", `miss ${name}`);
 		const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "light-launcher-icon-"));
 		try {
 			const icoPath = await AppService.extractIco(executablePath, tempDir);
 			if (!icoPath) {
 				AppService.rememberIcon(executablePath, stat, "");
 				await IconCacheService.markMiss(executablePath, stat);
+				LoggerService.debug("Icon", `no icon ${name}`);
 				return "";
 			}
-			return await AppService.buildAndCacheIcon(executablePath, stat, icoPath, tempDir);
+			const icon = await AppService.buildAndCacheIcon(executablePath, stat, icoPath, tempDir);
+			LoggerService.debug("Icon", `extracted ${name} (${icon.length} bytes)`);
+			return icon;
 		} finally {
 			try {
 				await fs.rm(tempDir, { recursive: true, force: true });
