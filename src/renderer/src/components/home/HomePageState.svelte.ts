@@ -1,10 +1,13 @@
 import { GetAutoScannedGames, GetRunningSessions, onEvent } from "@lib/api";
 import * as service from "@lib/homeService";
+import { createLogger } from "@lib/logger";
 import { navigationCommand } from "@stores/navigationStore";
 import { notifications } from "@stores/notificationStore";
 import { runState } from "@stores/runState";
 import { IconLoaderState } from "./IconLoaderState.svelte";
 import { SelectionState } from "./SelectionState.svelte";
+
+const log = createLogger("HomePage");
 
 function gameIdentity(game: any): string {
 	return game?.path || game?.config?.LauncherPath || game?.config?.GamePath || game?.name || "";
@@ -43,6 +46,7 @@ export class HomePageState {
 	sessionInterval: any = null;
 	showHelpModal = $state(false);
 	showAddModal = $state(false);
+	isLoading = $state(true);
 	currentView = $state<"grid" | "list-grid" | "sidebar-grid">("grid");
 	searchQuery = $state("");
 
@@ -87,38 +91,45 @@ export class HomePageState {
 	sessionPollInFlight = false;
 
 	async refreshData(forceScan = false) {
-		const shouldScan = forceScan || this.scannedFolderGroups.length === 0;
+		try {
+			const shouldScan = forceScan || this.scannedFolderGroups.length === 0;
 
-		const [data, scannedGroups] = await Promise.all([
-			service.refreshHomeData(),
-			shouldScan ? GetAutoScannedGames() : Promise.resolve(this.scannedFolderGroups)
-		]);
+			const [data, scannedGroups] = await Promise.all([
+				service.refreshHomeData(),
+				shouldScan ? GetAutoScannedGames() : Promise.resolve(this.scannedFolderGroups)
+			]);
 
-		let gamesChanged = false;
-		if (gamesSignature(data.games) !== gamesSignature(this.games)) {
-			this.games = data.games;
-			gamesChanged = true;
-		}
-		if (sessionsSignature(data.sessions) !== sessionsSignature(this.sessions)) {
-			this.sessions = data.sessions;
-		}
-		const nextPrefixes = data.prefixes || ["All Prefixes"];
-		if (nextPrefixes.join("|") !== this.prefixes.join("|")) {
-			this.prefixes = nextPrefixes;
-		}
-		const nextGroups = scannedGroups || [];
-		if (groupsSignature(nextGroups) !== groupsSignature(this.scannedFolderGroups)) {
-			this.scannedFolderGroups = nextGroups;
-			gamesChanged = true;
-		}
+			let gamesChanged = false;
+			if (gamesSignature(data.games) !== gamesSignature(this.games)) {
+				this.games = data.games;
+				gamesChanged = true;
+			}
+			if (sessionsSignature(data.sessions) !== sessionsSignature(this.sessions)) {
+				this.sessions = data.sessions;
+			}
+			const nextPrefixes = data.prefixes || ["All Prefixes"];
+			if (nextPrefixes.join("|") !== this.prefixes.join("|")) {
+				this.prefixes = nextPrefixes;
+			}
+			const nextGroups = scannedGroups || [];
+			if (groupsSignature(nextGroups) !== groupsSignature(this.scannedFolderGroups)) {
+				this.scannedFolderGroups = nextGroups;
+				gamesChanged = true;
+			}
 
-		// Icons load lazily on intersect; eager-sync only when the set changed.
-		if (gamesChanged || forceScan) {
-			const visibleForIcons = [
-				...this.games,
-				...this.scannedFolderGroups.flatMap((group) => group.games || [])
-			];
-			void this.icons.syncGames(visibleForIcons);
+			// Icons load lazily on intersect; eager-sync only when the set changed.
+			if (gamesChanged || forceScan) {
+				const visibleForIcons = [
+					...this.games,
+					...this.scannedFolderGroups.flatMap((group) => group.games || [])
+				];
+				void this.icons.syncGames(visibleForIcons);
+			}
+		} catch (error) {
+			log.error("Failed to load library", error);
+			notifications.add("Failed to load your library", "error");
+		} finally {
+			this.isLoading = false;
 		}
 	}
 

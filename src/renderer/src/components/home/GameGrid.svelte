@@ -617,6 +617,15 @@
 />
 
 <style lang="scss">
+	@keyframes games-mount {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
 	.games-container {
 		flex: 1;
 		min-height: 0;
@@ -626,6 +635,7 @@
 		padding-right: 8px;
 		box-sizing: border-box;
 		max-width: 100%;
+		animation: games-mount 260ms cubic-bezier(0.215, 0.61, 0.355, 1);
 
 		.main-content-panel {
 			min-width: 0;
@@ -739,6 +749,12 @@
 			display: flex;
 			flex-direction: column;
 			box-sizing: border-box;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.games-container {
+			animation: none;
 		}
 	}
 </style>
