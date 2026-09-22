@@ -2,15 +2,19 @@ import fs from "fs/promises";
 import fsSync from "fs";
 import path from "path";
 import os from "os";
-import { app, BrowserWindow, dialog, shell } from "electron";
-import { exec, execSync } from "child_process";
+import { app, BrowserWindow, dialog, nativeImage, shell } from "electron";
+import { execFile } from "child_process";
 import { promisify } from "util";
+import { IconCacheMaxEntries, IconPngSize } from "../../shared/constants";
+import type { IconCacheEntry } from "../../shared/types/system.types";
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 let initialLauncherPath = "";
 let initialGamePath = "";
 let shouldEditLsfg = false;
+
+const iconMemoryCache = new Map<string, IconCacheEntry>();
 
 export class AppService {
 	static setInitialArgs(launcherPath: string, gamePath: string, editLsfg: boolean) {
@@ -41,46 +45,102 @@ export class AppService {
 	}
 
 	static async getExeIcon(executablePath: string): Promise<string> {
-		if (!executablePath || !fsSync.existsSync(executablePath)) {
+		const stat = AppService.readExeStat(executablePath);
+		if (!stat) {
 			return "";
+		}
+
+		const cached = iconMemoryCache.get(executablePath);
+		if (cached && cached.mtimeMs === stat.mtimeMs && cached.size === stat.size) {
+			return cached.icon;
 		}
 
 		const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "light-launcher-icon-"));
 		try {
-			// Try wrestool
-			try {
-				const { execFile } = require("child_process");
-				const execFileAsync = promisify(execFile);
-				await execFileAsync("wrestool", ["-x", `--output=${tempDir}`, executablePath]);
-				const files = await fs.readdir(tempDir);
-				const icoFile = files.find((f) => f.toLowerCase().endsWith(".ico"));
-				if (icoFile) {
-					const data = await fs.readFile(path.join(tempDir, icoFile));
-					if (data.length > 0) {
-						return `data:image/x-icon;base64,${data.toString("base64")}`;
-					}
-				}
-			} catch {}
-
-			// Try icoextract
-			try {
-				const { execFile } = require("child_process");
-				const execFileAsync = promisify(execFile);
-				const outIco = path.join(tempDir, "icon.ico");
-				await execFileAsync("icoextract", [executablePath, outIco]);
-				if (fsSync.existsSync(outIco)) {
-					const data = await fs.readFile(outIco);
-					if (data.length > 0) {
-						return `data:image/x-icon;base64,${data.toString("base64")}`;
-					}
-				}
-			} catch {}
+			const icoPath = await AppService.extractIco(executablePath, tempDir);
+			if (!icoPath) {
+				return "";
+			}
+			const icon = AppService.icoToPngDataUrl(icoPath) ?? (await AppService.rawIcoDataUrl(icoPath));
+			if (icon) {
+				AppService.rememberIcon(executablePath, stat, icon);
+			}
+			return icon;
 		} finally {
 			try {
 				await fs.rm(tempDir, { recursive: true, force: true });
 			} catch {}
 		}
+	}
 
+	private static readExeStat(executablePath: string): fsSync.Stats | null {
+		try {
+			const stat = fsSync.statSync(executablePath);
+			return stat.isFile() ? stat : null;
+		} catch {
+			return null;
+		}
+	}
+
+	private static async extractIco(executablePath: string, tempDir: string): Promise<string> {
+		try {
+			await execFileAsync("wrestool", ["-x", `--output=${tempDir}`, executablePath]);
+			const files = await fs.readdir(tempDir);
+			const icoFile = files.find((f) => f.toLowerCase().endsWith(".ico"));
+			if (icoFile) {
+				return path.join(tempDir, icoFile);
+			}
+		} catch {}
+
+		try {
+			const outIco = path.join(tempDir, "icon.ico");
+			await execFileAsync("icoextract", [executablePath, outIco]);
+			if (fsSync.existsSync(outIco)) {
+				return outIco;
+			}
+		} catch {}
+		return "";
+	}
+
+	// Small PNG instead of the full multi-image ICO, so scrolling ships kilobytes.
+	private static icoToPngDataUrl(icoPath: string): string | null {
+		try {
+			const image = nativeImage.createFromBuffer(fsSync.readFileSync(icoPath));
+			if (image.isEmpty()) {
+				return null;
+			}
+			const { width, height } = image.getSize();
+			const sized =
+				Math.max(width, height) > IconPngSize
+					? image.resize({ width: IconPngSize, height: IconPngSize })
+					: image;
+			const png = sized.toPNG();
+			if (png.length === 0) {
+				return null;
+			}
+			return `data:image/png;base64,${png.toString("base64")}`;
+		} catch {
+			return null;
+		}
+	}
+
+	private static rememberIcon(executablePath: string, stat: fsSync.Stats, icon: string): void {
+		if (iconMemoryCache.size >= IconCacheMaxEntries) {
+			const oldest = iconMemoryCache.keys().next();
+			if (!oldest.done) {
+				iconMemoryCache.delete(oldest.value);
+			}
+		}
+		iconMemoryCache.set(executablePath, { mtimeMs: stat.mtimeMs, size: stat.size, icon });
+	}
+
+	private static async rawIcoDataUrl(icoPath: string): Promise<string> {
+		try {
+			const data = await fs.readFile(icoPath);
+			if (data.length > 0) {
+				return `data:image/x-icon;base64,${data.toString("base64")}`;
+			}
+		} catch {}
 		return "";
 	}
 

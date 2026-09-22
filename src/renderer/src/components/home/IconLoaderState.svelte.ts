@@ -8,11 +8,13 @@ export class IconLoaderState {
 	iconSources = new Map<string, string>();
 
 	async syncGames(games: GameInfo[]) {
-		for (const game of games) {
-			const gamePath = game?.path || game?.config?.LauncherPath;
-			if (!gamePath) continue;
-			await this.enqueueIconLoad(gamePath, game?.config?.CustomIconPath || null);
-		}
+		await Promise.allSettled(
+			games.map((game) => {
+				const gamePath = game?.path || game?.config?.LauncherPath;
+				if (!gamePath) return Promise.resolve();
+				return this.enqueueIconLoad(gamePath, game?.config?.CustomIconPath || null);
+			})
+		);
 	}
 
 	async enqueueIconLoad(gamePath: string, customIconPath?: string | null) {

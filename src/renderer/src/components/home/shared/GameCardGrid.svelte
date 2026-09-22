@@ -1,6 +1,6 @@
 <script lang="ts">
 	import GameCard from "@components/home/GameCard.svelte";
-	import { getGamePath } from "@lib/gameUtils";
+	import { getGameId, getGamePath } from "@lib/gameUtils";
 	import type { GameInfo, RunningSession } from "@shared";
 
 	export let games: GameInfo[] = [];
@@ -18,6 +18,17 @@
 	export let loadIcon: (path: string) => void = () => {};
 
 	$: cardView = view === "sidebar-grid" ? "grid" : view;
+
+	// Same exe can appear twice (e.g. duplicate profiles); keys must stay unique.
+	$: visibleGames = (() => {
+		const seen = new Set<string>();
+		return games.filter((game) => {
+			const key = getGameId(game);
+			if (seen.has(key)) return false;
+			seen.add(key);
+			return true;
+		});
+	})();
 </script>
 
 <div
@@ -25,7 +36,7 @@
 	class:grid-view={view === "grid" || view === "sidebar-grid"}
 	class:list-view={view === "list-grid"}
 >
-	{#each games as game}
+	{#each visibleGames as game (getGameId(game))}
 		{@const gamePath = getGamePath(game)}
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div on:contextmenu|preventDefault|stopPropagation={(e) => handleRightClick(e, game)}>

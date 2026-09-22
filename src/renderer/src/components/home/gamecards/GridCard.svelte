@@ -30,10 +30,16 @@
 
 	$: if (icon) {
 		const current = ++iconNonce;
-		getDominantColor(icon).then((c) => {
-			if (current !== iconNonce) return;
-			if (c) dominantRGB = `${c[0]},${c[1]},${c[2]}`;
-		});
+		const currentIcon = icon;
+		const run = () => {
+			getDominantColor(currentIcon).then((c) => {
+				if (current !== iconNonce) return;
+				if (c) dominantRGB = `${c[0]},${c[1]},${c[2]}`;
+			});
+		};
+		// Decode off the scroll path; spotlight color is decorative.
+		if (typeof requestIdleCallback !== "undefined") requestIdleCallback(run);
+		else setTimeout(run, 0);
 	} else {
 		dominantRGB = "255,255,255";
 	}
