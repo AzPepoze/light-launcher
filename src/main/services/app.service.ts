@@ -93,8 +93,8 @@ export class AppService {
 		}
 
 		const diskIcon = await IconCacheService.get(executablePath, stat);
-		if (diskIcon) {
-			AppService.rememberIcon(executablePath, stat, diskIcon);
+		if (diskIcon !== null) {
+			if (diskIcon) AppService.rememberIcon(executablePath, stat, diskIcon);
 			return diskIcon;
 		}
 
@@ -102,6 +102,8 @@ export class AppService {
 		try {
 			const icoPath = await AppService.extractIco(executablePath, tempDir);
 			if (!icoPath) {
+				AppService.rememberIcon(executablePath, stat, "");
+				await IconCacheService.markMiss(executablePath, stat);
 				return "";
 			}
 			return await AppService.buildAndCacheIcon(executablePath, stat, icoPath, tempDir);

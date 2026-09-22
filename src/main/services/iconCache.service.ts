@@ -16,7 +16,7 @@ export class IconCacheService {
 		return crypto.createHash("sha1").update(key).digest("hex");
 	}
 
-	/** Returns a cached data URL, or null on miss. */
+	/** Returns a cached data URL, "" for a known icon-less exe, or null on miss. */
 	static async get(
 		executablePath: string,
 		stat: { mtimeMs: number; size: number }
@@ -30,7 +30,12 @@ export class IconCacheService {
 				return `data:${mime};base64,${bytes.toString("base64")}`;
 			} catch {}
 		}
-		return null;
+		try {
+			await fs.access(`${base}.miss`);
+			return "";
+		} catch {
+			return null;
+		}
 	}
 
 	static async put(
@@ -47,6 +52,18 @@ export class IconCacheService {
 			const tempFile = `${target}.${process.pid}.${Date.now()}.tmp`;
 			await fs.writeFile(tempFile, bytes);
 			await fs.rename(tempFile, target);
+		} catch {}
+	}
+
+	/** Records that an exe has no extractable icon so extraction is not retried on later runs. */
+	static async markMiss(
+		executablePath: string,
+		stat: { mtimeMs: number; size: number }
+	): Promise<void> {
+		try {
+			const dir = IconCacheService.dir();
+			await fs.mkdir(dir, { recursive: true });
+			await fs.writeFile(path.join(dir, `${IconCacheService.hash(executablePath, stat)}.miss`), "");
 		} catch {}
 	}
 }
