@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from "svelte";
+	import { onMount, afterUpdate } from "svelte";
 	import ContextMenu from "@components/shared/ContextMenu.svelte";
 	import SidebarPanel from "@components/home/SidebarPanel.svelte";
 	import FolderGroup from "@components/home/FolderGroup.svelte";
@@ -16,6 +16,7 @@
 		OpenFileLocation
 	} from "@lib/api";
 	import { notifications } from "@stores/notificationStore";
+	import { saveHomeScroll, getHomeScroll } from "@stores/homeScrollStore";
 
 	export let currentView: "grid" | "list-grid" | "sidebar-grid" = "grid";
 	export let games: any[] = [];
@@ -179,6 +180,31 @@
 
 	let selectedGroupKey = "no-folder";
 
+	// Home scroll position: saved while scrolling, restored once per view
+	// when the grid mounts again after navigating back to Home.
+	let gamesScrollerEl: HTMLElement | null = null;
+	let sidebarScrollerEl: HTMLElement | null = null;
+	let restoredForView: string | null = null;
+
+	function getScroller(): HTMLElement | null {
+		return currentView === "sidebar-grid" ? sidebarScrollerEl : gamesScrollerEl;
+	}
+
+	function handleScrollerScroll(e: Event) {
+		saveHomeScroll((e.currentTarget as HTMLElement).scrollTop);
+	}
+
+	afterUpdate(() => {
+		if (restoredForView === currentView) return;
+		const el = getScroller();
+		if (!el) return;
+		restoredForView = currentView;
+		const saved = getHomeScroll();
+		if (saved > 0 && el.scrollTop !== saved) {
+			el.scrollTop = saved;
+		}
+	});
+
 	let scanHeaderEl: HTMLElement | null = null;
 	let isScanStuck = false;
 
@@ -231,6 +257,8 @@
 	class:grid-view={currentView === "grid"}
 	class:list-view={currentView === "list-grid"}
 	class:sidebar-layout-view={currentView === "sidebar-grid"}
+	bind:this={gamesScrollerEl}
+	on:scroll={handleScrollerScroll}
 >
 	{#if currentView === "sidebar-grid"}
 		<SidebarPanel
@@ -240,7 +268,7 @@
 		/>
 	{/if}
 
-	<div class="main-content-panel">
+	<div class="main-content-panel" bind:this={sidebarScrollerEl} on:scroll={handleScrollerScroll}>
 		<!-- 1. Render Custom Profiles if visible -->
 		{#if showCustomProfiles}
 			{#if currentView !== "sidebar-grid" && scannedFolderGroups.length > 0}
