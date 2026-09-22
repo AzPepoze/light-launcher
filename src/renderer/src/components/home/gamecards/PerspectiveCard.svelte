@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { tick } from "svelte";
+	import { iconFade } from "@lib/iconReveal";
 
 	export let game: any;
 	export let icon: string = "";
@@ -7,25 +7,6 @@
 	export let active: boolean = false;
 	export let onLaunch: (game: any) => void = () => {};
 	export let onConfigure: (game: any) => void = () => {};
-
-	let iconLoaded = false;
-	let lastIcon = "";
-	let iconImgEl: HTMLImageElement | undefined;
-
-	$: if (icon !== lastIcon) {
-		lastIcon = icon;
-		iconLoaded = false;
-		iconImgEl = undefined;
-		const current = icon;
-		if (current) {
-			// Reveal even if the load event was missed (cached/decoded image).
-			tick().then(() => {
-				if (current !== lastIcon) return;
-				const img = iconImgEl;
-				if (img && img.complete && img.naturalWidth > 0) iconLoaded = true;
-			});
-		}
-	}
 
 	function handleLaunch() {
 		onLaunch(game);
@@ -49,15 +30,12 @@
 		<div class="image-container">
 			{#if icon}
 				<img
-					bind:this={iconImgEl}
+					use:iconFade={icon}
 					src={icon}
 					alt={game.name}
 					class="game-icon"
-					class:loaded={iconLoaded}
 					decoding="async"
 					draggable="false"
-					on:load={() => (iconLoaded = true)}
-					on:error={() => (iconLoaded = true)}
 				/>
 			{:else}
 				<div class="fallback">
@@ -166,7 +144,7 @@
 			transform: scale(0.96);
 			transition: opacity 240ms var(--ease-out), transform 320ms var(--ease-spring);
 
-			&.loaded {
+			&:global(.loaded) {
 				opacity: 1;
 				transform: none;
 			}

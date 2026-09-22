@@ -1,9 +1,5 @@
 const cache = new Map<string, [number, number, number]>();
 
-function rgbToKey(r: number, g: number, b: number): string {
-	return `${r},${g},${b}`;
-}
-
 function getVibrantScore(r: number, g: number, b: number): number {
 	const max = Math.max(r, g, b);
 	const min = Math.min(r, g, b);
@@ -11,10 +7,8 @@ function getVibrantScore(r: number, g: number, b: number): number {
 	if (max === 0) return 0;
 	const saturation = delta / max;
 	const value = max / 255;
-	// Filter out near-gray and very dark
 	if (saturation < 0.15) return 0;
 	if (value < 0.2) return 0;
-	// Prefer vibrant + bright
 	return saturation * 0.7 + value * 0.3 + saturation * value * 0.5;
 }
 
@@ -42,15 +36,14 @@ function analyzeImage(source: CanvasImageSource): [number, number, number] | nul
 		// Skip near black/white extremes that make muddy spotlight
 		const max = Math.max(r, g, b);
 		const min = Math.min(r, g, b);
-		if (max < 20 && min < 20) continue; // near black
-		if (max > 250 && min > 230) continue; // near white
+		if (max < 20 && min < 20) continue;
+		if (max > 250 && min > 230) continue;
 
 		const score = getVibrantScore(r, g, b);
 		if (score > bestScore) {
 			bestScore = score;
 			best = [r, g, b];
 		}
-		// Also accumulate for fallback average
 		rSum += r;
 		gSum += g;
 		bSum += b;

@@ -514,7 +514,6 @@
 		on:scroll={handleScrollerScroll}
 		on:pointerdown={handleScrollerPointerDown}
 	>
-		<!-- 1. Render Custom Profiles if visible -->
 		{#if showCustomProfiles}
 			{#if currentView !== "sidebar-grid" && scannedFolderGroups.length > 0}
 				<h2 bind:this={scanHeaderEl} class="scan-section-title" class:is-stuck={isScanStuck}>
@@ -555,7 +554,6 @@
 			{/if}
 		{/if}
 
-		<!-- 2. Render Folder Groups -->
 		{#each foldersToRender as group (group.folderPath)}
 			<FolderGroup
 				{group}
@@ -579,7 +577,6 @@
 			/>
 		{/each}
 
-		<!-- 3. Show "no results" if both custom profiles and folder groups are empty -->
 		{#if filteredGames.length === 0 && scannedFolderGroups.every(g => g.games.length === 0) && (games.length > 0 || scannedFolderGroups.length > 0)}
 			<div class="no-results">
 				<p>

@@ -31,7 +31,6 @@
 		});
 	});
 
-	// If the game path changes and we have already intersected, load the new icon
 	$: if (isIntersecting) {
 		const path = game.path || game.config.LauncherPath;
 		if (path) loadIcon(path, game.config?.CustomIconPath ?? null);
@@ -78,7 +77,6 @@
 			{/if}
 		</div>
 	{:else}
-		<!-- Beautiful dark-mode skeleton screens matching the exact layouts -->
 		{#if view === "list-grid"}
 			<div class="skeleton-list-card">
 				<div class="skeleton-icon-box">
@@ -269,7 +267,7 @@
 		}
 	}
 
-	// Apple-style shimmer — only grid skeleton (placed after base rules so it overrides)
+	// Placed after base rules so it overrides
 	.skeleton-grid-card .skeleton-shimmer {
 		background: linear-gradient(
 			90deg,

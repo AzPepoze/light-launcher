@@ -9,17 +9,13 @@ export class IconLoaderState {
 	loadingIcons = new Set<string>();
 	iconSources = new Map<string, string>();
 
-	async enqueueIconLoad(gamePath: string, customIconPath?: string | null) {
-		const isExplicitSync = customIconPath !== undefined;
+	async enqueueIconLoad(gamePath: string, customIconPath: string | null = null) {
 		const requestedSource = customIconPath ? `custom:${customIconPath}` : `exe:${gamePath}`;
-		const exeSource = `exe:${gamePath}`;
-		const loadingKey = gamePath;
 
-		if (!isExplicitSync && this.iconSources.get(gamePath)?.startsWith("custom:")) return;
 		if (this.gameIcons[gamePath] && this.iconSources.get(gamePath) === requestedSource) return;
-		if (this.loadingIcons.has(loadingKey)) return;
+		if (this.loadingIcons.has(gamePath)) return;
 
-		this.loadingIcons.add(loadingKey);
+		this.loadingIcons.add(gamePath);
 		try {
 			let icon = "";
 			let resolvedSource: string | null = null;
@@ -29,13 +25,13 @@ export class IconLoaderState {
 					icon = (await GetImageBase64(customIconPath)) || "";
 					if (icon) resolvedSource = requestedSource;
 				} catch {
-					// custom file missing — clear stale marker and fall through to exe
+					// Custom file missing; fall through to the exe icon.
 				}
 			}
 
 			if (!icon) {
 				icon = (await loadExeIcon(gamePath)) || "";
-				if (icon) resolvedSource = exeSource;
+				if (icon) resolvedSource = `exe:${gamePath}`;
 			}
 
 			if (icon && resolvedSource) {
@@ -47,7 +43,7 @@ export class IconLoaderState {
 		} catch (error) {
 			log.error("Queue icon load error", error);
 		} finally {
-			this.loadingIcons.delete(loadingKey);
+			this.loadingIcons.delete(gamePath);
 		}
 	}
 }

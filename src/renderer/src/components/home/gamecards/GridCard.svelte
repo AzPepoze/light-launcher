@@ -3,7 +3,7 @@
 	import CardSelectionCheckbox from "./shared/CardSelectionCheckbox.svelte";
 	import AnimatedPlayIcon from "./shared/AnimatedPlayIcon.svelte";
 	import { getDominantColor } from "@lib/dominantColor";
-	import { tick } from "svelte";
+	import { iconFade } from "@lib/iconReveal";
 
 	export let game: any;
 	export let icon: string = "";
@@ -26,7 +26,6 @@
 	let colorFetched = false;
 	let iconImgEl: HTMLImageElement | undefined;
 	let colorNonce = 0;
-	let iconLoaded = false;
 	let lastIcon = "";
 
 	$: if (icon !== lastIcon) {
@@ -34,16 +33,6 @@
 		colorFetched = false;
 		dominantRGB = "255,255,255";
 		iconImgEl = undefined;
-		iconLoaded = false;
-		const current = icon;
-		if (current) {
-			// Reveal even if the load event was missed (cached/decoded image).
-			tick().then(() => {
-				if (current !== lastIcon) return;
-				const img = iconImgEl;
-				if (img && img.complete && img.naturalWidth > 0) iconLoaded = true;
-			});
-		}
 	}
 
 	function handleLaunch(event?: MouseEvent) {
@@ -131,14 +120,12 @@
 			{#if icon}
 				<img
 					bind:this={iconImgEl}
+					use:iconFade={icon}
 					src={icon}
 					alt={game.name}
 					class="game-icon"
-					class:loaded={iconLoaded}
 					decoding="async"
 					draggable="false"
-					on:load={() => (iconLoaded = true)}
-					on:error={() => (iconLoaded = true)}
 				/>
 			{:else}
 				<span class="material-icons system-icon">rocket_launch</span>
@@ -339,7 +326,7 @@
 		transform: scale(0.96);
 		transition: opacity 240ms var(--ease-out), transform 320ms var(--ease-spring);
 
-		&.loaded {
+		&:global(.loaded) {
 			opacity: 1;
 			transform: none;
 		}

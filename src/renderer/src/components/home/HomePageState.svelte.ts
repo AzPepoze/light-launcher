@@ -50,7 +50,6 @@ export class HomePageState {
 	currentView = $state<"grid" | "list-grid" | "sidebar-grid">("grid");
 	searchQuery = $state("");
 
-	// Sub-states
 	icons = new IconLoaderState();
 	selection = new SelectionState(() => this.getVisibleGames());
 

@@ -17,8 +17,41 @@ let shouldEditLsfg = false;
 
 const iconMemoryCache = new Map<string, IconCacheEntry>();
 
-type Extractor = "wrestool" | "icoextract" | null;
-let resolvedExtractor: Extractor | undefined;
+interface ToolCandidate<T extends string> {
+	tool: T;
+	probe: string[];
+}
+
+function createToolResolver<T extends string>(candidates: readonly ToolCandidate<T>[]) {
+	let resolved: T | null | undefined;
+	return {
+		async get(): Promise<T | null> {
+			if (resolved !== undefined) return resolved;
+			for (const { tool, probe } of candidates) {
+				try {
+					await execFileAsync(tool, probe);
+					resolved = tool;
+					return tool;
+				} catch {}
+			}
+			resolved = null;
+			return null;
+		},
+		reset(): void {
+			resolved = undefined;
+		}
+	};
+}
+
+const extractorResolver = createToolResolver([
+	{ tool: "wrestool", probe: ["--version"] },
+	{ tool: "icoextract", probe: ["--help"] }
+] as const);
+
+const converterResolver = createToolResolver([
+	{ tool: "magick", probe: ["-version"] },
+	{ tool: "convert", probe: ["-version"] }
+] as const);
 
 export class AppService {
 	static setInitialArgs(launcherPath: string, gamePath: string, editLsfg: boolean) {
@@ -71,19 +104,27 @@ export class AppService {
 			if (!icoPath) {
 				return "";
 			}
-			const ico = await fs.readFile(icoPath);
-			const png = await extractIconPng(ico, icoPath, tempDir);
-			const bytes = png ?? ico;
-			const mime = png ? "image/png" : "image/x-icon";
-			const icon = `data:${mime};base64,${bytes.toString("base64")}`;
-			AppService.rememberIcon(executablePath, stat, icon);
-			await IconCacheService.put(executablePath, stat, bytes, png ? "png" : "ico");
-			return icon;
+			return await AppService.buildAndCacheIcon(executablePath, stat, icoPath, tempDir);
 		} finally {
 			try {
 				await fs.rm(tempDir, { recursive: true, force: true });
 			} catch {}
 		}
+	}
+
+	private static async buildAndCacheIcon(
+		executablePath: string,
+		stat: fsSync.Stats,
+		icoPath: string,
+		tempDir: string
+	): Promise<string> {
+		const ico = await fs.readFile(icoPath);
+		const png = await extractIconPng(ico, icoPath, tempDir);
+		const bytes = png ?? ico;
+		const icon = `data:${png ? "image/png" : "image/x-icon"};base64,${bytes.toString("base64")}`;
+		AppService.rememberIcon(executablePath, stat, icon);
+		await IconCacheService.put(executablePath, stat, bytes, png ? "png" : "ico");
+		return icon;
 	}
 
 	private static readExeStat(executablePath: string): fsSync.Stats | null {
@@ -95,26 +136,8 @@ export class AppService {
 		}
 	}
 
-	private static async resolveExtractor(): Promise<Extractor> {
-		if (resolvedExtractor !== undefined) {
-			return resolvedExtractor;
-		}
-		try {
-			await execFileAsync("wrestool", ["--version"]);
-			resolvedExtractor = "wrestool";
-			return resolvedExtractor;
-		} catch {}
-		try {
-			await execFileAsync("icoextract", ["--help"]);
-			resolvedExtractor = "icoextract";
-			return resolvedExtractor;
-		} catch {}
-		resolvedExtractor = null;
-		return resolvedExtractor;
-	}
-
 	private static async extractIco(executablePath: string, tempDir: string): Promise<string> {
-		const extractor = await AppService.resolveExtractor();
+		const extractor = await extractorResolver.get();
 		if (!extractor) {
 			return "";
 		}
@@ -136,7 +159,7 @@ export class AppService {
 			}
 		} catch {
 			// Tool failed at runtime; re-probe on the next call.
-			resolvedExtractor = undefined;
+			extractorResolver.reset();
 		}
 		return "";
 	}
@@ -269,22 +292,6 @@ export class AppService {
 	}
 }
 
-type Converter = "magick" | "convert" | null;
-let resolvedConverter: Converter | undefined;
-
-async function resolveConverter(): Promise<Converter> {
-	if (resolvedConverter !== undefined) return resolvedConverter;
-	for (const tool of ["magick", "convert"] as const) {
-		try {
-			await execFileAsync(tool, ["-version"]);
-			resolvedConverter = tool;
-			return resolvedConverter;
-		} catch {}
-	}
-	resolvedConverter = null;
-	return resolvedConverter;
-}
-
 interface IcoFrame {
 	index: number;
 	width: number;
@@ -325,7 +332,7 @@ async function extractIconPng(ico: Buffer, icoPath: string, tempDir: string): Pr
 
 	const largest = frames.reduce((a, b) => (b.width * b.height > a.width * a.height ? b : a));
 
-	const converter = await resolveConverter();
+	const converter = await converterResolver.get();
 	if (converter) {
 		const outPng = path.join(tempDir, "icon.png");
 		try {
@@ -338,7 +345,7 @@ async function extractIconPng(ico: Buffer, icoPath: string, tempDir: string): Pr
 			const png = await fs.readFile(outPng);
 			if (png.length) return png;
 		} catch {
-			resolvedConverter = undefined;
+			converterResolver.reset();
 		}
 	}
 

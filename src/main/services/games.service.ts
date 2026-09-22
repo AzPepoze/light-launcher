@@ -58,7 +58,6 @@ export class GamesService {
 		}
 		const cfg = await ConfigService.loadGameConfig(executablePath);
 		if (!cfg) {
-			// Try finding by path match as fallback
 			const configs = await ConfigService.listGameConfigs();
 			const normalizedTarget = cleanPath(executablePath).toLowerCase();
 			const match = configs.find(
