@@ -12,6 +12,6 @@
 		"outDir": "./dist",
 		"rootDir": "./src"
 	},
-	"include": ["src/main/**/*", "src/preload/**/*", "src/shared/**/*"],
+	"include": ["src/shared/**/*"],
 	"exclude": ["src/renderer/**/*", "dist", "bin", "node_modules"]
 }

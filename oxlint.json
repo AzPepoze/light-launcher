@@ -7,8 +7,6 @@
 		"dist/**",
 		"bin/**",
 		"node_modules/**",
-		"src/renderer/dist/**",
-		"src/main/dist/**",
-		"src/preload/dist/**"
+		"src/renderer/dist/**"
 	]
 }
