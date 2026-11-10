@@ -2,6 +2,7 @@ package downloads
 
 import (
 	"context"
+	"errors"
 	"os"
 	"time"
 
@@ -92,6 +93,7 @@ func (m *Manager) failLocked(j *job, err error) {
 }
 
 // persist saves progress and segments so a restart or a pause can resume the file.
+// The configured connection count is the planned segment count, not the live limit, so a rate limit does not stick.
 func (m *Manager) persist(j *job) {
 	segments := j.snapshotSegments()
 	if len(segments) == 0 {
@@ -100,15 +102,15 @@ func (m *Manager) persist(j *job) {
 	p := j.progress(time.Now())
 	id := j.row.ID
 	ctx := context.Background()
-	connections := p.connections
+	connections := len(segments)
 	patch := Patch{BytesDone: &p.received, Size: &p.total, Connections: &connections}
 	if etag := j.etagValue(); etag != "" {
 		patch.ETag = &etag
 	}
-	if err := m.store.Update(ctx, id, patch); err != nil {
+	if err := m.store.Update(ctx, id, patch); err != nil && !errors.Is(err, ErrNotFound) {
 		logger.Warn(logCategory, "could not save progress of download %d: %v", id, err)
 	}
-	if err := m.store.SaveSegments(ctx, id, segments); err != nil {
+	if err := m.store.SaveSegments(ctx, id, segments); err != nil && !errors.Is(err, ErrNotFound) {
 		logger.Warn(logCategory, "could not save segments of download %d: %v", id, err)
 	}
 }
