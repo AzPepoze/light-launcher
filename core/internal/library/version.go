@@ -128,37 +128,6 @@ func isNewer(candidate, current string) bool {
 	return compareVersions(candidate, current) > 0
 }
 
-// versionKey is a stable key for equality checks: 0.7, v0.7 and 0.7.0 share one key.
-func versionKey(input string) string {
-	p := parseVersion(input)
-	if p == nil {
-		return ""
-	}
-	nums := append([]int(nil), p.nums...)
-	for len(nums) > 1 && nums[len(nums)-1] == 0 {
-		nums = nums[:len(nums)-1]
-	}
-	parts := make([]string, len(nums))
-	for i, n := range nums {
-		parts[i] = strconv.Itoa(n)
-	}
-	prefix := "v"
-	if p.kind == "ch" || p.kind == "ep" {
-		prefix = p.kind
-	}
-	return prefix + strings.Join(parts, ".") + p.suffix
-}
-
-// sameVersion reports whether two version strings name the same release.
-func sameVersion(a, b string) bool {
-	ka := versionKey(a)
-	kb := versionKey(b)
-	if ka != "" && kb != "" {
-		return ka == kb
-	}
-	return a == b
-}
-
 // versionFromText finds the last version-like token in a file or folder name. Years are ignored.
 func versionFromText(input string) string {
 	matches := versionCandidate.FindAllStringSubmatchIndex(input, -1)

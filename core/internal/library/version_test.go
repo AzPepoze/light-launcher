@@ -35,15 +35,6 @@ func TestIsNewerHandlesEmptyValues(t *testing.T) {
 	}
 }
 
-func TestSameVersionIgnoresPrefixAndTrailingZeros(t *testing.T) {
-	if !sameVersion("0.7", "v0.7.0") {
-		t.Error("0.7 and v0.7.0 should be the same version")
-	}
-	if sameVersion("0.7", "0.7a") {
-		t.Error("0.7 and 0.7a should differ")
-	}
-}
-
 func TestVersionFromText(t *testing.T) {
 	if got := versionFromText("Game_v1.2.3_win.zip"); got != "1.2.3" {
 		t.Errorf("versionFromText = %q, want 1.2.3", got)
