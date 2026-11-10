@@ -1,20 +1,11 @@
 package config
 
 import (
-	"os"
 	"path/filepath"
 )
 
 func GetBaseDirectory() string {
-	xdgConfigHome := os.Getenv("XDG_CONFIG_HOME")
-	if xdgConfigHome != "" {
-		return filepath.Join(xdgConfigHome, AppName)
-	}
-	homeDirectory, err := os.UserHomeDir()
-	if err != nil {
-		return filepath.Join(".config", AppName)
-	}
-	return filepath.Join(homeDirectory, ".config", AppName)
+	return filepath.Join(configHome(), AppName)
 }
 
 func GetConfigDirectory() string {
