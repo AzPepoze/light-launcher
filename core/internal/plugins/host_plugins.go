@@ -126,7 +126,7 @@ func (h *Host) SetEnabled(id string, enabled bool) (PluginInfo, error) {
 }
 
 // Logs returns the last lines a plugin wrote. A count of 0 returns all kept lines.
-func (h *Host) Logs(id string, lines int) ([]string, error) {
+func (h *Host) Logs(id string, lines int) ([]LogLine, error) {
 	if err := requireID(id); err != nil {
 		return nil, err
 	}

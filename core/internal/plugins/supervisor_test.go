@@ -149,7 +149,7 @@ func TestPluginNotificationsReachTheLog(t *testing.T) {
 		t.Fatalf("source.echo: %v", err)
 	}
 	lines := env.lines.tail(0)
-	if !containsLine(lines, "[info] echo called") {
+	if !containsLine(lines, "echo called") {
 		t.Fatalf("log lines = %v", lines)
 	}
 	if !containsLine(lines, "fixture plugin started") {
@@ -237,9 +237,9 @@ func (s *Supervisor) crashCount() int {
 	return len(s.crashes)
 }
 
-func containsLine(lines []string, want string) bool {
+func containsLine(lines []LogLine, want string) bool {
 	for _, line := range lines {
-		if strings.Contains(line, want) {
+		if strings.Contains(line.Text, want) {
 			return true
 		}
 	}
