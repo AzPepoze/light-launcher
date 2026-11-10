@@ -23,6 +23,10 @@
 	import Settings from "./pages/Settings.svelte";
 	import Utils from "./pages/Utils.svelte";
 	import Versions from "./pages/Versions.svelte";
+	import LibraryPage from "./features/library/LibraryPage.svelte";
+	import DownloadsPage from "./features/downloads/DownloadsPage.svelte";
+	import UpdatesPage from "./features/updates/UpdatesPage.svelte";
+	import PluginsPage from "./features/plugins/PluginsPage.svelte";
 	import CommandPalette from "@components/shared/CommandPalette.svelte";
 	import { commandPaletteState } from "@components/shared/CommandPaletteState.svelte";
 	import { createLogger } from "@lib/logger";
@@ -65,6 +69,10 @@
 		utils: 5,
 		settings: 6,
 		editlsfg: 7,
+		library: 8,
+		downloads: 9,
+		updates: 10,
+		plugins: 11,
 	};
 
 	let activePage = "home";
@@ -239,6 +247,14 @@
 							<Settings />
 						{:else if activePage === "editlsfg"}
 							<EditLsfg gamePath={editLsfgGamePath} />
+						{:else if activePage === "library"}
+							<LibraryPage />
+						{:else if activePage === "downloads"}
+							<DownloadsPage />
+						{:else if activePage === "updates"}
+							<UpdatesPage />
+						{:else if activePage === "plugins"}
+							<PluginsPage />
 						{:else}
 							<div class="placeholder">
 								Page "{activePage}" not implemented yet.
