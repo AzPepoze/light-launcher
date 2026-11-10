@@ -92,13 +92,12 @@ func onReady(logPath string) {
 
 	gameCmd := exec.Command(cmdArgs[0], cmdArgs[1:]...)
 	gameCmd.Env = env
-	gameCmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	if logFileHandle != nil {
 		gameCmd.Stdout = logFileHandle
 		gameCmd.Stderr = logFileHandle
 	}
 
-	if err := gameCmd.Start(); err != nil {
+	if err := executor.StartCommand(gameCmd); err != nil {
 		logger.Error("Runner", "Failed to start %s (%s): %v", exeNameClean, launcherName, err)
 		if logFileHandle != nil {
 			logFileHandle.Close()
@@ -180,6 +179,7 @@ func onReady(logPath string) {
 	go func() {
 		err := gameCmd.Wait()
 		endedAt := time.Now()
+		executor.ReleaseProcess(gameCmd.Process)
 		if logFileHandle != nil {
 			logFileHandle.Close()
 		}
@@ -246,7 +246,7 @@ func launchLsfgUI() {
 	env = append(env, fmt.Sprintf("LIGHT_LAUNCHER_GAME_PATH=%s", gamePath))
 	env = append(env, "LIGHT_LAUNCHER_EDIT_LSFG=1")
 	uiCmd.Env = env
-	uiCmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	executor.PrepareCommand(uiCmd)
 
 	log.Printf("Launching light-launcher with LIGHT_LAUNCHER_GAME_PATH=%s and LIGHT_LAUNCHER_EDIT_LSFG=1", gamePath)
 

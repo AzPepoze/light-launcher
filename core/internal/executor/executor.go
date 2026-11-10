@@ -6,10 +6,9 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"syscall"
-	"time"
 )
 
+// RunGameWithLog starts a command and streams its output lines to onLog.
 func RunGameWithLog(commandArguments []string, environment []string, onLog func(string), onExit func()) (*os.Process, error) {
 	if len(commandArguments) == 0 {
 		return nil, fmt.Errorf("empty command")
@@ -17,12 +16,11 @@ func RunGameWithLog(commandArguments []string, environment []string, onLog func(
 
 	command := exec.Command(commandArguments[0], commandArguments[1:]...)
 	command.Env = environment
-	command.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
 	stdout, _ := command.StdoutPipe()
 	stderr, _ := command.StderrPipe()
 
-	if err := command.Start(); err != nil {
+	if err := StartCommand(command); err != nil {
 		return nil, err
 	}
 
@@ -38,6 +36,7 @@ func RunGameWithLog(commandArguments []string, environment []string, onLog func(
 
 	go func() {
 		_ = command.Wait()
+		ReleaseProcess(command.Process)
 		onLog("\n--- Process Exited ---")
 		if onExit != nil {
 			onExit()
@@ -47,12 +46,16 @@ func RunGameWithLog(commandArguments []string, environment []string, onLog func(
 	return command.Process, nil
 }
 
-func StopProcessGroup(process *os.Process) error {
-	if process == nil {
-		return nil
+// StartCommand starts a command so that StopProcessGroup can stop it and its children.
+// Call ReleaseProcess after the command has exited.
+func StartCommand(command *exec.Cmd) error {
+	PrepareCommand(command)
+	if err := command.Start(); err != nil {
+		return err
 	}
-	processGroupId := -process.Pid
-	_ = syscall.Kill(processGroupId, syscall.SIGINT)
-	time.Sleep(200 * time.Millisecond)
-	return syscall.Kill(processGroupId, syscall.SIGTERM)
+	if err := attachProcess(command.Process); err != nil {
+		_ = command.Process.Kill()
+		return err
+	}
+	return nil
 }
