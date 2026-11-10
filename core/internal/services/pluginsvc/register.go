@@ -9,9 +9,11 @@ import (
 	"light-launcher/core/internal/plugins"
 )
 
+// updateInput updates a plugin. AcceptedPermissions is needed when the new version asks for more permissions.
 type updateInput struct {
-	ID            string `json:"id"`
-	AllowUnsigned bool   `json:"allowUnsigned"`
+	ID                  string   `json:"id"`
+	AllowUnsigned       bool     `json:"allowUnsigned"`
+	AcceptedPermissions []string `json:"acceptedPermissions"`
 }
 
 type idInput struct {
@@ -69,7 +71,7 @@ func Register(r *api.Router, ev api.Events, host *plugins.Host) {
 		return host.Install(ctx, in)
 	}))
 	r.Handle("PluginUpdate", api.Typed(func(ctx context.Context, in updateInput) (any, error) {
-		return host.Update(ctx, in.ID, in.AllowUnsigned)
+		return host.Update(ctx, in.ID, in.AllowUnsigned, in.AcceptedPermissions)
 	}))
 	r.Handle("PluginRemove", api.Typed(func(_ context.Context, in removeInput) (any, error) {
 		return nil, host.Remove(in.ID, in.DeleteData)

@@ -10,19 +10,22 @@ import (
 	"testing"
 )
 
+// testConsent is the permission list of testManifest, as the user accepts it.
+var testConsent = []string{"network:127.0.0.1"}
+
 func TestInstallRequiresAllowUnsignedForUnsignedPackage(t *testing.T) {
 	in, layout := newTestInstaller(t)
 	source := filepath.Join(t.TempDir(), "demo.llplugin")
 	writePackageFile(t, source, withChecksums(testPackageFiles("demo", "1.0.0")))
 
-	if _, err := in.Install(context.Background(), source, false); err != ErrUnsigned {
+	if _, err := in.Install(context.Background(), source, false, testConsent); err != ErrUnsigned {
 		t.Fatalf("Install without allowUnsigned: err = %v, want ErrUnsigned", err)
 	}
 	if exists(layout.PluginDir("demo")) {
 		t.Fatalf("a refused install left files behind")
 	}
 
-	id, err := in.Install(context.Background(), source, true)
+	id, err := in.Install(context.Background(), source, true, testConsent)
 	if err != nil {
 		t.Fatalf("Install with allowUnsigned: %v", err)
 	}
@@ -44,7 +47,7 @@ func TestInstallRejectsTamperedPackage(t *testing.T) {
 	source := filepath.Join(t.TempDir(), "demo.llplugin")
 	writePackageFile(t, source, files)
 
-	_, err := in.Install(context.Background(), source, true)
+	_, err := in.Install(context.Background(), source, true, testConsent)
 	if err == nil || !strings.Contains(err.Error(), "checksum mismatch") {
 		t.Fatalf("err = %v, want a checksum mismatch", err)
 	}
@@ -55,7 +58,7 @@ func TestInstallRejectsPackageWithoutChecksums(t *testing.T) {
 	source := filepath.Join(t.TempDir(), "demo.llplugin")
 	writePackageFile(t, source, testPackageFiles("demo", "1.0.0"))
 
-	if _, err := in.Install(context.Background(), source, true); err == nil || !strings.Contains(err.Error(), "SHA256SUMS") {
+	if _, err := in.Install(context.Background(), source, true, testConsent); err == nil || !strings.Contains(err.Error(), "SHA256SUMS") {
 		t.Fatalf("err = %v, want a missing SHA256SUMS error", err)
 	}
 }
@@ -67,7 +70,7 @@ func TestInstallRejectsFileMissingFromChecksums(t *testing.T) {
 	source := filepath.Join(t.TempDir(), "demo.llplugin")
 	writePackageFile(t, source, files)
 
-	if _, err := in.Install(context.Background(), source, true); err == nil || !strings.Contains(err.Error(), "not listed") {
+	if _, err := in.Install(context.Background(), source, true, testConsent); err == nil || !strings.Contains(err.Error(), "not listed") {
 		t.Fatalf("err = %v, want a not-listed error", err)
 	}
 }
@@ -82,7 +85,7 @@ func TestInstallAcceptsPackageSignedByTrustedKey(t *testing.T) {
 	source := filepath.Join(t.TempDir(), "demo.llplugin")
 	writePackageFile(t, source, withSignature(withChecksums(testPackageFiles("demo", "1.0.0")), private))
 
-	if _, err := in.Install(context.Background(), source, false); err != nil {
+	if _, err := in.Install(context.Background(), source, false, testConsent); err != nil {
 		t.Fatalf("signed install: %v", err)
 	}
 	if in.state.get("demo").Unsigned {
@@ -99,7 +102,7 @@ func TestInstallRejectsSignatureFromUnknownKey(t *testing.T) {
 	source := filepath.Join(t.TempDir(), "demo.llplugin")
 	writePackageFile(t, source, withSignature(withChecksums(testPackageFiles("demo", "1.0.0")), private))
 
-	if _, err := in.Install(context.Background(), source, true); err == nil || !strings.Contains(err.Error(), "trusted key") {
+	if _, err := in.Install(context.Background(), source, true, testConsent); err == nil || !strings.Contains(err.Error(), "trusted key") {
 		t.Fatalf("err = %v, want a trusted key error", err)
 	}
 }
@@ -116,7 +119,7 @@ func TestInstallRejectsUnsupportedAPIVersionAndNewerMinHost(t *testing.T) {
 			files["plugin.json"] = []byte(manifest)
 			source := filepath.Join(t.TempDir(), "demo.llplugin")
 			writePackageFile(t, source, withChecksums(files))
-			if _, err := in.Install(context.Background(), source, true); err == nil {
+			if _, err := in.Install(context.Background(), source, true, testConsent); err == nil {
 				t.Fatalf("expected an error")
 			}
 		})
@@ -145,16 +148,16 @@ func TestUpdateAndRollback(t *testing.T) {
 	ctx := context.Background()
 	source := filepath.Join(t.TempDir(), "demo.llplugin")
 	writePackageFile(t, source, withChecksums(testPackageFiles("demo", "1.0.0")))
-	if _, err := in.Install(ctx, source, true); err != nil {
+	if _, err := in.Install(ctx, source, true, testConsent); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := in.Update(ctx, "demo", true); err != ErrNoUpdate {
+	if err := in.Update(ctx, "demo", true, testConsent); err != ErrNoUpdate {
 		t.Fatalf("update to the same version: err = %v, want ErrNoUpdate", err)
 	}
 
 	writePackageFile(t, source, withChecksums(testPackageFiles("demo", "1.1.0")))
-	if err := in.Update(ctx, "demo", true); err != nil {
+	if err := in.Update(ctx, "demo", true, testConsent); err != nil {
 		t.Fatalf("Update: %v", err)
 	}
 	assertPointers(t, layout, "1.1.0", "1.0.0")
@@ -169,7 +172,7 @@ func TestRollbackWithoutPreviousFails(t *testing.T) {
 	in, _ := newTestInstaller(t)
 	source := filepath.Join(t.TempDir(), "demo.llplugin")
 	writePackageFile(t, source, withChecksums(testPackageFiles("demo", "1.0.0")))
-	if _, err := in.Install(context.Background(), source, true); err != nil {
+	if _, err := in.Install(context.Background(), source, true, testConsent); err != nil {
 		t.Fatal(err)
 	}
 	if err := in.Rollback("demo"); err != ErrNoPrevious {
@@ -181,7 +184,7 @@ func TestRemoveDeletesFilesAndOptionalData(t *testing.T) {
 	in, layout := newTestInstaller(t)
 	source := filepath.Join(t.TempDir(), "demo.llplugin")
 	writePackageFile(t, source, withChecksums(testPackageFiles("demo", "1.0.0")))
-	if _, err := in.Install(context.Background(), source, true); err != nil {
+	if _, err := in.Install(context.Background(), source, true, testConsent); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.MkdirAll(layout.DataDir("demo"), 0o755); err != nil {

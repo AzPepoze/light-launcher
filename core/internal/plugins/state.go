@@ -10,10 +10,11 @@ import (
 
 // PluginState is what the host remembers about one plugin, besides its files.
 type PluginState struct {
-	Enabled        bool   `json:"enabled"`
-	Source         string `json:"source,omitempty"`
-	Unsigned       bool   `json:"unsigned,omitempty"`
-	DisabledReason string `json:"disabledReason,omitempty"`
+	Enabled             bool     `json:"enabled"`
+	Source              string   `json:"source,omitempty"`
+	Unsigned            bool     `json:"unsigned,omitempty"`
+	DisabledReason      string   `json:"disabledReason,omitempty"`
+	AcceptedPermissions []string `json:"acceptedPermissions,omitempty"`
 }
 
 // stateStore keeps state.json in step with memory. It is safe for concurrent use.

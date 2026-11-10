@@ -29,9 +29,11 @@ type PluginInfo struct {
 }
 
 // InstallRequest asks for one package, from a local path or an https URL.
+// AcceptedPermissions must list the permissions the plugin asks for, as the preview's consent list.
 type InstallRequest struct {
-	Source        string `json:"source"`
-	AllowUnsigned bool   `json:"allowUnsigned"`
+	Source              string   `json:"source"`
+	AllowUnsigned       bool     `json:"allowUnsigned"`
+	AcceptedPermissions []string `json:"acceptedPermissions"`
 }
 
 // List returns every installed plugin, sorted by id.
@@ -55,7 +57,7 @@ func (h *Host) PermissionsPreview(ctx context.Context, source string) (Preview, 
 
 // Install adds a plugin from a package. Unsigned packages need AllowUnsigned.
 func (h *Host) Install(ctx context.Context, req InstallRequest) (PluginInfo, error) {
-	id, err := h.install.Install(ctx, req.Source, req.AllowUnsigned)
+	id, err := h.install.Install(ctx, req.Source, req.AllowUnsigned, req.AcceptedPermissions)
 	if err != nil {
 		return PluginInfo{}, err
 	}
@@ -63,13 +65,14 @@ func (h *Host) Install(ctx context.Context, req InstallRequest) (PluginInfo, err
 	return h.info(id), nil
 }
 
-// Update installs the newest version from the source the plugin came from.
-func (h *Host) Update(ctx context.Context, id string, allowUnsigned bool) (PluginInfo, error) {
+// Update installs the newest version from the source the plugin came from. A version that asks for new
+// permissions needs accepted to list all of them.
+func (h *Host) Update(ctx context.Context, id string, allowUnsigned bool, accepted []string) (PluginInfo, error) {
 	if err := requireID(id); err != nil {
 		return PluginInfo{}, err
 	}
 	h.stopPlugin(id)
-	if err := h.install.Update(ctx, id, allowUnsigned); err != nil {
+	if err := h.install.Update(ctx, id, allowUnsigned, accepted); err != nil {
 		return PluginInfo{}, err
 	}
 	h.emitState(id)

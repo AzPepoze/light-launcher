@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 )
 
 var (
@@ -42,11 +43,16 @@ func (in *installer) Preview(ctx context.Context, source string) (Preview, error
 		return Preview{}, err
 	}
 	defer prepared.discard()
-	return Preview{Manifest: prepared.Manifest, Unsigned: prepared.Unsigned}, nil
+	return Preview{
+		Manifest: prepared.Manifest,
+		Unsigned: prepared.Unsigned,
+		Consent:  PermissionSummary(prepared.Manifest.Permissions),
+	}, nil
 }
 
-// Install adds a new plugin. It fails when the plugin id is already installed.
-func (in *installer) Install(ctx context.Context, source string, allowUnsigned bool) (string, error) {
+// Install adds a new plugin. It fails when the plugin id is already installed, or when accepted
+// does not list the permissions the plugin asks for.
+func (in *installer) Install(ctx context.Context, source string, allowUnsigned bool, accepted []string) (string, error) {
 	prepared, err := in.preparePackage(ctx, source)
 	if err != nil {
 		return "", err
@@ -59,11 +65,16 @@ func (in *installer) Install(ctx context.Context, source string, allowUnsigned b
 	if exists(in.layout.PluginDir(id)) {
 		return "", ErrAlreadyInstalled
 	}
-	return id, in.commit(prepared, source)
+	summary := PermissionSummary(prepared.Manifest.Permissions)
+	if err := checkConsent(summary, accepted); err != nil {
+		return "", err
+	}
+	return id, in.commit(prepared, source, summary)
 }
 
 // Update installs the version found at the source the plugin was installed from.
-func (in *installer) Update(ctx context.Context, id string, allowUnsigned bool) error {
+// When the new version asks for permissions the user has not accepted, accepted must list all of them.
+func (in *installer) Update(ctx context.Context, id string, allowUnsigned bool, accepted []string) error {
 	source := in.state.get(id).Source
 	if source == "" {
 		return ErrNoSource
@@ -86,7 +97,32 @@ func (in *installer) Update(ctx context.Context, id string, allowUnsigned bool) 
 	if prepared.Unsigned && !allowUnsigned {
 		return ErrUnsigned
 	}
-	return in.commit(prepared, source)
+	summary := PermissionSummary(prepared.Manifest.Permissions)
+	baseline, err := in.acceptedBaseline(id, current)
+	if err != nil {
+		return err
+	}
+	if added := newPermissions(baseline, summary); len(added) > 0 && checkConsent(summary, accepted) != nil {
+		return fmt.Errorf("%w: %s", ErrNewPermissions, strings.Join(added, ", "))
+	}
+	return in.commit(prepared, source, summary)
+}
+
+// acceptedBaseline returns the permissions the user accepted for a plugin. Plugins installed before
+// consent was recorded fall back to the permissions of their installed version.
+func (in *installer) acceptedBaseline(id, current string) ([]string, error) {
+	if recorded := in.state.get(id).AcceptedPermissions; recorded != nil {
+		return recorded, nil
+	}
+	data, err := os.ReadFile(filepath.Join(in.layout.VersionDir(id, current), "plugin.json"))
+	if err != nil {
+		return nil, err
+	}
+	manifest, err := ParseManifest(data)
+	if err != nil {
+		return nil, err
+	}
+	return PermissionSummary(manifest.Permissions), nil
 }
 
 // Rollback makes the previous version current again. The version it replaces becomes the previous one.
@@ -129,8 +165,8 @@ func (in *installer) Remove(id string, deleteData bool) error {
 	return nil
 }
 
-// commit moves the unpacked package into place and points "current" at it.
-func (in *installer) commit(prepared preparedPackage, source string) error {
+// commit moves the unpacked package into place, points "current" at it, and records the accepted permissions.
+func (in *installer) commit(prepared preparedPackage, source string, consent []string) error {
 	manifest := prepared.Manifest
 	pluginDir := in.layout.PluginDir(manifest.ID)
 	versionDir := in.layout.VersionDir(manifest.ID, manifest.Version)
@@ -161,6 +197,7 @@ func (in *installer) commit(prepared preparedPackage, source string) error {
 	return in.state.update(manifest.ID, func(state *PluginState) {
 		state.Source = source
 		state.Unsigned = prepared.Unsigned
+		state.AcceptedPermissions = consent
 	})
 }
 

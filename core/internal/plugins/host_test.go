@@ -57,7 +57,7 @@ func TestHostInstallRunDisableAndRemove(t *testing.T) {
 	if _, err := host.Install(ctx, InstallRequest{Source: source}); !errors.Is(err, ErrUnsigned) {
 		t.Fatalf("unsigned install without consent: err = %v", err)
 	}
-	info, err := host.Install(ctx, InstallRequest{Source: source, AllowUnsigned: true})
+	info, err := host.Install(ctx, InstallRequest{Source: source, AllowUnsigned: true, AcceptedPermissions: testConsent})
 	if err != nil {
 		t.Fatalf("Install: %v", err)
 	}
@@ -116,7 +116,7 @@ func TestHostAutoDisablesAfterCrashes(t *testing.T) {
 	ctx := context.Background()
 	source := filepath.Join(t.TempDir(), "fixture.llplugin")
 	writeFixturePackage(t, source, "0.1.0")
-	if _, err := host.Install(ctx, InstallRequest{Source: source, AllowUnsigned: true}); err != nil {
+	if _, err := host.Install(ctx, InstallRequest{Source: source, AllowUnsigned: true, AcceptedPermissions: testConsent}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -139,12 +139,12 @@ func TestHostUpdateAndRollback(t *testing.T) {
 	ctx := context.Background()
 	source := filepath.Join(t.TempDir(), "fixture.llplugin")
 	writeFixturePackage(t, source, "0.1.0")
-	if _, err := host.Install(ctx, InstallRequest{Source: source, AllowUnsigned: true}); err != nil {
+	if _, err := host.Install(ctx, InstallRequest{Source: source, AllowUnsigned: true, AcceptedPermissions: testConsent}); err != nil {
 		t.Fatal(err)
 	}
 
 	writeFixturePackage(t, source, "0.2.0")
-	updated, err := host.Update(ctx, "fixture", true)
+	updated, err := host.Update(ctx, "fixture", true, testConsent)
 	if err != nil {
 		t.Fatalf("Update: %v", err)
 	}
@@ -192,7 +192,7 @@ func TestHostLogsKeepPluginOutput(t *testing.T) {
 	ctx := context.Background()
 	source := filepath.Join(t.TempDir(), "fixture.llplugin")
 	writeFixturePackage(t, source, "0.1.0")
-	if _, err := host.Install(ctx, InstallRequest{Source: source, AllowUnsigned: true}); err != nil {
+	if _, err := host.Install(ctx, InstallRequest{Source: source, AllowUnsigned: true, AcceptedPermissions: testConsent}); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := host.CallPlugin(ctx, "fixture", "source.echo", json.RawMessage(`{"x":"1"}`)); err != nil {

@@ -55,7 +55,7 @@ func TestSettingsGetWithoutSchemaReturnsNullSchema(t *testing.T) {
 	host := newTestHost(t)
 	source := filepath.Join(t.TempDir(), "plain.llplugin")
 	writeFixturePackage(t, source, "0.1.0")
-	if _, err := host.Install(context.Background(), InstallRequest{Source: source, AllowUnsigned: true}); err != nil {
+	if _, err := host.Install(context.Background(), InstallRequest{Source: source, AllowUnsigned: true, AcceptedPermissions: testConsent}); err != nil {
 		t.Fatalf("Install: %v", err)
 	}
 
