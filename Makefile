@@ -1,19 +1,45 @@
-.PHONY: all build dev build-go build-renderer clean
+.PHONY: all build build-ui build-go build-shell dev test test-go test-ui e2e lint clean
+
+VERSION ?= $(patsubst v%,%,$(shell git describe --tags --always 2>/dev/null || echo dev))
+LDFLAGS := -s -w -X main.version=$(VERSION)
 
 all: build
 
-build: build-go build-renderer
+# build makes the UI, the launcher, the instance binary and the Qt shell in bin/.
+build: build-ui build-go build-shell
+
+build-ui:
+	cd src/renderer && bun run build
 
 build-go:
 	@mkdir -p bin
-	go build -ldflags="-s -w" -o bin/light-launcher ./core/cmd/launcher
-	go build -ldflags="-s -w" -o bin/light-launcher-instance ./core/cmd/instance
+	go build -ldflags="$(LDFLAGS)" -o bin/light-launcher ./core/cmd/launcher
+	go build -ldflags="$(LDFLAGS)" -o bin/light-launcher-instance ./core/cmd/instance
 
-build-renderer:
-	@cd src/renderer && bun run build
+build-shell:
+	@mkdir -p bin
+	cd shell/qt && go build -ldflags="$(LDFLAGS)" -o ../../bin/light-launcher-shell .
 
-dev:
-	@bun run dev
+# dev builds the launcher, then starts the Vite dev server and the launcher API on port 9246.
+dev: build-go
+	bun run dev
+
+# test runs the UI tests (vitest) and the Go tests.
+test: test-ui test-go
+
+test-ui:
+	bun run test
+
+test-go:
+	go test -count=1 ./core/...
+
+# e2e starts the built launcher without a window and calls its API. It needs no display.
+e2e:
+	go test -tags e2e -count=1 ./core/cmd/launcher/...
+
+lint:
+	bun run lint
+	go vet ./core/...
 
 clean:
-	@rm -rf bin dist src/renderer/dist
+	@rm -rf bin dist src/renderer/dist core/cmd/launcher/ui
