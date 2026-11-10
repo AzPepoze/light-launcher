@@ -13,11 +13,13 @@ var (
 	apiVersionPattern = regexp.MustCompile(`^[0-9]+$`)
 	entryKeyPattern   = regexp.MustCompile(`^(linux|windows|mac)-(x64|arm64)$`)
 	hostPattern       = regexp.MustCompile(`^(\*\.)?[a-z0-9-]+(\.[a-z0-9-]+)+$`)
-	folderPattern     = regexp.MustCompile(`^\$[A-Z_]+$`)
+	fsNamePattern     = regexp.MustCompile(`^\$(GAMES|DOWNLOADS|DATA|APPDATA_[A-Z][A-Z0-9_]*)$`)
+	methodPattern     = regexp.MustCompile(`^[a-z][a-z0-9-]*(\.[A-Za-z][A-Za-z0-9]*)+$`)
 )
 
 var validCapabilities = map[string]bool{
-	"browse": true, "auth": true, "updateCheck": true, "resolveFiles": true, "sync": true,
+	"browse": true, "auth": true, "updateCheck": true, "resolveFiles": true,
+	"sync:games": true, "sync:index": true,
 }
 
 var validHooks = map[string]bool{
@@ -90,7 +92,10 @@ func (m Manifest) validateContributes() error {
 			return fieldError(fmt.Sprintf("contributes.pages[%d].path", i), "must be a relative path inside the package")
 		}
 	}
-	for _, group := range [][]NamedItem{c.Commands, c.LaunchAdapters, c.Importers} {
+	if err := validateCommands(c.Commands); err != nil {
+		return err
+	}
+	for _, group := range [][]NamedItem{c.LaunchAdapters, c.Importers} {
 		if err := validateNamedItems(group); err != nil {
 			return err
 		}
@@ -109,15 +114,39 @@ func validateSources(sources []SourceContribution) error {
 			return fieldError(field+".id", "duplicate source id %q", source.ID)
 		}
 		seen[source.ID] = true
-		capabilities := map[string]bool{}
-		for _, capability := range source.Capabilities {
-			if !validCapabilities[capability] {
-				return fieldError(field+".capabilities", "unknown capability %q", capability)
-			}
-			if capabilities[capability] {
-				return fieldError(field+".capabilities", "duplicate capability %q", capability)
-			}
-			capabilities[capability] = true
+		if err := validateCapabilities(field, source.Capabilities); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// validateCapabilities checks names, duplicates, and that sync:games and sync:index are not both set.
+func validateCapabilities(field string, capabilities []string) error {
+	seen := map[string]bool{}
+	for _, capability := range capabilities {
+		if !validCapabilities[capability] {
+			return fieldError(field+".capabilities", "unknown capability %q", capability)
+		}
+		if seen[capability] {
+			return fieldError(field+".capabilities", "duplicate capability %q", capability)
+		}
+		seen[capability] = true
+	}
+	if seen["sync:games"] && seen["sync:index"] {
+		return fieldError(field+".capabilities", "use sync:games or sync:index, not both")
+	}
+	return nil
+}
+
+func validateCommands(commands []CommandContribution) error {
+	for i, command := range commands {
+		field := fmt.Sprintf("contributes.commands[%d]", i)
+		if err := validateItem(field, command.ID, command.Label); err != nil {
+			return err
+		}
+		if command.Method != "" && !methodPattern.MatchString(command.Method) {
+			return fieldError(field+".method", "invalid method %q, use a name such as demo-site.importKey", command.Method)
 		}
 	}
 	return nil
@@ -177,8 +206,8 @@ func (m Manifest) validatePermissions() error {
 		seen[host] = true
 	}
 	for _, folder := range m.Permissions.FS {
-		if !folderPattern.MatchString(folder) {
-			return fieldError("permissions.fs", "invalid folder %q, use names such as $GAMES", folder)
+		if !fsNamePattern.MatchString(folder) {
+			return fieldError("permissions.fs", "invalid folder %q, use $GAMES, $DOWNLOADS, $DATA or $APPDATA_<NAME>", folder)
 		}
 	}
 	return nil

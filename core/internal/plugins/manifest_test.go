@@ -17,7 +17,8 @@ const validManifest = `{
   "contributes": {
     "sources": [{ "id": "demo", "label": "Demo", "capabilities": ["browse", "updateCheck"] }],
     "settings": { "$ref": "settings.schema.json" },
-    "hooks": ["onGameLaunch"]
+    "hooks": ["onGameLaunch"],
+    "commands": [{ "id": "import-key", "label": "Import key", "method": "demo.importKey" }]
   },
   "permissions": { "network": ["demo.example", "*.pixeldrain.com"], "fs": ["$GAMES"], "secrets": true }
 }`
@@ -40,18 +41,22 @@ func TestParseManifestAcceptsValidFile(t *testing.T) {
 
 func TestParseManifestRejectsBadFiles(t *testing.T) {
 	replacements := map[string]struct{ from, to, wantErr string }{
-		"bad id":             {`"id": "demo-site"`, `"id": "Demo_Site"`, "id:"},
-		"bad semver":         {`"version": "1.2.3"`, `"version": "1.2"`, "version:"},
-		"bad api":            {`"apiVersion": "1"`, `"apiVersion": "v1"`, "apiVersion:"},
-		"bad minHost":        {`"minHost": "2.0.0"`, `"minHost": "2.x"`, "minHost:"},
-		"absolute entry":     {`"bin/linux-x64/demo"`, `"/usr/bin/demo"`, "entry.linux-x64"},
-		"parent entry":       {`"bin/linux-x64/demo"`, `"../demo"`, "entry.linux-x64"},
-		"unknown platform":   {`"linux-x64": "bin/linux-x64/demo"`, `"plan9-x64": "bin/demo"`, "entry.plan9-x64"},
-		"unknown capability": {`"updateCheck"`, `"magic"`, "unknown capability"},
-		"unknown hook":       {`"onGameLaunch"`, `"onGameWhatever"`, "unknown hook"},
-		"bad host":           {`"demo.example"`, `"demo"`, "invalid host"},
-		"bad folder":         {`"$GAMES"`, `"GAMES"`, "invalid folder"},
-		"unknown field":      {`"secrets": true`, `"secrets": true, "typo": 1`, "unknown field"},
+		"bad id":              {`"id": "demo-site"`, `"id": "Demo_Site"`, "id:"},
+		"bad semver":          {`"version": "1.2.3"`, `"version": "1.2"`, "version:"},
+		"bad api":             {`"apiVersion": "1"`, `"apiVersion": "v1"`, "apiVersion:"},
+		"bad minHost":         {`"minHost": "2.0.0"`, `"minHost": "2.x"`, "minHost:"},
+		"absolute entry":      {`"bin/linux-x64/demo"`, `"/usr/bin/demo"`, "entry.linux-x64"},
+		"parent entry":        {`"bin/linux-x64/demo"`, `"../demo"`, "entry.linux-x64"},
+		"unknown platform":    {`"linux-x64": "bin/linux-x64/demo"`, `"plan9-x64": "bin/demo"`, "entry.plan9-x64"},
+		"unknown capability":  {`"updateCheck"`, `"magic"`, "unknown capability"},
+		"old sync capability": {`"updateCheck"`, `"sync"`, "unknown capability"},
+		"both sync":           {`"browse", "updateCheck"`, `"browse", "sync:games", "sync:index"`, "not both"},
+		"unknown hook":        {`"onGameLaunch"`, `"onGameWhatever"`, "unknown hook"},
+		"bad host":            {`"demo.example"`, `"demo"`, "invalid host"},
+		"bad folder":          {`"$GAMES"`, `"GAMES"`, "invalid folder"},
+		"old folder name":     {`"$GAMES"`, `"$ITCH_APP_DATA"`, "invalid folder"},
+		"bad command method":  {`"demo.importKey"`, `"importKey"`, "method"},
+		"unknown field":       {`"secrets": true`, `"secrets": true, "typo": 1`, "unknown field"},
 	}
 	for name, tc := range replacements {
 		t.Run(name, func(t *testing.T) {
@@ -98,10 +103,10 @@ func TestPlatformKeyFor(t *testing.T) {
 	}
 }
 
-// knownManifestGaps lists real plugin manifests that do not match the SDK schema yet.
-var knownManifestGaps = map[string]string{
-	"light-launcher-plugin-itch": "uses capability sync:games, which the SDK schema does not allow yet",
-	"light-launcher-plugin-f95":  "uses capability sync:index, which the SDK schema does not allow yet",
+// pendingFolderRenames lists the one folder name a real plugin still uses that the SDK renames.
+// The rename is in progress, so this case only logs. Remove the entry once the rename lands.
+var pendingFolderRenames = map[string]string{
+	"light-launcher-plugin-itch": "$ITCH_APP_DATA",
 }
 
 func TestParseManifestAcceptsRealPluginFiles(t *testing.T) {
@@ -116,12 +121,26 @@ func TestParseManifestAcceptsRealPluginFiles(t *testing.T) {
 				t.Fatal(err)
 			}
 			_, err = ParseManifest(data)
-			if reason, known := knownManifestGaps[repo]; known && err != nil {
-				t.Skipf("%s: %v", reason, err)
+			if err == nil {
+				return
 			}
-			if err != nil {
-				t.Fatal(err)
+			if old, pending := pendingFolderRenames[repo]; pending && strings.Contains(err.Error(), old) {
+				t.Logf("%s still uses %s, which is being renamed to $APPDATA_<NAME>: %v", repo, old, err)
+				return
 			}
+			t.Fatal(err)
 		})
+	}
+}
+
+func TestParseManifestAcceptsFolderNamesAndCommandsWithoutMethod(t *testing.T) {
+	source := strings.Replace(validManifest, `"$GAMES"`, `"$GAMES", "$DOWNLOADS", "$DATA", "$APPDATA_ITCH"`, 1)
+	source = strings.Replace(source, `, "method": "demo.importKey"`, "", 1)
+	manifest, err := ParseManifest([]byte(source))
+	if err != nil {
+		t.Fatalf("ParseManifest: %v", err)
+	}
+	if len(manifest.Contributes.Commands) != 1 || manifest.Contributes.Commands[0].Method != "" {
+		t.Fatalf("commands = %+v, want one command without a method", manifest.Contributes.Commands)
 	}
 }
