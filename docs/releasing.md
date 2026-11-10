@@ -31,21 +31,21 @@ Other types, such as `docs:` and `chore:`, do not bump the version on their own.
 
 ## Workflows
 
-| File                                   | Runs on                   | Purpose                                                                                                   |
-| :------------------------------------- | :------------------------ | :-------------------------------------------------------------------------------------------------------- |
-| `.github/workflows/ci.yml`             | Push and pull request     | Go vet and tests on Linux and Windows, UI checks, Qt shell build, WebView2 cross build, workflow lint.    |
-| `.github/workflows/release-please.yml` | Push to `main`            | Opens the release pull request and creates the tag.                                                       |
-| `.github/workflows/release.yml`        | Tag `v*`, or a manual run | Runs `scripts/build-linux.sh` and `scripts/build-windows.sh`, then publishes the release files.           |
-| `.github/workflows/aur.yml`            | Manual run only           | Builds an updated `PKGBUILD` as an artifact. Does not push.                                               |
+| File                                   | Runs on                   | Purpose                                                                                                |
+| :------------------------------------- | :------------------------ | :----------------------------------------------------------------------------------------------------- |
+| `.github/workflows/ci.yml`             | Push and pull request     | Go vet and tests on Linux and Windows, UI checks, Qt shell build, WebView2 cross build, workflow lint. |
+| `.github/workflows/release-please.yml` | Push to `main`            | Opens the release pull request and creates the tag.                                                    |
+| `.github/workflows/release.yml`        | Tag `v*`, or a manual run | Runs `scripts/build-linux.sh` and `scripts/build-windows.sh`, then publishes the release files.        |
+| `.github/workflows/aur.yml`            | Manual run only           | Builds an updated `PKGBUILD` as an artifact. Does not push.                                            |
 
 ## Release files
 
-| File                                           | What it is                              |
-| :--------------------------------------------- | :-------------------------------------- |
-| `light-launcher-<version>-linux-x64.tar.gz`    | Linux files in one archive              |
-| `light-launcher-<version>-windows-x64.zip`     | Windows files, no install needed        |
-| `light-launcher-<version>-windows-x64-setup.exe` | Windows installer (NSIS)              |
-| `SHA256SUMS`                                   | Checksums for the three files above     |
+| File                                             | What it is                          |
+| :----------------------------------------------- | :---------------------------------- |
+| `light-launcher-<version>-linux-x64.tar.gz`      | Linux files in one archive          |
+| `light-launcher-<version>-windows-x64.zip`       | Windows files, no install needed    |
+| `light-launcher-<version>-windows-x64-setup.exe` | Windows installer (NSIS)            |
+| `SHA256SUMS`                                     | Checksums for the three files above |
 
 The build steps are described in [Building](building.md).
 
