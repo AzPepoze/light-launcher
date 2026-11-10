@@ -8,13 +8,20 @@ import (
 	"light-launcher/core/internal/config"
 )
 
-// expandPath trims the value, expands a leading "~" and cleans the path. Empty input gives "".
+// expandPath trims the value, expands a leading "~" from $HOME and cleans the path. Empty input gives "".
 func expandPath(value string) string {
 	trimmed := strings.TrimSpace(value)
 	if trimmed == "" {
 		return ""
 	}
-	return filepath.Clean(config.ExpandPath(trimmed))
+	home, err := os.UserHomeDir()
+	if err == nil && trimmed == "~" {
+		return home
+	}
+	if err == nil && strings.HasPrefix(trimmed, "~/") {
+		return filepath.Join(home, trimmed[2:])
+	}
+	return filepath.Clean(trimmed)
 }
 
 // nodeBasename mirrors path.basename: an empty input stays empty instead of ".".
