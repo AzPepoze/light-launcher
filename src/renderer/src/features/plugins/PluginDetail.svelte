@@ -43,7 +43,7 @@
 
 	function update() {
 		run(async () => {
-			onChanged(await pluginsApi.update(plugin.id));
+			onChanged(await pluginsApi.update(plugin.id, !plugin.signed));
 		});
 	}
 
@@ -70,7 +70,7 @@
 		<div>
 			<h2>{plugin.name}</h2>
 			<p class="muted">
-				v{plugin.version}{plugin.author ? ` · ${plugin.author}` : ""}
+				v{plugin.version}
 			</p>
 		</div>
 		<div class="badges">
@@ -109,9 +109,7 @@
 		<p class="error" role="alert">{message}</p>
 	{/if}
 
-	{#if plugin.hasSettings}
-		<PluginSettings pluginId={plugin.id} />
-	{/if}
+	<PluginSettings pluginId={plugin.id} />
 
 	{#if plugin.sources.length}
 		<PluginAccounts {plugin} />

@@ -37,7 +37,7 @@
 		busy = true;
 		message = "";
 		try {
-			onInstalled(await pluginsApi.install(preview.source, preview.permissions));
+			onInstalled(await pluginsApi.install(preview.source, !preview.signed));
 		} catch (err) {
 			message = errorMessage(err);
 		} finally {
@@ -68,8 +68,6 @@
 	{#if preview}
 		<article class="consent" aria-label="Plugin details">
 			<h3>{preview.name} <span class="muted">v{preview.version}</span></h3>
-			{#if preview.author}<p class="muted">By {preview.author}</p>{/if}
-			{#if preview.description}<p>{preview.description}</p>{/if}
 
 			{#if !preview.signed}
 				<p class="notice" role="note">{UNSIGNED_WARNING}</p>
