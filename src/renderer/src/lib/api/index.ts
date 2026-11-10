@@ -15,43 +15,15 @@ import type {
 	PrefixConfigWithProton,
 	PrefixStats,
 	ProtonVariant,
-	GitHubRelease
-} from "../../../../shared/index";
+	GitHubRelease,
+	PlatformInfo
+} from "@shared";
+import { invoke, pickWithShell } from "../transport";
 
-declare global {
-	interface Window {
-		electronAPI: {
-			invoke: <T = any>(method: string, payload?: any) => Promise<T>;
-			send: (channel: string, ...args: any[]) => void;
-			on: (channel: string, callback: (...args: any[]) => void) => () => void;
-		};
-	}
-}
-
-function sanitizePayload<T>(payload: T): T {
-	if (payload === undefined || payload === null) return payload;
-	try {
-		return JSON.parse(JSON.stringify(payload));
-	} catch {
-		return payload;
-	}
-}
-
-async function invoke<T>(method: string, payload: any = {}): Promise<T> {
-	if (typeof window !== "undefined" && window.electronAPI) {
-		return window.electronAPI.invoke<T>(method, sanitizePayload(payload));
-	}
-	throw new Error("electronAPI is not available on window");
-}
-
-export function onEvent(channel: string, callback: (...args: any[]) => void): () => void {
-	if (typeof window !== "undefined" && window.electronAPI) {
-		return window.electronAPI.on(`event:${channel}`, callback);
-	}
-	return () => {};
-}
+export { onEvent } from "../transport";
 
 // App & Window Methods
+export const GetPlatform = () => invoke<PlatformInfo>("GetPlatform");
 export const GetInitialLauncherPath = () => invoke<string>("GetInitialLauncherPath");
 export const GetInitialGamePath = () => invoke<string>("GetInitialGamePath");
 export const GetShouldEditLsfg = () => invoke<boolean>("GetShouldEditLsfg");
@@ -61,8 +33,8 @@ export const GetExeIcon = (executablePath: string) =>
 export const GetTotalRam = () => invoke<number>("GetTotalRam");
 export const GetImageBase64 = (imagePath: string) =>
 	invoke<string>("GetImageBase64", { imagePath });
-export const PickFile = () => invoke<string>("PickFile");
-export const PickFolder = () => invoke<string>("PickFolder");
+export const PickFile = () => pickWithShell("pickFile", () => invoke<string>("PickFile"));
+export const PickFolder = () => pickWithShell("pickFolder", () => invoke<string>("PickFolder"));
 export const PickFileCustom = (
 	title: string,
 	filters: { displayName: string; pattern: string }[]
