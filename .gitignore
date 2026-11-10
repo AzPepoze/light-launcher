@@ -1,6 +1,9 @@
-# Binaries
-/bin
-/dist
+# Build output
+bin/
+dist/
+
+# UI copied into the launcher for the embedded release build
+core/cmd/launcher/ui/
 
 # Go
 vendor/
@@ -8,18 +11,13 @@ vendor/
 *.exe~
 *.dll
 *.so
-*.dylib1
+*.dylib
 *.test
 *.out
 
-# Frontend & Electron
+# Frontend
 node_modules/
 src/renderer/dist/
-src/renderer/node_modules/
-src/main/dist/
-src/preload/dist/
-dist/
-build/dist/
 
 # IDEs
 .vscode/
