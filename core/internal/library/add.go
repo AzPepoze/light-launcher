@@ -28,7 +28,7 @@ func (l *Library) Preview(ctx context.Context, url string) (Preview, error) {
 	if err != nil {
 		return Preview{}, err
 	}
-	dto, err := l.fetchGame(ctx, info.Plugin, ref)
+	dto, err := l.fetchGame(ctx, info, ref)
 	if err != nil {
 		return Preview{}, err
 	}
@@ -48,7 +48,7 @@ func (l *Library) AddFromURL(ctx context.Context, url string) (Game, error) {
 	if err != nil {
 		return Game{}, err
 	}
-	dto, err := l.fetchGame(ctx, info.Plugin, ref)
+	dto, err := l.fetchGame(ctx, info, ref)
 	if err != nil {
 		return Game{}, err
 	}
@@ -81,7 +81,7 @@ func (l *Library) LinkLocal(ctx context.Context, id int64, url string) (Game, er
 	if ref.Kind != "game" {
 		return Game{}, fmt.Errorf("that is not a %s game page", info.Plugin)
 	}
-	dto, err := l.fetchGame(ctx, info.Plugin, ref)
+	dto, err := l.fetchGame(ctx, info, ref)
 	if err != nil {
 		return Game{}, err
 	}

@@ -27,9 +27,9 @@ const (
 // ErrUnknownURL means no plugin recognises a link.
 var ErrUnknownURL = errors.New("no source recognises that URL")
 
-// GameRef identifies a stored game in a plugin call.
+// GameRef identifies a stored game in a plugin call. ID is omitted for games the launcher has not saved.
 type GameRef struct {
-	ID        int64          `json:"id"`
+	ID        int64          `json:"id,omitempty"`
 	Source    string         `json:"source"`
 	SourceID  string         `json:"sourceId"`
 	URL       string         `json:"url"`
@@ -44,6 +44,40 @@ type ParsedRef struct {
 	Kind string `json:"kind"`
 	ID   string `json:"id"`
 	URL  string `json:"url"`
+}
+
+// Params and replies of the source.* methods, as the plugin SDK defines them.
+// Every call names the source that owns the game, so the plugin knows which of its sources to use.
+
+type fetchGameParams struct {
+	Source string    `json:"source"`
+	Ref    ParsedRef `json:"ref"`
+}
+
+type fetchGameReply struct {
+	Game contract.GameDTO `json:"game"`
+}
+
+type searchParams struct {
+	Source string `json:"source"`
+	Query  string `json:"query"`
+}
+
+type searchReply struct {
+	Games []contract.GameDTO `json:"games"`
+}
+
+type gameParams struct {
+	Source string  `json:"source"`
+	Game   GameRef `json:"game"`
+}
+
+type filesReply struct {
+	Files []contract.FileCandidate `json:"files"`
+}
+
+type updateReply struct {
+	Update *UpdateInfo `json:"update"`
 }
 
 // UpdateInfo is what source.checkUpdate returns for a game.
@@ -100,22 +134,36 @@ func (l *Library) resolveURL(ctx context.Context, url string) (contract.SourceIn
 	return contract.SourceInfo{}, ParsedRef{}, ErrUnknownURL
 }
 
-func (l *Library) fetchGame(ctx context.Context, plugin string, ref ParsedRef) (contract.GameDTO, error) {
-	var dto contract.GameDTO
-	if err := l.sources.Call(ctx, plugin, methodFetchGame, ref, &dto); err != nil {
+func (l *Library) fetchGame(ctx context.Context, info contract.SourceInfo, ref ParsedRef) (contract.GameDTO, error) {
+	var reply fetchGameReply
+	params := fetchGameParams{Source: info.SourceID, Ref: ref}
+	if err := l.sources.Call(ctx, info.Plugin, methodFetchGame, params, &reply); err != nil {
 		return contract.GameDTO{}, fmt.Errorf("fetch game: %w", err)
 	}
-	return dto, nil
+	return reply.Game, nil
+}
+
+// resolveFiles asks the source for the download candidates of a game, when the source can.
+// It returns nil, nil for sources without the resolveFiles capability.
+func (l *Library) resolveFiles(ctx context.Context, info contract.SourceInfo, game GameRef) ([]contract.FileCandidate, error) {
+	if !hasCapability(info, CapabilityResolveFiles) {
+		return nil, nil
+	}
+	var reply filesReply
+	if err := l.sources.Call(ctx, info.Plugin, methodResolveFiles, gameParams{Source: info.SourceID, Game: game}, &reply); err != nil {
+		return nil, err
+	}
+	return reply.Files, nil
 }
 
 // refreshFiles stores the download candidates a plugin reports for a game, when it can.
 func (l *Library) refreshFiles(ctx context.Context, game Game) error {
 	info, ok := l.pluginFor(game.Source)
-	if !ok || !hasCapability(info, CapabilityResolveFiles) {
+	if !ok {
 		return nil
 	}
-	var candidates []contract.FileCandidate
-	if err := l.sources.Call(ctx, info.Plugin, methodResolveFiles, gameRefOf(game), &candidates); err != nil {
+	candidates, err := l.resolveFiles(ctx, info, gameRefOf(game))
+	if err != nil || candidates == nil {
 		return err
 	}
 	return l.ReplaceFiles(ctx, game.ID, candidates)

@@ -37,17 +37,18 @@ func (l *Library) CheckGame(ctx context.Context, id int64) (CheckResult, error) 
 	}
 
 	stamp := nowStamp()
-	var update *UpdateInfo
-	if err := l.sources.Call(ctx, info.Plugin, methodCheckUpdate, gameRefOf(game), &update); err != nil {
+	var reply updateReply
+	params := gameParams{Source: info.SourceID, Game: gameRefOf(game)}
+	if err := l.sources.Call(ctx, info.Plugin, methodCheckUpdate, params, &reply); err != nil {
 		return l.handleCheckError(ctx, game, stamp, err)
 	}
 	if _, err := l.Patch(ctx, id, Patch{LastCheckedAt: &stamp}); err != nil {
 		return CheckResult{}, err
 	}
-	if update == nil {
+	if reply.Update == nil {
 		return noUpdate(game), nil
 	}
-	return l.applyUpdate(ctx, game, *update)
+	return l.applyUpdate(ctx, game, *reply.Update)
 }
 
 func (l *Library) handleCheckError(ctx context.Context, game Game, stamp string, err error) (CheckResult, error) {
