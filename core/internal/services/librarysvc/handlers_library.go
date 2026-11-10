@@ -9,14 +9,21 @@ import (
 )
 
 type updatePayload struct {
-	ID       int64     `json:"id"`
-	Title    *string   `json:"title"`
-	Notes    *string   `json:"notes"`
-	Tags     *[]string `json:"tags"`
-	Hidden   *bool     `json:"hidden"`
-	Favorite *bool     `json:"favorite"`
-	ExePath  *string   `json:"exePath"`
-	ExeArgs  *string   `json:"exeArgs"`
+	ID         int64     `json:"id"`
+	Title      *string   `json:"title"`
+	Notes      *string   `json:"notes"`
+	Tags       *[]string `json:"tags"`
+	Hidden     *bool     `json:"hidden"`
+	Favorite   *bool     `json:"favorite"`
+	ExePath    *string   `json:"exePath"`
+	ExeArgs    *string   `json:"exeArgs"`
+	InstallDir *string   `json:"installDir"`
+}
+
+// removePayload deletes a game. DeleteFiles also deletes its install folder, when it is inside the games folder.
+type removePayload struct {
+	ID          int64 `json:"id"`
+	DeleteFiles bool  `json:"deleteFiles"`
 }
 
 type favoritePayload struct {
@@ -59,14 +66,20 @@ func (s *service) update(ctx context.Context, in updatePayload) (library.Game, e
 	if in.Title != nil && strings.TrimSpace(*in.Title) == "" {
 		return library.Game{}, errors.New("title cannot be empty")
 	}
+	if in.InstallDir != nil && *in.InstallDir != "" {
+		if err := s.lib.CheckInstallDir(ctx, in.ID, *in.InstallDir); err != nil {
+			return library.Game{}, err
+		}
+	}
 	patch := library.Patch{
-		Title:    trimmed(in.Title),
-		Notes:    in.Notes,
-		Tags:     in.Tags,
-		Hidden:   in.Hidden,
-		Favorite: in.Favorite,
-		ExePath:  in.ExePath,
-		ExeArgs:  in.ExeArgs,
+		Title:      trimmed(in.Title),
+		Notes:      in.Notes,
+		Tags:       in.Tags,
+		Hidden:     in.Hidden,
+		Favorite:   in.Favorite,
+		ExePath:    in.ExePath,
+		ExeArgs:    in.ExeArgs,
+		InstallDir: in.InstallDir,
 	}
 	game, err := s.lib.Patch(ctx, in.ID, patch)
 	if err != nil {
@@ -84,41 +97,21 @@ func trimmed(value *string) *string {
 	return &text
 }
 
-// remove deletes a game and keeps a history entry. Files on disk are not touched.
-func (s *service) remove(ctx context.Context, in idPayload) (okResult, error) {
-	game, err := s.lib.Get(ctx, in.ID)
+// removeResult says whether the install folder was deleted along with the game.
+type removeResult struct {
+	OK           bool `json:"ok"`
+	DeletedFiles bool `json:"deletedFiles"`
+}
+
+// remove deletes a game and keeps a history entry. Install files are deleted only with deleteFiles,
+// and only inside the games folder.
+func (s *service) remove(ctx context.Context, in removePayload) (removeResult, error) {
+	deleted, err := s.lib.RemoveGame(ctx, in.ID, in.DeleteFiles)
 	if err != nil {
-		return okResult{}, err
-	}
-	if _, err := s.lib.AddDeleted(ctx, deletedInputOf(game)); err != nil {
-		return okResult{}, err
-	}
-	if err := s.lib.Remove(ctx, in.ID); err != nil {
-		return okResult{}, err
+		return removeResult{}, err
 	}
 	s.events.Emit("library.removed", map[string]any{"id": in.ID})
-	return okResult{OK: true}, nil
-}
-
-func deletedInputOf(game library.Game) library.DeletedInput {
-	return library.DeletedInput{
-		GameID:     game.ID,
-		Source:     game.Source,
-		SourceID:   game.SourceID,
-		URL:        game.URL,
-		Title:      game.Title,
-		Version:    derefString(game.Version),
-		Developer:  derefString(game.Developer),
-		Tags:       game.Tags,
-		InstallDir: derefString(game.InstallDir),
-	}
-}
-
-func derefString(value *string) string {
-	if value == nil {
-		return ""
-	}
-	return *value
+	return removeResult{OK: true, DeletedFiles: deleted}, nil
 }
 
 func (s *service) search(ctx context.Context, in searchPayload) ([]library.SearchResult, error) {
