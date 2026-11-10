@@ -61,10 +61,20 @@ func shellPath() (string, error) {
 	return path, nil
 }
 
+// shellURLEnv carries the UI URL, with its token fragment, to the shell. argv would show it in the process list.
+const shellURLEnv = "LL_URL"
+
+// shellCommand builds the shell process with the URL in its environment.
+func shellCommand(ctx context.Context, bin, url string) *exec.Cmd {
+	cmd := exec.CommandContext(ctx, bin)
+	cmd.Env = append(os.Environ(), shellURLEnv+"="+url)
+	return cmd
+}
+
 // runShell waits for the shell to exit. A stop request from ctx is not an error.
 func runShell(ctx context.Context, bin, url string) error {
 	logger.Info("shell", "starting %s", filepath.Base(bin))
-	cmd := exec.CommandContext(ctx, bin, url)
+	cmd := shellCommand(ctx, bin, url)
 	cmd.Cancel = closeProcess(cmd)
 	cmd.WaitDelay = shellExitTimeout
 	cmd.Stdout = os.Stdout
