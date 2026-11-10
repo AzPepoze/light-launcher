@@ -37,8 +37,10 @@ type linkPayload struct {
 	URL string `json:"url"`
 }
 
+// checkPayload picks games to check. Without force, games checked within the recheck interval are skipped.
 type checkPayload struct {
-	IDs []int64 `json:"ids"`
+	IDs   []int64 `json:"ids"`
+	Force bool    `json:"force"`
 }
 
 type pathPayload struct {
@@ -146,7 +148,11 @@ func (s *service) linkLocal(ctx context.Context, in linkPayload) (library.Game, 
 }
 
 func (s *service) checkUpdates(ctx context.Context, in checkPayload) ([]library.CheckResult, error) {
-	return s.lib.CheckAll(ctx, in.IDs, false)
+	return s.lib.CheckAll(ctx, in.IDs, !in.Force)
+}
+
+func (s *service) updatesSummary(ctx context.Context) (library.UpdatesSummary, error) {
+	return s.lib.UpdatesSummary(ctx)
 }
 
 func (s *service) setFavorite(ctx context.Context, in favoritePayload) (library.Game, error) {
