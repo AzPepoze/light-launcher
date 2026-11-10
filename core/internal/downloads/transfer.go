@@ -19,7 +19,7 @@ type transferer struct {
 
 // run probes the file, prepares the part file, downloads it and renames it into place.
 func (t *transferer) run(ctx context.Context, j *job) error {
-	probe, err := t.probeFor(ctx, j)
+	probe, err := Probe(ctx, t.client, j.row.URL, j.row.Headers)
 	if err != nil {
 		return err
 	}
@@ -59,15 +59,6 @@ func (t *transferer) run(ctx context.Context, j *job) error {
 		return err
 	}
 	return os.Rename(part, j.row.Dest)
-}
-
-func (t *transferer) probeFor(ctx context.Context, j *job) (ProbeResult, error) {
-	if j.probe != nil {
-		probe := *j.probe
-		j.probe = nil
-		return probe, nil
-	}
-	return Probe(ctx, t.client, j.row.URL, j.row.Headers)
 }
 
 // openPart reuses the part file when the saved segments still match this file. Otherwise it starts over.

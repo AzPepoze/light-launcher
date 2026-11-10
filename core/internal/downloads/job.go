@@ -19,9 +19,8 @@ const (
 
 // job is one download while it runs. Its progress fields are guarded by mu.
 type job struct {
-	row    Download     // the stored row when this run started
-	probe  *ProbeResult // probe from enqueue; the first run uses it instead of probing again
-	resume []Segment    // segments left by the previous run
+	row    Download  // the stored row when this run started
+	resume []Segment // segments left by the previous run
 	cancel context.CancelFunc
 	done   chan struct{} // closed when the run returns
 
@@ -37,10 +36,9 @@ type job struct {
 	strikes  int
 }
 
-func newJob(row Download, probe *ProbeResult, resume []Segment) *job {
+func newJob(row Download, resume []Segment) *job {
 	return &job{
 		row:      row,
-		probe:    probe,
 		resume:   resume,
 		done:     make(chan struct{}),
 		lastByte: time.Now(),
@@ -103,6 +101,13 @@ func (j *job) snapshotSegments() []Segment {
 	j.mu.Lock()
 	defer j.mu.Unlock()
 	return append([]Segment(nil), j.segments...)
+}
+
+// etagValue is the ETag seen by this run's probe, or "" before the layout is set.
+func (j *job) etagValue() string {
+	j.mu.Lock()
+	defer j.mu.Unlock()
+	return j.etag
 }
 
 func (j *job) gateRef() *Gate {
