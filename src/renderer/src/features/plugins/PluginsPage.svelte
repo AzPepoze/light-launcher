@@ -1,9 +1,12 @@
 <script lang="ts">
 	import PageHeader from "@components/shared/PageHeader.svelte";
 	import { onMount } from "svelte";
-	import { errorMessage } from "../../lib/features/rpc";
+	import { errorMessage, listen } from "../../lib/features/rpc";
+	import { PLUGIN_NOTIFY_EVENT, PLUGIN_STATE_EVENT } from "../../lib/features/events";
 	import { pluginsApi } from "../../lib/features/pluginsApi";
+	import { isRemovedPlugin, toPluginInfo } from "../../lib/features/pluginsMap";
 	import type { PluginInfo } from "../../lib/features/types";
+	import type { WirePluginInfo, WirePluginNotify, WireRemovedPlugin } from "../../lib/features/wire";
 	import PluginDetail from "./PluginDetail.svelte";
 	import PluginInstallDialog from "./PluginInstallDialog.svelte";
 	import { COMMUNITY_PLUGINS_URL } from "./pluginCopy";
@@ -11,6 +14,7 @@
 	let plugins = $state<PluginInfo[]>([]);
 	let loading = $state(true);
 	let error = $state("");
+	let notice = $state("");
 	let selectedId = $state<string | null>(null);
 	let installOpen = $state(false);
 
@@ -21,13 +25,14 @@
 
 	onMount(() => {
 		load();
+		return subscribe();
 	});
 
 	async function load() {
 		loading = true;
 		error = "";
 		try {
-			plugins = (await pluginsApi.list()).items;
+			plugins = await pluginsApi.list();
 		} catch (err) {
 			error = errorMessage(err);
 		} finally {
@@ -35,25 +40,51 @@
 		}
 	}
 
+	/** Keeps the list in step with plugin events. Returns a function that stops them. */
+	function subscribe(): () => void {
+		const stops = [
+			listen<WirePluginInfo | WireRemovedPlugin>(PLUGIN_STATE_EVENT, onState),
+			listen<WirePluginNotify>(PLUGIN_NOTIFY_EVENT, (event) => {
+				notice = `${event.plugin}: ${event.message}`;
+			})
+		];
+		return () => stops.forEach((stop) => stop());
+	}
+
+	function onState(payload: WirePluginInfo | WireRemovedPlugin) {
+		if (isRemovedPlugin(payload)) {
+			removed(payload.id);
+			return;
+		}
+		replacePlugin(toPluginInfo(payload));
+	}
+
 	function replacePlugin(plugin: PluginInfo) {
-		plugins = plugins.map((item) => (item.id === plugin.id ? plugin : item));
+		const exists = plugins.some((item) => item.id === plugin.id);
+		plugins = exists
+			? plugins.map((item) => (item.id === plugin.id ? plugin : item))
+			: [...plugins, plugin];
 	}
 
 	function installed(plugin: PluginInfo) {
-		plugins = [...plugins.filter((item) => item.id !== plugin.id), plugin];
+		replacePlugin(plugin);
 		installOpen = false;
 		selectedId = plugin.id;
 	}
 
 	function removed(id: string) {
 		plugins = plugins.filter((plugin) => plugin.id !== id);
-		selectedId = null;
+		if (selectedId === id) selectedId = null;
 	}
 </script>
 
 <PageHeader title="Plugins" {subtitle} icon="extension">
 	<button class="btn sm primary" onclick={() => (installOpen = true)}>Install</button>
 </PageHeader>
+
+{#if notice}
+	<p class="notice" role="status">{notice}</p>
+{/if}
 
 {#if error}
 	<div class="status">

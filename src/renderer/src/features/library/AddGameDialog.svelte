@@ -11,6 +11,7 @@
 
 	let query = $state("");
 	let hits = $state<SearchHit[]>([]);
+	let searchErrors = $state<string[]>([]);
 	let preview = $state<GamePreview | null>(null);
 	let busy = $state(false);
 	let message = $state("");
@@ -22,11 +23,14 @@
 		if (!text) return;
 		await run(async () => {
 			preview = null;
+			searchErrors = [];
 			if (isLink(text)) {
 				preview = await libraryApi.preview(text);
 				return;
 			}
-			hits = (await libraryApi.search(text)).hits;
+			const result = await libraryApi.search(text);
+			hits = result.hits;
+			searchErrors = result.errors;
 			if (hits.length === 0) message = "No matches. Try another name or paste a link.";
 		});
 	}
@@ -73,16 +77,19 @@
 		<p class="message" role="status">{message}</p>
 	{/if}
 
+	{#each searchErrors as error (error)}
+		<p class="message" role="alert">{error}</p>
+	{/each}
+
 	{#if preview}
 		<article class="preview" aria-label="Preview">
 			<h3>{preview.title}</h3>
 			<p class="muted">
-				{[preview.sourceLabel, preview.developer, preview.version].filter(Boolean).join(" · ")}
+				{[preview.source, preview.developer, preview.version].filter(Boolean).join(" · ")}
 			</p>
 			{#if preview.description}
 				<p class="description">{preview.description}</p>
 			{/if}
-			<p class="muted">{preview.files.length} files found</p>
 			{#if preview.existing}
 				<p class="message">Already in your library.</p>
 			{:else}

@@ -25,10 +25,8 @@
 
 <PageHeader title="Downloads" {subtitle} icon="downloading" />
 
-{#if downloads.sevenZipMissing}
-	<p class="notice" role="alert">
-		7-Zip is missing. Archives can't be unpacked until it is installed.
-	</p>
+{#if downloads.toast}
+	<p class="notice" role="alert">{downloads.toast.message}</p>
 {/if}
 
 {#if downloads.error}

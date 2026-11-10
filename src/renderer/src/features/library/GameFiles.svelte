@@ -1,7 +1,9 @@
 <script lang="ts">
+	import { platform } from "@stores/platformStore";
 	import { errorMessage } from "../../lib/features/rpc";
 	import { downloadsApi } from "../../lib/features/downloadsApi";
 	import { bytes } from "../../lib/features/format";
+	import { isFileForOs } from "../../lib/features/platform";
 	import type { GameFile } from "../../lib/features/types";
 
 	let { gameId, files }: { gameId: number; files: GameFile[] } = $props();
@@ -38,6 +40,9 @@
 							{[file.platform, file.host, file.size ? bytes(file.size) : null]
 								.filter(Boolean)
 								.join(" · ")}
+							{#if !isFileForOs(file.platform, $platform.os)}
+								· Other OS
+							{/if}
 							{#if file.requiresAuth}
 								· Needs sign-in
 							{/if}

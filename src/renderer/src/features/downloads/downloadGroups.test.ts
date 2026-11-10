@@ -77,7 +77,8 @@ describe("installLine", () => {
 		speed: 0,
 		eta: null,
 		engine: "7-Zip",
-		state: "active"
+		state: "active",
+		error: null
 	};
 
 	it("joins phase, tool, percent and byte counts", () => {

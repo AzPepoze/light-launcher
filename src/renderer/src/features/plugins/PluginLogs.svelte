@@ -18,7 +18,7 @@
 		loading = true;
 		message = "";
 		try {
-			lines = (await pluginsApi.logs(pluginId)).lines;
+			lines = await pluginsApi.logs(pluginId);
 		} catch (err) {
 			message = errorMessage(err);
 		} finally {

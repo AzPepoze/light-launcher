@@ -69,7 +69,7 @@
 
 	function remove() {
 		run(async () => {
-			await libraryApi.remove(game.id, false);
+			await libraryApi.remove(game.id);
 			onRemoved(game.id);
 		});
 	}

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from "svelte";
-	import { errorMessage } from "../../lib/features/rpc";
+	import { errorMessage, listen } from "../../lib/features/rpc";
+	import { LIBRARY_INCOMING_EVENT } from "../../lib/features/events";
 	import { libraryApi } from "../../lib/features/libraryApi";
 	import { ago, bytes } from "../../lib/features/format";
 	import type { IncomingItem, IncomingListResponse } from "../../lib/features/types";
@@ -15,6 +16,7 @@
 
 	onMount(() => {
 		reload();
+		return listen<unknown>(LIBRARY_INCOMING_EVENT, () => reload());
 	});
 
 	async function reload() {

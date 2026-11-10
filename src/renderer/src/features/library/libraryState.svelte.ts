@@ -1,4 +1,10 @@
-import { errorMessage } from "../../lib/features/rpc";
+import { createLogger } from "../../lib/logger";
+import {
+	LIBRARY_CHANGED_EVENT,
+	LIBRARY_GAME_EVENT,
+	LIBRARY_REMOVED_EVENT
+} from "../../lib/features/events";
+import { errorMessage, listen } from "../../lib/features/rpc";
 import { libraryApi } from "../../lib/features/libraryApi";
 import type { Game, LibraryStats } from "../../lib/features/types";
 import {
@@ -10,6 +16,7 @@ import {
 import { loadSavedFilters, storeSavedFilters, type SavedFilter } from "./savedFilters";
 
 const EMPTY_STATS: LibraryStats = { total: 0, installed: 0, updates: 0, bytes: 0, playtime: 0 };
+const log = createLogger("Library");
 
 export class LibraryState {
 	games = $state<Game[]>([]);
@@ -37,6 +44,30 @@ export class LibraryState {
 			this.error = errorMessage(err);
 		} finally {
 			this.loading = false;
+		}
+	}
+
+	/** Keeps the list in step with library events. Returns a function that stops them. */
+	subscribe(): () => void {
+		const stops = [
+			listen<{ id: number }>(LIBRARY_GAME_EVENT, (event) => this.refreshGame(event.id)),
+			listen<{ id: number }>(LIBRARY_REMOVED_EVENT, (event) => this.removeGame(event.id)),
+			listen<unknown>(LIBRARY_CHANGED_EVENT, () => this.load())
+		];
+		return () => stops.forEach((stop) => stop());
+	}
+
+	/** Reloads one game. A failed refresh keeps the old row; the next full load fixes it. */
+	private async refreshGame(id: number) {
+		try {
+			const { game } = await libraryApi.get(id);
+			if (this.gameById(id)) {
+				this.replaceGame(game);
+			} else {
+				this.addGame(game);
+			}
+		} catch (err) {
+			log.warn(`could not refresh game ${id}`, errorMessage(err));
 		}
 	}
 
