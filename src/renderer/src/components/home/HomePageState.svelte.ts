@@ -119,7 +119,10 @@ export class HomePageState {
 		this.isLoading = false;
 
 		const scannedGroups = await scannedPromise;
-		if (scannedGroups && groupsSignature(scannedGroups) !== groupsSignature(this.scannedFolderGroups)) {
+		if (
+			scannedGroups &&
+			groupsSignature(scannedGroups) !== groupsSignature(this.scannedFolderGroups)
+		) {
 			this.scannedFolderGroups = scannedGroups;
 		}
 
