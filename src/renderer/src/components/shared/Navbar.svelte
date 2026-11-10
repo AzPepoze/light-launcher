@@ -7,11 +7,15 @@
 
 	const navItems = [
 		{ id: "home", label: "Home", icon: "home" },
+		{ id: "library", label: "Library", icon: "collections_bookmark" },
+		{ id: "downloads", label: "Downloads", icon: "downloading" },
+		{ id: "updates", label: "Updates", icon: "system_update_alt" },
 		{ id: "manager", label: "Game Manager", icon: "monitor_heart" },
 		{ id: "run", label: "Run", icon: "rocket_launch" },
 		{ id: "versions", label: "Versions", icon: protonIcon, isCustomIcon: true },
 		{ id: "prefix", label: "Prefix", icon: "folder_shared" },
 		{ id: "utils", label: "Utils", icon: "handyman" },
+		{ id: "plugins", label: "Plugins", icon: "extension" },
 		{ id: "settings", label: "Settings", icon: "settings" },
 	];
 
