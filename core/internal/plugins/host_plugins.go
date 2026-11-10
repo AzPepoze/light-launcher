@@ -22,6 +22,10 @@ type PluginInfo struct {
 	Unsigned       bool                  `json:"unsigned"`
 	Permissions    Permissions           `json:"permissions"`
 	Sources        []contract.SourceInfo `json:"sources"`
+	Author         string                `json:"author"`
+	Description    string                `json:"description"`
+	Homepage       string                `json:"homepage"`
+	HasSettings    bool                  `json:"hasSettings"`
 }
 
 // InstallRequest asks for one package, from a local path or an https URL.
@@ -147,6 +151,10 @@ func (h *Host) info(id string) PluginInfo {
 	info.Version = inst.version
 	info.Previous = inst.previous
 	info.Permissions = inst.manifest.Permissions
+	info.Author = inst.manifest.Author
+	info.Description = inst.manifest.Description
+	info.Homepage = inst.manifest.Homepage
+	info.HasSettings = inst.manifest.Contributes.Settings != nil
 	info.Sources = sourceInfos(id, inst.manifest)
 	info.Running = h.running(id)
 	switch {

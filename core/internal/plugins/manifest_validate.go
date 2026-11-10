@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"fmt"
+	"net/url"
 	"regexp"
 	"strings"
 )
@@ -30,6 +31,7 @@ var validHooks = map[string]bool{
 func (m Manifest) Validate() error {
 	checks := []func() error{
 		m.validateIdentity,
+		m.validateInfo,
 		m.validateEntry,
 		m.validateContributes,
 		m.validatePermissions,
@@ -59,6 +61,25 @@ func (m Manifest) validateIdentity() error {
 		return fieldError("minHost", "must be a semver version such as 2.0.0")
 	}
 	return nil
+}
+
+// validateInfo checks the optional author, description and homepage. The SDK schema may not list them yet.
+func (m Manifest) validateInfo() error {
+	if len(m.Author) > 80 {
+		return fieldError("author", "must be at most 80 characters")
+	}
+	if len(m.Description) > 1000 {
+		return fieldError("description", "must be at most 1000 characters")
+	}
+	if m.Homepage != "" && !isHTTPURL(m.Homepage) {
+		return fieldError("homepage", "must be an http or https URL")
+	}
+	return nil
+}
+
+func isHTTPURL(raw string) bool {
+	parsed, err := url.Parse(raw)
+	return err == nil && (parsed.Scheme == "http" || parsed.Scheme == "https") && parsed.Host != ""
 }
 
 func (m Manifest) validateEntry() error {
