@@ -103,3 +103,37 @@ func deref(value *string) string {
 	}
 	return *value
 }
+
+func TestListSortsByLastPlayed(t *testing.T) {
+	lib := openTestLibrary(t, Options{})
+	ctx := context.Background()
+	older := upsertGame(t, lib, "sort-old", "Older")
+	newer := upsertGame(t, lib, "sort-new", "Newer")
+	upsertGame(t, lib, "sort-never", "Never")
+	early, late := "2026-01-01T00:00:00.000Z", "2026-03-01T00:00:00.000Z"
+	if _, err := lib.Patch(ctx, older.ID, Patch{LastPlayedAt: &early}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := lib.Patch(ctx, newer.ID, Patch{LastPlayedAt: &late}); err != nil {
+		t.Fatal(err)
+	}
+
+	page, err := lib.List(ctx, Filter{Sort: "lastPlayed"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var titles []string
+	for _, game := range page.Items {
+		titles = append(titles, game.Title)
+	}
+	want := []string{"Newer", "Older", "Never"}
+	if len(titles) != len(want) {
+		t.Fatalf("titles = %v, want %v", titles, want)
+	}
+	for i := range want {
+		if titles[i] != want[i] {
+			t.Errorf("titles = %v, want %v", titles, want)
+			break
+		}
+	}
+}
