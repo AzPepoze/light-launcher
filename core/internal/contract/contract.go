@@ -70,3 +70,18 @@ type Secrets interface {
 	Set(ctx context.Context, plugin, key, value string) error
 	Delete(ctx context.Context, plugin, key string) error
 }
+
+// SourceInfo describes one game source contributed by a plugin.
+type SourceInfo struct {
+	Plugin       string   `json:"plugin"`
+	SourceID     string   `json:"sourceId"`
+	Label        string   `json:"label"`
+	Capabilities []string `json:"capabilities"`
+}
+
+// Sources is implemented by the plugin host. Call runs a plugin method such as "source.fetchGame"
+// and decodes the JSON result into out.
+type Sources interface {
+	Sources() []SourceInfo
+	Call(ctx context.Context, plugin, method string, params any, out any) error
+}
