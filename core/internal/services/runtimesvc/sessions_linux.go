@@ -8,12 +8,13 @@ import (
 	"strconv"
 )
 
-// runningInstancePids finds instance processes with pgrep. The short name is a fallback, as in the Electron app.
+// instancePattern matches the instance binary at the start of a command line. Plain pgrep names
+// are cut to 15 characters by the kernel, so the full command line is matched instead.
+const instancePattern = `(^|/)light-launcher-instance( |$)`
+
+// runningInstancePids finds instance processes with pgrep.
 func runningInstancePids() []int {
-	output, err := exec.Command("pgrep", "light-launcher-instance").Output()
-	if err != nil {
-		output, _ = exec.Command("pgrep", "light-launcher-instan").Output()
-	}
+	output, _ := exec.Command("pgrep", "-f", instancePattern).Output()
 	return parsePids(string(output))
 }
 
