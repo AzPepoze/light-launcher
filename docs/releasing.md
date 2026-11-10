@@ -31,25 +31,41 @@ Other types, such as `docs:` and `chore:`, do not bump the version on their own.
 
 ## Workflows
 
-| File                                   | Runs on                   | Purpose                                                                               |
-| :------------------------------------- | :------------------------ | :------------------------------------------------------------------------------------ |
-| `.github/workflows/ci.yml`             | Push and pull request     | Lint, format check, typecheck, tests, `go vet`, `go test`. Runs on Linux and Windows. |
-| `.github/workflows/release-please.yml` | Push to `main`            | Opens the release pull request and creates the tag.                                   |
-| `.github/workflows/release.yml`        | Tag `v*`, or a manual run | Builds and publishes the release files.                                               |
-| `.github/workflows/aur.yml`            | Manual run only           | Builds an updated `PKGBUILD` as an artifact. Does not push.                           |
+| File                                   | Runs on                   | Purpose                                                                                                   |
+| :------------------------------------- | :------------------------ | :-------------------------------------------------------------------------------------------------------- |
+| `.github/workflows/ci.yml`             | Push and pull request     | Go vet and tests on Linux and Windows, UI checks, Qt shell build, WebView2 cross build, workflow lint.    |
+| `.github/workflows/release-please.yml` | Push to `main`            | Opens the release pull request and creates the tag.                                                       |
+| `.github/workflows/release.yml`        | Tag `v*`, or a manual run | Runs `scripts/build-linux.sh` and `scripts/build-windows.sh`, then publishes the release files.           |
+| `.github/workflows/aur.yml`            | Manual run only           | Builds an updated `PKGBUILD` as an artifact. Does not push.                                               |
 
 ## Release files
 
-| File type          | Built on | What it is                     |
-| :----------------- | :------- | :----------------------------- |
-| `.AppImage`        | Linux    | Single file app                |
-| `.tar.gz`          | Linux    | Archive                        |
-| `.exe` (installer) | Windows  | Installer (NSIS)               |
-| `.exe` (portable)  | Windows  | Portable app, no install       |
-| `SHA256SUMS`       | Linux    | Checksums for every file above |
+| File                                           | What it is                              |
+| :--------------------------------------------- | :-------------------------------------- |
+| `light-launcher-<version>-linux-x64.tar.gz`    | Linux files in one archive              |
+| `light-launcher-<version>-windows-x64.zip`     | Windows files, no install needed        |
+| `light-launcher-<version>-windows-x64-setup.exe` | Windows installer (NSIS)              |
+| `SHA256SUMS`                                   | Checksums for the three files above     |
 
-> [!IMPORTANT]
-> Check a download with `sha256sum -c SHA256SUMS` before you run it.
+The build steps are described in [Building](building.md).
+
+## Check a download
+
+Check the file against `SHA256SUMS` before you run it.
+
+Linux:
+
+```sh
+sha256sum -c SHA256SUMS
+```
+
+Windows (PowerShell or Command Prompt):
+
+```text
+certutil -hashfile light-launcher-<version>-windows-x64-setup.exe SHA256
+```
+
+Compare the result with the line for that file in `SHA256SUMS`.
 
 ## Manual run
 
@@ -65,12 +81,10 @@ To publish by hand, uncheck **dry-run** and pick a tag in the branch list.
 
 Add secrets in **Settings > Secrets and variables > Actions**.
 
-| Secret                  | Required     | Used by              | What it is                                                                                                                           |
-| :---------------------- | :----------- | :------------------- | :----------------------------------------------------------------------------------------------------------------------------------- |
-| `RELEASE_PLEASE_TOKEN`  | Optional     | `release-please.yml` | A personal access token or GitHub App token. Lets a release tag start `release.yml`. Without it, start the Release workflow by hand. |
-| `WINDOWS_CERT_BASE64`   | Optional     | `release.yml`        | The Windows code signing certificate (`.pfx` file) as base64 text. Without it, the Windows files are not signed.                     |
-| `WINDOWS_CERT_PASSWORD` | Optional     | `release.yml`        | The password for the `.pfx` file. Needed when `WINDOWS_CERT_BASE64` is set.                                                          |
-| `AUR_SSH_KEY`           | Not used yet | Future AUR push      | An SSH private key registered on the AUR. Add it when the AUR push step is written.                                                  |
+| Secret                 | Required     | Used by              | What it is                                                                                                                           |
+| :--------------------- | :----------- | :------------------- | :----------------------------------------------------------------------------------------------------------------------------------- |
+| `RELEASE_PLEASE_TOKEN` | Optional     | `release-please.yml` | A personal access token or GitHub App token. Lets a release tag start `release.yml`. Without it, start the Release workflow by hand. |
+| `AUR_SSH_KEY`          | Not used yet | Future AUR push      | An SSH private key registered on the AUR. Add it when the AUR push step is written.                                                  |
 
 `GITHUB_TOKEN` is created by GitHub for each run. You do not add it.
 
@@ -79,5 +93,6 @@ Add secrets in **Settings > Secrets and variables > Actions**.
 
 ## Notes
 
-- The Windows packaging step is separate from the rest of the build. The Electron shell will be replaced later, so that step may change or move.
+- The Windows files are not signed yet. Windows shows a warning when you first run them.
 - Release notes come from release-please. The Release workflow also asks for generated notes. Check the release body after the first run.
+- The Release workflow runs on Ubuntu. It cross-builds the Windows files there.
