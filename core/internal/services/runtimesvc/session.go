@@ -3,6 +3,7 @@ package runtimesvc
 import (
 	"errors"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -73,6 +74,18 @@ func (t *sessionTracker) forgetExcept(pids []int) {
 			delete(t.firstSeen, pid)
 		}
 	}
+}
+
+// parsePids reads one PID per line, as pgrep prints them. Invalid lines are skipped.
+func parsePids(output string) []int {
+	var pids []int
+	for _, line := range strings.Split(output, "\n") {
+		pid, err := strconv.Atoi(strings.TrimSpace(line))
+		if err == nil && pid > 0 {
+			pids = append(pids, pid)
+		}
+	}
+	return pids
 }
 
 // parseGameArguments returns the last --game and --game-name values in a NUL-separated argument list.
