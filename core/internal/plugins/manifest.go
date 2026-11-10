@@ -25,14 +25,14 @@ type Manifest struct {
 
 // Contributes lists what the plugin adds to the launcher.
 type Contributes struct {
-	Sources        []SourceContribution `json:"sources,omitempty"`
-	Settings       *SettingsRef         `json:"settings,omitempty"`
-	Pages          []PageContribution   `json:"pages,omitempty"`
-	Commands       []NamedItem          `json:"commands,omitempty"`
-	Hooks          []string             `json:"hooks,omitempty"`
-	LaunchAdapters []NamedItem          `json:"launchAdapters,omitempty"`
-	Importers      []NamedItem          `json:"importers,omitempty"`
-	Themes         []ThemeContribution  `json:"themes,omitempty"`
+	Sources        []SourceContribution  `json:"sources,omitempty"`
+	Settings       *SettingsRef          `json:"settings,omitempty"`
+	Pages          []PageContribution    `json:"pages,omitempty"`
+	Commands       []CommandContribution `json:"commands,omitempty"`
+	Hooks          []string              `json:"hooks,omitempty"`
+	LaunchAdapters []NamedItem           `json:"launchAdapters,omitempty"`
+	Importers      []NamedItem           `json:"importers,omitempty"`
+	Themes         []ThemeContribution   `json:"themes,omitempty"`
 }
 
 // SourceContribution is one game source a plugin offers.
@@ -54,10 +54,17 @@ type PageContribution struct {
 	Path  string `json:"path"`
 }
 
-// NamedItem is an id and a label, used by commands, launch adapters and importers.
+// NamedItem is an id and a label, used by launch adapters and importers.
 type NamedItem struct {
 	ID    string `json:"id"`
 	Label string `json:"label"`
+}
+
+// CommandContribution is an action in the command palette. Method is the plugin method it calls.
+type CommandContribution struct {
+	ID     string `json:"id"`
+	Label  string `json:"label"`
+	Method string `json:"method,omitempty"`
 }
 
 // ThemeContribution is a theme file with colors and fonts.

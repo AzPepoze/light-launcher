@@ -17,7 +17,7 @@ const (
 	defaultCallTimeout = 60 * time.Second
 	initializeTimeout  = 10 * time.Second
 	shutdownTimeout    = 3 * time.Second
-	exitGrace          = 2 * time.Second
+	exitGrace          = 3 * time.Second // the SDK waits up to 2 s for running requests before it answers shutdown
 )
 
 // ErrPluginDisabled is returned for calls to a plugin that was turned off, or auto-disabled after crashes.
@@ -152,6 +152,7 @@ func (s *Supervisor) start(ctx context.Context) (*connection, error) {
 	}
 	conn := &connection{child: child, exited: make(chan struct{})}
 	conn.peer = NewPeer(child.stdout, child.stdin, s.cfg.env.call, s.cfg.env.notify)
+	s.cfg.env.setPeer(conn.peer)
 	go s.watch(conn)
 	if err := s.handshake(ctx, conn); err != nil {
 		conn.child.kill()

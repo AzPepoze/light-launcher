@@ -11,7 +11,7 @@ import (
 const (
 	defaultHeartbeat = 15 * time.Second
 	pingTimeout      = 5 * time.Second
-	// pingMethod is not in the SDK protocol yet. A plugin that does not know it still answers, which proves it is alive.
+	// pingMethod is not a method in the SDK. Every SDK plugin answers an unknown method with -32601, which proves it is alive.
 	pingMethod = "ping"
 )
 

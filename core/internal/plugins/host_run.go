@@ -103,15 +103,43 @@ func (h *Host) disable(id, reason string) {
 	h.emitState(id)
 }
 
-// CallPlugin runs a method for the UI. Only source methods and declared commands are allowed.
+// CallPlugin runs a source method for the UI. Only "source.*" methods are allowed.
 func (h *Host) CallPlugin(ctx context.Context, id, method string, params json.RawMessage) (json.RawMessage, error) {
+	if !strings.HasPrefix(method, "source.") {
+		return nil, fmt.Errorf("method %q is not allowed from the UI", method)
+	}
+	return h.callMethod(ctx, id, method, params)
+}
+
+// CallCommand runs a command from the plugin's manifest. The command must name a method.
+func (h *Host) CallCommand(ctx context.Context, id, commandID string, params json.RawMessage) (json.RawMessage, error) {
 	inst, err := h.loadInstalled(id)
 	if err != nil {
 		return nil, err
 	}
-	if !allowedUIMethod(inst.manifest, method) {
-		return nil, fmt.Errorf("method %q is not allowed from the UI", method)
+	method, err := commandMethod(inst.manifest, commandID)
+	if err != nil {
+		return nil, err
 	}
+	return h.callMethod(ctx, id, method, params)
+}
+
+// commandMethod returns the plugin method a command runs. A command without a method cannot run.
+func commandMethod(manifest Manifest, commandID string) (string, error) {
+	for _, command := range manifest.Contributes.Commands {
+		if command.ID != commandID {
+			continue
+		}
+		if command.Method == "" {
+			return "", fmt.Errorf("command %q has no method in plugin.json", commandID)
+		}
+		return command.Method, nil
+	}
+	return "", fmt.Errorf("plugin %s has no command %q", manifest.ID, commandID)
+}
+
+// callMethod starts the plugin when needed and runs one method on it.
+func (h *Host) callMethod(ctx context.Context, id, method string, params json.RawMessage) (json.RawMessage, error) {
 	sup, err := h.supervisorFor(id)
 	if err != nil {
 		return nil, err
@@ -121,21 +149,4 @@ func (h *Host) CallPlugin(ctx context.Context, id, method string, params json.Ra
 		return nil, err
 	}
 	return out, nil
-}
-
-// allowedUIMethod allows "source.*" methods and "command.<id>" for commands the manifest declares.
-func allowedUIMethod(manifest Manifest, method string) bool {
-	if strings.HasPrefix(method, "source.") {
-		return true
-	}
-	commandID, isCommand := strings.CutPrefix(method, "command.")
-	if !isCommand {
-		return false
-	}
-	for _, command := range manifest.Contributes.Commands {
-		if command.ID == commandID {
-			return true
-		}
-	}
-	return false
 }

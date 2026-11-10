@@ -145,6 +145,7 @@ func (p *Peer) dispatchNotify(msg envelope) {
 func (p *Peer) serve(msg envelope) {
 	ctx, cancel := context.WithTimeout(context.Background(), serveTimeout)
 	defer cancel()
+	ctx = context.WithValue(ctx, requestIDKey{}, requestIDText(msg.ID))
 	result, err := p.handle(ctx, msg)
 	if err != nil {
 		_ = p.writeResponse(msg.ID, nil, toRPCError(err))
@@ -238,6 +239,24 @@ func contextError(err error) error {
 		return &RPCError{Code: CodeTimeout, Message: "request timed out"}
 	}
 	return &RPCError{Code: CodeCanceled, Message: "request canceled"}
+}
+
+// requestIDKey is the context key for the id of the request being answered.
+type requestIDKey struct{}
+
+// requestIDFrom returns the id of the plugin request being answered, as text.
+func requestIDFrom(ctx context.Context) string {
+	id, _ := ctx.Value(requestIDKey{}).(string)
+	return id
+}
+
+// requestIDText returns a request id as plain text: 7 stays 7, and "abc" becomes abc.
+func requestIDText(raw json.RawMessage) string {
+	var text string
+	if json.Unmarshal(raw, &text) == nil {
+		return text
+	}
+	return string(raw)
 }
 
 // toRPCError keeps an RPCError as it is. Any other error becomes an internal error.

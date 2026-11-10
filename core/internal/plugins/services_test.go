@@ -86,6 +86,74 @@ func TestServicesDeniedWithoutGrant(t *testing.T) {
 	expectCode(t, err, CodeMethodNotFound)
 }
 
+// fakeBrowser records the last request and returns a fixed capture.
+type fakeBrowser struct {
+	got     BrowserAssistRequest
+	capture BrowserCapture
+}
+
+func (f *fakeBrowser) Assist(_ context.Context, request BrowserAssistRequest) (BrowserCapture, error) {
+	f.got = request
+	return f.capture, nil
+}
+
+func TestBrowserAssistPassesTokenAndReturnsCapture(t *testing.T) {
+	env := testEnv(t, Permissions{Browser: true}, nil)
+	browser := &fakeBrowser{capture: BrowserCapture{
+		URL:      "https://files.example/a.zip",
+		Filename: "a.zip",
+		Size:     42,
+		Headers:  map[string]string{"Cookie": "x=1"},
+	}}
+	env.deps.browser = browser
+
+	result, err := callService(t, env, "browser.assist", map[string]string{"url": "https://example.com", "token": "abc"})
+	if err != nil {
+		t.Fatalf("browser.assist: %v", err)
+	}
+	if browser.got.Token != "abc" {
+		t.Fatalf("token = %q, want abc", browser.got.Token)
+	}
+	got := result.(browserResult)
+	if got.CapturedURL == nil || *got.CapturedURL != "https://files.example/a.zip" {
+		t.Fatalf("capturedUrl = %v", got.CapturedURL)
+	}
+	if got.Filename != "a.zip" || got.Size != 42 || got.Headers["Cookie"] != "x=1" {
+		t.Fatalf("result = %+v", got)
+	}
+}
+
+func TestBrowserAssistUsesRequestIDWithoutToken(t *testing.T) {
+	env := testEnv(t, Permissions{Browser: true}, nil)
+	browser := &fakeBrowser{}
+	env.deps.browser = browser
+
+	ctx := context.WithValue(context.Background(), requestIDKey{}, "7")
+	result, err := serviceBrowserAssist(ctx, env, json.RawMessage(`{"url":"https://example.com"}`))
+	if err != nil {
+		t.Fatalf("serviceBrowserAssist: %v", err)
+	}
+	if browser.got.Token != "7" {
+		t.Fatalf("token = %q, want the request id 7", browser.got.Token)
+	}
+	raw, err := json.Marshal(result)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(raw), `"capturedUrl":null`) {
+		t.Fatalf("nothing captured must answer capturedUrl null, got %s", raw)
+	}
+}
+
+func TestRequestIDText(t *testing.T) {
+	if got := requestIDText(json.RawMessage(`7`)); got != "7" {
+		t.Fatalf("numeric id = %q", got)
+	}
+	if got := requestIDText(json.RawMessage(`"abc"`)); got != "abc" {
+		t.Fatalf("string id = %q", got)
+	}
+}
+
 func TestHTTPRequestFetchesAllowedHost(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		fmt.Fprint(w, "hello page")
