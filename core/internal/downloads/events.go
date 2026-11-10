@@ -20,18 +20,20 @@ type ProgressEvent struct {
 
 // View is one download as the UI lists it. Request headers are left out on purpose.
 type View struct {
-	ID          int64      `json:"id"`
-	GameID      int64      `json:"gameId"`
-	URL         string     `json:"url"`
-	Filename    string     `json:"filename"`
-	Dest        string     `json:"dest"`
-	State       State      `json:"state"`
-	Error       string     `json:"error,omitempty"`
-	Received    int64      `json:"received"`
-	Total       int64      `json:"total"`
-	Speed       float64    `json:"speed"`
-	Connections int        `json:"connections"`
-	Install     bool       `json:"install"`
+	ID          int64   `json:"id"`
+	GameID      int64   `json:"gameId"`
+	URL         string  `json:"url"`
+	Filename    string  `json:"filename"`
+	Dest        string  `json:"dest"`
+	State       State   `json:"state"`
+	Error       string  `json:"error,omitempty"`
+	Received    int64   `json:"received"`
+	Total       int64   `json:"total"`
+	Speed       float64 `json:"speed"`
+	Connections int     `json:"connections"`
+	Install     bool    `json:"install"`
+	// RateLimited is true while a total speed limit applies to a running download.
+	RateLimited bool       `json:"rateLimited"`
 	CreatedAt   time.Time  `json:"createdAt"`
 	FinishedAt  *time.Time `json:"finishedAt,omitempty"`
 }
@@ -56,6 +58,7 @@ func (m *Manager) viewLocked(d Download, now time.Time) View {
 		finished := d.FinishedAt
 		v.FinishedAt = &finished
 	}
+	v.RateLimited = d.State == StateDownloading && m.settings.SpeedLimitKBps > 0
 	if j := m.active[d.ID]; j != nil {
 		p := j.progress(now)
 		v.Received, v.Total, v.Speed = p.received, p.total, p.speed
