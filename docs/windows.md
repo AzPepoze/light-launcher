@@ -9,15 +9,15 @@ This page explains what LightLauncher does on Windows and how to install it.
 
 ## What works on Windows
 
-| Feature | Windows | Linux only |
-| :--- | :---: | :---: |
-| Add a game and start its `.exe` | Yes | |
-| Browse the game library and settings | Yes | |
-| Start a game with Proton and umu-run | | Yes |
-| Prefixes | | Yes |
-| Lossless Scaling (LSFG) | | Yes |
-| Gamescope, MangoHud, GameMode | | Yes |
-| Steam Proton versions | | Yes |
+| Feature                              | Windows | Linux only |
+| :----------------------------------- | :-----: | :--------: |
+| Add a game and start its `.exe`      |   Yes   |            |
+| Browse the game library and settings |   Yes   |            |
+| Start a game with Proton and umu-run |         |    Yes     |
+| Prefixes                             |         |    Yes     |
+| Lossless Scaling (LSFG)              |         |    Yes     |
+| Gamescope, MangoHud, GameMode        |         |    Yes     |
+| Steam Proton versions                |         |    Yes     |
 
 Features marked Linux only are hidden in the Windows app.
 
@@ -25,10 +25,10 @@ Features marked Linux only are hidden in the Windows app.
 
 Pick one of the two files from the [release page](https://github.com/AzPepoze/light-launcher/releases).
 
-| File | Use it when |
-| :--- | :--- |
+| File                                             | Use it when                                                      |
+| :----------------------------------------------- | :--------------------------------------------------------------- |
 | `light-launcher-<version>-windows-x64-setup.exe` | You want a normal install with Start Menu and Desktop shortcuts. |
-| `light-launcher-<version>-windows-x64.zip` | You want to run it from any folder. Nothing is installed. |
+| `light-launcher-<version>-windows-x64.zip`       | You want to run it from any folder. Nothing is installed.        |
 
 ### Installer steps
 
@@ -49,10 +49,10 @@ Pick one of the two files from the [release page](https://github.com/AzPepoze/li
 
 LightLauncher shows its window with the Microsoft Edge WebView2 Runtime.
 
-| Situation | What you see |
-| :--- | :--- |
-| The runtime is installed | The window opens. |
-| The runtime is missing | A message with the download page. Choose **Yes** to open it in your browser. |
+| Situation                | What you see                                                                 |
+| :----------------------- | :--------------------------------------------------------------------------- |
+| The runtime is installed | The window opens.                                                            |
+| The runtime is missing   | A message with the download page. Choose **Yes** to open it in your browser. |
 
 Download page: `https://developer.microsoft.com/microsoft-edge/webview2/`
 
@@ -71,17 +71,18 @@ Check the file first. See the checksum steps in [Releasing](releasing.md#check-a
 2. Find **LightLauncher** and choose **Uninstall**.
 3. The uninstaller asks if you also want to delete your data.
 
-| Data | Where it is | Deleted when you answer Yes |
-| :--- | :--- | :--- |
-| Game settings, prefixes and logs | `%APPDATA%\light-launcher` | Yes |
+| Data                                                            | Where it is                | Deleted when you answer Yes                  |
+| :-------------------------------------------------------------- | :------------------------- | :------------------------------------------- |
+| Settings, game configs, prefixes, logs, plugins and plugin data | `%APPDATA%\light-launcher` | Yes                                          |
+| Plugin sign-in values                                           | Windows Credential Manager | No. Remove them yourself, or sign out first. |
 
 > [!IMPORTANT]
 > The data folder belongs to the Windows account that runs the uninstaller. Run it with the same account that you used for LightLauncher.
 
 ## More
 
-| Topic | Page |
-| :--- | :--- |
-| Build the Windows files | [Building](building.md) |
-| Linux | [Linux](linux.md) |
-| Shell options | [Shells](../shell/README.md) |
+| Topic                   | Page                         |
+| :---------------------- | :--------------------------- |
+| Build the Windows files | [Building](building.md)      |
+| Linux                   | [Linux](linux.md)            |
+| Shell options           | [Shells](../shell/README.md) |
