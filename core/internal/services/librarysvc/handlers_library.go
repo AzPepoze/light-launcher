@@ -49,8 +49,8 @@ func (s *service) list(ctx context.Context, filter library.Filter) (library.Page
 	return s.lib.List(ctx, filter)
 }
 
-func (s *service) get(ctx context.Context, in idPayload) (library.Game, error) {
-	return s.lib.Get(ctx, in.ID)
+func (s *service) get(ctx context.Context, in idPayload) (library.GameDetail, error) {
+	return s.lib.Detail(ctx, in.ID)
 }
 
 func (s *service) update(ctx context.Context, in updatePayload) (library.Game, error) {
