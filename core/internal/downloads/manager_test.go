@@ -238,6 +238,40 @@ func TestEnqueueAvoidsFileNameCollisions(t *testing.T) {
 	}
 }
 
+func TestDownloadWithInstallFlagIsInstalledAndArchiveRemoved(t *testing.T) {
+	archive := makeZip(t, []zipEntry{{"Game/" + launcherName(), "binary"}})
+	data, err := os.ReadFile(archive)
+	if err != nil {
+		t.Fatal(err)
+	}
+	file := &testFile{data: data, etag: `"v1"`}
+	srv := httptest.NewServer(file)
+	defer srv.Close()
+
+	library := t.TempDir()
+	dir := t.TempDir()
+	m, err := NewManager(Options{
+		Store:     NewMemoryStore(),
+		Dir:       dir,
+		Installer: &FolderInstaller{Root: library},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { m.Shutdown(context.Background()) })
+
+	id, err := m.Enqueue(context.Background(), contract.DownloadRequest{URL: srv.URL + "/Game.zip", Install: true, GameID: 4})
+	if err != nil {
+		t.Fatal(err)
+	}
+	waitForState(t, m, id, StateDone)
+	waitFor(t, func() bool {
+		_, err := os.Stat(filepath.Join(library, "Game", launcherName()))
+		return err == nil
+	})
+	waitFor(t, func() bool { return !fileExists(filepath.Join(dir, "Game.zip")) })
+}
+
 func TestSettingsAreClampedOnSet(t *testing.T) {
 	m := newTestManager(t, nil, t.TempDir(), Settings{})
 	got := m.SetSettings(Settings{Connections: 99, MaxActive: 0, HostConnections: -1, Retries: 50, SpeedLimitKBps: -5})
