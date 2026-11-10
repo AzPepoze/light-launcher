@@ -41,3 +41,24 @@ func TestParseOptionsAcceptsIgnoredFlags(t *testing.T) {
 		t.Fatalf("ignored = %v", opts.ignored)
 	}
 }
+
+func TestParseOptionsRejectsPortOutOfRange(t *testing.T) {
+	if _, err := parseOptions([]string{"--port=70000"}); err == nil {
+		t.Fatal("port 70000 was accepted")
+	}
+}
+
+func TestAPIEndpointUsesFixedValuesOnlyWithDevToken(t *testing.T) {
+	port, token := apiEndpoint(options{port: 5000})
+	if port != 5000 || token != "" {
+		t.Fatalf("no dev token: port %d, token %q", port, token)
+	}
+	port, token = apiEndpoint(options{devToken: "dev"})
+	if port != defaultDevPort || token != "dev" {
+		t.Fatalf("dev token without port: port %d, token %q", port, token)
+	}
+	port, _ = apiEndpoint(options{devToken: "dev", port: 7000})
+	if port != 7000 {
+		t.Fatalf("explicit port ignored: %d", port)
+	}
+}

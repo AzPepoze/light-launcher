@@ -13,13 +13,21 @@ import (
 	"syscall"
 
 	"light-launcher/core/internal/logger"
+	"light-launcher/core/internal/plugins"
+	"light-launcher/core/internal/services/appsvc"
 )
 
 const (
 	exitOK      = 0
 	exitFailure = 1
 	exitUsage   = 2
+
+	// defaultDevPort is the port the Vite dev proxy expects when --dev-token is given.
+	defaultDevPort = 9246
 )
+
+// version is the launcher version. The release build sets it with -ldflags "-X main.version=...".
+var version = "dev"
 
 var validShells = map[string]bool{"auto": true, "qt": true, "webview2": true, "browser": true}
 
@@ -32,12 +40,15 @@ type options struct {
 	uiDir    string
 	editLsfg bool
 	gamePath string
+	port     int
+	devToken string
 	ignored  []string
 }
 
 func main() {
+	plugins.HostVersion = version
 	if len(os.Args) > 1 && os.Args[1] == "plugin" {
-		os.Exit(runPluginCommand(os.Args[2:]))
+		os.Exit(plugins.RunCLI(os.Args[1:], os.Stdout))
 	}
 	os.Exit(launch(os.Args[1:]))
 }
@@ -55,9 +66,6 @@ func launch(args []string) int {
 	for _, name := range opts.ignored {
 		logger.Info("main", "--%s is accepted and ignored", name)
 	}
-	if opts.editLsfg {
-		logger.Warn("main", "--edit-lsfg is not wired yet and is ignored")
-	}
 
 	lockPath := lockFilePath()
 	if forwardToRunning(lockPath, opts.gamePath) {
@@ -69,14 +77,18 @@ func launch(args []string) int {
 		return exitFailure
 	}
 
+	// The game path and the lsfg editor flag are read by the UI on start, through the app service.
+	appsvc.SetInitialArgs("", opts.gamePath, opts.editLsfg)
+	port, token := apiEndpoint(opts)
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	err = run(ctx, runConfig{
 		UI:       ui,
 		Shell:    resolveShell(opts.shell),
 		NoShell:  opts.noShell,
-		GamePath: opts.gamePath,
 		LockPath: lockPath,
+		Port:     port,
+		Token:    token,
 	})
 	if err != nil {
 		logger.Error("main", "%v", err)
@@ -85,13 +97,27 @@ func launch(args []string) int {
 	return exitOK
 }
 
+// apiEndpoint returns the port and token for the API. A fixed token is only used with --dev-token,
+// and then the port defaults to the one the Vite dev proxy expects.
+func apiEndpoint(opts options) (int, string) {
+	if opts.devToken == "" {
+		return opts.port, ""
+	}
+	if opts.port == 0 {
+		return defaultDevPort, opts.devToken
+	}
+	return opts.port, opts.devToken
+}
+
 func parseOptions(args []string) (options, error) {
 	var opts options
 	flags := flag.NewFlagSet("light-launcher", flag.ContinueOnError)
 	flags.StringVar(&opts.shell, "shell", "auto", "window type: auto, qt, webview2 or browser")
 	flags.BoolVar(&opts.noShell, "no-shell", false, "serve the UI and print the URL, without a window")
 	flags.StringVar(&opts.uiDir, "ui", "", "directory with the built UI (default: embedded UI, else ui next to the executable)")
-	flags.BoolVar(&opts.editLsfg, "edit-lsfg", false, "open the lsfg-vk editor (not wired yet)")
+	flags.BoolVar(&opts.editLsfg, "edit-lsfg", false, "open the lsfg-vk editor on start")
+	flags.IntVar(&opts.port, "port", 0, "loopback port for the API (default: a free port)")
+	flags.StringVar(&opts.devToken, "dev-token", "", "fixed API token for the Vite dev proxy; sets port 9246 unless --port is given")
 	flags.Bool("wayland", false, "accepted and ignored")
 	flags.Bool("x11", false, "accepted and ignored")
 	flags.String("ozone-platform", "", "accepted and ignored")
@@ -100,6 +126,9 @@ func parseOptions(args []string) (options, error) {
 	}
 	if !validShells[opts.shell] {
 		return opts, fmt.Errorf("unknown shell %q", opts.shell)
+	}
+	if opts.port < 0 || opts.port > 65535 {
+		return opts, fmt.Errorf("port %d is out of range", opts.port)
 	}
 	flags.Visit(func(f *flag.Flag) {
 		if ignoredFlags[f.Name] {
@@ -141,12 +170,4 @@ func uiSource(dir string) (fs.FS, error) {
 		return nil, err
 	}
 	return os.DirFS(filepath.Join(filepath.Dir(exe), "ui")), nil
-}
-
-func runPluginCommand(args []string) int {
-	if PluginCLI == nil {
-		logger.Warn("plugin", "plugin commands are not wired yet")
-		return exitUsage
-	}
-	return PluginCLI(args, os.Stdout)
 }

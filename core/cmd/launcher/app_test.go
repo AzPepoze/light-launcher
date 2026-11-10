@@ -13,6 +13,7 @@ import (
 // TestRunWithoutShellServesUntilCancelled starts the real run loop on a random port and
 // checks that a second launch with a game path reaches it.
 func TestRunWithoutShellServesUntilCancelled(t *testing.T) {
+	useTempConfig(t)
 	lockPath := filepath.Join(t.TempDir(), "launcher.lock")
 	ui := fstest.MapFS{"index.html": {Data: []byte("<!doctype html>ui")}}
 	ctx, cancel := context.WithCancel(context.Background())
