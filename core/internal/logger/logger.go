@@ -3,9 +3,7 @@ package logger
 import (
 	"fmt"
 	"io"
-	"math"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -46,21 +44,7 @@ const (
 	AnsiBold  = "\x1b[1m"
 )
 
-var pastelAnsiPalette = []string{
-	"\x1b[38;2;255;179;186m", // pastel-pink
-	"\x1b[38;2;255;223;186m", // pastel-peach
-	"\x1b[38;2;253;255;182m", // pastel-buttercup
-	"\x1b[38;2;186;255;201m", // pastel-mint
-	"\x1b[38;2;186;225;255m", // pastel-sky
-	"\x1b[38;2;232;223;245m", // pastel-lavender
-	"\x1b[38;2;181;234;215m", // pastel-seafoam
-	"\x1b[38;2;252;225;228m", // pastel-rose
-	"\x1b[38;2;189;178;255m", // pastel-violet
-	"\x1b[38;2;255;198;255m", // pastel-magenta
-	"\x1b[38;2;155;246;255m", // pastel-aqua
-	"\x1b[38;2;202;255;191m", // pastel-sage
-	"\x1b[38;2;160;196;255m", // pastel-periwinkle
-}
+const timeLayout = "15:04:05.000"
 
 var levelAnsi = map[Level]string{
 	LevelDebug: "\x1b[38;2;176;190;197m",
@@ -69,37 +53,29 @@ var levelAnsi = map[Level]string{
 	LevelError: "\x1b[38;2;239;154;154m",
 }
 
-func hashCategory(category string) int {
-	clean := strings.ToLower(strings.TrimSpace(category))
-	var hash uint32 = 5381
-	for i := 0; i < len(clean); i++ {
-		hash = ((hash << 5) + hash) ^ uint32(clean[i])
-	}
-	return int(hash % uint32(len(pastelAnsiPalette)))
-}
-
-func getCategoryAnsi(category string) string {
-	if strings.TrimSpace(category) == "" {
-		return pastelAnsiPalette[0]
-	}
-	idx := hashCategory(category)
-	idx = int(math.Abs(float64(idx))) % len(pastelAnsiPalette)
-	return pastelAnsiPalette[idx]
-}
-
 var (
 	mu               sync.Mutex
 	logFile          *os.File
 	currentPath      string
 	minLevel                   = LevelDebug
-	outWriter        io.Writer = os.Stdout
+	outWriter        io.Writer = os.Stderr
+	colorOn                    = colorEnabled(os.Stderr, os.LookupEnv)
 	notificationIcon string
+	notifier         func(msg string)
 )
 
+// SetNotificationIcon sets the icon that NotifySend shows. It does not turn on notifications by itself.
 func SetNotificationIcon(iconPath string) {
 	mu.Lock()
 	defer mu.Unlock()
 	notificationIcon = iconPath
+}
+
+// SetNotifier sets the function that gets every error message. Nil, the default, means no notifications.
+func SetNotifier(fn func(msg string)) {
+	mu.Lock()
+	defer mu.Unlock()
+	notifier = fn
 }
 
 func Init(fileName string, keepCount int) error {
@@ -145,51 +121,52 @@ func SetLevel(level Level) {
 	minLevel = level
 }
 
+// Log writes one line to stderr and to the log file. Error lines also go to the notifier, if one is set.
 func Log(level Level, category string, format string, args ...interface{}) {
+	if !levelEnabled(level) {
+		return
+	}
+	message := fmt.Sprintf(format, args...)
+	notify := writeLine(level, category, message)
+	if notify != nil {
+		notify(fmt.Sprintf("[%s] %s", category, message))
+	}
+}
+
+func levelEnabled(level Level) bool {
+	mu.Lock()
+	defer mu.Unlock()
+	return level >= minLevel
+}
+
+// writeLine writes the line under the lock. It returns the notifier for error lines, so it runs after unlocking.
+func writeLine(level Level, category string, message string) func(msg string) {
 	mu.Lock()
 	defer mu.Unlock()
 
-	if level < minLevel {
-		return
-	}
-
-	message := fmt.Sprintf(format, args...)
-	timestamp := time.Now().Format("15:04:05.000")
-
-	// 1. ANSI Terminal Output
-	catColor := getCategoryAnsi(category)
-	lvlColor := levelAnsi[level]
-	if lvlColor == "" {
-		lvlColor = AnsiReset
-	}
-
-	timeBadge := fmt.Sprintf("%s%s%s", AnsiDim, timestamp, AnsiReset)
-	lvlBadge := fmt.Sprintf("%s%-5s%s", lvlColor, level.String(), AnsiReset)
-	catBadge := fmt.Sprintf("%s%s[%s]%s", catColor, AnsiBold, category, AnsiReset)
-
-	terminalLine := fmt.Sprintf("%s %s %s %s\n", timeBadge, lvlBadge, catBadge, message)
+	timestamp := time.Now().Format(timeLayout)
 	if outWriter != nil {
-		fmt.Fprint(outWriter, terminalLine)
+		fmt.Fprint(outWriter, terminalLine(timestamp, level, category, message))
 	}
-
-	// 2. File Output (Plain text without ANSI codes)
-	plainLine := fmt.Sprintf("[%s] [%-5s] [%s] %s\n", timestamp, level.String(), category, message)
 	if logFile != nil {
-		_, _ = logFile.WriteString(plainLine)
+		_, _ = fmt.Fprintf(logFile, "[%s] [%-5s] [%s] %s\n", timestamp, level.String(), category, message)
 		_ = logFile.Sync()
 	}
-
-	// 3. Desktop Notification on Error
 	if level == LevelError {
-		go func(cat, msg string) {
-			title := fmt.Sprintf("LightLauncher [%s] Error", cat)
-			if notificationIcon != "" {
-				_ = exec.Command("notify-send", "-a", "LightLauncher", "-i", notificationIcon, title, msg).Run()
-			} else {
-				_ = exec.Command("notify-send", "-a", "LightLauncher", title, msg).Run()
-			}
-		}(category, message)
+		return notifier
 	}
+	return nil
+}
+
+// terminalLine formats one stderr line. Colors are added only when colorOn is set.
+func terminalLine(timestamp string, level Level, category string, message string) string {
+	if !colorOn {
+		return fmt.Sprintf("%s %-5s [%s] %s\n", timestamp, level.String(), category, message)
+	}
+	timeBadge := AnsiDim + timestamp + AnsiReset
+	levelBadge := levelAnsi[level] + fmt.Sprintf("%-5s", level.String()) + AnsiReset
+	categoryBadge := categoryColor(category) + AnsiBold + "[" + category + "]" + AnsiReset
+	return fmt.Sprintf("%s %s %s %s\n", timeBadge, levelBadge, categoryBadge, message)
 }
 
 func Debug(category string, format string, args ...interface{}) {
