@@ -169,6 +169,19 @@ func (l *Library) refreshFiles(ctx context.Context, game Game) error {
 	return l.ReplaceFiles(ctx, game.ID, candidates)
 }
 
+// gameRefOfDTO builds the reference for a source game that is not saved yet.
+func gameRefOfDTO(dto contract.GameDTO) GameRef {
+	return GameRef{
+		Source:    dto.Source,
+		SourceID:  dto.SourceID,
+		URL:       dto.URL,
+		Title:     dto.Title,
+		Version:   stringOrNil(dto.Version),
+		UpdatedAt: stringOrNil(dto.UpdatedAt),
+		Extra:     dto.Extra,
+	}
+}
+
 func gameRefOf(game Game) GameRef {
 	return GameRef{
 		ID:        game.ID,

@@ -18,11 +18,14 @@ type ExistingGame struct {
 
 // Preview is a source game fetched for display. Nothing is saved.
 type Preview struct {
-	Game     contract.GameDTO `json:"game"`
-	Existing *ExistingGame    `json:"existing"`
+	Game        contract.GameDTO         `json:"game"`
+	Existing    *ExistingGame            `json:"existing"`
+	Files       []contract.FileCandidate `json:"files"`
+	SourceLabel string                   `json:"sourceLabel"`
 }
 
-// Preview fetches the game behind a link and reports whether it is already in the library.
+// Preview fetches the game behind a link, its download files when the source can list them,
+// and whether it is already in the library. Nothing is saved.
 func (l *Library) Preview(ctx context.Context, url string) (Preview, error) {
 	info, ref, err := l.resolveURL(ctx, url)
 	if err != nil {
@@ -32,7 +35,14 @@ func (l *Library) Preview(ctx context.Context, url string) (Preview, error) {
 	if err != nil {
 		return Preview{}, err
 	}
-	preview := Preview{Game: dto}
+	preview := Preview{Game: dto, Files: []contract.FileCandidate{}, SourceLabel: info.Label}
+	files, err := l.resolveFiles(ctx, info, gameRefOfDTO(dto))
+	if err != nil {
+		logger.Warn(logCategory, "could not resolve files for preview of %s: %v", dto.Title, err)
+	}
+	if files != nil {
+		preview.Files = files
+	}
 	existing, err := l.BySource(ctx, dto.Source, dto.SourceID)
 	if err == nil {
 		preview.Existing = &ExistingGame{ID: existing.ID, Title: existing.Title, Installed: existing.InstallDir != nil}
