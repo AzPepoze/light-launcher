@@ -93,9 +93,6 @@ jobs:
             echo "::notice::WINDOWS_CERT_BASE64 is not set. The Windows build is not signed."
           fi
 
-      # TODO: build/electron-builder.yml copies bin/light-launcher-instance (no .exe).
-      # The Windows build needs bin/light-launcher-instance.exe. Add a win
-      # override to that config, then check these steps.
       - name: Package Windows installer and portable (signed)
         if: steps.signing.outputs.enabled == 'true'
         env:

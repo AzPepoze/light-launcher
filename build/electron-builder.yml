@@ -10,10 +10,10 @@ files:
   - from: src/renderer/dist
     to: dist/renderer
   - package.json
-extraResources:
-  - from: bin/light-launcher-instance
-    to: light-launcher-instance
 linux:
+  extraResources:
+    - from: bin/light-launcher-instance
+      to: light-launcher-instance
   target:
     - target: AppImage
       arch:
@@ -26,3 +26,14 @@ linux:
     StartupWMClass: light-launcher
     Name: LightLauncher
     Comment: Ultra-lightweight Linux gaming launcher
+win:
+  extraResources:
+    - from: bin/light-launcher-instance.exe
+      to: light-launcher-instance.exe
+  target:
+    - target: nsis
+      arch:
+        - x64
+    - target: portable
+      arch:
+        - x64
