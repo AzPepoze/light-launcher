@@ -45,8 +45,8 @@ type pathPayload struct {
 	Path string `json:"path"`
 }
 
-func (s *service) list(ctx context.Context, filter library.Filter) (library.Page, error) {
-	return s.lib.List(ctx, filter)
+func (s *service) list(ctx context.Context, filter library.Filter) (library.Listing, error) {
+	return s.lib.Listing(ctx, filter)
 }
 
 func (s *service) get(ctx context.Context, in idPayload) (library.GameDetail, error) {
