@@ -10,6 +10,14 @@ import (
 
 var errNotSourceMethod = errors.New("only source methods can be called on a plugin source")
 
+// PrepareDownloadResult is the answer to source.prepareDownload. Filename and Size are set only when the plugin knows them.
+type PrepareDownloadResult struct {
+	URL      string            `json:"url"`
+	Headers  map[string]string `json:"headers"`
+	Filename string            `json:"filename,omitempty"`
+	Size     int64             `json:"size,omitempty"`
+}
+
 // Registry implements contract.Sources over the enabled plugins.
 type Registry struct {
 	host *Host
