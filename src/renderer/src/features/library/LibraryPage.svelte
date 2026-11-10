@@ -24,6 +24,7 @@
 
 	onMount(() => {
 		library.load();
+		return library.subscribe();
 	});
 
 	function openGame(game: Game) {

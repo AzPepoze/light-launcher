@@ -17,14 +17,14 @@
 	);
 
 	onMount(() => {
-		check(false);
+		check();
 	});
 
-	async function check(force: boolean) {
+	async function check() {
 		checking = true;
 		error = "";
 		try {
-			updates = await libraryApi.checkUpdates(force);
+			updates = await libraryApi.checkUpdates();
 		} catch (err) {
 			error = errorMessage(err);
 		} finally {
@@ -34,7 +34,7 @@
 </script>
 
 <PageHeader title="Updates" {subtitle} icon="system_update_alt">
-	<button class="btn sm primary" disabled={checking} onclick={() => check(true)}>
+	<button class="btn sm primary" disabled={checking} onclick={() => check()}>
 		{checking ? "Checking..." : "Check now"}
 	</button>
 </PageHeader>
@@ -42,6 +42,10 @@
 {#if error}
 	<p class="notice" role="alert">{error}</p>
 {/if}
+
+{#each updates?.errors ?? [] as failure (failure)}
+	<p class="notice" role="alert">{failure}</p>
+{/each}
 
 {#if updates && updates.games.length === 0}
 	<div class="empty">
