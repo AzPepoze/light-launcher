@@ -79,9 +79,7 @@ export class CommandPaletteState {
 
 		const matchedPages = this.availablePages()
 			.filter((p) => p.name.toLowerCase().includes(query))
-			.map(
-			(p) => ({ ...p, type: "page" })
-		);
+			.map((p) => ({ ...p, type: "page" }));
 		const matchedGames = this.games
 			.filter((g) => g.name.toLowerCase().includes(query))
 			.map((g) => ({ name: `Launch ${g.name}`, icon: "sports_esports", type: "game", game: g }));
