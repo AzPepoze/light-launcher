@@ -14,6 +14,7 @@ import { loadExeIcon } from "@lib/iconService";
 import * as core from "@shared";
 import { notifications } from "@stores/notificationStore";
 import { runState } from "@stores/runState";
+import { currentFeatures } from "@stores/platformStore";
 import { get } from "svelte/store";
 import { mergeOptions } from "./formService";
 import { loadConfigForGame } from "./runConfig";
@@ -40,6 +41,11 @@ export type ConfigUpdateCallback = (
 	proton: string
 ) => void;
 
+/** Calls a platform-specific API only when the platform supports it. */
+function whenEnabled<T>(enabled: boolean, load: () => Promise<T>, fallback: T): Promise<T> {
+	return enabled ? load() : Promise.resolve(fallback);
+}
+
 /**
  * Orchestrates the full initialization of the Launch Configuration page.
  * Fetches hardware info, system tools, and merges any existing run state.
@@ -48,12 +54,13 @@ export async function initializeRunPage(
 	currentOptions: core.LaunchOptions,
 	onConfigUpdate: ConfigUpdateCallback
 ): Promise<RunPageInitData> {
-	const baseDirectory = await GetPrefixBaseDir();
+	const features = currentFeatures();
+	const baseDirectory = await whenEnabled(features.prefix, GetPrefixBaseDir, "");
 
 	const [availableGpus, detectedLosslessDll, detectedProtons] = await Promise.all([
-		GetListGpus(),
-		DetectLosslessDll(),
-		ScanProtonVersions()
+		whenEnabled(features.lsfg, GetListGpus, []),
+		whenEnabled(features.lsfg, DetectLosslessDll, ""),
+		whenEnabled(features.proton, ScanProtonVersions, [])
 	]);
 
 	const gpuList = availableGpus || [];

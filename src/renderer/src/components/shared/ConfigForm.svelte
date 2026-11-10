@@ -12,6 +12,7 @@
 	import { onMount } from "svelte";
 	import { loadLsfgResources, parseMemoryValue } from "@lib/formService";
 	import { createLogger } from "@lib/logger";
+	import { currentFeatures, isLinux, platform } from "@stores/platformStore";
 
 	const log = createLogger("ConfigForm");
 
@@ -36,6 +37,7 @@
 		try {
 			const ram = await GetTotalRam();
 			if (ram > 0) systemRamTotal = ram;
+			if (!currentFeatures().lsfg) return;
 
 			const { gpus, dll } = await loadLsfgResources();
 
@@ -76,42 +78,54 @@
 	</div>
 
 	<div class="toggles-grid">
-		<SlideButton
-			bind:checked={options.Extras.EnableMangoHud}
-			label="MangoHud"
-			subtitle="Performance overlay"
-		/>
-		<SlideButton
-			bind:checked={options.Extras.EnableGamemode}
-			label="GameMode"
-			subtitle="Optimize priorities"
-		/>
-		<SlideButton
-			bind:checked={options.Extras.Lsfg.Enabled}
-			label="LSFG-VK"
-			subtitle="Lossless Scaling Frame Generation"
-			hasConfig={true}
-			onConfig={() => (showLsfgModal = true)}
-		/>
-		<SlideButton
-			bind:checked={options.Extras.Gamescope.Enabled}
-			label="Gamescope"
-			subtitle="Micro-compositor"
-			hasConfig={true}
-			onConfig={() => (showGamescopeModal = true)}
-		/>
-		<SlideButton
-			bind:checked={options.Extras.Memory.Enabled}
-			label="Memory Protect"
-			subtitle="Prevent Swap (Min RAM)"
-			hasConfig={true}
-			onConfig={() => (showMemoryModal = true)}
-		/>
-		<SlideButton
-			bind:checked={showLogsWindow}
-			label="Show Logs"
-			subtitle="Open logs in terminal"
-		/>
+		{#if $platform.features.mangoHud}
+			<SlideButton
+				bind:checked={options.Extras.EnableMangoHud}
+				label="MangoHud"
+				subtitle="Performance overlay"
+			/>
+		{/if}
+		{#if $platform.features.gameMode}
+			<SlideButton
+				bind:checked={options.Extras.EnableGamemode}
+				label="GameMode"
+				subtitle="Optimize priorities"
+			/>
+		{/if}
+		{#if $platform.features.lsfg}
+			<SlideButton
+				bind:checked={options.Extras.Lsfg.Enabled}
+				label="LSFG-VK"
+				subtitle="Lossless Scaling Frame Generation"
+				hasConfig={true}
+				onConfig={() => (showLsfgModal = true)}
+			/>
+		{/if}
+		{#if $platform.features.gamescope}
+			<SlideButton
+				bind:checked={options.Extras.Gamescope.Enabled}
+				label="Gamescope"
+				subtitle="Micro-compositor"
+				hasConfig={true}
+				onConfig={() => (showGamescopeModal = true)}
+			/>
+		{/if}
+		{#if $isLinux}
+			<SlideButton
+				bind:checked={options.Extras.Memory.Enabled}
+				label="Memory Protect"
+				subtitle="Prevent Swap (Min RAM)"
+				hasConfig={true}
+				onConfig={() => (showMemoryModal = true)}
+			/>
+		{/if}
+		{#if $platform.features.liveTerminalLogs}
+			<SlideButton
+				bind:checked={showLogsWindow}
+				label="Show Logs"
+				subtitle="Open logs in terminal"
+			/>
+		{/if}
 	</div>
 
 	<!-- LSFG Settings Modal -->
