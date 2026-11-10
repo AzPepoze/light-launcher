@@ -12,8 +12,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  check:
-    name: check (${{ matrix.os }})
+  go:
+    name: go (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -22,15 +22,32 @@ jobs:
     defaults:
       run:
         shell: bash
-    env:
-      # Electron is only needed for packaging, not for these checks.
-      ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
+          cache-dependency-path: go.sum
+
+      - name: Go vet
+        run: go vet ./...
+
+      - name: Go tests
+        run: go test ./...
+
+      - name: Logger tests
+        working-directory: shell/logx
+        run: go test ./...
+
+  bun:
+    name: bun checks
+    runs-on: ubuntu-latest
+    env:
+      # Electron is only needed for packaging, not for these checks.
+      ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+    steps:
+      - uses: actions/checkout@v4
 
       - uses: oven-sh/setup-bun@v2
 
@@ -49,8 +66,71 @@ jobs:
       - name: Unit tests
         run: bun run test
 
-      - name: Go vet
+  shell-qt:
+    name: qt shell (linux)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt6 WebEngine
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qt6-base-dev qt6-webengine-dev xvfb
+
+      # setup-go caches the module and build caches for every go.sum listed here.
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: shell/qt/go.mod
+          cache-dependency-path: shell/qt/go.sum
+
+      - name: Vet
+        working-directory: shell/qt
         run: go vet ./...
 
-      - name: Go tests
-        run: go test ./...
+      - name: Build
+        working-directory: shell/qt
+        run: go build -ldflags="-s -w" -o "$RUNNER_TEMP/light-launcher-shell" .
+
+  shell-webview2:
+    name: webview2 shell (cross build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: shell/webview2/go.mod
+          cache-dependency-path: shell/webview2/go.sum
+
+      # Compile check only. The shell has not been run on Windows yet.
+      - name: Vet
+        working-directory: shell/webview2
+        env:
+          GOOS: windows
+          GOARCH: amd64
+        run: go vet ./...
+
+      - name: Build
+        working-directory: shell/webview2
+        env:
+          GOOS: windows
+          GOARCH: amd64
+        run: go build -ldflags="-s -w -H=windowsgui" -o "$RUNNER_TEMP/light-launcher-shell.exe" .
+
+  workflows:
+    name: workflow lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download actionlint
+        run: bash <(curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.7/scripts/download-actionlint.bash) 1.7.7 "$RUNNER_TEMP"
+
+      - name: Run actionlint
+        run: $RUNNER_TEMP/actionlint -color
