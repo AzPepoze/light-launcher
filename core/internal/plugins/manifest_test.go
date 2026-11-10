@@ -101,6 +101,7 @@ func TestPlatformKeyFor(t *testing.T) {
 // knownManifestGaps lists real plugin manifests that do not match the SDK schema yet.
 var knownManifestGaps = map[string]string{
 	"light-launcher-plugin-itch": "uses capability sync:games, which the SDK schema does not allow yet",
+	"light-launcher-plugin-f95":  "uses capability sync:index, which the SDK schema does not allow yet",
 }
 
 func TestParseManifestAcceptsRealPluginFiles(t *testing.T) {
