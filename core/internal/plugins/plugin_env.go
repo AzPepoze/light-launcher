@@ -34,6 +34,28 @@ type pluginEnv struct {
 	deps      *serviceDeps
 	lines     *lineRing
 	storageMu sync.Mutex
+	peerMu    sync.Mutex
+	peer      *Peer // the connection of the running plugin, set on each start
+}
+
+// setPeer records the connection of a newly started plugin.
+func (env *pluginEnv) setPeer(peer *Peer) {
+	env.peerMu.Lock()
+	defer env.peerMu.Unlock()
+	env.peer = peer
+}
+
+// notifyPlugin sends a notification to the running plugin. It is dropped when no plugin is connected.
+func (env *pluginEnv) notifyPlugin(method string, params any) {
+	env.peerMu.Lock()
+	peer := env.peer
+	env.peerMu.Unlock()
+	if peer == nil {
+		return
+	}
+	if err := peer.Notify(method, params); err != nil {
+		logger.Debug(env.category(), "could not send %s: %v", method, err)
+	}
 }
 
 func newPluginEnv(manifest Manifest, dataDir string, deps *serviceDeps, lines *lineRing) *pluginEnv {

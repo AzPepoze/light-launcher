@@ -152,6 +152,7 @@ func (s *Supervisor) start(ctx context.Context) (*connection, error) {
 	}
 	conn := &connection{child: child, exited: make(chan struct{})}
 	conn.peer = NewPeer(child.stdout, child.stdin, s.cfg.env.call, s.cfg.env.notify)
+	s.cfg.env.setPeer(conn.peer)
 	go s.watch(conn)
 	if err := s.handshake(ctx, conn); err != nil {
 		conn.child.kill()
