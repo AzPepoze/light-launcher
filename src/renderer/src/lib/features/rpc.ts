@@ -1,5 +1,4 @@
 import { onEvent } from "@lib/api";
-// `invoke` is not exported from lib/api yet; the transport owns it. Only this file imports it.
 import { invoke } from "@lib/transport";
 
 export function rpc<T>(method: string, payload: object = {}): Promise<T> {
