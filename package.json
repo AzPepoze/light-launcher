@@ -21,7 +21,9 @@
 		"test:watch": "vitest",
 		"test:coverage": "vitest run --coverage"
 	},
-	"dependencies": {},
+	"dependencies": {
+		"material-icons": "^1.13.14"
+	},
 	"devDependencies": {
 		"@sveltejs/vite-plugin-svelte": "^6.2.4",
 		"@tsconfig/svelte": "^5.0.6",

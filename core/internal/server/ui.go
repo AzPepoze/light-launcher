@@ -32,5 +32,5 @@ func isUIFile(ui fs.FS, urlPath string) bool {
 
 // contentSecurityPolicy allows the app's own files, data and blob images, and the local socket origin only.
 func contentSecurityPolicy(port int) string {
-	return fmt.Sprintf("default-src 'self'; img-src 'self' data: blob:; connect-src 'self' ws://127.0.0.1:%d", port)
+	return fmt.Sprintf("default-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; connect-src 'self' ws://127.0.0.1:%d", port)
 }

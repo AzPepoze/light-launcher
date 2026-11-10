@@ -1,3 +1,4 @@
+import "material-icons/iconfont/material-icons.css";
 import "./style.scss";
 import { mount } from "svelte";
 import App from "./App.svelte";
