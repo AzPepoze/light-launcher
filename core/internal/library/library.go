@@ -52,6 +52,7 @@ type Library struct {
 	opts     Options
 	sources  contract.Sources
 	media    *mediaCache
+	launches *launchSet
 }
 
 // Open creates or opens the library database and prepares the background jobs.
@@ -73,6 +74,7 @@ func Open(ctx context.Context, opts Options) (*Library, error) {
 		opts:     opts,
 		sources:  sources,
 		media:    newMediaCache(opts.MediaDir),
+		launches: newLaunchSet(),
 	}, nil
 }
 
