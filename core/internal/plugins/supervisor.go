@@ -17,7 +17,7 @@ const (
 	defaultCallTimeout = 60 * time.Second
 	initializeTimeout  = 10 * time.Second
 	shutdownTimeout    = 3 * time.Second
-	exitGrace          = 2 * time.Second
+	exitGrace          = 3 * time.Second // the SDK waits up to 2 s for running requests before it answers shutdown
 )
 
 // ErrPluginDisabled is returned for calls to a plugin that was turned off, or auto-disabled after crashes.
