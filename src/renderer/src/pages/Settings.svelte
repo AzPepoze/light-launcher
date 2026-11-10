@@ -1,6 +1,7 @@
 <script lang="ts">
 	import PageHeader from "@components/shared/PageHeader.svelte";
 	import { settingsStore } from "@stores/settingsStore";
+	import { isLinux, platform } from "@stores/platformStore";
 	import * as service from "@lib/settingsService";
 	import { onMount } from "svelte";
 	import ScanFoldersSetting from "@components/settings/ScanFoldersSetting.svelte";
@@ -165,31 +166,35 @@
 			</div>
 		</div>
 
-		<!-- Zone 3: Display & Window Platform (Ozone) -->
-		<div class="zone-card">
-			<div class="zone-header">
-				<span class="material-icons">desktop_windows</span>
-				<h2>Display & Window Platform</h2>
-			</div>
+		<!-- Zone 3: Display & Window Platform (Ozone, Linux only) -->
+		{#if $isLinux}
+			<div class="zone-card">
+				<div class="zone-header">
+					<span class="material-icons">desktop_windows</span>
+					<h2>Display & Window Platform</h2>
+				</div>
 
-			<div class="settings-section">
-				<h3>Ozone Platform (Wayland / X11)</h3>
-				<p class="desc">
-					Configure whether LightLauncher runs natively on Wayland or via X11/Xwayland. You can also override this via <code>--wayland</code>, <code>--x11</code>, or <code>~/.config/light-launcher-flags.conf</code>.
-				</p>
-				<div>
-					<button class="btn {appSettings.NativeWayland ? 'primary' : 'secondary'}" on:click={toggleNativeWayland}>
-						<span class="material-icons mini-icon">{appSettings.NativeWayland ? 'layers' : 'view_in_ar'}</span>
-						<span>{appSettings.NativeWayland ? 'Platform: Native Wayland' : 'Platform: X11 / Xwayland'} (Restarts App)</span>
-					</button>
+				<div class="settings-section">
+					<h3>Ozone Platform (Wayland / X11)</h3>
+					<p class="desc">
+						Configure whether LightLauncher runs natively on Wayland or via X11/Xwayland. You can also override this via <code>--wayland</code>, <code>--x11</code>, or <code>~/.config/light-launcher-flags.conf</code>.
+					</p>
+					<div>
+						<button class="btn {appSettings.NativeWayland ? 'primary' : 'secondary'}" on:click={toggleNativeWayland}>
+							<span class="material-icons mini-icon">{appSettings.NativeWayland ? 'layers' : 'view_in_ar'}</span>
+							<span>{appSettings.NativeWayland ? 'Platform: Native Wayland' : 'Platform: X11 / Xwayland'} (Restarts App)</span>
+						</button>
+					</div>
 				</div>
 			</div>
-		</div>
+		{/if}
 
 		<GamingIntegrationsSetting {appSettings} onRefresh={refreshAppSettings} />
 
-		<!-- Wine Prefix Storage Location -->
-		<PrefixStorageSetting {appSettings} onRefresh={refreshAppSettings} />
+		<!-- Wine Prefix Storage Location (Linux only) -->
+		{#if $platform.features.prefix}
+			<PrefixStorageSetting {appSettings} onRefresh={refreshAppSettings} />
+		{/if}
 
 		<!-- Automatic Scan Folders -->
 		<ScanFoldersSetting {appSettings} onRefresh={refreshAppSettings} />
