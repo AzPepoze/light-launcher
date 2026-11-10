@@ -19,119 +19,66 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build-linux:
-    name: build linux
+  build:
+    name: build release files
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-
-      - uses: oven-sh/setup-bun@v2
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Build
-        run: bun run build
-
-      - name: Package AppImage and tar.gz
-        run: bunx electron-builder --config build/electron-builder.yml --linux --publish never
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: linux
-          if-no-files-found: error
-          path: |
-            dist/bundle/*.AppImage
-            dist/bundle/*.tar.gz
-
-  build-windows:
-    name: build windows
-    runs-on: windows-latest
     defaults:
       run:
         shell: bash
+    env:
+      # Electron is not used any more. Skip its large binary download.
+      ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
     steps:
+      # fetch-depth 0 and tags make git describe return the release version.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
 
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
+          cache-dependency-path: go.sum
 
       - uses: oven-sh/setup-bun@v2
+
+      - name: Install Qt6 WebEngine and NSIS
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qt6-base-dev qt6-webengine-dev zip nsis
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Build Go instance for Windows
-        env:
-          GOOS: windows
-          GOARCH: amd64
-        run: |
-          mkdir -p bin
-          go build -ldflags="-s -w" -o bin/light-launcher-instance.exe ./core/cmd/instance
+      - name: Build Linux files
+        run: bash scripts/build-linux.sh
 
-      - name: Build renderer and main process
-        run: |
-          bun run build:renderer
-          bun run build:electron
+      - name: Build Windows files
+        run: bash scripts/build-windows.sh
 
-      # Isolated packaging step. The Electron shell is replaced later.
-      # Move or remove this step together with the Electron code.
-      - name: Check Windows signing secrets
-        id: signing
-        env:
-          CERT_BASE64: ${{ secrets.WINDOWS_CERT_BASE64 }}
+      - name: Check release files
         run: |
-          if [ -n "$CERT_BASE64" ]; then
-            echo "enabled=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "enabled=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::WINDOWS_CERT_BASE64 is not set. The Windows build is not signed."
+          shopt -s nullglob
+          archives=(dist/*.tar.gz dist/*.zip dist/*-setup.exe)
+          if (( ${#archives[@]} != 3 )); then
+            echo "::error::expected 3 release files, found ${#archives[@]}"
+            exit 1
           fi
-
-      - name: Package Windows installer and portable (signed)
-        if: steps.signing.outputs.enabled == 'true'
-        env:
-          CSC_LINK: ${{ secrets.WINDOWS_CERT_BASE64 }}
-          CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
-        run: bunx electron-builder --config build/electron-builder.yml --win nsis portable --publish never
-
-      - name: Package Windows installer and portable (unsigned)
-        if: steps.signing.outputs.enabled == 'false'
-        run: bunx electron-builder --config build/electron-builder.yml --win nsis portable --publish never
+          test -f dist/SHA256SUMS
 
       - uses: actions/upload-artifact@v4
         with:
-          name: windows
+          name: release
           if-no-files-found: error
-          path: dist/bundle/*.exe
-
-  checksums:
-    name: checksums
-    needs: [build-linux, build-windows]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          path: release
-          merge-multiple: true
-
-      - name: Create SHA256SUMS
-        working-directory: release
-        run: sha256sum * > SHA256SUMS
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: checksums
-          path: release/SHA256SUMS
+          path: |
+            dist/*.tar.gz
+            dist/*.zip
+            dist/*-setup.exe
+            dist/SHA256SUMS
 
   publish:
     name: publish release
-    needs: [checksums]
+    needs: [build]
     if: github.event_name == 'push' || inputs.dry-run == false
     runs-on: ubuntu-latest
     permissions:
@@ -139,8 +86,8 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
+          name: release
           path: release
-          merge-multiple: true
 
       - uses: softprops/action-gh-release@v2
         with:
