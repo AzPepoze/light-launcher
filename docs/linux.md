@@ -6,11 +6,11 @@ This page explains how to install LightLauncher on Linux and what it needs to ru
 
 ## Install options
 
-| Option | Use it when | Command or file |
-| :--- | :--- | :--- |
-| Arch, from source | You want to build it yourself. | `install/arch/PKGBUILD` |
-| Arch, prebuilt | You want the release files on Arch. | `install/arch/PKGBUILD-bin` |
-| Tar archive | Any other distro. | `light-launcher-<version>-linux-x64.tar.gz` |
+| Option            | Use it when                         | Command or file                             |
+| :---------------- | :---------------------------------- | :------------------------------------------ |
+| Arch, from source | You want to build it yourself.      | `install/arch/PKGBUILD`                     |
+| Arch, prebuilt    | You want the release files on Arch. | `install/arch/PKGBUILD-bin`                 |
+| Tar archive       | Any other distro.                   | `light-launcher-<version>-linux-x64.tar.gz` |
 
 ### Arch from source
 
@@ -44,41 +44,41 @@ tar -xzf light-launcher-<version>-linux-x64.tar.gz -C ~/apps/light-launcher
 
 ## What it needs
 
-| Need | Why | Package (Arch) |
-| :--- | :--- | :--- |
-| umu-launcher (`umu-run`) | Starts Windows games with Proton. | `umu-launcher` |
-| Qt6 WebEngine | Shows the window. | `qt6-webengine` |
+| Need                     | Why                               | Package (Arch)  |
+| :----------------------- | :-------------------------------- | :-------------- |
+| umu-launcher (`umu-run`) | Starts Windows games with Proton. | `umu-launcher`  |
+| Qt6 WebEngine            | Shows the window.                 | `qt6-webengine` |
 
 Optional:
 
-| Tool | What it adds |
-| :--- | :--- |
-| Steam | Steam Proton versions |
-| ProtonPlus | Manage Proton versions |
-| MangoHud | Performance overlay |
-| Gamescope | Micro compositor for scaling |
-| GameMode | Game performance tuning |
+| Tool                         | What it adds                                                            |
+| :--------------------------- | :---------------------------------------------------------------------- |
+| Steam                        | Steam Proton versions                                                   |
+| ProtonPlus                   | Manage Proton versions                                                  |
+| lsfg-vk (Lossless Scaling)   | Frame generation (LSFG)                                                 |
+| MangoHud                     | Performance overlay                                                     |
+| Gamescope                    | Micro compositor for scaling                                            |
+| GameMode                     | Game performance tuning                                                 |
+| 7-Zip (`7zz`, `7z` or `7za`) | Unpacks `.7z` files. RAR files use a slower built-in reader without it. |
 
 ## Window options
 
-| Setting | How |
-| :--- | :--- |
-| Show on Wayland | Qt picks Wayland or X11 by itself. |
-| Force X11 | `QT_QPA_PLATFORM=xcb light-launcher` |
+| Setting                  | How                                                                         |
+| :----------------------- | :-------------------------------------------------------------------------- |
+| Show on Wayland          | Qt picks Wayland or X11 by itself.                                          |
+| Force X11                | `QT_QPA_PLATFORM=xcb light-launcher`                                        |
+| Old display flags        | `--wayland`, `--x11` and `--ozone-platform` are accepted and ignored.       |
 | Window position and size | Saved in `~/.config/light-launcher/window-geometry` when the window closes. |
 
 ## Why there is no AppImage
 
 An AppImage would need to contain Qt WebEngine. That adds a large set of Chromium libraries, so the file would be much bigger than the other Linux files.
 
-> [!NOTE]
-> An AppImage may come later. For now, use the tar archive or the Arch packages.
-
 ## More
 
-| Topic | Page |
-| :--- | :--- |
-| Build the Linux files | [Building](building.md) |
-| Windows | [Windows](windows.md) |
-| Shell options | [Shells](../shell/README.md) |
-| Publishing | [Releasing](releasing.md) |
+| Topic                 | Page                         |
+| :-------------------- | :--------------------------- |
+| Build the Linux files | [Building](building.md)      |
+| Windows               | [Windows](windows.md)        |
+| Shell options         | [Shells](../shell/README.md) |
+| Publishing            | [Releasing](releasing.md)    |
