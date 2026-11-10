@@ -174,3 +174,17 @@ func (s *service) scanFolder(ctx context.Context, in pathPayload) (library.ScanR
 func (s *service) launch(ctx context.Context, in idPayload) (library.LaunchResult, error) {
 	return s.lib.Launch(ctx, in.ID)
 }
+
+type linkFolderPayload struct {
+	ID   int64  `json:"id"`
+	Path string `json:"path"`
+}
+
+func (s *service) linkFolder(ctx context.Context, in linkFolderPayload) (library.Game, error) {
+	game, err := s.lib.LinkFolder(ctx, in.ID, in.Path)
+	if err != nil {
+		return library.Game{}, err
+	}
+	s.changed(game.ID)
+	return game, nil
+}
