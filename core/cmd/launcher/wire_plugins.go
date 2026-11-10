@@ -11,7 +11,7 @@ func newPluginHost(dirs folders, library contract.Library, downloads contract.Do
 	layout := plugins.DefaultLayout()
 	return plugins.NewHost(plugins.HostOptions{
 		Layout:      layout,
-		HostVersion: version,
+		HostVersion: hostVersion(version),
 		Library:     library,
 		Downloads:   downloads,
 		Folders: map[string]string{

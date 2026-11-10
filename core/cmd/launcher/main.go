@@ -46,7 +46,7 @@ type options struct {
 }
 
 func main() {
-	plugins.HostVersion = version
+	plugins.HostVersion = hostVersion(version)
 	if len(os.Args) > 1 && os.Args[1] == "plugin" {
 		os.Exit(plugins.RunCLI(os.Args[1:], os.Stdout))
 	}
