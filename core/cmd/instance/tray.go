@@ -18,6 +18,7 @@ import (
 	"light-launcher/core/internal/executor"
 	"light-launcher/core/internal/executor/builder"
 	"light-launcher/core/internal/logger"
+	"light-launcher/core/internal/platform"
 	lsfgLib "light-launcher/core/internal/utils/lsfg"
 
 	"github.com/getlantern/systray"
@@ -72,7 +73,7 @@ func onReady(logPath string) {
 	mKill := systray.AddMenuItem("End Process", "Stop this game")
 
 	// Ensure prefix directory exists
-	if opts.PrefixPath != "" {
+	if opts.PrefixPath != "" && platform.Current().Prefix {
 		_ = os.MkdirAll(config.ExpandPath(opts.PrefixPath), 0755)
 	}
 
@@ -92,6 +93,7 @@ func onReady(logPath string) {
 
 	gameCmd := exec.Command(cmdArgs[0], cmdArgs[1:]...)
 	gameCmd.Env = env
+	gameCmd.Dir = builder.WorkingDirectory(opts)
 	if logFileHandle != nil {
 		gameCmd.Stdout = logFileHandle
 		gameCmd.Stderr = logFileHandle
