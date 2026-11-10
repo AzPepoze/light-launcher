@@ -1,0 +1,148 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: "Build only. Do not publish a GitHub Release."
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-linux:
+    name: build linux
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build
+        run: bun run build
+
+      - name: Package AppImage and tar.gz
+        run: bunx electron-builder --config build/electron-builder.yml --linux --publish never
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          if-no-files-found: error
+          path: |
+            dist/bundle/*.AppImage
+            dist/bundle/*.tar.gz
+
+  build-windows:
+    name: build windows
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build Go instance for Windows
+        env:
+          GOOS: windows
+          GOARCH: amd64
+        run: |
+          mkdir -p bin
+          go build -ldflags="-s -w" -o bin/light-launcher-instance.exe ./core/cmd/instance
+
+      - name: Build renderer and main process
+        run: |
+          bun run build:renderer
+          bun run build:electron
+
+      # Isolated packaging step. The Electron shell is replaced later.
+      # Move or remove this step together with the Electron code.
+      - name: Check Windows signing secrets
+        id: signing
+        env:
+          CERT_BASE64: ${{ secrets.WINDOWS_CERT_BASE64 }}
+        run: |
+          if [ -n "$CERT_BASE64" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::WINDOWS_CERT_BASE64 is not set. The Windows build is not signed."
+          fi
+
+      - name: Package Windows installer and portable (signed)
+        if: steps.signing.outputs.enabled == 'true'
+        env:
+          CSC_LINK: ${{ secrets.WINDOWS_CERT_BASE64 }}
+          CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+        run: bunx electron-builder --config build/electron-builder.yml --win nsis portable --publish never
+
+      - name: Package Windows installer and portable (unsigned)
+        if: steps.signing.outputs.enabled == 'false'
+        run: bunx electron-builder --config build/electron-builder.yml --win nsis portable --publish never
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          if-no-files-found: error
+          path: dist/bundle/*.exe
+
+  checksums:
+    name: checksums
+    needs: [build-linux, build-windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: release
+          merge-multiple: true
+
+      - name: Create SHA256SUMS
+        working-directory: release
+        run: sha256sum * > SHA256SUMS
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: checksums
+          path: release/SHA256SUMS
+
+  publish:
+    name: publish release
+    needs: [checksums]
+    if: github.event_name == 'push' || inputs.dry-run == false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: release
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+          generate_release_notes: true

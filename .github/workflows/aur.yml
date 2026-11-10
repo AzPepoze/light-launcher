@@ -1,0 +1,41 @@
+name: AUR PKGBUILD
+
+# Manual only. Builds an updated PKGBUILD as an artifact. Nothing is pushed.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pkgbuild:
+    runs-on: ubuntu-latest
+    steps:
+      # fetch-depth 0 is needed so the commit count matches the full history.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compute pkgver
+        run: |
+          echo "PKGVER=r$(git rev-list --count HEAD).g$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
+
+      - name: Update pkgver in PKGBUILD
+        run: sed -i "s/^pkgver=.*/pkgver=${PKGVER}/" install/arch/PKGBUILD
+
+      - name: Write PKGBUILD and diff
+        run: |
+          mkdir -p aur-out
+          cp install/arch/PKGBUILD aur-out/PKGBUILD
+          git diff -- install/arch/PKGBUILD > aur-out/PKGBUILD.diff
+          cat aur-out/PKGBUILD.diff
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pkgbuild
+          path: aur-out/
+
+      # TODO: Push to AUR. Not enabled yet.
+      # Needs the AUR_SSH_KEY repository secret (an SSH key registered on aur.archlinux.org).
+      # Later steps: load the key, clone ssh://aur@aur.archlinux.org/light-launcher.git,
+      # copy PKGBUILD in, run makepkg --printsrcinfo > .SRCINFO, commit and push.
