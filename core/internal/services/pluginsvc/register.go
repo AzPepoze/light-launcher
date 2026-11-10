@@ -37,15 +37,25 @@ type settingsSetInput struct {
 	Settings map[string]any `json:"settings"`
 }
 
+// callInput names either a source method or a command of the plugin, not both.
 type callInput struct {
-	Plugin string          `json:"plugin"`
-	Method string          `json:"method"`
-	Params json.RawMessage `json:"params"`
+	Plugin  string          `json:"plugin"`
+	Method  string          `json:"method"`
+	Command string          `json:"command"`
+	Params  json.RawMessage `json:"params"`
 }
 
 type logsInput struct {
 	ID    string `json:"id"`
 	Lines int    `json:"lines"`
+}
+
+// pluginCall runs a command when one is named, and a source method otherwise.
+func pluginCall(ctx context.Context, host *plugins.Host, in callInput) (any, error) {
+	if in.Command != "" {
+		return host.CallCommand(ctx, in.Plugin, in.Command, in.Params)
+	}
+	return host.CallPlugin(ctx, in.Plugin, in.Method, in.Params)
 }
 
 // Register adds the plugin methods to r. Host events such as "plugin-state" go to ev.
@@ -80,7 +90,7 @@ func Register(r *api.Router, ev api.Events, host *plugins.Host) {
 		return nil, host.SettingsSet(in.ID, in.Settings)
 	}))
 	r.Handle("PluginCall", api.Typed(func(ctx context.Context, in callInput) (any, error) {
-		return host.CallPlugin(ctx, in.Plugin, in.Method, in.Params)
+		return pluginCall(ctx, host, in)
 	}))
 	r.Handle("PluginLogs", api.Typed(func(_ context.Context, in logsInput) (any, error) {
 		return host.Logs(in.ID, in.Lines)

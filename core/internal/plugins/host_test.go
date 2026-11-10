@@ -161,6 +161,23 @@ func TestHostUpdateAndRollback(t *testing.T) {
 	}
 }
 
+func TestCommandMethodNeedsManifestMethod(t *testing.T) {
+	manifest := Manifest{ID: "demo", Contributes: Contributes{Commands: []CommandContribution{
+		{ID: "import-key", Label: "Import key", Method: "demo.importKey"},
+		{ID: "open", Label: "Open"},
+	}}}
+	method, err := commandMethod(manifest, "import-key")
+	if err != nil || method != "demo.importKey" {
+		t.Fatalf("commandMethod(import-key) = %q, %v", method, err)
+	}
+	if _, err := commandMethod(manifest, "open"); err == nil {
+		t.Fatalf("a command without a method must be refused")
+	}
+	if _, err := commandMethod(manifest, "missing"); err == nil {
+		t.Fatalf("an unknown command must be refused")
+	}
+}
+
 func TestHostRejectsBadIDs(t *testing.T) {
 	host := newTestHost(t)
 	for _, id := range []string{"../etc", "Upper", "a/b", ""} {
