@@ -51,13 +51,14 @@ const (
 
 // sortColumns maps the sort names the UI sends to SQL expressions.
 var sortColumns = map[string]string{
-	"added":    "added_at",
-	"updated":  "coalesce(source_updated_at, updated_at)",
-	"checked":  "coalesce(last_checked_at, added_at)",
-	"title":    "title collate nocase",
-	"rating":   "coalesce(rating, 0)",
-	"size":     "coalesce(install_size, 0)",
-	"playtime": "playtime_s",
+	"added":      "added_at",
+	"updated":    "coalesce(source_updated_at, updated_at)",
+	"checked":    "coalesce(last_checked_at, added_at)",
+	"title":      "title collate nocase",
+	"rating":     "coalesce(rating, 0)",
+	"size":       "coalesce(install_size, 0)",
+	"playtime":   "playtime_s",
+	"lastPlayed": "coalesce(last_played_at, '')",
 }
 
 // List returns one page of games that match the filter.
