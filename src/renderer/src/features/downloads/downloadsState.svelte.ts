@@ -1,13 +1,19 @@
+import { applyProgress, hasDownload, toInstallProgress } from "../../lib/features/downloadsMap";
 import { downloadsApi } from "../../lib/features/downloadsApi";
-import { errorMessage, listen } from "../../lib/features/rpc";
 import {
 	DOWNLOAD_PROGRESS_EVENT,
 	INSTALL_PROGRESS_EVENT,
-	SEVEN_ZIP_MISSING_EVENT,
-	type DownloadAction,
-	type DownloadItem,
-	type InstallProgress
+	TOAST_EVENT
+} from "../../lib/features/events";
+import { errorMessage, listen } from "../../lib/features/rpc";
+import type {
+	DownloadAction,
+	DownloadItem,
+	DownloadsListResponse,
+	InstallProgress,
+	Toast
 } from "../../lib/features/types";
+import type { WireDownloadProgress, WireInstallProgress } from "../../lib/features/wire";
 
 /** Adds or replaces an item by id, keeping the list order. */
 function upsert<T>(list: T[], item: T, idOf: (value: T) => number): T[] {
@@ -20,7 +26,8 @@ function upsert<T>(list: T[], item: T, idOf: (value: T) => number): T[] {
 export class DownloadsState {
 	items = $state<DownloadItem[]>([]);
 	installs = $state<InstallProgress[]>([]);
-	sevenZipMissing = $state(false);
+	/** The latest message from the Go side, such as the 7-Zip warning. */
+	toast = $state<Toast | null>(null);
 	speedLimitKBps = $state(0);
 	loading = $state(true);
 	error = $state("");
@@ -28,11 +35,7 @@ export class DownloadsState {
 	async load() {
 		this.loading = true;
 		try {
-			const response = await downloadsApi.list();
-			this.items = response.items;
-			this.installs = response.installs;
-			this.sevenZipMissing = !response.sevenZip;
-			this.speedLimitKBps = response.speedLimitKBps;
+			this.applyList(await downloadsApi.list());
 			this.error = "";
 		} catch (err) {
 			this.error = errorMessage(err);
@@ -41,20 +44,48 @@ export class DownloadsState {
 		}
 	}
 
+	private applyList(response: DownloadsListResponse) {
+		this.items = response.items;
+		this.installs = response.installs;
+		this.speedLimitKBps = response.speedLimitKBps;
+	}
+
 	/** Subscribes to live events. Returns a function that stops them. */
 	subscribe(): () => void {
 		const stops = [
-			listen<DownloadItem>(DOWNLOAD_PROGRESS_EVENT, (item) => {
-				this.items = upsert(this.items, item, (value) => value.id);
-			}),
-			listen<InstallProgress>(INSTALL_PROGRESS_EVENT, (install) => {
-				this.installs = upsert(this.installs, install, (value) => value.downloadId);
-			}),
-			listen<unknown>(SEVEN_ZIP_MISSING_EVENT, () => {
-				this.sevenZipMissing = true;
+			listen<WireDownloadProgress>(DOWNLOAD_PROGRESS_EVENT, (progress) =>
+				this.onProgress(progress)
+			),
+			listen<WireInstallProgress>(INSTALL_PROGRESS_EVENT, (install) => this.onInstall(install)),
+			listen<Toast>(TOAST_EVENT, (toast) => {
+				this.toast = toast;
 			})
 		];
 		return () => stops.forEach((stop) => stop());
+	}
+
+	/** A row that is not in the list yet is loaded again, so nothing is lost. */
+	private onProgress(progress: WireDownloadProgress) {
+		if (!hasDownload(this.items, progress.id)) {
+			void this.refreshItems();
+			return;
+		}
+		this.items = applyProgress(this.items, progress);
+	}
+
+	private onInstall(wire: WireInstallProgress) {
+		const title = this.items.find((item) => item.id === wire.downloadId)?.filename ?? "";
+		const install = toInstallProgress(wire, title);
+		this.installs = upsert(this.installs, install, (value) => value.downloadId);
+	}
+
+	/** Reloads the rows only, so live install progress is kept. */
+	private async refreshItems() {
+		try {
+			this.items = (await downloadsApi.list()).items;
+		} catch (err) {
+			this.error = errorMessage(err);
+		}
 	}
 
 	async act(action: DownloadAction, id: number) {

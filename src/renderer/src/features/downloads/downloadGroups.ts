@@ -39,7 +39,8 @@ export function statusLabel(status: DownloadStatus): string {
 const PHASE_LABELS: Record<InstallProgress["phase"], string> = {
 	extracting: "Extracting",
 	unpacking: "Unpacking",
-	finalizing: "Finalizing"
+	finalizing: "Finalizing",
+	done: "Done"
 };
 
 /** One line such as "Extracting · 7-Zip · 59% · 3.7 GB / 6.3 GB". */

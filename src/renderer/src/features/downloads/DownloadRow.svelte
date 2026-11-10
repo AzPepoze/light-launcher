@@ -38,7 +38,6 @@
 			{#if isRunning}
 				<span>{speed(item.speed)}</span>
 				<span>ETA {eta(item.eta)}</span>
-				{#if item.rateLimited}<span class="warn">Host limits speed</span>{/if}
 			{/if}
 			{#if item.error}<span class="warn">{item.error}</span>{/if}
 		</p>
