@@ -1,5 +1,4 @@
 <script lang="ts">
-	import BrowseInput from "@components/shared/BrowseInput.svelte";
 	import { errorMessage } from "../../lib/features/rpc";
 	import { libraryApi } from "../../lib/features/libraryApi";
 	import type { Game } from "../../lib/features/types";
@@ -7,18 +6,19 @@
 
 	let { game, library }: { game: Game; library: LibraryState } = $props();
 
-	let folder = $state("");
+	let sourceUrl = $state("");
 	let message = $state("");
 	let linking = $state(false);
 
-	async function linkFolder() {
-		if (!folder) return;
+	async function linkSource() {
+		const url = sourceUrl.trim();
+		if (!url) return;
 		linking = true;
 		message = "";
 		try {
-			library.replaceGame(await libraryApi.linkLocal(game.id, folder));
-			message = "Folder linked.";
-			folder = "";
+			library.replaceGame(await libraryApi.linkSource(game.id, url));
+			message = "Linked to the source page.";
+			sourceUrl = "";
 		} catch (err) {
 			message = errorMessage(err);
 		} finally {
@@ -33,12 +33,15 @@
 	{#if game.installDir}
 		<p class="path" title={game.installDir}>{game.installDir}</p>
 	{:else}
-		<p class="muted">Not installed. Download a build or link a folder you already have.</p>
+		<p class="muted">Not installed. Download a file above, or link a source page.</p>
 	{/if}
 
 	<div class="link">
-		<BrowseInput bind:value={folder} label="Link an existing folder" id="link-folder" placeholder="Pick the game folder" />
-		<button class="btn sm" disabled={!folder || linking} onclick={linkFolder}>Link folder</button>
+		<label class="source-field">
+			<span>Link a source page</span>
+			<input class="input" type="url" bind:value={sourceUrl} placeholder="https://..." />
+		</label>
+		<button class="btn sm" disabled={!sourceUrl.trim() || linking} onclick={linkSource}>Link</button>
 	</div>
 
 	{#if message}
@@ -84,10 +87,15 @@
 		align-items: flex-end;
 		gap: 8px;
 		flex-wrap: wrap;
+	}
 
-		:global(.browse-input-container) {
-			flex: 1 1 260px;
-			min-width: 0;
-		}
+	.source-field {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		flex: 1 1 260px;
+		min-width: 0;
+		font-size: 0.85rem;
+		color: var(--text-muted);
 	}
 </style>
