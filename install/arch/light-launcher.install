@@ -2,8 +2,9 @@ post_install() {
     echo "==> LightLauncher installed successfully!"
     echo "==> To launch the UI, run: light-launcher"
     echo ""
-    echo "==> Required runtime dependencies:"
-    echo "    umu-launcher (umu-run) and Steam"
+    echo "==> Required runtime dependency:"
+    echo "    umu-launcher (umu-run)"
+    echo "==> Optional: steam, for Steam Proton versions"
 }
 
 post_upgrade() {

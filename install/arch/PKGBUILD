@@ -3,13 +3,14 @@
 pkgname=light-launcher
 pkgver=r0.git
 pkgrel=1
-pkgdesc="Ultra-lightweight, customizable Linux gaming launcher powered by Go & Electron"
+pkgdesc="Ultra-lightweight, customizable Linux gaming launcher powered by Go and Qt"
 arch=('x86_64')
 url="https://github.com/AzPepoze/light-launcher"
 license=('MIT')
-depends=('umu-launcher' 'steam' 'nss' 'gtk3' 'libxss' 'alsa-lib')
-makedepends=('git' 'go' 'bun')
+depends=('umu-launcher' 'qt6-webengine')
+makedepends=('git' 'go' 'bun' 'qt6-base' 'qt6-webengine')
 optdepends=(
+  'steam: run games with Steam Proton versions'
   'protonplus: recommended for managing Proton versions'
   'mangohud: performance overlay'
   'gamescope: micro-compositor'
@@ -60,23 +61,22 @@ build() {
   export BUN_INSTALL_CACHE_DIR="$_bun_install_cache_path"
 
   bun install
-  bun run build
-  bunx electron-builder --config build/electron-builder.yml --linux dir
+  bash scripts/build-linux.sh
 
   go clean -modcache 2>/dev/null || true
-  rm -rf "$_golang_workspace_path" "$_golang_build_cache_path" "$_bun_install_cache_path"
+  rm -rf "$srcdir/go-path" "$srcdir/go-build-cache" "$_bun_install_cache_path"
 }
 
 package() {
   cd "$srcdir/$pkgname"
 
-  install -dm755 "$pkgdir/opt/light-launcher"
-  cp -a dist/bundle/linux-unpacked/* "$pkgdir/opt/light-launcher/"
-  chmod 4755 "$pkgdir/opt/light-launcher/chrome-sandbox" 2>/dev/null || true
+  # The launcher starts light-launcher-instance and light-launcher-shell from its own folder.
+  install -dm755 "$pkgdir/usr/lib/$pkgname"
+  cp -a dist/linux/light-launcher dist/linux/light-launcher-instance dist/linux/light-launcher-shell \
+    "$pkgdir/usr/lib/$pkgname/"
 
   install -dm755 "$pkgdir/usr/bin"
-  ln -sf /opt/light-launcher/light-launcher "$pkgdir/usr/bin/light-launcher"
-  ln -sf /opt/light-launcher/resources/light-launcher-instance "$pkgdir/usr/bin/light-launcher-instance"
+  ln -sf "/usr/lib/$pkgname/light-launcher" "$pkgdir/usr/bin/light-launcher"
 
   install -Dm644 "install/arch/light-launcher.desktop" "$pkgdir/usr/share/applications/light-launcher.desktop"
   install -Dm644 "build/icon.png" "$pkgdir/usr/share/icons/hicolor/256x256/apps/light-launcher.png"

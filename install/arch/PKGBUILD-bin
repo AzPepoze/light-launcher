@@ -1,0 +1,43 @@
+# Maintainer: AzPepoze
+# Installs the release tar.gz. For each release, set pkgver and replace SKIP
+# with the linux-x64 hash from that release's SHA256SUMS.
+
+pkgname=light-launcher-bin
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Ultra-lightweight, customizable Linux gaming launcher powered by Go and Qt (prebuilt)"
+arch=('x86_64')
+url="https://github.com/AzPepoze/light-launcher"
+license=('MIT')
+depends=('umu-launcher' 'qt6-webengine')
+optdepends=(
+  'steam: run games with Steam Proton versions'
+  'protonplus: recommended for managing Proton versions'
+  'mangohud: performance overlay'
+  'gamescope: micro-compositor'
+  'gamemode: gaming performance optimizer'
+)
+provides=('light-launcher')
+conflicts=('light-launcher')
+
+source=(
+  "$pkgname-$pkgver.tar.gz::$url/releases/download/v$pkgver/light-launcher-$pkgver-linux-x64.tar.gz"
+  "light-launcher.desktop::$url/raw/v$pkgver/install/arch/light-launcher.desktop"
+  "icon.png::$url/raw/v$pkgver/build/icon.png"
+)
+sha256sums=('SKIP' 'SKIP' 'SKIP')
+
+package() {
+  # The archive has the launcher, instance and shell at its top level. The desktop entry and icon come from the tag.
+  install -dm755 "$pkgdir/usr/lib/light-launcher"
+  install -m755 "$srcdir/light-launcher" "$srcdir/light-launcher-instance" "$srcdir/light-launcher-shell" \
+    "$pkgdir/usr/lib/light-launcher/"
+
+  install -dm755 "$pkgdir/usr/bin"
+  ln -sf "/usr/lib/light-launcher/light-launcher" "$pkgdir/usr/bin/light-launcher"
+
+  install -Dm644 "$srcdir/LICENSE" "$pkgdir/usr/share/licenses/light-launcher/LICENSE"
+  install -Dm644 "$srcdir/README.md" "$pkgdir/usr/share/doc/light-launcher/README.md"
+  install -Dm644 "$srcdir/light-launcher.desktop" "$pkgdir/usr/share/applications/light-launcher.desktop"
+  install -Dm644 "$srcdir/icon.png" "$pkgdir/usr/share/icons/hicolor/256x256/apps/light-launcher.png"
+}
