@@ -18,7 +18,7 @@ build_ui
 step "build launcher ($VERSION)"
 rm -rf "$STAGE"
 mkdir -p "$STAGE"
-(cd "$ROOT" && go build -tags embedui -ldflags="-s -w" -o "$STAGE/light-launcher" "$LAUNCHER_PKG")
+(cd "$ROOT" && go build -tags embedui -ldflags="-s -w -X main.version=$VERSION" -o "$STAGE/light-launcher" "$LAUNCHER_PKG")
 
 step "build instance"
 (cd "$ROOT" && go build -ldflags="-s -w" -o "$STAGE/light-launcher-instance" "$INSTANCE_PKG")

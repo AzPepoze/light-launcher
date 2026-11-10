@@ -18,28 +18,34 @@ import (
 )
 
 const (
-	gameOpenChannel = "game:open"
+	gameOpenChannel = "open-game"
 	shutdownTimeout = 3 * time.Second
 	headerTimeout   = 10 * time.Second
 )
 
 // runConfig is what one launcher run needs. Tests pass in an in-memory UI and no window.
+// Port 0 picks a free port. An empty Token makes a random one.
 type runConfig struct {
 	UI       fs.FS
 	Shell    string
 	NoShell  bool
-	GamePath string
 	LockPath string
+	Port     int
+	Token    string
 }
 
-// run serves the UI API on a random loopback port, opens the window and blocks until the
-// window closes or ctx ends.
+// run serves the UI API on a loopback port, opens the window and blocks until the window closes or
+// ctx ends.
 func run(ctx context.Context, cfg runConfig) error {
-	token, err := newToken()
-	if err != nil {
-		return err
+	token := cfg.Token
+	if token == "" {
+		generated, err := newToken()
+		if err != nil {
+			return err
+		}
+		token = generated
 	}
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", cfg.Port))
 	if err != nil {
 		return err
 	}
@@ -47,10 +53,13 @@ func run(ctx context.Context, cfg runConfig) error {
 
 	hub := api.NewHub()
 	router := api.NewRouter()
-	if err := registerServices(router, hub); err != nil {
+	svc, err := wireServices(ctx, router, hub)
+	if err != nil {
 		listener.Close()
 		return err
 	}
+	defer svc.Close()
+
 	handler := server.New(server.Config{
 		UI:     cfg.UI,
 		Router: router,
@@ -72,10 +81,8 @@ func run(ctx context.Context, cfg runConfig) error {
 	defer removeInstance(cfg.LockPath, port)
 	logger.Info("http", "serving the UI on 127.0.0.1:%d", port)
 
-	if cfg.GamePath != "" {
-		openGame(hub, cfg.GamePath)
-	}
 	// The token rides in the URL fragment, so it never reaches the server in a request line.
+	// The shell gets the URL through LL_URL, not argv.
 	url := fmt.Sprintf("http://127.0.0.1:%d/#t=%s", port, token)
 	if cfg.NoShell {
 		logger.Info("main", "open %s", url)
@@ -85,7 +92,7 @@ func run(ctx context.Context, cfg runConfig) error {
 	return openWindow(ctx, cfg.Shell, url)
 }
 
-// openGame tells the UI that a game was requested. The UI reads it from the event stream.
+// openGame tells the UI that a second launch sent a game. The first game is read with GetInitialGamePath.
 func openGame(hub *api.Hub, gamePath string) {
 	logger.Info("game", "open requested: %s", filepath.Base(gamePath))
 	hub.Emit(gameOpenChannel, map[string]string{"path": gamePath})

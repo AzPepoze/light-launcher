@@ -1,6 +1,7 @@
 // Command light-launcher-shell shows the launcher UI in a native Qt6 WebEngine window.
 //
-// Usage: light-launcher-shell [--transparent] <url>
+// The launcher passes the URL in the LL_URL environment variable. A URL argument is the fallback.
+// Usage: [LL_URL=<url>] light-launcher-shell [--transparent] [url]
 package main
 
 import (
@@ -29,12 +30,14 @@ func parseOptions(args []string) (options, error) {
 	if err := flags.Parse(args); err != nil {
 		return options{}, err
 	}
-	if flags.NArg() != 1 {
-		return options{}, fmt.Errorf("expected one URL, got %d arguments", flags.NArg())
-	}
-	target, err := url.Parse(flags.Arg(0))
+	raw, err := shellURL(flags.Args())
 	if err != nil {
 		return options{}, err
+	}
+	// url.Parse errors repeat the input, which holds the token, so the error is replaced.
+	target, err := url.Parse(raw)
+	if err != nil {
+		return options{}, errors.New("URL is not valid")
 	}
 	if (target.Scheme != "http" && target.Scheme != "https") || target.Host == "" {
 		return options{}, errors.New("URL must be http:// or https:// with a host")
@@ -42,11 +45,22 @@ func parseOptions(args []string) (options, error) {
 	return options{url: target, transparent: *transparent}, nil
 }
 
+// shellURL returns the UI URL from LL_URL, or from the single argument when LL_URL is not set.
+func shellURL(args []string) (string, error) {
+	if value := os.Getenv("LL_URL"); value != "" {
+		return value, nil
+	}
+	if len(args) != 1 {
+		return "", fmt.Errorf("expected one URL, got %d arguments", len(args))
+	}
+	return args[0], nil
+}
+
 func main() {
 	opts, err := parseOptions(os.Args[1:])
 	if err != nil {
 		log.Error("args", "%v", err)
-		log.Error("args", "usage: light-launcher-shell [--transparent] <url>")
+		log.Error("args", "usage: LL_URL=<url> light-launcher-shell [--transparent]")
 		os.Exit(2)
 	}
 
