@@ -6,9 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net"
 	"os"
-	"path/filepath"
 	"strconv"
 	"time"
 )
@@ -19,36 +17,12 @@ const (
 )
 
 type Client struct {
-	conn net.Conn
+	conn io.ReadWriteCloser
 }
 
 type packetHeader struct {
 	Opcode uint32
 	Length uint32
-}
-
-func socketCandidates() []string {
-	bases := []string{}
-	if runtimeDir := os.Getenv("XDG_RUNTIME_DIR"); runtimeDir != "" {
-		bases = append(bases, runtimeDir)
-	}
-	if tmpDir := os.Getenv("TMPDIR"); tmpDir != "" {
-		bases = append(bases, tmpDir)
-	}
-	bases = append(bases, "/tmp")
-
-	seen := map[string]bool{}
-	candidates := []string{}
-	for _, base := range bases {
-		for i := 0; i < 10; i++ {
-			candidate := filepath.Join(base, fmt.Sprintf("discord-ipc-%d", i))
-			if !seen[candidate] {
-				seen[candidate] = true
-				candidates = append(candidates, candidate)
-			}
-		}
-	}
-	return candidates
 }
 
 func Connect(clientID string) (*Client, error) {
@@ -58,7 +32,7 @@ func Connect(clientID string) (*Client, error) {
 
 	var lastErr error
 	for _, socketPath := range socketCandidates() {
-		conn, err := net.DialTimeout("unix", socketPath, 250*time.Millisecond)
+		conn, err := dialSocket(socketPath)
 		if err != nil {
 			lastErr = err
 			continue
@@ -75,13 +49,13 @@ func Connect(clientID string) (*Client, error) {
 		}
 
 		// Read READY reply before SET_ACTIVITY.
-		_ = conn.SetReadDeadline(time.Now().Add(2 * time.Second))
+		setReadDeadline(conn, time.Now().Add(2*time.Second))
 		if _, _, err := client.readPacket(); err != nil {
 			_ = conn.Close()
 			lastErr = err
 			continue
 		}
-		_ = conn.SetReadDeadline(time.Time{})
+		setReadDeadline(conn, time.Time{})
 		return client, nil
 	}
 
@@ -89,6 +63,13 @@ func Connect(clientID string) (*Client, error) {
 		lastErr = errors.New("discord IPC socket not found")
 	}
 	return nil, lastErr
+}
+
+// setReadDeadline sets the read deadline when the transport supports it. Windows pipes do not.
+func setReadDeadline(conn io.ReadWriteCloser, deadline time.Time) {
+	if deadlineConn, ok := conn.(interface{ SetReadDeadline(time.Time) error }); ok {
+		_ = deadlineConn.SetReadDeadline(deadline)
+	}
 }
 
 func (c *Client) SetActivity(gameName string, startedAt time.Time) error {
