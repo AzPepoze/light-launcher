@@ -1,6 +1,7 @@
 package adapter
 
 import (
+	"light-launcher/core/internal/platform"
 	"light-launcher/core/internal/types"
 	"light-launcher/core/internal/utils/gamemode"
 	"light-launcher/core/internal/utils/gamescope"
@@ -12,13 +13,26 @@ import (
 var cachedAdapters []types.LaunchAdapter
 
 func init() {
-	cachedAdapters = []types.LaunchAdapter{
-		lsfg.NewAdapter(),
-		mangohud.NewAdapter(),
-		gamescope.NewAdapter(),
-		gamemode.NewAdapter(),
-		memory.NewAdapter(),
+	cachedAdapters = enabledAdapters(platform.Current())
+}
+
+// enabledAdapters lists the tools the platform supports, in wrapping order.
+// Memory has no platform feature. Its wrapper only runs when systemd-run exists.
+func enabledAdapters(features platform.Features) []types.LaunchAdapter {
+	var adapters []types.LaunchAdapter
+	if features.Lsfg {
+		adapters = append(adapters, lsfg.NewAdapter())
 	}
+	if features.MangoHud {
+		adapters = append(adapters, mangohud.NewAdapter())
+	}
+	if features.Gamescope {
+		adapters = append(adapters, gamescope.NewAdapter())
+	}
+	if features.GameMode {
+		adapters = append(adapters, gamemode.NewAdapter())
+	}
+	return append(adapters, memory.NewAdapter())
 }
 
 // GetAdapters returns the list of all registered tool adapters.
