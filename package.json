@@ -2,6 +2,7 @@
 	"name": "light-launcher",
 	"version": "1.0.0",
 	"private": true,
+	"license": "MIT",
 	"description": "Ultra-lightweight, customizable Linux gaming launcher powered by Go & Svelte",
 	"scripts": {
 		"dev:go": "go build -o bin/light-launcher ./core/cmd/launcher",
