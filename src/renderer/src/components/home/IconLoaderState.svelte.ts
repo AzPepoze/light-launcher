@@ -57,7 +57,8 @@ export class IconLoaderState {
 	) {
 		for (const game of games) {
 			const gamePath = game?.path || game?.config?.LauncherPath;
-			if (gamePath) void this.enqueueIconLoad(gamePath, game?.config?.CustomIconPath ?? null, "low");
+			if (gamePath)
+				void this.enqueueIconLoad(gamePath, game?.config?.CustomIconPath ?? null, "low");
 		}
 	}
 }

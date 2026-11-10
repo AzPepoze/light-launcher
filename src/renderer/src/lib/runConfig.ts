@@ -1,6 +1,7 @@
 import * as core from "@shared";
 import { GetConfig, LoadPrefixConfig, DetectLosslessDll } from "@lib/api";
 import { createLogger } from "./logger";
+import { currentFeatures } from "@stores/platformStore";
 
 const log = createLogger("runConfig");
 
@@ -43,7 +44,7 @@ export async function loadConfigForGame(
 		}
 
 		// Keep newly selected prefix; don't replay old profile prefix.
-		if (!options.Extras.Lsfg.DllPath) {
+		if (currentFeatures().lsfg && !options.Extras.Lsfg.DllPath) {
 			try {
 				const dll = await DetectLosslessDll();
 				if (dll) {
@@ -67,6 +68,7 @@ export async function loadConfigForPrefix(
 	protonVersions: core.ProtonTool[],
 	updateOptions: (newOpts: core.LaunchOptions, pPath: string, pName: string, proton: string) => void
 ) {
+	if (!currentFeatures().prefix) return;
 	if (name === "Custom..." || !prefixPath.startsWith(baseDir)) return;
 	try {
 		const config = await LoadPrefixConfig(name);

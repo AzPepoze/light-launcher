@@ -15,6 +15,7 @@
 	import lsfgPng from "@icons/lsfg.png";
 	import SystemDependencies from "@components/utils/SystemDependencies.svelte";
 	import UtilityCard from "@components/utils/UtilityCard.svelte";
+	import { currentFeatures, platform } from "@stores/platformStore";
 
 	let status = $state<core.UtilsStatus>({ isLsfgInstalled: false, lsfgVersion: "" });
 	let systemStatus = $state<core.SystemToolsStatus & { hasLosslessDll: boolean }>({
@@ -51,6 +52,7 @@
 	]);
 
 	async function loadStatus() {
+		if (!currentFeatures().lsfg) return;
 		const [utilStatus, sysTools, dllPath] = await Promise.all([
 			GetUtilsStatus(),
 			GetSystemToolsStatus(),
@@ -107,13 +109,17 @@
 <div class="utils-container">
 	<PageHeader title="Utilities & Extras" icon="handyman" />
 
-	<SystemDependencies {systemStatus} />
+	{#if $platform.features.gamescope}
+		<SystemDependencies {systemStatus} />
+	{/if}
 
-	<div class="utils-grid">
-		{#each utilities as util (util.id)}
-			<UtilityCard {...util} />
-		{/each}
-	</div>
+	{#if $platform.features.lsfg}
+		<div class="utils-grid">
+			{#each utilities as util (util.id)}
+				<UtilityCard {...util} />
+			{/each}
+		</div>
+	{/if}
 </div>
 
 <style lang="scss">

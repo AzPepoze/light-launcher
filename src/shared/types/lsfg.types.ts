@@ -8,14 +8,3 @@ export interface LsfgProfileData {
 	dllPath: string;
 	allowFp16: boolean;
 }
-
-export interface LsfgInternalProfile {
-	Name: string;
-	Multiplier: number;
-	PerformanceMode: boolean;
-	GPU: string;
-	FlowScale: number;
-	Pacing: string;
-	AllowFP16: boolean;
-	Disable?: boolean;
-}

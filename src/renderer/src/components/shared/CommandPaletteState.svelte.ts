@@ -4,6 +4,7 @@ import { loadExeIcon } from "@lib/iconService";
 import { quickLaunchGame } from "@lib/homeService";
 import { createLogger } from "@lib/logger";
 import protonIcon from "@icons/protron_forked.png";
+import { currentFeatures, isPageAvailable } from "@stores/platformStore";
 
 const log = createLogger("CommandPalette");
 
@@ -21,31 +22,20 @@ export class CommandPaletteState {
 	previousFocusElement = $state<HTMLElement | null>(null);
 
 	readonly PAGES = [
-		{ name: "Go to Home", icon: "home", action: () => this.navigateTo("home") },
-		{
-			name: "Go to Game Manager",
-			icon: "monitor_heart",
-			action: () => this.navigateTo("manager")
-		},
-		{
-			name: "Go to Launch Configuration",
-			icon: "play_arrow",
-			action: () => this.navigateTo("run")
-		},
-		{ name: "Go to Utilities", icon: "handyman", action: () => this.navigateTo("utils") },
-		{
-			name: "Go to Appearance & Settings",
-			icon: "settings",
-			action: () => this.navigateTo("settings")
-		},
-		{
-			name: "Go to Proton Versions",
-			icon: protonIcon,
-			isCustomIcon: true,
-			action: () => this.navigateTo("versions")
-		},
-		{ name: "Go to WINE Prefixes", icon: "folder", action: () => this.navigateTo("prefix") }
-	];
+		{ page: "home", name: "Go to Home", icon: "home" },
+		{ page: "manager", name: "Go to Game Manager", icon: "monitor_heart" },
+		{ page: "run", name: "Go to Launch Configuration", icon: "play_arrow" },
+		{ page: "utils", name: "Go to Utilities", icon: "handyman" },
+		{ page: "settings", name: "Go to Appearance & Settings", icon: "settings" },
+		{ page: "versions", name: "Go to Proton Versions", icon: protonIcon, isCustomIcon: true },
+		{ page: "prefix", name: "Go to WINE Prefixes", icon: "folder" }
+	].map((entry) => ({ ...entry, action: () => this.navigateTo(entry.page) }));
+
+	/** Pages the current platform supports. */
+	availablePages() {
+		const features = currentFeatures();
+		return this.PAGES.filter((entry) => isPageAvailable(entry.page, features));
+	}
 
 	async loadGames() {
 		try {
@@ -78,7 +68,7 @@ export class CommandPaletteState {
 
 		if (!query) {
 			this.filteredItems = [
-				...this.PAGES.map((p) => ({ ...p, type: "page" })),
+				...this.availablePages().map((p) => ({ ...p, type: "page" })),
 				...this.games
 					.slice(0, 5)
 					.map((g) => ({ name: `Launch ${g.name}`, icon: "sports_esports", type: "game", game: g }))
@@ -87,9 +77,9 @@ export class CommandPaletteState {
 			return;
 		}
 
-		const matchedPages = this.PAGES.filter((p) => p.name.toLowerCase().includes(query)).map(
-			(p) => ({ ...p, type: "page" })
-		);
+		const matchedPages = this.availablePages()
+			.filter((p) => p.name.toLowerCase().includes(query))
+			.map((p) => ({ ...p, type: "page" }));
 		const matchedGames = this.games
 			.filter((g) => g.name.toLowerCase().includes(query))
 			.map((g) => ({ name: `Launch ${g.name}`, icon: "sports_esports", type: "game", game: g }));

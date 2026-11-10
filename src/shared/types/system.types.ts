@@ -28,8 +28,18 @@ export interface UtilsStatus {
 	lsfgVersion: string;
 }
 
-export interface IconCacheEntry {
-	mtimeMs: number;
-	size: number;
-	icon: string;
+/** Launch tools and UI parts the current OS supports. Mirrors the Go platform.Features. */
+export interface PlatformFeatures {
+	proton: boolean;
+	prefix: boolean;
+	lsfg: boolean;
+	gamescope: boolean;
+	mangoHud: boolean;
+	gameMode: boolean;
+	liveTerminalLogs: boolean;
+}
+
+export interface PlatformInfo {
+	os: string;
+	features: PlatformFeatures;
 }

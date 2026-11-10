@@ -3,12 +3,5 @@
 		"no-unused-vars": "warn",
 		"no-unassigned-vars": "off"
 	},
-	"ignorePatterns": [
-		"dist/**",
-		"bin/**",
-		"node_modules/**",
-		"src/renderer/dist/**",
-		"src/main/dist/**",
-		"src/preload/dist/**"
-	]
+	"ignorePatterns": ["dist/**", "bin/**", "node_modules/**", "src/renderer/dist/**"]
 }

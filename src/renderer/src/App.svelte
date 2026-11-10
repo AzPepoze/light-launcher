@@ -10,6 +10,7 @@
 	import NotificationHost from "@components/shared/NotificationHost.svelte";
 	import { navigationCommand } from "@stores/navigationStore";
 	import { runState } from "@stores/runState";
+	import { currentFeatures, isPageAvailable, loadPlatform } from "@stores/platformStore";
 	import { settingsStore } from "@stores/settingsStore";
 	import { onMount } from "svelte";
 	import { cubicOut } from "svelte/easing";
@@ -72,6 +73,7 @@
 
 	function changePage(newPage: string) {
 		if (!newPage || newPage === activePage) return;
+		if (!isPageAvailable(newPage, currentFeatures())) return;
 		const prevIndex = PAGE_ORDER[activePage] ?? 0;
 		const newIndex = PAGE_ORDER[newPage] ?? 0;
 		navDirection = newIndex >= prevIndex ? 1 : -1;
@@ -81,11 +83,12 @@
 
 	onMount(async () => {
 		try {
+			await loadPlatform();
 			const appSettings = await GetAppSettings();
 			document.documentElement.dataset.transparent =
 				appSettings.TransparentMode.toString();
 
-			const shouldEditLsfg = await GetShouldEditLsfg();
+			const shouldEditLsfg = currentFeatures().lsfg && (await GetShouldEditLsfg());
 			const launcherPath = await GetInitialLauncherPath();
 
 			if (shouldEditLsfg) {

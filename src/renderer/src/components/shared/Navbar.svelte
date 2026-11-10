@@ -1,6 +1,7 @@
 <script lang="ts">
 	import appIcon from "@icons/appicon.png";
 	import protonIcon from "@icons/protron_forked.png";
+	import { isPageAvailable, platform } from "@stores/platformStore";
 
 	export let activePage: string = "home";
 	export let onNavigate: (page: string) => void = () => {};
@@ -14,6 +15,8 @@
 		{ id: "utils", label: "Utils", icon: "handyman" },
 		{ id: "settings", label: "Settings", icon: "settings" },
 	];
+
+	$: visibleItems = navItems.filter((item) => isPageAvailable(item.id, $platform.features));
 
 	let navbarRef: HTMLElement;
 	let indicatorStyle = "";
@@ -49,7 +52,7 @@
 
 	<nav class="navbar" bind:this={navbarRef}>
 		<div class="indicator" style={indicatorStyle}></div>
-		{#each navItems as item}
+		{#each visibleItems as item}
 			<button
 				class="nav-item"
 				data-id={item.id}

@@ -8,6 +8,7 @@
 	import PageHeader from "@components/shared/PageHeader.svelte";
 	import SlideButton from "@components/shared/SlideButton.svelte";
 	import { RunPageState } from "@components/run/RunPageState.svelte";
+	import { platform } from "@stores/platformStore";
 	import { onMount } from "svelte";
 
 	const state = new RunPageState();
@@ -50,39 +51,45 @@
 			/>
 		</div>
 
-		<!-- Zone 2: Environment & Compatibility -->
-		<div class="zone-card">
-			<div class="zone-header">
-				<span class="material-icons">layers</span>
-				<h2>Environment & Compatibility</h2>
+		{#if $platform.features.prefix || $platform.features.proton}
+			<!-- Zone 2: Environment & Compatibility (Linux only) -->
+			<div class="zone-card">
+				<div class="zone-header">
+					<span class="material-icons">layers</span>
+					<h2>Environment & Compatibility</h2>
+				</div>
+
+				{#if $platform.features.prefix}
+					<PrefixSelector
+						bind:availablePrefixes={state.availablePrefixes}
+						bind:selectedPrefixName={state.selectedPrefixName}
+						bind:prefixPath={state.prefixPath}
+						baseDir={state.baseDir}
+						onPrefixChange={(name) => state.handlePrefixChange(name)}
+						onBrowsePrefix={() => state.handleBrowsePrefix()}
+					/>
+				{/if}
+
+				{#if $platform.features.proton}
+					<div class="form-group">
+						<SlideButton
+							bind:checked={state.options.UseCustomProton}
+							label="Use Custom Proton"
+							subtitle="Prevent prefix changes from overwriting your proton selection"
+						/>
+					</div>
+
+					<ProtonSelector
+						bind:protonOptions={state.proton.protonOptions}
+						bind:selectedProton={state.proton.selectedProton}
+						bind:isLoadingProton={state.proton.isLoadingProton}
+						onProtonChange={(val) => state.proton.handleProtonChange(val)}
+						disabled={!state.options.UseCustomProton}
+						disabledMessage="Enable 'Use Custom Proton' to change version"
+					/>
+				{/if}
 			</div>
-
-			<PrefixSelector
-				bind:availablePrefixes={state.availablePrefixes}
-				bind:selectedPrefixName={state.selectedPrefixName}
-				bind:prefixPath={state.prefixPath}
-				baseDir={state.baseDir}
-				onPrefixChange={(name) => state.handlePrefixChange(name)}
-				onBrowsePrefix={() => state.handleBrowsePrefix()}
-			/>
-
-			<div class="form-group">
-				<SlideButton
-					bind:checked={state.options.UseCustomProton}
-					label="Use Custom Proton"
-					subtitle="Prevent prefix changes from overwriting your proton selection"
-				/>
-			</div>
-
-			<ProtonSelector
-				bind:protonOptions={state.proton.protonOptions}
-				bind:selectedProton={state.proton.selectedProton}
-				bind:isLoadingProton={state.proton.isLoadingProton}
-				onProtonChange={(val) => state.proton.handleProtonChange(val)}
-				disabled={!state.options.UseCustomProton}
-				disabledMessage="Enable 'Use Custom Proton' to change version"
-			/>
-		</div>
+		{/if}
 
 		<!-- Zone 3: Advanced Integrations -->
 		<div class="zone-card">

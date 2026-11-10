@@ -2,18 +2,15 @@
 	"name": "light-launcher",
 	"version": "1.0.0",
 	"private": true,
-	"description": "Ultra-lightweight, customizable Linux gaming launcher powered by Go & Electron",
-	"main": "dist/main/index.js",
+	"description": "Ultra-lightweight, customizable Linux gaming launcher powered by Go & Svelte",
 	"scripts": {
-		"dev:go": "go build -o bin/light-launcher-instance ./core/cmd/instance",
+		"dev:go": "go build -o bin/light-launcher ./core/cmd/launcher",
 		"dev:renderer": "cd src/renderer && bun run dev",
-		"dev:electron": "tsc && sleep 1 && electron .",
-		"dev": "bun run dev:go && concurrently -k \"bun run dev:renderer\" \"bun run dev:electron\"",
-		"build:go": "go build -ldflags=\"-s -w\" -o bin/light-launcher-instance ./core/cmd/instance",
+		"dev:server": "./bin/light-launcher --dev-token dev --port 9246",
+		"dev": "bun run dev:go && concurrently -k \"bun run dev:renderer\" \"bun run dev:server\"",
+		"build:go": "go build -ldflags=\"-s -w\" -o bin/light-launcher ./core/cmd/launcher && go build -ldflags=\"-s -w\" -o bin/light-launcher-instance ./core/cmd/instance",
 		"build:renderer": "cd src/renderer && bun run build",
-		"build:electron": "tsc",
-		"build": "bun run build:go && bun run build:renderer && bun run build:electron",
-		"dist": "bun run build && electron-builder --config build/electron-builder.yml",
+		"build": "bun run build:go && bun run build:renderer",
 		"typecheck": "tsc --noEmit && cd src/renderer && svelte-check --tsconfig ./tsconfig.json",
 		"format": "oxfmt --write .",
 		"format:check": "oxfmt --check .",
@@ -30,8 +27,6 @@
 		"@types/node": "^25.6.0",
 		"@vitest/coverage-v8": "^4.1.10",
 		"concurrently": "^9.1.2",
-		"electron": "^34.3.0",
-		"electron-builder": "^25.1.8",
 		"oxfmt": "^0.63.0",
 		"oxlint": "^1.78.0",
 		"sass": "^1.97.3",
@@ -45,7 +40,6 @@
 	},
 	"trustedDependencies": [
 		"@parcel/watcher",
-		"electron",
 		"svelte-preprocess"
 	]
 }

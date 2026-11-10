@@ -25,7 +25,10 @@ function analyzeImage(source: CanvasImageSource): [number, number, number] | nul
 
 	let bestScore = -1;
 	let best: [number, number, number] = [255, 255, 255];
-	let rSum = 0, gSum = 0, bSum = 0, count = 0;
+	let rSum = 0,
+		gSum = 0,
+		bSum = 0,
+		count = 0;
 
 	for (let i = 0; i < data.length; i += 4) {
 		const r = data[i];
@@ -51,13 +54,14 @@ function analyzeImage(source: CanvasImageSource): [number, number, number] | nul
 	}
 
 	if (bestScore > 0) return best;
-	if (count > 0) return [Math.round(rSum / count), Math.round(gSum / count), Math.round(bSum / count)];
+	if (count > 0)
+		return [Math.round(rSum / count), Math.round(gSum / count), Math.round(bSum / count)];
 	return [255, 255, 255];
 }
 
 export async function getDominantColor(
 	src: string,
-	img?: HTMLImageElement,
+	img?: HTMLImageElement
 ): Promise<[number, number, number] | null> {
 	if (!src) return null;
 	if (cache.has(src)) return cache.get(src)!;

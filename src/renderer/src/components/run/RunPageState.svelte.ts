@@ -2,6 +2,7 @@ import { PickFile, PickFolder, SaveGameConfig } from "@lib/api";
 import * as core from "@shared";
 import { notifications } from "@stores/notificationStore";
 import { runState } from "@stores/runState";
+import { currentFeatures } from "@stores/platformStore";
 import { createLaunchOptions } from "@lib/formService";
 import * as service from "@lib/runService";
 import { loadConfigForGame, loadConfigForPrefix } from "@lib/runConfig";
@@ -107,7 +108,7 @@ export class RunPageState {
 				this.proton.selectedProton = this.proton.protonOptions[0];
 			}
 
-			if (!this.prefixPath) {
+			if (!this.prefixPath && currentFeatures().prefix) {
 				this.prefixPath = this.baseDir + "/Default";
 				this.selectedPrefixName = "Default";
 				await this.doLoadConfigForPrefix("Default");

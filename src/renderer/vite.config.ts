@@ -2,6 +2,9 @@ import { svelte } from "@sveltejs/vite-plugin-svelte";
 import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vite";
 
+// The Go launcher serves /api in dev (started with --port 9246 --dev-token dev).
+const GO_API_TARGET = "http://127.0.0.1:9246";
+
 // https://vitejs.dev/config/
 export default defineConfig({
 	base: "./",
@@ -17,7 +20,10 @@ export default defineConfig({
 	},
 	server: {
 		port: 9245,
-		strictPort: true
+		strictPort: true,
+		proxy: {
+			"/api": GO_API_TARGET
+		}
 	},
 	build: {
 		target: "esnext",
