@@ -1,18 +1,39 @@
+import { toDownloadItem, toDownloadsList } from "./downloadsMap";
 import { rpc } from "./rpc";
 import type { DownloadAction, DownloadItem, DownloadsListResponse } from "./types";
+import type { WireDownloadSettings, WireDownloadView } from "./wire";
 
-const ACTION_METHODS: Record<DownloadAction, string> = {
+const ACTION_METHODS: Record<Exclude<DownloadAction, "remove">, string> = {
 	pause: "DownloadPause",
 	resume: "DownloadResume",
 	cancel: "DownloadCancel",
-	retry: "DownloadRetry",
-	remove: "DownloadRemove"
+	retry: "DownloadRetry"
 };
 
 export const downloadsApi = {
-	list: () => rpc<DownloadsListResponse>("DownloadsList"),
-	enqueue: (url: string, gameId: number | null) =>
-		rpc<DownloadItem>("DownloadEnqueue", { url, gameId }),
-	act: (action: DownloadAction, id: number) => rpc<void>(ACTION_METHODS[action], { id }),
+	list: async (): Promise<DownloadsListResponse> => {
+		const [views, settings] = await Promise.all([
+			rpc<WireDownloadView[] | null>("DownloadsList"),
+			rpc<WireDownloadSettings>("DownloadsGetSettings")
+		]);
+		return toDownloadsList(views ?? [], settings);
+	},
+
+	/** A game file is installed after it downloads. A direct link is only saved. */
+	enqueue: async (url: string, gameId: number | null): Promise<DownloadItem> =>
+		toDownloadItem(
+			await rpc<WireDownloadView>("DownloadEnqueue", {
+				url,
+				gameId: gameId ?? 0,
+				install: gameId !== null
+			})
+		),
+
+	/** Remove keeps the file on disk. */
+	act: (action: DownloadAction, id: number) =>
+		action === "remove"
+			? rpc<void>("DownloadRemove", { id, deleteFile: false })
+			: rpc<void>(ACTION_METHODS[action], { id }),
+
 	setSpeedLimit: (speedLimitKBps: number) => rpc<void>("DownloadSetSpeedLimit", { speedLimitKBps })
 };

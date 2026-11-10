@@ -34,7 +34,6 @@ function makeGame(overrides: Partial<Game>): Game {
 		lastPlayedAt: null,
 		addedAt: "2026-01-01T00:00:00Z",
 		updateAvailable: false,
-		running: false,
 		...overrides
 	};
 }

@@ -1,5 +1,5 @@
-// Shapes returned by the Go API methods used by the library, downloads, updates and plugin pages.
-// Assumed until the Go side lands: keep this file in sync with the method handlers.
+// View types for the library, downloads, updates and plugin pages.
+// The Go payloads are in wire.ts. The mappers in *Map.ts turn them into these types.
 
 export interface Game {
 	id: number;
@@ -10,6 +10,7 @@ export interface Game {
 	developer: string | null;
 	engine: string | null;
 	tags: string[];
+	/** Remote cover image. Cached local covers have no served URL yet. */
 	cover: string | null;
 	screenshots: string[];
 	description: string | null;
@@ -25,7 +26,6 @@ export interface Game {
 	lastPlayedAt: string | null;
 	addedAt: string;
 	updateAvailable: boolean;
-	running: boolean;
 }
 
 export interface LibraryStats {
@@ -72,31 +72,23 @@ export interface LibraryGetResponse {
 }
 
 export type LibraryEditableFields = Partial<
-	Pick<Game, "title" | "notes" | "exePath" | "exeArgs" | "installDir" | "favorite">
+	Pick<Game, "title" | "notes" | "exePath" | "exeArgs" | "favorite">
 >;
 
 export interface SearchHit {
 	url: string;
 	title: string;
-	score: number;
+	source: string;
 }
 
 export interface SearchResponse {
 	hits: SearchHit[];
-}
-
-export interface PreviewFile {
-	label: string;
-	host: string | null;
-	platform: string;
-	size: number | null;
-	kind: string;
-	requiresAuth: boolean;
+	/** One message per source that failed to search. */
+	errors: string[];
 }
 
 export interface GamePreview {
 	source: string;
-	sourceLabel: string;
 	title: string;
 	version: string | null;
 	developer: string | null;
@@ -106,7 +98,6 @@ export interface GamePreview {
 	cover: string | null;
 	url: string;
 	existing: { id: number; title: string; installed: boolean } | null;
-	files: PreviewFile[];
 }
 
 export interface IncomingSuggestion {
@@ -152,9 +143,11 @@ export interface UpdateCheckRow {
 
 export interface UpdatesResponse {
 	count: number;
-	unseen: number;
 	games: Game[];
+	/** Recent checks. The API does not list them yet, so this is empty. */
 	history: UpdateCheckRow[];
+	/** Titles of games whose check failed, with the reason. */
+	errors: string[];
 }
 
 export type DownloadStatus = "queued" | "downloading" | "paused" | "done" | "error" | "canceled";
@@ -170,17 +163,18 @@ export interface DownloadItem {
 	error: string | null;
 	speed: number;
 	eta: number | null;
-	rateLimited?: boolean;
 	connections: number;
 	createdAt: string;
 	finishedAt: string | null;
 }
 
+export type InstallPhase = "extracting" | "unpacking" | "finalizing" | "done";
+
 export interface InstallProgress {
 	downloadId: number;
 	gameId: number;
 	title: string;
-	phase: "extracting" | "unpacking" | "finalizing";
+	phase: InstallPhase;
 	done: number;
 	total: number;
 	progress: number | null;
@@ -189,22 +183,23 @@ export interface InstallProgress {
 	/** Name of the extraction tool, such as "7-Zip". */
 	engine: string | null;
 	state: "active" | "done" | "error";
-	error?: string | null;
+	error: string | null;
+}
+
+export interface Toast {
+	level: string;
+	message: string;
 }
 
 export interface DownloadsListResponse {
 	items: DownloadItem[];
+	/** Install snapshots are only sent as events, so this starts empty. */
 	installs: InstallProgress[];
-	sevenZip: boolean;
 	/** 0 means no limit. */
 	speedLimitKBps: number;
 }
 
 export type DownloadAction = "pause" | "resume" | "cancel" | "retry" | "remove";
-
-export const DOWNLOAD_PROGRESS_EVENT = "download-progress";
-export const INSTALL_PROGRESS_EVENT = "install-progress";
-export const SEVEN_ZIP_MISSING_EVENT = "sevenzip-missing";
 
 export type PluginStatus = "ok" | "error";
 
@@ -212,13 +207,12 @@ export interface PluginInfo {
 	id: string;
 	name: string;
 	version: string;
-	author: string | null;
 	enabled: boolean;
 	signed: boolean;
 	status: PluginStatus;
 	error: string | null;
+	/** Source ids this plugin contributes. */
 	sources: string[];
-	hasSettings: boolean;
 }
 
 export interface PluginPreview {
@@ -226,9 +220,8 @@ export interface PluginPreview {
 	id: string;
 	name: string;
 	version: string;
-	author: string | null;
-	description: string | null;
 	signed: boolean;
+	/** Plain-language permission lines for the user. */
 	permissions: string[];
 }
 
@@ -249,11 +242,13 @@ export interface JsonSchema {
 }
 
 export interface PluginSettingsResponse {
+	/** The settings schema. The API does not send it yet, so this is null. */
 	schema: JsonSchema | null;
 	values: Record<string, unknown>;
 }
 
 export interface PluginLogLine {
+	/** The API does not send times yet, so this is empty. */
 	time: string;
 	level: "debug" | "info" | "warn" | "error";
 	message: string;
