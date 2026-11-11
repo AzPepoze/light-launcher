@@ -70,4 +70,6 @@ export interface AppSettings {
 	TrackPlaytime?: boolean;
 	DiscordRichPresence?: boolean;
 	DiscordClientId?: string;
+	/** Minutes without a plugin call before it sleeps. Zero disables sleeping. */
+	pluginIdleTimeoutMinutes?: number;
 }

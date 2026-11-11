@@ -7,7 +7,12 @@
 	import PluginConsent from "./PluginConsent.svelte";
 	import PluginLogs from "./PluginLogs.svelte";
 	import PluginSettings from "./PluginSettings.svelte";
-	import { NO_NEW_PERMISSIONS, UNSIGNED_WARNING, UPDATE_PERMISSION_HINT } from "./pluginCopy";
+	import {
+		NO_NEW_PERMISSIONS,
+		SLEEPING_BADGE,
+		UNSIGNED_WARNING,
+		UPDATE_PERMISSION_HINT
+	} from "./pluginCopy";
 
 	let {
 		plugin,
@@ -105,6 +110,7 @@
 		</div>
 		<div class="badges">
 			<span class="badge">{plugin.enabled ? "Enabled" : "Disabled"}</span>
+			{#if plugin.idle}<span class="badge">{SLEEPING_BADGE}</span>{/if}
 			{#if !plugin.signed}
 				<span class="badge warn">Unsigned</span>
 			{/if}

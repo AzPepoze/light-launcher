@@ -308,6 +308,8 @@ export interface WirePluginInfo {
 	status: string;
 	enabled: boolean;
 	running: boolean;
+	idle: boolean;
+	lastActiveAt?: string;
 	error?: string;
 	disabledReason?: string;
 	source?: string;

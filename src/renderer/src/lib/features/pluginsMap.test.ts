@@ -28,6 +28,7 @@ function makeWire(overrides: Partial<WirePluginInfo> = {}): WirePluginInfo {
 		status: "stopped",
 		enabled: true,
 		running: false,
+		idle: false,
 		unsigned: false,
 		permissions: NO_PERMISSIONS,
 		sources: [
@@ -105,6 +106,8 @@ describe("toPluginInfo", () => {
 			enabled: true,
 			signed: true,
 			status: "ok",
+			idle: false,
+			lastActiveAt: null,
 			error: null,
 			disabledReason: null,
 			author: "Ada",
@@ -129,6 +132,14 @@ describe("toPluginInfo", () => {
 		expect(info.source).toBe("https://example.test/store.zip");
 		expect(info.repository).toBe("github:ada/example");
 		expect(info.consent).toEqual(["exec", "network:api.example.test"]);
+	});
+
+	it("passes the sleeping state and the last activity time through", () => {
+		const info = toPluginInfo(
+			makeWire({ idle: true, lastActiveAt: "2026-03-01T10:00:00Z", running: false })
+		);
+		expect(info.idle).toBe(true);
+		expect(info.lastActiveAt).toBe("2026-03-01T10:00:00Z");
 	});
 
 	it("passes the disabled reason and the settings flag through", () => {

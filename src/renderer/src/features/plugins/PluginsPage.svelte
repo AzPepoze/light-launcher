@@ -29,6 +29,7 @@
 		CHECKING_UPDATES_LABEL,
 		CHECK_UPDATES_LABEL,
 		COMMUNITY_PLUGINS_URL,
+		SLEEPING_BADGE,
 		UPLOAD_PROBLEM_COPY,
 		UPLOADING_TEXT
 	} from "./pluginCopy";
@@ -242,6 +243,7 @@
 						<span class="muted">v{plugin.version}</span>
 						<span class="badges">
 							<span class="badge">{plugin.enabled ? "Enabled" : "Disabled"}</span>
+							{#if plugin.idle}<span class="badge">{SLEEPING_BADGE}</span>{/if}
 							{#if !plugin.signed}<span class="badge warn">Unsigned</span>{/if}
 							{#if plugin.status === "error"}<span class="badge warn">Error</span>{/if}
 							{#if updateFor(plugin.id)?.available}

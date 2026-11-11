@@ -60,6 +60,8 @@ export function toPluginInfo(wire: WirePluginInfo): PluginInfo {
 		enabled: wire.enabled,
 		signed: !wire.unsigned,
 		status: wire.status === "broken" ? "error" : "ok",
+		idle: wire.idle ?? false,
+		lastActiveAt: wire.lastActiveAt ?? null,
 		error: wire.error || null,
 		disabledReason: wire.disabledReason || null,
 		author: wire.author,

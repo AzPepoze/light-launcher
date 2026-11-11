@@ -20,6 +20,8 @@ export const CHECK_UPDATES_LABEL = "Check for updates";
 
 export const CHECKING_UPDATES_LABEL = "Checking...";
 
+export const SLEEPING_BADGE = "Sleeping";
+
 export const DROP_HINT = "Drop a plugin zip or folder here";
 
 export const DROP_OVERLAY_TEXT = "Drop to check the plugin";

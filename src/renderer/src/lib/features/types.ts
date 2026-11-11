@@ -236,6 +236,10 @@ export interface PluginInfo {
 	enabled: boolean;
 	signed: boolean;
 	status: PluginStatus;
+	/** True when the launcher stopped the plugin to save memory. */
+	idle: boolean;
+	/** When the launcher last called the plugin, or null before its first call. */
+	lastActiveAt: string | null;
 	error: string | null;
 	/** Why the plugin is switched off, when the launcher turned it off. */
 	disabledReason: string | null;
