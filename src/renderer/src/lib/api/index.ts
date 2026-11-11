@@ -71,12 +71,6 @@ export const ClearPreferredLauncher = (folder: string) =>
 	invoke<GameInfo>("ClearPreferredLauncher", { folder });
 export const UpdateScanFolderConfig = (folderPath: string, depth: number, excludeNames: string[]) =>
 	invoke<void>("UpdateScanFolderConfig", { folderPath, depth, excludeNames });
-export const RenameScanFolder = (
-	oldPath: string,
-	newPath: string,
-	depth: number,
-	excludeNames: string[]
-) => invoke<string>("RenameScanFolder", { oldPath, newPath, depth, excludeNames });
 export const GetScanFolderConfig = (folderPath: string) =>
 	invoke<ScanFolderConfig>("GetScanFolderConfig", { folderPath });
 export const BlacklistGame = (executablePath: string) =>
