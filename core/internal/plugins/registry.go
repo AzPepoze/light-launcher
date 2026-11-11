@@ -92,11 +92,17 @@ func (r *Registry) Browse(ctx context.Context, plugin string, request contract.B
 // invalidCursorCode is the error data code a plugin sends when it does not know a browse cursor.
 const invalidCursorCode = "invalid_cursor"
 
+// invalidCursorRPCCode is the JSON-RPC error code the SDK protocol gives invalid_cursor.
+const invalidCursorRPCCode = -32007
+
 // isInvalidCursor reports whether a plugin error says the browse cursor is unknown.
 func isInvalidCursor(err error) bool {
 	var rpcErr *RPCError
 	if !errors.As(err, &rpcErr) {
 		return false
+	}
+	if rpcErr.Code == invalidCursorRPCCode {
+		return true
 	}
 	data, ok := rpcErr.Data.(map[string]any)
 	return ok && data["code"] == invalidCursorCode
