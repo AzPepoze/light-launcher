@@ -46,12 +46,16 @@
 		await refreshAppSettings();
 	});
 
-	$effect(() => {
-		const scroll = sectionScroll($pendingSettingsSection, prefersReducedMotion());
+	// Subscribing after mount means the section exists when the first request is handled. This page uses the
+	// older component syntax, so it must not use $effect: one rune would switch the whole page to runes mode.
+	onMount(() => pendingSettingsSection.subscribe(scrollToPendingSection));
+
+	function scrollToPendingSection(section: string | null) {
+		const scroll = sectionScroll(section, prefersReducedMotion());
 		if (!scroll) return;
 		document.getElementById(scroll.id)?.scrollIntoView({ behavior: scroll.behavior, block: "start" });
 		pendingSettingsSection.set(null);
-	});
+	}
 
 	function prefersReducedMotion(): boolean {
 		return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
