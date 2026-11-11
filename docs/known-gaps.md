@@ -73,13 +73,12 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 |---|---|
 | [x] | Covers are cached and shown through the cover route. |
 | [x] | Library page groups local games and plugin games. |
-| [ ] | Cached screenshots are downloaded but not served; the detail panel uses the remote link. |
+| [x] | Cached screenshots are served through the media route and shown in the detail panel. |
 | [ ] | Covers behind a login (F95) may fail because media fetches send no cookies. |
-| [ ] | Cover images are kept in memory for the whole session (no eviction for very large libraries). |
-| [ ] | Source filter shows raw ids (`f95`) instead of labels. |
-| [ ] | Check which view "quick launch" means (grid is 1:1, the side view is not). |
-| [ ] | No UI for "link existing folder" and the update-check history. |
-| [ ] | Import of old interesting-launcher data has no button. |
+| [x] | Cover and screenshot images are evicted from memory least-recently-used first (200 entries). |
+| [x] | Source filter shows labels from the library instead of raw ids. |
+| [x] | The game detail can link an existing install folder. |
+| [x] | The Updates page shows the update-check history with paging. |
 | [ ] | Check the new Library page and drop zone by eye in the real window. |
 
 ## Migration
@@ -88,6 +87,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 |---|---|
 | Won't do | Moving old Electron-era data on first start. The only user chose a clean start, so v2 may break old data. |
 | Won't do | Reading the old Electron flags file and rewriting old config paths. |
+| Won't do | Import of old interesting-launcher data. v2 starts clean. |
 | [ ] | Keep schemas of new data versioned from now on, so later releases can migrate. |
 
 ## Code quality
