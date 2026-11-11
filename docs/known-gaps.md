@@ -44,7 +44,8 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | Nested objects in a settings schema are not drawn (only top-level fields). |
 | [ ] | SDK docs for the `settings.changed` notification and the `x-ll-*` schema extensions. |
 | [ ] | Check the settings form by eye in the real window (only typecheck, tests and build so far). |
-| [ ] | Host option for a download folder, a subfolder per game, install after download and delete archive (in progress). |
+| [x] | Host options for a download folder, a subfolder per game, install after download and delete archive, including the optional `source.prepareDownload` result hints. |
+| [ ] | The library download button still calls `DownloadEnqueue` with the file URL, so it does not call `source.prepareDownload` yet; the plugin's download hints need that wiring to take effect in the UI. |
 | [x] | The launcher never calls `source.sync` and never schedules update checks. Plugin sync and interval settings have no effect until a scheduler exists. |
 | [x] | A running plugin gets a `settings.changed` notice when settings are saved (no restart; plugins must read settings per call). |
 | [x] | Embedded browser assist on Linux (Qt): the host starts the shell in assist mode and reads its download event. Run in a real window against a local test page. |

@@ -89,12 +89,28 @@ For web requests, secrets, files and downloads, a plugin asks the launcher. The 
 | `http.request`                                                                      | `network` lists the host |
 | `secrets.get`, `secrets.set`, `secrets.delete`                                      | `secrets: true`          |
 | `extract`                                                                           | `fs` lists a folder      |
-| `downloads.enqueue` with `root: "games"` or `install: true`                         | `fs` lists `$GAMES`      |
+| `downloads.enqueue` or `source.prepareDownload` with `root: "games"` or `install: true` | `fs` lists `$GAMES`      |
 | `browser.assist`                                                                    | `browser: true`          |
 | `storage.get`, `storage.set`, `downloads.enqueue`, `library.upsert`, `settings.get` | None                     |
 
 > [!WARNING]
 > A plugin that opens its own network connections is not stopped by the launcher. See [Security](security.md#honest-limits).
+
+## Download hints
+
+`source.prepareDownload` may return the same optional folder and install fields as `downloads.enqueue`. The launcher validates them with the same rules and queues the download with them.
+
+| Result field       | Type    | Use it for                                                                                     |
+| :----------------- | :------ | :--------------------------------------------------------------------------------------------- |
+| `root`             | string  | `downloads` (default) or `games`.                                                              |
+| `subfolder`        | string  | A relative folder under `root`, such as `Team/Demo`.                                           |
+| `install`          | boolean | Install the archive after the download.                                                        |
+| `installSubfolder` | string  | A relative folder under the games folder for the installed game. Needs `install`.              |
+| `deleteArchive`    | boolean | Delete the archive after a good install. Omit it to use the launcher setting. Needs `install`. |
+
+Omit every field to keep the default: save into the downloads folder and do not install. `root: "games"` and `install: true` need `$GAMES` in the plugin's `fs` permission; the launcher refuses them otherwise.
+
+Map the plugin's settings to these fields: a `downloadFolder` setting to `subfolder`, `installAfterDownload` to `install`, `installFolder` to `installSubfolder`, and `deleteArchive` to `deleteArchive`. Use `root: "games"` when the user picked a folder inside the games folder. Read the settings on each call, as described above.
 
 ## Settings form
 
