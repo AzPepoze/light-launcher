@@ -169,7 +169,7 @@ While the launcher is open it keeps two kinds of work running in the background.
 
 | Job | When it runs | What it does |
 | :--- | :--- | :--- |
-| Plugin sync | Every 24 hours, or the plugin's `syncIntervalHours` setting | Calls `source.sync` for plugins that list `sync:games` or `sync:index`. |
+| Plugin sync | Every 24 hours, or the plugin's `syncIntervalHours` setting | Calls `source.sync` for sources that list `sync:games` or `sync:index`. Sources that list `listGames` import their games page by page instead. |
 | Update check | Every 30 minutes | Checks games that were not checked in the last 6 hours. |
 
 The first run starts 30 to 120 seconds after the launcher opens, and a restart keeps the saved run times. A job that fails waits longer each time, up to 6 hours. Disabled plugins are skipped.

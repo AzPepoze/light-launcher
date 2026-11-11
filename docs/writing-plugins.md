@@ -124,6 +124,83 @@ Every name in `subfolder` and `installSubfolder`, and every download `filename`,
 
 Map the plugin's settings to these fields: a `downloadFolder` setting to `subfolder`, `installAfterDownload` to `install`, `installFolder` to `installSubfolder`, and `deleteArchive` to `deleteArchive`. Use `root: "games"` when the user picked a folder inside the games folder. Read the settings on each call, as described above.
 
+## List the user's games
+
+A source can list every game the user owns, follows or bookmarks there. The launcher reads the list page by page and saves the games in the library. Use this for large lists. Use `source.search` to browse a whole site.
+
+To offer it, add the `listGames` capability to the source in `plugin.json`:
+
+```json
+{
+  "contributes": {
+    "sources": [
+      { "id": "shop", "label": "Shop", "capabilities": ["browse", "listGames"], "tile": "poster" }
+    ]
+  }
+}
+```
+
+### Request
+
+The launcher sends `source.listGames` with these params.
+
+| Param    | Type    | Rule                                                                 |
+| :------- | :------ | :------------------------------------------------------------------- |
+| `source` | string  | The source id, such as `shop`.                                       |
+| `scope`  | string  | Always `mine` for now: the games the user owns, follows or bookmarked. |
+| `cursor` | string  | Missing on the first page. Otherwise the `nextCursor` of the last page. |
+| `limit`  | integer | From 1 to 200. The launcher asks for 100.                            |
+
+### Result
+
+| Field        | Type    | Rule                                                                 |
+| :----------- | :------ | :------------------------------------------------------------------- |
+| `games`      | array   | Games in the same shape as `source.search` results (`GameDTO`). At most `limit` games. |
+| `nextCursor` | string  | Leave it out on the last page.                                       |
+| `total`      | integer | Optional. The number of games, when the plugin knows it.             |
+
+```json
+{
+  "games": [
+    { "source": "shop", "sourceId": "1042", "url": "https://shop.example/g/1042", "title": "Example Game" }
+  ],
+  "nextCursor": "eyJvZmZzZXQiOjEwMH0",
+  "total": 250
+}
+```
+
+### Cursor and page rules
+
+| Rule                                                              | Why                                                  |
+| :---------------------------------------------------------------- | :--------------------------------------------------- |
+| Make each cursor an opaque string that works on its own.          | The launcher does not read it.                       |
+| Keep a cursor valid while the whole import runs, which can take minutes. | The launcher asks for the next page only after the last one. |
+| Answer a bad cursor with an invalid params error (code `-32602`). | The import stops and reports the error.              |
+| Do not return the same `sourceId` twice in one import.            | Repeated games are counted more than once.           |
+
+> [!IMPORTANT]
+> A bad `limit` or `scope` must return an invalid params error (code `-32602`). Do not clamp it silently.
+
+### Speed and caching
+
+| Advice                                                                 | Details                                                                          |
+| :--------------------------------------------------------------------- | :------------------------------------------------------------------------------- |
+| Answer each page quickly.                                              | The launcher waits for each page before it asks for the next one.                |
+| Cache the upstream pages yourself.                                     | Keep them in memory or in `storage.set` with a time limit, such as 10 minutes.  |
+| Do not keep the whole list in memory for a huge account.               | Fetch and answer one page at a time.                                             |
+
+### Card shape
+
+The `tile` field of the source sets the shape of its cards in the Library:
+
+| `tile`   | Shape         | Use it for                  |
+| :------- | :------------ | :-------------------------- |
+| `poster` | 3:4 (default) | Tall cover art.             |
+| `wide`   | 16:9          | Banner-style cover art.     |
+| `square` | 1:1           | Icons and square covers.    |
+
+A value other than these three fails the manifest check.
+
 ## Settings form
 
 The launcher draws a settings form from a JSON Schema file. Point to it in `plugin.json`:
