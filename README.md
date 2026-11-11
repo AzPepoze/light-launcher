@@ -77,6 +77,7 @@ LightLauncher is a Go program with a web-based window. On Linux it starts Window
 | Build from source                                     | [Building](docs/building.md)               |
 | Window programs (Qt and WebView2)                     | [Shells](shell/README.md)                  |
 | Publish a release                                     | [Releasing](docs/releasing.md)             |
+| See what is missing or planned                        | [Known gaps](docs/known-gaps.md)           |
 | Development setup and rules                           | [Contributing](CONTRIBUTING.md)            |
 
 ## License
