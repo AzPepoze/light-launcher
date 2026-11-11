@@ -66,6 +66,35 @@ The launcher rules run in order. The first rule that decides wins.
 | 5     | The bigger file wins.                                                                 |                                    |
 | 6     | The shorter path wins, then the alphabetical order.                                   |                                    |
 
+## Card names
+
+A card takes the first name it finds. The order is:
+
+| Order | Name                                                                                  | Example                              |
+| :---- | :------------------------------------------------------------------------------------ | :----------------------------------- |
+| 1     | A name saved in the game's config (the `Name` field).                                 | `My Game`                            |
+| 2     | The product name inside the `.exe`. The file description is the fallback.            | `Hollow Knight`                      |
+| 3     | The folder name, cleaned. Used when the launcher name is generic or the folder has several launchers. | `Mad_Island_0.34` becomes `Mad Island` |
+| 4     | The launcher file name without `.exe`.                                                | `Hollow.exe` becomes `Hollow`        |
+
+Generic names say nothing about the game. They are skipped in steps 2 and 3:
+
+- Engine and tool names, such as `Unity`, `Unreal Engine`, `Ren'Py`, `Godot Engine`, `NW.js` and `Electron`.
+- Windows names, such as `Microsoft(R) Windows(R) Operating System`.
+- Launcher names, such as `game`, `launcher`, `start`, `play`, `run`, `main`, `app`, `client`, `win`, `pc`, `nw` and `UnityPlayer`.
+- Unreal and 32 or 64-bit builds, such as `<folder>-32`, `<folder>-64` and `*-Win64-Shipping`.
+
+Folder names are cleaned like this:
+
+| Rule                                                                  | Example                                  |
+| :-------------------------------------------------------------------- | :--------------------------------------- |
+| `_` and `.` become spaces, when the name has no spaces yet.          | `Hollow_Knight` becomes `Hollow Knight`  |
+| Version endings are removed.                                          | `Game-v1.2.3` and `Game [v0.5]` become `Game` |
+| Platform endings are removed.                                         | `Game_Win`, `Game-pc` and `Game-win` become `Game` |
+
+> [!NOTE]
+> If cleaning would leave nothing, the folder name is used as it is.
+
 ## Other launchers
 
 The other `.exe` files of a game folder stay on the card as alternatives. Each one has a kind:
