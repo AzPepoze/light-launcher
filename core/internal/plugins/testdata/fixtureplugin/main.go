@@ -3,6 +3,7 @@
 // Methods:
 //   - initialize, shutdown, ping: handshake, exit and liveness
 //   - source.parseRef, source.echo: answer with their params
+//   - source.prepareDownload: returns a URL with download hints
 //   - source.probe {service, args}: asks the host for a service and returns what the host answered
 //   - source.wait {ms}: answers after a delay, to keep a call in flight
 //   - source.progress {id, done, total}: reports a progress job
@@ -69,6 +70,8 @@ func handle(msg message) {
 	case "source.echo":
 		notify("log", map[string]string{"level": "info", "message": "echo called"})
 		respond(msg.ID, msg.Params)
+	case "source.prepareDownload":
+		respond(msg.ID, prepareDownload())
 	case "source.probe":
 		respond(msg.ID, probe(msg.Params))
 	case "source.wait":
@@ -81,6 +84,22 @@ func handle(msg message) {
 		os.Exit(3)
 	default:
 		respondError(msg.ID, -32601, "method not found: "+msg.Method)
+	}
+}
+
+// prepareDownload returns a fixed answer with every optional download hint.
+func prepareDownload() map[string]any {
+	return map[string]any{
+		"url":              "https://files.example/game.zip",
+		"headers":          map[string]string{"X-Token": "fixture"},
+		"filename":         "game.zip",
+		"size":             1024,
+		"root":             "games",
+		"subfolder":        "Team/Demo",
+		"install":          true,
+		"installSubfolder": "Pack",
+		"deleteArchive":    false,
+		"futureField":      "ignored",
 	}
 }
 

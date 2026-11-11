@@ -32,6 +32,20 @@ func ValidateSubfolder(sub string) error {
 	return nil
 }
 
+// ValidateRequest checks the folder, root and install fields of a download request.
+func ValidateRequest(req contract.DownloadRequest) error {
+	if req.Root != "" && req.Root != contract.RootDownloads && req.Root != contract.RootGames {
+		return badFolder(`root must be "downloads" or "games"`)
+	}
+	if err := ValidateSubfolder(req.Subfolder); err != nil {
+		return err
+	}
+	if err := ValidateSubfolder(req.InstallSubfolder); err != nil {
+		return err
+	}
+	return checkInstallOptions(req)
+}
+
 // checkInstallOptions rejects install settings that have no install to apply to.
 func checkInstallOptions(req contract.DownloadRequest) error {
 	if req.Install {

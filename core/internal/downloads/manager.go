@@ -120,7 +120,7 @@ func (m *Manager) Enqueue(ctx context.Context, req contract.DownloadRequest) (in
 		probe = ProbeResult{URL: req.URL}
 	}
 	headers = stripForeignCredentials(headers, req.URL, probe.URL)
-	if err := checkInstallOptions(req); err != nil {
+	if err := ValidateRequest(req); err != nil {
 		return 0, err
 	}
 

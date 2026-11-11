@@ -91,6 +91,30 @@ func TestResolveFolderRefusesLinkSegments(t *testing.T) {
 	}
 }
 
+func TestValidateRequest(t *testing.T) {
+	cases := []struct {
+		name string
+		req  contract.DownloadRequest
+		want error
+	}{
+		{"defaults", contract.DownloadRequest{}, nil},
+		{"downloads root", contract.DownloadRequest{Root: contract.RootDownloads, Subfolder: "Team/Demo"}, nil},
+		{"games root", contract.DownloadRequest{Root: contract.RootGames}, nil},
+		{"unknown root", contract.DownloadRequest{Root: "music"}, contract.ErrBadFolder},
+		{"traversal", contract.DownloadRequest{Subfolder: "../escape"}, contract.ErrBadFolder},
+		{"install without flag", contract.DownloadRequest{DeleteArchive: new(bool)}, contract.ErrBadRequest},
+	}
+	for _, c := range cases {
+		err := ValidateRequest(c.req)
+		if c.want == nil && err != nil {
+			t.Errorf("%s: err = %v, want nil", c.name, err)
+		}
+		if c.want != nil && !errors.Is(err, c.want) {
+			t.Errorf("%s: err = %v, want %v", c.name, err, c.want)
+		}
+	}
+}
+
 func TestCheckInstallOptions(t *testing.T) {
 	cases := []struct {
 		name string
