@@ -24,7 +24,7 @@ LightLauncher has a core program written in Go and a small native window, called
           | starts the shell with the page address
           v
  light-launcher-shell (native window)
-   - Qt6 WebEngine on Linux
+   - WebKitGTK 6.0 on Linux
    - WebView2 on Windows
    - file dialogs for window.llShell
           |
@@ -42,7 +42,7 @@ The shell does not hold any game logic. It only shows the page and runs the nati
 | UI in a web page    | One UI for Linux and Windows.                                               |
 | Go core             | One language for the library, settings and game sessions.                   |
 | Small shell         | Only the window differs per system.                                         |
-| Qt on Linux         | Gives a Chromium web engine without the size of Electron.                   |
+| WebKitGTK on Linux  | A native web engine that scrolls smoothly on Wayland and high-refresh screens. |
 | WebView2 on Windows | Windows 11 includes the runtime. On Windows 10 it may need to be installed. |
 
 ## Native functions

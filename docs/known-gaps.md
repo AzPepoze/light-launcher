@@ -56,6 +56,8 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [x] | The launcher never calls `source.sync` and never schedules update checks. Plugin sync and interval settings have no effect until a scheduler exists. |
 | [x] | A running plugin gets a `settings.changed` notice when settings are saved (no restart; plugins must read settings per call). |
 | [x] | Embedded browser assist on Linux (Qt): the host starts the shell in assist mode and reads its download event. Run in a real window against a local test page. |
+| [x] | Embedded browser assist on Linux (GTK): ready, download (filename, size, Cookie, Referer, User-Agent), closed and persistent profile cookies verified against a local test page in a real window. |
+| [ ] | Check the GTK shell's external-link opening and transparent window by eye. The link rules and flags are unit-tested only. |
 | [ ] | No plugin calls the host `browser.assist` service yet (F95 still uses its own Chrome code), so a real plugin download through the embedded window is untested. |
 | [ ] | Embedded browser assist on Windows (WebView2) is untested on Windows. |
 | [ ] | If the request that started a browser step ends first, the browser window stays open until its own time limit. The host does not pass that cancel on to `browser.assist` yet. |
@@ -95,7 +97,8 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | Covers behind a login (F95) may fail because media fetches send no cookies. |
 | [x] | Remove the old `/api/cover/{id}` route (the media route replaced it). |
 | [x] | `make build` embeds the UI, so the launcher starts without `--ui`. |
-| [ ] | The NativeWayland setting is saved but has no effect; Qt picks the display system. |
+| [ ] | The NativeWayland setting is saved but has no effect; GTK picks the display system. |
+| [ ] | The GTK shell does not remember the window position or size between runs. |
 | [x] | Cover and screenshot images are evicted from memory least-recently-used first (200 entries). |
 | [x] | Source filter shows labels from the library instead of raw ids. |
 | [x] | The game detail can link an existing install folder. |

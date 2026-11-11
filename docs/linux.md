@@ -44,13 +44,10 @@ tar -xzf light-launcher-<version>-linux-x64.tar.gz -C ~/apps/light-launcher
 
 ## What it needs
 
-| Need                     | Why                                      | Package (Arch)  |
-| :----------------------- | :--------------------------------------- | :-------------- |
-| umu-launcher (`umu-run`) | Starts Windows games with Proton.        | `umu-launcher`  |
-| Qt6 WebEngine            | Shows the window.                        | `qt6-webengine` |
-| Qt6 SQLite driver        | Reads cookies restored from the profile. | `qt6-base`      |
-
-On Debian and Ubuntu, the SQLite driver is in the separate `libqt6sql6-sqlite` package.
+| Need                     | Why                               | Package (Arch)   |
+| :----------------------- | :-------------------------------- | :--------------- |
+| umu-launcher (`umu-run`) | Starts Windows games with Proton. | `umu-launcher`   |
+| WebKitGTK 6.0 (GTK4)     | Shows the window.                 | `webkitgtk-6.0`  |
 
 Optional:
 
@@ -66,15 +63,15 @@ Optional:
 
 ## Window options
 
-| Setting                  | How                                                                         |
-| :----------------------- | :-------------------------------------------------------------------------- |
-| Show on Wayland          | Qt picks Wayland or X11 by itself.                                          |
-| Force X11                | `QT_QPA_PLATFORM=xcb light-launcher`                                        |
-| Window position and size | Saved in `~/.config/light-launcher/window-geometry` when the window closes. |
+| Setting                  | How                                                    |
+| :----------------------- | :----------------------------------------------------- |
+| Show on Wayland          | GTK picks Wayland or X11 by itself.                    |
+| Force X11                | `GDK_BACKEND=x11 light-launcher`                       |
+| Window position and size | Not saved. The GTK window opens at its default size.   |
 
 ## Why there is no AppImage
 
-An AppImage would need to contain Qt WebEngine. That adds a large set of Chromium libraries, so the file would be much bigger than the other Linux files.
+An AppImage would need to contain WebKitGTK and GTK4. That adds a large set of libraries, so the file would be much bigger than the other Linux files.
 
 ## More
 

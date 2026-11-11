@@ -21,10 +21,10 @@ LightLauncher is a Go program with a web-based window. On Linux it starts Window
 
 ### Linux
 
-1. Install umu-launcher and Qt6 WebEngine (the Chromium web engine that draws the window). On Arch:
+1. Install umu-launcher and WebKitGTK 6.0 (the web engine that draws the window). On Arch:
 
    ```sh
-   sudo pacman -S umu-launcher qt6-webengine
+   sudo pacman -S umu-launcher webkitgtk-6.0
    ```
 
 2. Install LightLauncher. See [Install](docs/install.md).
@@ -75,7 +75,7 @@ LightLauncher is a Go program with a web-based window. On Linux it starts Window
 | Move data from older versions                       | [Migration](docs/migration.md)             |
 | How the parts fit together                          | [Architecture](docs/architecture.md)       |
 | Build from source                                   | [Building](docs/building.md)               |
-| Window programs (Qt and WebView2)                   | [Shells](shell/README.md)                  |
+| Window programs (GTK and WebView2)                  | [Shells](shell/README.md)                  |
 | Publish a release                                   | [Releasing](docs/releasing.md)             |
 | See what is missing or planned                      | [Known gaps](docs/known-gaps.md)           |
 | Development setup and rules                         | [Contributing](CONTRIBUTING.md)            |

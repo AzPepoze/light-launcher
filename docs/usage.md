@@ -31,13 +31,13 @@ light-launcher [flags] [GAME_PATH]
 
 | Value      | What it does on Linux                          | What it does on Windows                       |
 | :--------- | :--------------------------------------------- | :-------------------------------------------- |
-| `auto`     | Starts `light-launcher-shell` (Qt).            | Starts `light-launcher-shell.exe` (WebView2). |
-| `qt`       | Starts the shell program next to the launcher. | Same as `auto`.                               |
+| `auto`     | Starts `light-launcher-shell` (GTK).           | Starts `light-launcher-shell.exe` (WebView2). |
+| `gtk`      | Starts the shell program next to the launcher. | Same as `auto`.                               |
 | `webview2` | Starts the shell program next to the launcher. | Same as `auto`.                               |
 | `browser`  | Opens the default browser.                     | Opens the default browser.                    |
 
 > [!NOTE]
-> `qt` and `webview2` start the same kind of program: the shell next to the launcher. The shell file decides the window engine.
+> `gtk` and `webview2` start the same kind of program: the shell next to the launcher. The shell file decides the window engine.
 
 If the shell program is missing, the launcher opens the default browser instead.
 
@@ -247,7 +247,7 @@ Inside the base folder:
 | `browser-profiles/<id>/`              | Cookies and logins from the browser window of one plugin.               |
 | `launcher.lock`                       | The port and token of the running launcher. Only your user can read it. |
 
-On Linux, the window size and position are saved in `~/.config/light-launcher/window-geometry`.
+On Linux, the GTK window opens at its default size each time. It does not keep the window position or size between runs.
 
 > [!IMPORTANT]
 > `launcher.lock` holds the API token. Do not share it. See [Security](security.md).
