@@ -16,13 +16,9 @@ INSTALLER="$DIST/light-launcher-$VERSION-windows-x64-setup.exe"
 
 export GOOS=windows GOARCH=amd64 CGO_ENABLED=0
 
-trap clean_ui EXIT
-build_ui
-
-step "build launcher ($VERSION)"
 rm -rf "$STAGE"
 mkdir -p "$STAGE"
-(cd "$ROOT" && go build -tags embedui -ldflags="-s -w -X main.version=$VERSION" -o "$STAGE/light-launcher.exe" "$LAUNCHER_PKG")
+bash "$SCRIPTS_DIR/build-launcher.sh" "$STAGE/light-launcher.exe"
 
 step "build instance"
 (cd "$ROOT" && go build -ldflags="-s -w" -o "$STAGE/light-launcher-instance.exe" "$INSTANCE_PKG")

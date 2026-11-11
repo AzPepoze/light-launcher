@@ -7,7 +7,7 @@
 	"scripts": {
 		"dev:go": "go build -o bin/light-launcher ./core/cmd/launcher",
 		"dev:renderer": "cd src/renderer && bun run dev",
-		"dev:server": "./bin/light-launcher --dev-token dev --port 9246",
+		"dev:server": "./bin/light-launcher --no-shell --dev-token dev --port 9246 --ui src/renderer",
 		"dev": "bun run dev:go && concurrently -k \"bun run dev:renderer\" \"bun run dev:server\"",
 		"build:go": "go build -ldflags=\"-s -w\" -o bin/light-launcher ./core/cmd/launcher && go build -ldflags=\"-s -w\" -o bin/light-launcher-instance ./core/cmd/instance",
 		"build:renderer": "cd src/renderer && bun run build",

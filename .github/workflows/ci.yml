@@ -43,9 +43,6 @@ jobs:
   bun:
     name: bun checks
     runs-on: ubuntu-latest
-    env:
-      # Electron is only needed for packaging, not for these checks.
-      ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
     steps:
       - uses: actions/checkout@v4
 

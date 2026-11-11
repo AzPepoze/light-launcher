@@ -25,9 +25,6 @@ jobs:
     defaults:
       run:
         shell: bash
-    env:
-      # Electron is not used any more. Skip its large binary download.
-      ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
     steps:
       # fetch-depth 0 and tags make git describe return the release version.
       - uses: actions/checkout@v4

@@ -22,7 +22,14 @@ export default defineConfig({
 		port: 9245,
 		strictPort: true,
 		proxy: {
-			"/api": GO_API_TARGET
+			"/api": {
+				target: GO_API_TARGET,
+				changeOrigin: true,
+				configure: (proxy) => {
+					// The launcher only accepts its own origin, so make proxied calls look like direct ones.
+					proxy.on("proxyReq", (request) => request.setHeader("Origin", GO_API_TARGET));
+				}
+			}
 		}
 	},
 	build: {
