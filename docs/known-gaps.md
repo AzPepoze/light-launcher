@@ -35,10 +35,13 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [x] | Consent screen on install and update. |
 | [x] | Drag and drop install (zip or folder). |
 | [ ] | Updating a plugin that was dropped in (it has no web source, so drop the new version again). |
-| [ ] | Settings form built from each plugin's `settings.schema.json` (in progress). |
+| [x] | Settings form built from each plugin's `settings.schema.json`. |
+| [ ] | Nested objects in a settings schema are not drawn (only top-level fields). |
+| [ ] | SDK docs for the `settings.changed` notification and the `x-ll-*` schema extensions. |
+| [ ] | Check the settings form by eye in the real window (only typecheck, tests and build so far). |
 | [ ] | Host option for a download folder, a subfolder per game, install after download and delete archive (in progress). |
 | [ ] | The launcher never calls `source.sync` and never schedules update checks. Plugin sync and interval settings have no effect until a scheduler exists. |
-| [ ] | Restart a plugin when its settings are saved (today changes apply on the next plugin start). |
+| [x] | A running plugin gets a `settings.changed` notice when settings are saved (no restart; plugins must read settings per call). |
 | [ ] | Browser assist (Chrome or Edge over CDP) is not implemented in the host. |
 | [ ] | Plugin secrets saved before the cleanup change are not removed when the plugin is removed. |
 | [ ] | OS-level sandbox for plugins (permissions only cover host services today). |
