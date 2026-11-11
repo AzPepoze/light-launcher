@@ -77,6 +77,7 @@ func TestRegisterAddsEveryLibraryMethod(t *testing.T) {
 	want := []string{
 		"LibraryList", "LibraryGet", "LibraryUpdate", "LibraryRemove", "LibrarySearch", "LibraryPreview",
 		"LibraryAddFromUrl", "LibraryLinkLocal", "LibraryCheckUpdates", "LibrarySetFavorite",
+		"LibraryOverview", "LibrarySyncSource",
 		"LibraryScanFolder", "LibraryLaunch", "LibraryLinkFolder", "LibraryUpdatesSummary",
 		"LibraryUpdateHistory", "LibraryDownloadFile",
 		"IncomingList", "IncomingLink", "IncomingIgnore", "IncomingCreateLocal",
@@ -127,14 +128,14 @@ func TestLibraryListAndRemoveKeepHistory(t *testing.T) {
 	router, _ := setup(t)
 	id := createManual(t, router)
 
-	page := call(t, router, "LibraryList", `{"search":"manual"}`).(library.Listing)
-	if page.Total != 1 {
-		t.Errorf("list total = %d, want 1", page.Total)
+	page := call(t, router, "LibraryList", `{"search":"manual"}`).(library.Page)
+	if page.Total == nil || *page.Total != 1 {
+		t.Errorf("list total = %v, want 1", page.Total)
 	}
 	call(t, router, "LibraryRemove", idJSON(id, ""))
-	page = call(t, router, "LibraryList", `{}`).(library.Listing)
-	if page.Total != 0 {
-		t.Errorf("list total after remove = %d, want 0", page.Total)
+	page = call(t, router, "LibraryList", `{}`).(library.Page)
+	if page.Total == nil || *page.Total != 0 {
+		t.Errorf("list total after remove = %v, want 0", page.Total)
 	}
 }
 

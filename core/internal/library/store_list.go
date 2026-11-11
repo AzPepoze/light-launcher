@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"unicode/utf8"
 )
 
 // Filter is the payload of LibraryList. Zero values mean "no filter".
@@ -21,12 +22,15 @@ type Filter struct {
 	Order     string   `json:"order"`
 	Limit     int      `json:"limit"`
 	Offset    int      `json:"offset"`
+	// WantTotal asks for the total on any page. The first page always has it.
+	WantTotal bool `json:"wantTotal"`
 }
 
-// Page is one page of games plus the total that matches the filter.
+// Page is one page of games. Total counts every game that matches the filter. It is nil on later pages
+// unless the filter asked for it, because counting costs as much as the rest of the query.
 type Page struct {
 	Items []Game `json:"items"`
-	Total int    `json:"total"`
+	Total *int   `json:"total,omitempty"`
 }
 
 // TagCount is a tag and how many visible games use it.
@@ -47,6 +51,8 @@ type Stats struct {
 const (
 	defaultLimit = 200
 	maxLimit     = 1000
+	// trigramMinLength is the shortest search the trigram index can match.
+	trigramMinLength = 3
 )
 
 // sortColumns maps the sort names the UI sends to SQL expressions.
@@ -64,33 +70,60 @@ var sortColumns = map[string]string{
 // List returns one page of games that match the filter.
 func (s *Store) List(ctx context.Context, f Filter) (Page, error) {
 	where, args := buildWhere(f)
-	var total int
-	if err := s.db.QueryRowContext(ctx, "select count(*) from games"+where, args...).Scan(&total); err != nil {
-		return Page{}, err
-	}
 	limit := clamp(f.Limit, 1, maxLimit, defaultLimit)
 	offset := max(f.Offset, 0)
-	query := fmt.Sprintf("select %s from games%s order by %s %s limit ? offset ?",
-		gameColumns, where, sortExpression(f.Sort), sortDirection(f.Order))
-	queryArgs := append(args, limit, offset)
-	items, err := s.queryMany(ctx, query, queryArgs...)
+	var page Page
+	if offset == 0 || f.WantTotal {
+		total, err := s.countGames(ctx, where, args)
+		if err != nil {
+			return Page{}, err
+		}
+		page.Total = &total
+	}
+	items, err := s.queryMany(ctx, pageQuery(where, f), append(args, limit, offset)...)
 	if err != nil {
 		return Page{}, err
 	}
-	return Page{Items: items, Total: total}, nil
+	page.Items = items
+	return page, nil
+}
+
+func (s *Store) countGames(ctx context.Context, where string, args []any) (int, error) {
+	var total int
+	err := s.db.QueryRowContext(ctx, "select count(*) from games"+where, args...).Scan(&total)
+	return total, err
+}
+
+// pageQuery selects one page of games. Its arguments are the where arguments, then limit and offset.
+func pageQuery(where string, f Filter) string {
+	return fmt.Sprintf("select %s from games%s order by %s limit ? offset ?", gameColumns, where, orderBy(f))
+}
+
+// orderBy returns the ORDER BY terms. The id breaks ties, so pages do not repeat or skip games.
+func orderBy(f Filter) string {
+	direction := sortDirection(f.Order)
+	return sortExpression(f.Sort) + " " + direction + ", id " + direction
 }
 
 // TagCounts counts tags across visible games, most used first.
 func (s *Store) TagCounts(ctx context.Context) ([]TagCount, error) {
-	games, err := s.queryMany(ctx, `select `+gameColumns+` from games where hidden = 0`)
+	rows, err := s.db.QueryContext(ctx, `select tags from games where hidden = 0`)
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 	counts := map[string]int{}
-	for _, game := range games {
-		for _, tag := range game.Tags {
+	for rows.Next() {
+		var raw string
+		if err := rows.Scan(&raw); err != nil {
+			return nil, err
+		}
+		for _, tag := range decodeStrings(raw) {
 			counts[tag]++
 		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	out := make([]TagCount, 0, len(counts))
 	for tag, count := range counts {
@@ -124,10 +157,10 @@ func buildWhere(f Filter) (string, []any) {
 	if !f.Hidden {
 		clauses = append(clauses, "hidden = 0")
 	}
-	if f.Search != "" {
-		clauses = append(clauses, "(title like ? or developer like ? or tags like ?)")
-		pattern := "%" + f.Search + "%"
-		args = append(args, pattern, pattern, pattern)
+	if search := strings.TrimSpace(f.Search); search != "" {
+		clause, searchArgs := searchClause(search)
+		clauses = append(clauses, clause)
+		args = append(args, searchArgs...)
 	}
 	if f.Source != "" {
 		clauses = append(clauses, "source = ?")
@@ -156,6 +189,25 @@ func buildWhere(f Filter) (string, []any) {
 		return "", nil
 	}
 	return " where " + strings.Join(clauses, " and "), args
+}
+
+// searchClause matches text inside the title, developer and tags. Three or more characters use the
+// full-text index; one or two characters match the start of the title.
+func searchClause(text string) (string, []any) {
+	if utf8.RuneCountInString(text) >= trigramMinLength {
+		return "id in (select rowid from games_fts where games_fts match ?)", []any{ftsPhrase(text)}
+	}
+	return `title like ? escape '\'`, []any{escapeLike(text) + "%"}
+}
+
+// ftsPhrase quotes text as one FTS5 phrase, so quotes and operators in it are plain text.
+func ftsPhrase(text string) string {
+	return `"` + strings.ReplaceAll(text, `"`, `""`) + `"`
+}
+
+// escapeLike escapes the LIKE wildcards and the escape character.
+func escapeLike(text string) string {
+	return strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(text)
 }
 
 func installedClause(installed bool) string {

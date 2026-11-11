@@ -13,6 +13,7 @@ const (
 	CapabilityBrowse       = "browse"
 	CapabilityUpdateCheck  = "updateCheck"
 	CapabilityResolveFiles = "resolveFiles"
+	CapabilityListGames    = "listGames"
 )
 
 // Plugin methods the library calls. Params and results mirror the old provider types.
@@ -22,6 +23,7 @@ const (
 	methodSearch       = "source.search"
 	methodCheckUpdate  = "source.checkUpdate"
 	methodResolveFiles = "source.resolveFiles"
+	methodListGames    = "source.listGames"
 )
 
 // ErrUnknownURL means no plugin recognises a link.

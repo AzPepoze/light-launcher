@@ -106,28 +106,28 @@ func TestListFiltersSearchesAndPages(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if all.Total != 2 || all.Items[0].Title != "Brass Tide" {
-		t.Errorf("visible list total=%d first=%q, want 2 and Brass Tide", all.Total, all.Items[0].Title)
+	if totalOf(all) != 2 || all.Items[0].Title != "Brass Tide" {
+		t.Errorf("visible list total=%d first=%q, want 2 and Brass Tide", totalOf(all), all.Items[0].Title)
 	}
 
 	withHidden, _ := lib.List(ctx, Filter{Hidden: true})
-	if withHidden.Total != 3 {
-		t.Errorf("with hidden total = %d, want 3", withHidden.Total)
+	if totalOf(withHidden) != 3 {
+		t.Errorf("with hidden total = %d, want 3", totalOf(withHidden))
 	}
 
 	search, _ := lib.List(ctx, Filter{Search: "harbor"})
-	if search.Total != 1 || search.Items[0].ID != harbor.ID {
-		t.Errorf("search total = %d, want the harbor game", search.Total)
+	if totalOf(search) != 1 || search.Items[0].ID != harbor.ID {
+		t.Errorf("search total = %d, want the harbor game", totalOf(search))
 	}
 
 	installed := true
 	inst, _ := lib.List(ctx, Filter{Installed: &installed})
-	if inst.Total != 1 {
-		t.Errorf("installed total = %d, want 1", inst.Total)
+	if totalOf(inst) != 1 {
+		t.Errorf("installed total = %d, want 1", totalOf(inst))
 	}
 
-	paged, _ := lib.List(ctx, Filter{Limit: 1, Offset: 1, Sort: "title", Order: "asc"})
-	if paged.Total != 2 || len(paged.Items) != 1 || paged.Items[0].Title != "Moonlit Harbor" {
+	paged, _ := lib.List(ctx, Filter{Limit: 1, Offset: 1, Sort: "title", Order: "asc", WantTotal: true})
+	if totalOf(paged) != 2 || len(paged.Items) != 1 || paged.Items[0].Title != "Moonlit Harbor" {
 		t.Errorf("page = %+v, want second title with total 2", paged)
 	}
 }

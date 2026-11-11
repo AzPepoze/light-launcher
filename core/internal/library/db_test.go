@@ -48,8 +48,8 @@ func TestReopenKeepsDataAndVersion(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if page.Total != 1 {
-		t.Errorf("total after reopen = %d, want 1", page.Total)
+	if totalOf(page) != 1 {
+		t.Errorf("total after reopen = %d, want 1", totalOf(page))
 	}
 
 	var version int

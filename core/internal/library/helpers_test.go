@@ -42,7 +42,7 @@ func (f *fakeSources) StartDownload(context.Context, string, any, int64) (int64,
 }
 
 // openTestLibrary opens a library in a temp folder that is closed when the test ends.
-func openTestLibrary(t *testing.T, opts Options) *Library {
+func openTestLibrary(t testing.TB, opts Options) *Library {
 	t.Helper()
 	dir := t.TempDir()
 	if opts.DBPath == "" {
@@ -80,4 +80,12 @@ func upsertGame(t *testing.T, lib *Library, sourceID, title string) Game {
 
 func strPtr(value string) *string {
 	return &value
+}
+
+// totalOf returns the page total, or -1 when the page carries none.
+func totalOf(page Page) int {
+	if page.Total == nil {
+		return -1
+	}
+	return *page.Total
 }

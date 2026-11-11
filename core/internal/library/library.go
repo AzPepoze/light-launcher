@@ -59,6 +59,8 @@ type Library struct {
 	launches *launchSet
 	watch    *watchState
 	artwork  *artworkQueue
+	imports  *importer
+	overview overviewCache
 }
 
 // Open creates or opens the library database and prepares the background jobs.
@@ -83,11 +85,13 @@ func Open(ctx context.Context, opts Options) (*Library, error) {
 		launches: newLaunchSet(),
 		watch:    newWatchState(),
 		artwork:  newArtworkQueue(),
+		imports:  newImporter(),
 	}, nil
 }
 
-// Close stops artwork downloads, then closes the database. Running launches keep running, but their playtime is lost if the app exits first.
+// Close stops imports and artwork downloads, then closes the database. Running launches keep running, but their playtime is lost if the app exits first.
 func (l *Library) Close() error {
+	l.imports.stop()
 	l.artwork.stop()
 	return l.db.Close()
 }

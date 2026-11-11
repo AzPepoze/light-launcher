@@ -73,8 +73,8 @@ func TestScanFolderImportsUnknownFoldersOnce(t *testing.T) {
 	}
 
 	page, _ := lib.List(context.Background(), Filter{})
-	if page.Total != 1 {
-		t.Fatalf("library total = %d, want 1", page.Total)
+	if totalOf(page) != 1 {
+		t.Fatalf("library total = %d, want 1", totalOf(page))
 	}
 	imported := page.Items[0]
 	if imported.Title != "Cool Game v1.2" || derefString(imported.Version) != "1.2" {

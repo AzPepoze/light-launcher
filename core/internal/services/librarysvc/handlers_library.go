@@ -72,8 +72,13 @@ type updateHistoryPayload struct {
 	Before int64 `json:"before"`
 }
 
-func (s *service) list(ctx context.Context, filter library.Filter) (library.Listing, error) {
-	return s.lib.Listing(ctx, filter)
+// list returns one page of games. The sources, tags and stats come from overview.
+func (s *service) list(ctx context.Context, filter library.Filter) (library.Page, error) {
+	return s.lib.List(ctx, filter)
+}
+
+func (s *service) overview(ctx context.Context) (library.Overview, error) {
+	return s.lib.Overview(ctx)
 }
 
 func (s *service) get(ctx context.Context, in idPayload) (library.GameDetail, error) {

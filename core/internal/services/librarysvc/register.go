@@ -24,6 +24,8 @@ func Register(r *api.Router, ev api.Events, lib *library.Library, sources contra
 	s := &service{lib: lib, sources: sources, events: ev}
 
 	r.Handle("LibraryList", api.Typed(s.list))
+	r.Handle("LibraryOverview", api.NoInput(s.overview))
+	r.Handle("LibrarySyncSource", api.Typed(s.syncSource))
 	r.Handle("LibraryGet", api.Typed(s.get))
 	r.Handle("LibraryUpdate", api.Typed(s.update))
 	r.Handle("LibraryRemove", api.Typed(s.remove))
