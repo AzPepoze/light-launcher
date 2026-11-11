@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from "svelte";
 	import Modal from "@components/shared/Modal.svelte";
 	import { errorMessage } from "../../lib/features/rpc";
 	import { pluginsApi } from "../../lib/features/pluginsApi";
@@ -7,11 +8,22 @@
 	import { PERMISSION_HINT } from "./pluginCopy";
 
 	let {
+		initialSource = "",
 		onInstalled,
 		onClose,
-	}: { onInstalled: (plugin: PluginInfo) => void; onClose: () => void } = $props();
+	}: {
+		initialSource?: string;
+		onInstalled: (plugin: PluginInfo) => void;
+		onClose: () => void;
+	} = $props();
 
 	let source = $state("");
+
+	onMount(() => {
+		if (!initialSource) return;
+		source = initialSource;
+		void check();
+	});
 	let preview = $state<PluginPreview | null>(null);
 	let busy = $state(false);
 	let message = $state("");
