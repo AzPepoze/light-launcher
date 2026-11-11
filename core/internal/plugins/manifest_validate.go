@@ -5,6 +5,8 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+
+	"light-launcher/core/internal/semver"
 )
 
 var (
@@ -16,6 +18,7 @@ var (
 	hostPattern       = regexp.MustCompile(`^(\*\.)?[a-z0-9-]+(\.[a-z0-9-]+)+$`)
 	fsNamePattern     = regexp.MustCompile(`^\$(GAMES|DOWNLOADS|DATA|APPDATA_[A-Z][A-Z0-9_]*)$`)
 	methodPattern     = regexp.MustCompile(`^[a-z][a-z0-9-]*(\.[A-Za-z][A-Za-z0-9]*)+$`)
+	repositoryPattern = regexp.MustCompile(`^github:[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$`)
 )
 
 var validCapabilities = map[string]bool{
@@ -57,13 +60,13 @@ func (m Manifest) validateIdentity() error {
 	if !apiVersionPattern.MatchString(m.APIVersion) {
 		return fieldError("apiVersion", "must be a major version number such as \"1\"")
 	}
-	if _, err := parseSemver(m.MinHost); err != nil {
+	if _, err := semver.Parse(m.MinHost); err != nil {
 		return fieldError("minHost", "must be a semver version such as 2.0.0")
 	}
 	return nil
 }
 
-// validateInfo checks the optional author, description and homepage. The SDK schema may not list them yet.
+// validateInfo checks the optional author, description, homepage and repository. The SDK schema may not list them yet.
 func (m Manifest) validateInfo() error {
 	if len(m.Author) > 80 {
 		return fieldError("author", "must be at most 80 characters")
@@ -73,6 +76,9 @@ func (m Manifest) validateInfo() error {
 	}
 	if m.Homepage != "" && !isHTTPURL(m.Homepage) {
 		return fieldError("homepage", "must be an http or https URL")
+	}
+	if m.Repository != "" && !repositoryPattern.MatchString(m.Repository) {
+		return fieldError("repository", "must look like github:owner/repo")
 	}
 	return nil
 }

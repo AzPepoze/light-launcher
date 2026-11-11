@@ -8,6 +8,7 @@ import (
 
 	"light-launcher/core/internal/api"
 	"light-launcher/core/internal/contract"
+	"light-launcher/core/internal/plugins/updater"
 )
 
 const logLinesKept = 500
@@ -24,6 +25,10 @@ type HostOptions struct {
 	Library     contract.Library
 	Browser     BrowserAssist
 	Folders     map[string]string // grant name such as "$GAMES" to its folder
+
+	// UpdateChecker defaults to one that asks GitHub Releases. AllowPrereleases includes release candidates.
+	UpdateChecker    UpdateChecker
+	AllowPrereleases bool
 }
 
 // Host installs, runs and manages plugins.
@@ -33,6 +38,7 @@ type Host struct {
 	install     *installer
 	deps        *serviceDeps
 	tuning      supervisorConfig
+	updates     *updateTracker
 
 	mu          sync.Mutex
 	supervisors map[string]*Supervisor
@@ -64,11 +70,19 @@ func NewHost(opts HostOptions) (*Host, error) {
 		limiter:   newHostLimiter(hostRequestInterval),
 		cache:     newETagCache(),
 	}
+	checker := opts.UpdateChecker
+	if checker == nil {
+		checker = updater.NewChecker(updater.Options{
+			AllowPrereleases: opts.AllowPrereleases,
+			UserAgent:        "light-launcher/" + opts.HostVersion,
+		})
+	}
 	return &Host{
 		layout:      opts.Layout,
 		hostVersion: opts.HostVersion,
 		install:     in,
 		deps:        deps,
+		updates:     newUpdateTracker(checker),
 		supervisors: map[string]*Supervisor{},
 		logs:        map[string]*lineRing{},
 	}, nil

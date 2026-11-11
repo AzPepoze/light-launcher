@@ -27,6 +27,7 @@ type PluginInfo struct {
 	Author         string                `json:"author"`
 	Description    string                `json:"description"`
 	Homepage       string                `json:"homepage"`
+	Repository     string                `json:"repository,omitempty"`
 	HasSettings    bool                  `json:"hasSettings"`
 }
 
@@ -34,6 +35,16 @@ type PluginInfo struct {
 // AcceptedPermissions must list the permissions the plugin asks for, as the preview's consent list.
 type InstallRequest struct {
 	Source              string   `json:"source"`
+	AllowUnsigned       bool     `json:"allowUnsigned"`
+	AcceptedPermissions []string `json:"acceptedPermissions"`
+}
+
+// UpdateRequest installs a newer version. An empty Source uses the recorded install source.
+// A GitHub update passes the checked asset URL and, when the release lists it, its SHA256.
+type UpdateRequest struct {
+	ID                  string   `json:"id"`
+	Source              string   `json:"source,omitempty"`
+	SHA256              string   `json:"sha256,omitempty"`
 	AllowUnsigned       bool     `json:"allowUnsigned"`
 	AcceptedPermissions []string `json:"acceptedPermissions"`
 }
@@ -53,8 +64,27 @@ func (h *Host) List() []PluginInfo {
 }
 
 // PermissionsPreview verifies a package and returns it for the consent screen. Nothing is installed.
-func (h *Host) PermissionsPreview(ctx context.Context, source string) (Preview, error) {
-	return h.install.Preview(ctx, source)
+// A non-empty expectedSHA must match the package file, as the release SHA256SUMS says.
+func (h *Host) PermissionsPreview(ctx context.Context, source, expectedSHA string) (Preview, error) {
+	preview, err := h.install.Preview(ctx, source, expectedSHA)
+	if err != nil {
+		return Preview{}, err
+	}
+	h.flagRepositoryChange(&preview)
+	return preview, nil
+}
+
+// flagRepositoryChange warns when an update would point future updates at another repository.
+func (h *Host) flagRepositoryChange(preview *Preview) {
+	installed, err := h.loadInstalled(preview.Manifest.ID)
+	if err != nil {
+		return
+	}
+	if installed.manifest.Repository == preview.Manifest.Repository {
+		return
+	}
+	preview.RepositoryChanged = true
+	preview.InstalledRepository = installed.manifest.Repository
 }
 
 // Install adds a plugin from a package. Unsigned packages need AllowUnsigned.
@@ -67,24 +97,33 @@ func (h *Host) Install(ctx context.Context, req InstallRequest) (PluginInfo, err
 	return h.info(id), nil
 }
 
-// Update installs the newest version from the source the plugin came from. A version that asks for new
-// permissions needs accepted to list all of them.
-func (h *Host) Update(ctx context.Context, id string, allowUnsigned bool, accepted []string) (PluginInfo, error) {
-	if err := requireID(id); err != nil {
+// Update installs a newer version. A version that asks for new permissions needs the request to list
+// all of them. A version that fails to start is rolled back to the previous one.
+func (h *Host) Update(ctx context.Context, req UpdateRequest) (PluginInfo, error) {
+	if err := requireID(req.ID); err != nil {
+		return PluginInfo{}, err
+	}
+	source, sha256, err := h.updateSource(req.ID, req.Source, req.SHA256)
+	if err != nil {
 		return PluginInfo{}, err
 	}
 	// Checks run first, so a refused update leaves the running plugin alone.
-	prepared, source, err := h.install.prepareUpdate(ctx, id, allowUnsigned, accepted)
+	prepared, source, err := h.install.prepareUpdate(ctx, req.ID, source, sha256, req.AllowUnsigned, req.AcceptedPermissions)
 	if err != nil {
 		return PluginInfo{}, err
 	}
 	defer prepared.discard()
-	h.stopPlugin(id)
+	wasRunning := h.running(req.ID)
+	h.stopPlugin(req.ID)
 	if err := h.install.commitUpdate(prepared, source); err != nil {
 		return PluginInfo{}, err
 	}
-	h.emitState(id)
-	return h.info(id), nil
+	if err := h.startUpdateTarget(ctx, req.ID, wasRunning); err != nil {
+		return PluginInfo{}, h.rollbackFailedUpdate(ctx, req.ID, wasRunning, err)
+	}
+	h.forgetUpdate(req.ID)
+	h.emitState(req.ID)
+	return h.info(req.ID), nil
 }
 
 // Rollback makes the previous version current again.
@@ -96,6 +135,7 @@ func (h *Host) Rollback(id string) (PluginInfo, error) {
 	if err := h.install.Rollback(id); err != nil {
 		return PluginInfo{}, err
 	}
+	h.forgetUpdate(id)
 	h.emitState(id)
 	return h.info(id), nil
 }
@@ -112,6 +152,7 @@ func (h *Host) Remove(id string, deleteData bool) error {
 	if err := h.install.Remove(id, deleteData); err != nil {
 		return err
 	}
+	h.forgetUpdate(id)
 	h.emitRemoved(id)
 	return nil
 }
@@ -180,6 +221,7 @@ func (h *Host) info(id string) PluginInfo {
 	info.Author = inst.manifest.Author
 	info.Description = inst.manifest.Description
 	info.Homepage = inst.manifest.Homepage
+	info.Repository = inst.manifest.Repository
 	info.HasSettings = inst.manifest.Contributes.Settings != nil
 	info.Sources = sourceInfos(id, inst.manifest)
 	info.Running = h.running(id)

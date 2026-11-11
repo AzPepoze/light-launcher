@@ -28,6 +28,7 @@ func TestParseManifestReadsOptionalInfo(t *testing.T) {
 		"author":      "Ada",
 		"description": "Finds demo games.",
 		"homepage":    "https://example.com/demo",
+		"repository":  "github:ada/demo-plugin",
 	})
 	manifest, err := ParseManifest(data)
 	if err != nil {
@@ -35,6 +36,9 @@ func TestParseManifestReadsOptionalInfo(t *testing.T) {
 	}
 	if manifest.Author != "Ada" || manifest.Description != "Finds demo games." || manifest.Homepage != "https://example.com/demo" {
 		t.Errorf("info = %q, %q, %q", manifest.Author, manifest.Description, manifest.Homepage)
+	}
+	if manifest.Repository != "github:ada/demo-plugin" {
+		t.Errorf("repository = %q", manifest.Repository)
 	}
 }
 
@@ -44,6 +48,8 @@ func TestParseManifestRejectsBadInfo(t *testing.T) {
 		"homepage not a url":    {"homepage": "not a url"},
 		"author too long":       {"author": strings.Repeat("a", 81)},
 		"description too long":  {"description": strings.Repeat("a", 1001)},
+		"bad repository":        {"repository": "github:owner"},
+		"foreign repository":    {"repository": "https://github.com/owner/repo"},
 	}
 	for name, fields := range cases {
 		if _, err := ParseManifest(manifestWith(t, fields)); err == nil {

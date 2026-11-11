@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"light-launcher/core/internal/semver"
 )
 
 // preparedPackage is an unpacked and verified package that is not installed yet.
@@ -25,11 +27,15 @@ type Preview struct {
 	Unsigned bool     `json:"unsigned"`
 	// Consent is the permission list to send back as acceptedPermissions.
 	Consent []string `json:"consent"`
+	// RepositoryChanged warns when the package names a different repository than the installed version.
+	RepositoryChanged   bool   `json:"repositoryChanged"`
+	InstalledRepository string `json:"installedRepository,omitempty"`
 }
 
 // preparePackage downloads (for URLs), unpacks and verifies a package without installing it.
+// A non-empty expectedSHA must match the downloaded package file.
 // The caller must call discard on the result.
-func (in *installer) preparePackage(ctx context.Context, source string) (prepared preparedPackage, err error) {
+func (in *installer) preparePackage(ctx context.Context, source, expectedSHA string) (prepared preparedPackage, err error) {
 	if err := os.MkdirAll(in.layout.Root, 0o755); err != nil {
 		return preparedPackage{}, err
 	}
@@ -45,6 +51,9 @@ func (in *installer) preparePackage(ctx context.Context, source string) (prepare
 
 	archive, err := in.archiveFor(ctx, source, work)
 	if err != nil {
+		return preparedPackage{}, err
+	}
+	if err := checkPackageChecksum(archive, expectedSHA); err != nil {
 		return preparedPackage{}, err
 	}
 	prepared = preparedPackage{Work: work, Dir: filepath.Join(work, "package")}
@@ -113,7 +122,7 @@ func checkCompatibility(manifest Manifest, dir, hostVersion string) error {
 	if manifest.APIVersion != SupportedAPIVersion {
 		return fmt.Errorf("plugin needs protocol %s, this launcher speaks %s", manifest.APIVersion, SupportedAPIVersion)
 	}
-	order, err := compareSemver(hostVersion, manifest.MinHost)
+	order, err := semver.CompareStrings(hostVersion, manifest.MinHost)
 	if err != nil {
 		return fmt.Errorf("launcher version %q: %w", hostVersion, err)
 	}

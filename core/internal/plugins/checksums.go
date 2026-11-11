@@ -3,6 +3,7 @@ package plugins
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -112,4 +113,26 @@ func fileSHA256(path string) (string, error) {
 		return "", err
 	}
 	return hex.EncodeToString(hasher.Sum(nil)), nil
+}
+
+// checkPackageChecksum compares a package file to the digest a release published. An empty digest skips the check.
+func checkPackageChecksum(path, expected string) error {
+	if expected == "" {
+		return nil
+	}
+	expected = strings.ToLower(strings.TrimSpace(expected))
+	if len(expected) != sha256.Size*2 {
+		return fmt.Errorf("release checksum %q is not a SHA256 digest", expected)
+	}
+	if _, err := hex.DecodeString(expected); err != nil {
+		return fmt.Errorf("release checksum %q is not a SHA256 digest", expected)
+	}
+	got, err := fileSHA256(path)
+	if err != nil {
+		return fmt.Errorf("checksum package: %w", err)
+	}
+	if got != expected {
+		return errors.New("package does not match the release SHA256SUMS")
+	}
+	return nil
 }

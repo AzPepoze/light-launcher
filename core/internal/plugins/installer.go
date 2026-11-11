@@ -37,8 +37,9 @@ func newInstaller(layout Layout, hostVersion string) (*installer, error) {
 }
 
 // Preview unpacks and verifies a package and returns its manifest. Nothing is installed.
-func (in *installer) Preview(ctx context.Context, source string) (Preview, error) {
-	prepared, err := in.preparePackage(ctx, source)
+// A non-empty expectedSHA must match the package file, as the release SHA256SUMS says.
+func (in *installer) Preview(ctx context.Context, source, expectedSHA string) (Preview, error) {
+	prepared, err := in.preparePackage(ctx, source, expectedSHA)
 	if err != nil {
 		return Preview{}, err
 	}
@@ -53,7 +54,7 @@ func (in *installer) Preview(ctx context.Context, source string) (Preview, error
 // Install adds a new plugin. It fails when the plugin id is already installed, or when accepted
 // does not list the permissions the plugin asks for.
 func (in *installer) Install(ctx context.Context, source string, allowUnsigned bool, accepted []string) (string, error) {
-	prepared, err := in.preparePackage(ctx, source)
+	prepared, err := in.preparePackage(ctx, source, "")
 	if err != nil {
 		return "", err
 	}
@@ -75,7 +76,7 @@ func (in *installer) Install(ctx context.Context, source string, allowUnsigned b
 // Update installs the version found at the source the plugin was installed from.
 // When the new version asks for permissions the user has not accepted, accepted must list all of them.
 func (in *installer) Update(ctx context.Context, id string, allowUnsigned bool, accepted []string) error {
-	prepared, source, err := in.prepareUpdate(ctx, id, allowUnsigned, accepted)
+	prepared, source, err := in.prepareUpdate(ctx, id, "", "", allowUnsigned, accepted)
 	if err != nil {
 		return err
 	}
@@ -84,13 +85,15 @@ func (in *installer) Update(ctx context.Context, id string, allowUnsigned bool, 
 }
 
 // prepareUpdate unpacks the newest version and runs every check before anything is changed.
-// The caller must discard the returned package.
-func (in *installer) prepareUpdate(ctx context.Context, id string, allowUnsigned bool, accepted []string) (preparedPackage, string, error) {
-	source := in.state.get(id).Source
+// An empty source uses the recorded install source. The caller must discard the returned package.
+func (in *installer) prepareUpdate(ctx context.Context, id, source, expectedSHA string, allowUnsigned bool, accepted []string) (preparedPackage, string, error) {
+	if source == "" {
+		source = in.state.get(id).Source
+	}
 	if source == "" {
 		return preparedPackage{}, "", ErrNoSource
 	}
-	prepared, err := in.preparePackage(ctx, source)
+	prepared, err := in.preparePackage(ctx, source, expectedSHA)
 	if err != nil {
 		return preparedPackage{}, "", err
 	}

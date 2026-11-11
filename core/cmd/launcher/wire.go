@@ -106,9 +106,9 @@ func (s *services) registerMethods(router *api.Router, hub *api.Hub, sources con
 	logger.Info("api", "registered %d methods", len(router.Methods()))
 }
 
-// startJobs runs the watch folder poller and the background scheduler until Close.
+// startJobs runs the watch folder poller, the background scheduler and the plugin release check until Close.
 func (s *services) startJobs(ctx context.Context) {
-	s.jobs.Add(2)
+	s.jobs.Add(3)
 	go func() {
 		defer s.jobs.Done()
 		s.library.RunWatcher(ctx, watchInterval)
@@ -116,6 +116,10 @@ func (s *services) startJobs(ctx context.Context) {
 	go func() {
 		defer s.jobs.Done()
 		s.scheduler.Run(ctx)
+	}()
+	go func() {
+		defer s.jobs.Done()
+		s.runPluginUpdateCheck(ctx)
 	}()
 }
 

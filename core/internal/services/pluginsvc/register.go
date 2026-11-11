@@ -12,8 +12,11 @@ import (
 )
 
 // updateInput updates a plugin. AcceptedPermissions is needed when the new version asks for more permissions.
+// Source and SHA256 are set for a GitHub release update.
 type updateInput struct {
 	ID                  string   `json:"id"`
+	Source              string   `json:"source"`
+	SHA256              string   `json:"sha256"`
 	AllowUnsigned       bool     `json:"allowUnsigned"`
 	AcceptedPermissions []string `json:"acceptedPermissions"`
 }
@@ -34,6 +37,7 @@ type setEnabledInput struct {
 
 type sourceInput struct {
 	Source string `json:"source"`
+	SHA256 string `json:"sha256"`
 }
 
 type settingsSetInput struct {
@@ -85,7 +89,13 @@ func Register(r *api.Router, ev api.Events, host *plugins.Host, uploads *uploads
 		return info, err
 	}))
 	r.Handle("PluginUpdate", api.Typed(func(ctx context.Context, in updateInput) (any, error) {
-		return host.Update(ctx, in.ID, in.AllowUnsigned, in.AcceptedPermissions)
+		return host.Update(ctx, plugins.UpdateRequest{
+			ID:                  in.ID,
+			Source:              in.Source,
+			SHA256:              in.SHA256,
+			AllowUnsigned:       in.AllowUnsigned,
+			AcceptedPermissions: in.AcceptedPermissions,
+		})
 	}))
 	r.Handle("PluginRemove", api.Typed(func(_ context.Context, in removeInput) (any, error) {
 		return nil, host.Remove(in.ID, in.DeleteData)
@@ -97,7 +107,7 @@ func Register(r *api.Router, ev api.Events, host *plugins.Host, uploads *uploads
 		return host.Rollback(in.ID)
 	}))
 	r.Handle("PluginPermissionsPreview", api.Typed(func(ctx context.Context, in sourceInput) (any, error) {
-		return host.PermissionsPreview(ctx, in.Source)
+		return host.PermissionsPreview(ctx, in.Source, in.SHA256)
 	}))
 	r.Handle("PluginSettingsGet", api.Typed(func(_ context.Context, in idInput) (any, error) {
 		return host.SettingsGet(in.ID)
@@ -110,5 +120,11 @@ func Register(r *api.Router, ev api.Events, host *plugins.Host, uploads *uploads
 	}))
 	r.Handle("PluginLogs", api.Typed(func(_ context.Context, in logsInput) (any, error) {
 		return host.Logs(in.ID, in.Lines)
+	}))
+	r.Handle("PluginUpdatesCheck", api.Typed(func(ctx context.Context, in idInput) (any, error) {
+		return host.CheckUpdates(ctx, in.ID)
+	}))
+	r.Handle("PluginUpdatesStatus", api.NoInput(func(context.Context) (any, error) {
+		return host.UpdatesStatus(), nil
 	}))
 }

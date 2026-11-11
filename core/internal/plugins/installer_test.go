@@ -131,7 +131,7 @@ func TestPreviewReturnsManifestWithoutInstalling(t *testing.T) {
 	source := filepath.Join(t.TempDir(), "demo.llplugin")
 	writePackageFile(t, source, withChecksums(testPackageFiles("demo", "1.0.0")))
 
-	preview, err := in.Preview(context.Background(), source)
+	preview, err := in.Preview(context.Background(), source, "")
 	if err != nil {
 		t.Fatal(err)
 	}

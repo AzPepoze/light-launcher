@@ -14,12 +14,18 @@ import (
 // newTestHost returns a host whose files live in a temp folder and whose restarts are fast.
 func newTestHost(t *testing.T) *Host {
 	t.Helper()
+	return newTestHostWithChecker(t, nil)
+}
+
+func newTestHostWithChecker(t *testing.T, checker UpdateChecker) *Host {
+	t.Helper()
 	base := t.TempDir()
 	layout := Layout{Root: filepath.Join(base, "plugins"), Data: filepath.Join(base, "plugin-data")}
 	host, err := NewHost(HostOptions{
-		Layout:      layout,
-		HostVersion: "2.0.0",
-		Secrets:     newFileSecrets(filepath.Join(base, "secrets")),
+		Layout:        layout,
+		HostVersion:   "2.0.0",
+		Secrets:       newFileSecrets(filepath.Join(base, "secrets")),
+		UpdateChecker: checker,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -40,6 +46,12 @@ func writeFixturePackageWith(t *testing.T, path, version string, permissions Per
 	t.Helper()
 	manifest := fixtureManifest(permissions)
 	manifest.Version = version
+	writeFixtureManifest(t, path, manifest)
+}
+
+// writeFixtureManifest writes a package that holds the fixture plugin with this manifest.
+func writeFixtureManifest(t *testing.T, path string, manifest Manifest) {
+	t.Helper()
 	manifestJSON, err := json.Marshal(manifest)
 	if err != nil {
 		t.Fatal(err)
@@ -151,7 +163,7 @@ func TestHostUpdateAndRollback(t *testing.T) {
 	}
 
 	writeFixturePackage(t, source, "0.2.0")
-	updated, err := host.Update(ctx, "fixture", true, testConsent)
+	updated, err := host.Update(ctx, UpdateRequest{ID: "fixture", AllowUnsigned: true, AcceptedPermissions: testConsent})
 	if err != nil {
 		t.Fatalf("Update: %v", err)
 	}
@@ -181,7 +193,7 @@ func TestHostRefusedUpdateKeepsPluginRunning(t *testing.T) {
 	}
 
 	writeFixturePackageWith(t, source, "0.2.0", Permissions{Network: []string{"127.0.0.1", "example.com"}})
-	if _, err := host.Update(ctx, "fixture", true, testConsent); !errors.Is(err, ErrNewPermissions) {
+	if _, err := host.Update(ctx, UpdateRequest{ID: "fixture", AllowUnsigned: true, AcceptedPermissions: testConsent}); !errors.Is(err, ErrNewPermissions) {
 		t.Fatalf("Update without consent: err = %v, want ErrNewPermissions", err)
 	}
 	if !host.running("fixture") {

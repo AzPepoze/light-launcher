@@ -56,6 +56,7 @@ func TestParseManifestRejectsBadFiles(t *testing.T) {
 		"bad folder":          {`"$GAMES"`, `"GAMES"`, "invalid folder"},
 		"old folder name":     {`"$GAMES"`, `"$ITCH_APP_DATA"`, "invalid folder"},
 		"bad command method":  {`"demo.importKey"`, `"importKey"`, "method"},
+		"bad repository":      {`"secrets": true`, `"repository": "gitlab:owner/repo", "secrets": true`, "repository"},
 		"unknown field":       {`"secrets": true`, `"secrets": true, "typo": 1`, "unknown field"},
 	}
 	for name, tc := range replacements {

@@ -93,6 +93,12 @@ func (s *Supervisor) Running() bool {
 	return s.conn != nil
 }
 
+// Start launches the plugin and completes the initialize handshake.
+func (s *Supervisor) Start(ctx context.Context) error {
+	_, err := s.connect(ctx)
+	return err
+}
+
 // Disabled reports whether the supervisor refuses to start the plugin.
 func (s *Supervisor) Disabled() bool {
 	s.mu.Lock()
