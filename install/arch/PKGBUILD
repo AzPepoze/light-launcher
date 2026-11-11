@@ -7,7 +7,7 @@ pkgdesc="Ultra-lightweight, customizable Linux gaming launcher powered by Go and
 arch=('x86_64')
 url="https://github.com/AzPepoze/light-launcher"
 license=('MIT')
-depends=('umu-launcher' 'qt6-webengine')
+depends=('umu-launcher' 'qt6-base' 'qt6-webengine')
 makedepends=('git' 'go' 'bun' 'qt6-base' 'qt6-webengine')
 optdepends=(
   'steam: run games with Steam Proton versions'
