@@ -156,7 +156,8 @@ func (in *FolderInstaller) targetFolder(parent string, gameID int64, archivePath
 	for n := 1; ; n++ {
 		candidate := filepath.Join(parent, base)
 		if n > 1 {
-			candidate = filepath.Join(parent, fmt.Sprintf("%s (%d)", base, n))
+			suffix := fmt.Sprintf(" (%d)", n)
+			candidate = filepath.Join(parent, truncateBytes(base, maxNameBytes-len(suffix))+suffix)
 		}
 		if !fileExists(candidate) {
 			return candidate, nil
@@ -169,13 +170,14 @@ var (
 	illegalFolderRune = regexp.MustCompile(`[<>:"/\\|?*]`)
 )
 
-// folderName keeps the readable part of a title, without [tags] or (tags).
+// folderName keeps the readable part of a title, without [tags] or (tags), and returns a
+// name that is valid on every OS or falls back to the game id.
 func folderName(title string, gameID int64) string {
 	name := bracketTags.ReplaceAllString(title, " ")
 	name = illegalFolderRune.ReplaceAllString(name, " ")
 	name = strings.Join(strings.Fields(name), " ")
-	name = strings.TrimRight(name, ". ")
-	if name == "" {
+	name = strings.TrimRight(truncateName(name), ". ")
+	if name == "" || checkFolderName(name) != nil {
 		return fmt.Sprintf("game-%d", gameID)
 	}
 	return name

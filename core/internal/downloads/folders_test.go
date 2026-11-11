@@ -4,16 +4,21 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"light-launcher/core/internal/contract"
 )
 
-func TestValidateSubfolderAcceptsPlainNames(t *testing.T) {
-	for _, sub := range []string{"", "Demo", "Team/Demo", "Team/Demo 2 (v1)"} {
+func TestValidateSubfolderAcceptsPortableNames(t *testing.T) {
+	for _, sub := range []string{
+		"", "Demo", "Team/Demo", "Team/Demo 2 (v1)", "Game.v1.2",
+		"My Folder/with spaces", "日本語/ゲーム", "Fun 🎮 Games/Ünïcode",
+	} {
 		if err := ValidateSubfolder(sub); err != nil {
 			t.Errorf("ValidateSubfolder(%q) = %v, want nil", sub, err)
 		}
@@ -33,11 +38,69 @@ func TestValidateSubfolderRejectsUnsafePaths(t *testing.T) {
 		"empty segment":    "a//b",
 		"trailing slash":   "a/",
 		"control char":     "a\x00b",
+		"less than":        "a<b",
+		"greater than":     "a>b",
+		"quote":            `a"b`,
+		"pipe":             "a|b",
+		"question mark":    "a?b",
+		"star":             "a*b",
+		"trailing dot":     "Demo.",
+		"trailing space":   "Demo ",
+		"reserved name":    "Team/CON",
+		"reserved ext":     "Team/nul.txt",
+		"path too long":    strings.Repeat("a", maxSubfolderBytes+1),
 	}
 	for name, sub := range cases {
 		err := ValidateSubfolder(sub)
 		if !errors.Is(err, contract.ErrBadFolder) {
 			t.Errorf("%s: ValidateSubfolder(%q) = %v, want ErrBadFolder", name, sub, err)
+		}
+	}
+}
+
+func TestValidateNameRejectsEachRule(t *testing.T) {
+	invalid := map[string]string{
+		"empty":          "",
+		"dot":            ".",
+		"dot dot":        "..",
+		"control":        "a\x1fb",
+		"trailing dot":   "Game.",
+		"trailing space": "Game ",
+		"reserved con":   "CON",
+		"reserved ext":   "con.txt",
+		"reserved aux":   "Aux.tar.gz",
+		"reserved com":   "COM1",
+		"reserved lpt":   "LPT9",
+		"reserved sup1":  "COM¹",
+		"reserved sup2":  "LPT²",
+		"too long":       strings.Repeat("a", maxNameBytes+1),
+	}
+	for name, value := range invalid {
+		if err := ValidateName(value); !errors.Is(err, contract.ErrBadFolder) {
+			t.Errorf("%s: ValidateName(%q) = %v, want ErrBadFolder", name, value, err)
+		}
+	}
+
+	for _, char := range `<>:"|?*\` {
+		value := "a" + string(char) + "b"
+		err := ValidateName(value)
+		if !errors.Is(err, contract.ErrBadFolder) {
+			t.Errorf("ValidateName(%q) = %v, want ErrBadFolder", value, err)
+			continue
+		}
+		if want := fmt.Sprintf("%q", char); !strings.Contains(err.Error(), want) {
+			t.Errorf("ValidateName(%q) = %v, want the message to name %s", value, err, want)
+		}
+	}
+}
+
+func TestValidateNameAcceptsPortableNames(t *testing.T) {
+	for _, name := range []string{
+		"Demo", "Game.v1.2", "with spaces", "日本語", "🎮", "CONSOLE", "COM10", "LPT0",
+		"MyCON", "COM1 Game", strings.Repeat("a", maxNameBytes),
+	} {
+		if err := ValidateName(name); err != nil {
+			t.Errorf("ValidateName(%q) = %v, want nil", name, err)
 		}
 	}
 }

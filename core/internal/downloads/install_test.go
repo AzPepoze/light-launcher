@@ -187,10 +187,22 @@ func TestFolderNameDropsTagsAndIllegalCharacters(t *testing.T) {
 		"A: B/C?":             "A B C",
 		"   ":                 "game-7",
 		"Name.":               "Name",
+		"CON":                 "game-7",
+		"nul.txt":             "game-7",
 	}
 	for in, want := range cases {
 		if got := folderName(in, 7); got != want {
 			t.Errorf("folderName(%q) = %q, want %q", in, got, want)
 		}
+	}
+}
+
+func TestFolderNameFitsTheNameLimit(t *testing.T) {
+	got := folderName(strings.Repeat("a", maxNameBytes+20), 7)
+	if len(got) > maxNameBytes {
+		t.Fatalf("folderName returned %d bytes, want at most %d", len(got), maxNameBytes)
+	}
+	if err := ValidateName(got); err != nil {
+		t.Fatalf("folderName returned %q: %v", got, err)
 	}
 }
