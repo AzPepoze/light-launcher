@@ -36,7 +36,6 @@ Other types, such as `docs:` and `chore:`, do not bump the version on their own.
 | `.github/workflows/ci.yml`             | Push and pull request     | Go vet and tests on Linux and Windows, UI checks, GTK shell build, WebView2 cross build, workflow lint. |
 | `.github/workflows/release-please.yml` | Push to `main`            | Opens the release pull request and creates the tag.                                                    |
 | `.github/workflows/release.yml`        | Tag `v*`, or a manual run | Runs `scripts/build-linux.sh` and `scripts/build-windows.sh`, then publishes the release files.        |
-| `.github/workflows/aur.yml`            | Manual run only           | Builds an updated `PKGBUILD` as an artifact. Does not push.                                            |
 
 ## Release files
 
@@ -84,7 +83,6 @@ Add secrets in **Settings > Secrets and variables > Actions**.
 | Secret                 | Required     | Used by              | What it is                                                                                                                           |
 | :--------------------- | :----------- | :------------------- | :----------------------------------------------------------------------------------------------------------------------------------- |
 | `RELEASE_PLEASE_TOKEN` | Optional     | `release-please.yml` | A personal access token or GitHub App token. Lets a release tag start `release.yml`. Without it, start the Release workflow by hand. |
-| `AUR_SSH_KEY`          | Not used yet | Future AUR push      | An SSH private key registered on the AUR. Add it when the AUR push step is written.                                                  |
 
 `GITHUB_TOKEN` is created by GitHub for each run. You do not add it.
 

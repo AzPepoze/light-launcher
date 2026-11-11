@@ -5,7 +5,7 @@
 This page shows how to install LightLauncher on Linux and Windows.
 
 > [!NOTE]
-> The AUR package is not published yet. On Arch, build from the PKGBUILD files in `install/arch`.
+> On Arch, build from the PKGBUILD files in `install/arch`.
 
 ## Pick a file
 
