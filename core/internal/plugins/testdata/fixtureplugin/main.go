@@ -9,6 +9,8 @@
 //   - source.progress {id, done, total}: reports a progress job
 //   - source.crash: exits at once, to test restarts
 //   - source.listGames {source, scope, cursor, limit}: pages through 250 fixed games
+//   - source.browse {source, query, filters, sort, order, cursor, limit}: pages through a fixed catalog of 8 games
+//   - source.listFilters {source, group, query, limit}: counts the tags of the catalog
 package main
 
 import (
@@ -93,6 +95,10 @@ func handle(msg message) {
 		os.Exit(3)
 	case "source.listGames":
 		answerListGames(msg)
+	case "source.browse":
+		answerBrowse(msg)
+	case "source.listFilters":
+		answerListFilters(msg)
 	default:
 		respondError(msg.ID, -32601, "method not found: "+msg.Method)
 	}
@@ -257,6 +263,10 @@ func respond(id json.RawMessage, result any) {
 
 func respondError(id json.RawMessage, code int, text string) {
 	send(map[string]any{"jsonrpc": "2.0", "id": id, "error": map[string]any{"code": code, "message": text}})
+}
+
+func respondErrorData(id json.RawMessage, code int, text string, data any) {
+	send(map[string]any{"jsonrpc": "2.0", "id": id, "error": map[string]any{"code": code, "message": text, "data": data}})
 }
 
 func notify(method string, params any) {

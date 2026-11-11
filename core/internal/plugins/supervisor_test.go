@@ -129,7 +129,7 @@ func fixtureManifest(perms Permissions) Manifest {
 		APIVersion:  SupportedAPIVersion,
 		MinHost:     "2.0.0",
 		Entry:       map[string]string{PlatformKey(): entry},
-		Contributes: Contributes{Sources: []SourceContribution{{ID: "fixture", Label: "Fixture", Capabilities: []string{"browse"}}}},
+		Contributes: Contributes{Sources: []SourceContribution{{ID: "fixture", Label: "Fixture", Capabilities: []string{"browse", "browse:filters"}, Sidebar: fixtureSidebar()}}},
 		Permissions: perms,
 	}
 }
