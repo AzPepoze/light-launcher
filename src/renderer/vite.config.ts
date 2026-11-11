@@ -5,6 +5,9 @@ import { defineConfig } from "vite";
 // The Go launcher serves /api in dev (started with --port 9246 --dev-token dev).
 const GO_API_TARGET = "http://127.0.0.1:9246";
 
+// material-icons is installed in the repository root, outside this Vite root.
+const REPO_ROOT = fileURLToPath(new URL("../..", import.meta.url));
+
 // https://vitejs.dev/config/
 export default defineConfig({
 	base: "./",
@@ -19,6 +22,9 @@ export default defineConfig({
 		}
 	},
 	server: {
+		fs: {
+			allow: [REPO_ROOT]
+		},
 		port: 9245,
 		strictPort: true,
 		proxy: {
