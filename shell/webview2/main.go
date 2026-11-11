@@ -66,10 +66,15 @@ func shellURL(args []string) (string, error) {
 }
 
 func main() {
+	if assistRequested(os.Args[1:]) {
+		os.Exit(runAssist(os.Args[1:]))
+	}
+
 	opts, err := parseOptions(os.Args[1:])
 	if err != nil {
 		log.Error("args", "%v", err)
 		log.Error("args", "usage: LL_URL=<url> light-launcher-shell.exe [--transparent]")
+		log.Error("args", assistUsage)
 		os.Exit(2)
 	}
 	if opts.transparent {
