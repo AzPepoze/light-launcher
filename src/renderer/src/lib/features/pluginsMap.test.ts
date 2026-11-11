@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+	consentLabel,
 	isRemovedPlugin,
-	permissionLabels,
+	newPermissionLines,
+	permissionSummary,
 	toLogLine,
 	toPluginInfo,
 	toPluginPreview,
@@ -38,27 +40,59 @@ function makeWire(overrides: Partial<WirePluginInfo> = {}): WirePluginInfo {
 	};
 }
 
-describe("permissionLabels", () => {
-	it("lists nothing when no permission is asked", () => {
-		expect(permissionLabels(NO_PERMISSIONS)).toEqual([]);
+describe("consentLabel", () => {
+	it("writes a plain line for each kind of entry", () => {
+		expect(consentLabel("network:api.example.test")).toBe("Connect to api.example.test");
+		expect(consentLabel("fs:$GAMES")).toBe("Access files: $GAMES");
+		expect(consentLabel("secrets")).toBe("Store sign-in details");
+		expect(consentLabel("browser")).toBe("Open a browser window");
+		expect(consentLabel("exec")).toBe("Run programs on this computer");
 	});
 
-	it("writes one line per network host and file path, then the flags", () => {
+	it("shows an unknown entry as it is", () => {
+		expect(consentLabel("camera")).toBe("camera");
+		expect(consentLabel("constructor")).toBe("constructor");
+	});
+});
+
+describe("permissionSummary", () => {
+	it("lists nothing when no permission is asked", () => {
+		expect(permissionSummary(NO_PERMISSIONS)).toEqual([]);
+	});
+
+	it("lists every permission as a sorted consent entry", () => {
 		expect(
-			permissionLabels({
-				network: ["api.example.test"],
+			permissionSummary({
+				network: ["b.example.test", "a.example.test"],
 				fs: ["data"],
 				secrets: true,
 				browser: true,
 				exec: true
 			})
 		).toEqual([
-			"Connect to api.example.test",
-			"Access files: data",
-			"Store sign-in details",
-			"Open a browser window",
-			"Run programs on this computer"
+			"browser",
+			"exec",
+			"fs:data",
+			"network:a.example.test",
+			"network:b.example.test",
+			"secrets"
 		]);
+	});
+});
+
+describe("newPermissionLines", () => {
+	it("returns labels for the entries the installed consent does not have", () => {
+		expect(
+			newPermissionLines(
+				["network:a.example.test"],
+				["network:a.example.test", "network:b.example.test", "exec"]
+			)
+		).toEqual(["Connect to b.example.test", "Run programs on this computer"]);
+	});
+
+	it("returns nothing when the new version asks for nothing more", () => {
+		expect(newPermissionLines(["exec"], ["exec"])).toEqual([]);
+		expect(newPermissionLines(["exec", "browser"], ["browser"])).toEqual([]);
 	});
 });
 
@@ -77,8 +111,21 @@ describe("toPluginInfo", () => {
 			description: "Finds games.",
 			homepage: "https://example.test",
 			hasSettings: false,
-			sources: ["example"]
+			sources: ["example"],
+			source: null,
+			consent: []
 		});
+	});
+
+	it("keeps the install source and the installed permissions", () => {
+		const info = toPluginInfo(
+			makeWire({
+				source: "https://example.test/store.zip",
+				permissions: { ...NO_PERMISSIONS, exec: true, network: ["api.example.test"] }
+			})
+		);
+		expect(info.source).toBe("https://example.test/store.zip");
+		expect(info.consent).toEqual(["exec", "network:api.example.test"]);
 	});
 
 	it("passes the disabled reason and the settings flag through", () => {

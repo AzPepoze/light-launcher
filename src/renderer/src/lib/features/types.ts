@@ -248,6 +248,10 @@ export interface PluginInfo {
 	hasSettings: boolean;
 	/** Source ids this plugin contributes. */
 	sources: string[];
+	/** Where the plugin was installed from. Updates download from here. */
+	source: string | null;
+	/** The permissions the installed version has, as consent entries. */
+	consent: string[];
 }
 
 export interface PluginPreview {
@@ -260,6 +264,13 @@ export interface PluginPreview {
 	permissions: string[];
 	/** The entries to send back as accepted permissions when the user agrees. */
 	consent: string[];
+}
+
+export interface PluginUpdatePreview {
+	/** The newest version at the plugin's install source. */
+	preview: PluginPreview;
+	/** Plain-language lines for the permissions the new version adds. */
+	newPermissions: string[];
 }
 
 export interface JsonSchemaProperty {
