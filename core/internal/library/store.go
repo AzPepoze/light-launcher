@@ -58,11 +58,11 @@ func (s *Store) Relink(ctx context.Context, id int64, dto contract.GameDTO) erro
 		return err
 	}
 	_, err = s.db.ExecContext(ctx, `update games set source=?, source_id=?, url=?, title=?, version=?, developer=?,
-		engine=?, tags=?, cover_url=?, cover_path=null, screenshots=?, description=?, changelog=?, status=?,
+		engine=?, tags=?, cover_url=?, cover_path=null, screenshots=?, description=?, changelog=?, rating=?, status=?,
 		source_updated_at=?, extra=?, updated_at=? where id=?`,
 		dto.Source, dto.SourceID, dto.URL, dto.Title, nullIfEmpty(dto.Version), nullIfEmpty(dto.Developer),
 		nullIfEmpty(dto.Engine), tags, nullIfEmpty(dto.CoverURL), screenshots, nullIfEmpty(dto.DescriptionHTML),
-		nullIfEmpty(dto.Changelog), statusOr(dto.Status, "completed"), nullIfEmpty(dto.UpdatedAt), extra,
+		nullIfEmpty(dto.Changelog), dto.Rating, statusOr(dto.Status, "completed"), nullIfEmpty(dto.UpdatedAt), extra,
 		nowStamp(), id)
 	return err
 }
@@ -80,11 +80,11 @@ func (s *Store) insert(ctx context.Context, dto contract.GameDTO) (int64, error)
 	}
 	now := nowStamp()
 	result, err := s.db.ExecContext(ctx, `insert into games (source, source_id, url, title, version, developer, engine,
-		tags, cover_url, screenshots, description, changelog, status, source_updated_at, extra, added_at, updated_at)
-		values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+		tags, cover_url, screenshots, description, changelog, rating, status, source_updated_at, extra, added_at, updated_at)
+		values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
 		dto.Source, dto.SourceID, dto.URL, dto.Title, nullIfEmpty(dto.Version), nullIfEmpty(dto.Developer),
 		nullIfEmpty(dto.Engine), tags, nullIfEmpty(dto.CoverURL), screenshots, nullIfEmpty(dto.DescriptionHTML),
-		nullIfEmpty(dto.Changelog), statusOr(dto.Status, "unknown"), nullIfEmpty(dto.UpdatedAt), extra, now, now)
+		nullIfEmpty(dto.Changelog), dto.Rating, statusOr(dto.Status, "unknown"), nullIfEmpty(dto.UpdatedAt), extra, now, now)
 	if err != nil {
 		return 0, fmt.Errorf("insert game: %w", err)
 	}
@@ -103,12 +103,13 @@ func (s *Store) update(ctx context.Context, existing Game, dto contract.GameDTO)
 		return err
 	}
 	_, err = s.db.ExecContext(ctx, `update games set url=?, title=?, version=?, developer=?, engine=?, tags=?,
-		cover_url=?, cover_path=?, screenshots=?, description=?, changelog=?, status=?, source_updated_at=?,
+		cover_url=?, cover_path=?, screenshots=?, description=?, changelog=?, rating=?, status=?, source_updated_at=?,
 		extra=?, updated_at=? where id=?`,
 		dto.URL, firstNonEmpty(dto.Title, existing.Title), pickString(dto.Version, existing.Version),
 		pickString(dto.Developer, existing.Developer), pickString(dto.Engine, existing.Engine), tags,
 		pickString(dto.CoverURL, existing.CoverURL), coverPath, screenshots,
 		pickString(dto.DescriptionHTML, existing.Description), pickString(dto.Changelog, existing.Changelog),
+		pickRating(dto.Rating, existing.Rating),
 		firstNonEmpty(dto.Status, existing.Status), pickString(dto.UpdatedAt, existing.SourceUpdatedAt),
 		extra, nowStamp(), existing.ID)
 	return err

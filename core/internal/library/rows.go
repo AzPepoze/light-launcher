@@ -112,6 +112,17 @@ func pickString(next string, previous *string) any {
 	return *previous
 }
 
+// pickRating keeps the previous rating when the source sent none.
+func pickRating(next *float64, previous *float64) any {
+	if next != nil {
+		return *next
+	}
+	if previous == nil {
+		return nil
+	}
+	return *previous
+}
+
 func decodeStrings(raw string) []string {
 	var out []string
 	if err := json.Unmarshal([]byte(raw), &out); err != nil || out == nil {
