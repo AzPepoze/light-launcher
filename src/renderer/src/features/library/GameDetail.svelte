@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from "svelte";
+	import CoverImage from "@components/shared/CoverImage.svelte";
 	import { errorMessage } from "../../lib/features/rpc";
 	import { libraryApi } from "../../lib/features/libraryApi";
 	import type { Game, GameChange, GameFile } from "../../lib/features/types";
@@ -82,8 +83,8 @@
 
 	<header class="hero">
 		<div class="cover">
-			{#if game.cover}
-				<img src={game.cover} alt="" />
+			{#if game.cover || game.coverLocal}
+				<CoverImage {game} />
 			{:else}
 				<span class="material-icons" aria-hidden="true">videogame_asset</span>
 			{/if}
@@ -198,12 +199,6 @@
 		align-items: center;
 		justify-content: center;
 		color: var(--text-dim);
-
-		img {
-			width: 100%;
-			height: 100%;
-			object-fit: cover;
-		}
 	}
 
 	.summary {

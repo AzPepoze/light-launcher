@@ -80,6 +80,15 @@ export async function invoke<T>(method: string, payload: unknown = {}): Promise<
 	return unwrapEnvelope<T>(response, method);
 }
 
+/** Downloads a server route as a blob, with the session token. Throws when the server refuses. */
+export async function fetchBlob(path: string): Promise<Blob> {
+	const response = await fetch(path, { headers: authHeaders() });
+	if (!response.ok) {
+		throw new Error(`HTTP ${response.status} loading ${path}`);
+	}
+	return response.blob();
+}
+
 /** Posts multipart form data to a server route. Throws with the server error text on failure. */
 export async function postForm<T>(path: string, form: FormData): Promise<T> {
 	const response = await fetch(path, {

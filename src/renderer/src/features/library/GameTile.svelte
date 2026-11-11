@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CoverImage from "@components/shared/CoverImage.svelte";
 	import type { Game } from "../../lib/features/types";
 
 	let { game, onOpen }: { game: Game; onOpen: (game: Game) => void } = $props();
@@ -6,8 +7,8 @@
 
 <button class="tile" onclick={() => onOpen(game)} aria-label="Open {game.title}">
 	<div class="cover">
-		{#if game.cover}
-			<img src={game.cover} alt="" loading="lazy" />
+		{#if game.cover || game.coverLocal}
+			<CoverImage {game} />
 		{:else}
 			<span class="material-icons placeholder" aria-hidden="true">videogame_asset</span>
 		{/if}
@@ -60,12 +61,6 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-
-		img {
-			width: 100%;
-			height: 100%;
-			object-fit: cover;
-		}
 	}
 
 	.placeholder {
