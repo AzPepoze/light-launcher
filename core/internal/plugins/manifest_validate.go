@@ -23,7 +23,11 @@ var (
 
 var validCapabilities = map[string]bool{
 	"browse": true, "auth": true, "updateCheck": true, "resolveFiles": true,
-	"sync:games": true, "sync:index": true,
+	"sync:games": true, "sync:index": true, "listGames": true,
+}
+
+var validTiles = map[string]bool{
+	TilePoster: true, TileWide: true, TileSquare: true,
 }
 
 var validHooks = map[string]bool{
@@ -144,8 +148,19 @@ func validateSources(sources []SourceContribution) error {
 		if err := validateCapabilities(field, source.Capabilities); err != nil {
 			return err
 		}
+		if err := validateTile(field, source.Tile); err != nil {
+			return err
+		}
 	}
 	return nil
+}
+
+// validateTile accepts an empty tile (the default poster) or one of the known card shapes.
+func validateTile(field, tile string) error {
+	if tile == "" || validTiles[tile] {
+		return nil
+	}
+	return fieldError(field+".tile", "must be poster, wide or square, not %q", tile)
 }
 
 // validateCapabilities checks names, duplicates, and that sync:games and sync:index are not both set.

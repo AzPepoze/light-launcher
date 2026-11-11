@@ -271,7 +271,16 @@ func sourceInfos(id string, manifest Manifest) []contract.SourceInfo {
 			SourceID:     source.ID,
 			Label:        source.Label,
 			Capabilities: source.Capabilities,
+			Tile:         tileOrDefault(source.Tile),
 		})
 	}
 	return sources
+}
+
+// tileOrDefault returns the card shape of a source, poster when the manifest names none.
+func tileOrDefault(tile string) string {
+	if tile == "" {
+		return TilePoster
+	}
+	return tile
 }

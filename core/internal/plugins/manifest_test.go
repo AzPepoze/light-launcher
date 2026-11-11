@@ -3,6 +3,7 @@ package plugins
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -49,6 +50,7 @@ func TestParseManifestRejectsBadFiles(t *testing.T) {
 		"parent entry":        {`"bin/linux-x64/demo"`, `"../demo"`, "entry.linux-x64"},
 		"unknown platform":    {`"linux-x64": "bin/linux-x64/demo"`, `"plan9-x64": "bin/demo"`, "entry.plan9-x64"},
 		"unknown capability":  {`"updateCheck"`, `"magic"`, "unknown capability"},
+		"unknown tile":        {`"capabilities": ["browse", "updateCheck"]`, `"capabilities": ["browse", "updateCheck"], "tile": "tall"`, "tile"},
 		"old sync capability": {`"updateCheck"`, `"sync"`, "unknown capability"},
 		"both sync":           {`"browse", "updateCheck"`, `"browse", "sync:games", "sync:index"`, "not both"},
 		"unknown hook":        {`"onGameLaunch"`, `"onGameWhatever"`, "unknown hook"},
@@ -130,6 +132,34 @@ func TestParseManifestAcceptsRealPluginFiles(t *testing.T) {
 				return
 			}
 			t.Fatal(err)
+		})
+	}
+}
+
+func TestSourceTileAndListGamesCapability(t *testing.T) {
+	cases := []struct {
+		name     string
+		source   string
+		wantTile string
+	}{
+		{"no tile", `{ "id": "demo", "label": "Demo", "capabilities": ["listGames"] }`, TilePoster},
+		{"wide", `{ "id": "demo", "label": "Demo", "capabilities": ["listGames"], "tile": "wide" }`, TileWide},
+		{"square", `{ "id": "demo", "label": "Demo", "capabilities": ["listGames"], "tile": "square" }`, TileSquare},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			source := strings.Replace(validManifest, `{ "id": "demo", "label": "Demo", "capabilities": ["browse", "updateCheck"] }`, tc.source, 1)
+			manifest, err := ParseManifest([]byte(source))
+			if err != nil {
+				t.Fatalf("ParseManifest: %v", err)
+			}
+			infos := sourceInfos("demo-site", manifest)
+			if len(infos) != 1 || infos[0].Tile != tc.wantTile {
+				t.Fatalf("sourceInfos = %+v, want tile %q", infos, tc.wantTile)
+			}
+			if !slices.Contains(infos[0].Capabilities, "listGames") {
+				t.Fatalf("capabilities = %v, want listGames", infos[0].Capabilities)
+			}
 		})
 	}
 }

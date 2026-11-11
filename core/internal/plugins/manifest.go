@@ -41,11 +41,20 @@ type Contributes struct {
 	Themes         []ThemeContribution   `json:"themes,omitempty"`
 }
 
+// Card shapes a source can ask for in the Library.
+const (
+	TilePoster = "poster"
+	TileWide   = "wide"
+	TileSquare = "square"
+)
+
 // SourceContribution is one game source a plugin offers.
 type SourceContribution struct {
 	ID           string   `json:"id"`
 	Label        string   `json:"label"`
 	Capabilities []string `json:"capabilities"`
+	// Tile is the Library card shape: poster (the default), wide or square.
+	Tile string `json:"tile,omitempty"`
 }
 
 // SettingsRef points at the JSON Schema file that builds the settings form.

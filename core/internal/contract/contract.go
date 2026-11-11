@@ -102,6 +102,7 @@ type SourceInfo struct {
 	SourceID     string   `json:"sourceId"`
 	Label        string   `json:"label"`
 	Capabilities []string `json:"capabilities"`
+	Tile         string   `json:"tile,omitempty"`
 }
 
 // PrepareDownloadTimeout is the longest source.prepareDownload may take. A person can finish a browser
