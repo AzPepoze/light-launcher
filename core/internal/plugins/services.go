@@ -29,7 +29,7 @@ var services = map[string]service{
 	"downloads.enqueue": {run: serviceDownloadsEnqueue},
 	"library.upsert":    {run: serviceLibraryUpsert},
 	"extract":           {needs: hasFolders, grantName: "fs", run: serviceExtract},
-	"browser.assist":    {needs: hasBrowser, grantName: "browser", run: serviceBrowserAssist},
+	methodBrowserAssist: {needs: hasBrowser, grantName: "browser", run: serviceBrowserAssist},
 }
 
 func hasSecrets(p Permissions) bool { return p.Secrets }

@@ -11,6 +11,8 @@ import (
 	"light-launcher/core/internal/logger"
 )
 
+const methodPrepareDownload = "source.prepareDownload"
+
 var errNotSourceMethod = errors.New("only source methods can be called on a plugin source")
 
 // PrepareDownloadResult is the answer to source.prepareDownload. Filename and Size are set only when the plugin knows them.
@@ -79,8 +81,10 @@ func (r *Registry) PrepareDownload(ctx context.Context, plugin string, params an
 	if err != nil {
 		return contract.DownloadRequest{}, fmt.Errorf("prepare download with %s: %w", plugin, err)
 	}
+	ctx, cancel := prepareContext(ctx)
+	defer cancel()
 	var raw json.RawMessage
-	if err := sup.Call(ctx, "source.prepareDownload", params, &raw); err != nil {
+	if err := sup.Call(ctx, methodPrepareDownload, params, &raw); err != nil {
 		return contract.DownloadRequest{}, fmt.Errorf("prepare download with %s: %w", plugin, err)
 	}
 	result, err := decodePrepareDownload(raw, sup.cfg.env.category())
@@ -98,6 +102,11 @@ func (r *Registry) PrepareDownload(ctx context.Context, plugin string, params an
 		return contract.DownloadRequest{}, fmt.Errorf("prepare download with %s: %w", plugin, err)
 	}
 	return req, nil
+}
+
+// prepareContext bounds one source.prepareDownload call. A person may finish a browser step inside it.
+func prepareContext(ctx context.Context) (context.Context, context.CancelFunc) {
+	return context.WithTimeout(ctx, contract.PrepareDownloadTimeout)
 }
 
 // StartDownload runs source.prepareDownload and queues the file with the host downloader.

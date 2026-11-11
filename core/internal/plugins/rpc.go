@@ -11,6 +11,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"light-launcher/core/internal/contract"
 )
 
 // ErrPeerClosed is returned for calls that were pending when the connection ended.
@@ -18,6 +20,15 @@ var ErrPeerClosed = errors.New("plugin connection closed")
 
 // serveTimeout bounds how long one plugin request to the host may run.
 const serveTimeout = 2 * time.Minute
+
+// serveTimeoutFor returns the limit for one plugin request. browser.assist waits for a person,
+// so it may run as long as a prepared download.
+func serveTimeoutFor(method string) time.Duration {
+	if method == methodBrowserAssist {
+		return contract.PrepareDownloadTimeout
+	}
+	return serveTimeout
+}
 
 // requestHandler answers a request from the other side. Its error becomes the response error.
 type requestHandler func(ctx context.Context, method string, params json.RawMessage) (any, error)
@@ -143,7 +154,7 @@ func (p *Peer) dispatchNotify(msg envelope) {
 
 // serve answers one request from the other side. The response is written even when the handler fails.
 func (p *Peer) serve(msg envelope) {
-	ctx, cancel := context.WithTimeout(context.Background(), serveTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), serveTimeoutFor(msg.Method))
 	defer cancel()
 	ctx = context.WithValue(ctx, requestIDKey{}, requestIDText(msg.ID))
 	result, err := p.handle(ctx, msg)

@@ -7,6 +7,7 @@ import (
 )
 
 const (
+	methodBrowserAssist   = "browser.assist"
 	defaultBrowserTimeout = 2 * time.Minute
 	maxBrowserTimeout     = 10 * time.Minute
 )
