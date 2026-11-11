@@ -73,6 +73,7 @@ func TestRegisterAddsEveryLibraryMethod(t *testing.T) {
 		"LibraryList", "LibraryGet", "LibraryUpdate", "LibraryRemove", "LibrarySearch", "LibraryPreview",
 		"LibraryAddFromUrl", "LibraryLinkLocal", "LibraryCheckUpdates", "LibrarySetFavorite",
 		"LibraryImportLegacy", "LibraryScanFolder", "LibraryLaunch", "LibraryLinkFolder", "LibraryUpdatesSummary",
+		"LibraryUpdateHistory",
 		"IncomingList", "IncomingLink", "IncomingIgnore", "IncomingCreateLocal",
 	}
 	got := router.Methods()

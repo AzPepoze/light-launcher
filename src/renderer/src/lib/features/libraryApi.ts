@@ -6,6 +6,7 @@ import {
 	toLibraryListing,
 	toPreview,
 	toSearchResponse,
+	toUpdateHistory,
 	toUpdatesSummary
 } from "./libraryMap";
 import { rpc } from "./rpc";
@@ -17,6 +18,7 @@ import type {
 	LibraryGetResponse,
 	LibraryListResponse,
 	SearchResponse,
+	UpdateHistoryEntry,
 	UpdatesResponse
 } from "./types";
 import type {
@@ -28,6 +30,7 @@ import type {
 	WirePreview,
 	WireSearchResult,
 	WireUpdateCheckRequest,
+	WireUpdateHistoryEntry,
 	WireUpdatesSummary
 } from "./wire";
 
@@ -88,6 +91,16 @@ export const libraryApi = {
 
 	/** The unseen update count, the games with a newer version, and the last check. */
 	updates: fetchUpdates,
+
+	/** Recent checks, newest first. Pass before as the last seen id to get the next page. */
+	updateHistory: async (params: { gameId?: number; limit?: number; before?: number } = {}) =>
+		toUpdateHistory(
+			await rpc<WireUpdateHistoryEntry[]>("LibraryUpdateHistory", {
+				gameId: params.gameId ?? 0,
+				limit: params.limit ?? 50,
+				before: params.before ?? 0
+			})
+		),
 
 	setFavorite: async (id: number, favorite: boolean): Promise<Game> =>
 		toGame(await rpc<WireGame>("LibrarySetFavorite", { id, favorite })),

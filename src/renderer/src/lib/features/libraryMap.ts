@@ -12,6 +12,7 @@ import type {
 	LibraryStats,
 	PreviewFile,
 	SearchResponse,
+	UpdateHistoryEntry,
 	UpdatesResponse
 } from "./types";
 import type {
@@ -29,6 +30,7 @@ import type {
 	WirePreview,
 	WireSearchResult,
 	WireSuggestion,
+	WireUpdateHistoryEntry,
 	WireUpdatesSummary
 } from "./wire";
 
@@ -212,12 +214,26 @@ export function toUpdatesSummary(summary: WireUpdatesSummary, games: Game[]): Up
 	return {
 		count: summary.unseen,
 		games: updatable,
-		history: [],
 		errors: (last?.results ?? [])
 			.filter((result) => result.error)
 			.map((result) => `${result.title}: ${result.error}`),
 		lastCheckedAt: last?.checkedAt ?? null
 	};
+}
+
+/** Maps the check history. Unknown result values are treated as a check that found nothing. */
+export function toUpdateHistory(entries: WireUpdateHistoryEntry[]): UpdateHistoryEntry[] {
+	return entries.map((entry) => ({
+		id: entry.id,
+		gameId: entry.gameId,
+		title: entry.title,
+		checkedAt: entry.checkedAt,
+		from: entry.from,
+		to: entry.to,
+		result:
+			entry.result === "update" || entry.result === "error" ? entry.result : ("current" as const),
+		error: entry.error
+	}));
 }
 
 function toSuggestion(wire: WireSuggestion): IncomingSuggestion {

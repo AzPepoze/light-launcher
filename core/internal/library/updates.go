@@ -81,7 +81,9 @@ func (l *Library) CheckGame(ctx context.Context, id int64) (CheckResult, error) 
 		return CheckResult{}, err
 	}
 	if reply.Update == nil {
-		return noUpdate(game), nil
+		result := noUpdate(game)
+		l.recordCheck(ctx, game, derefString(result.From), derefString(result.To), "", ResultCurrent, "")
+		return result, nil
 	}
 	return l.applyUpdate(ctx, game, *reply.Update)
 }
@@ -91,12 +93,22 @@ func (l *Library) handleCheckError(ctx context.Context, game Game, stamp string,
 		if _, patchErr := l.Patch(ctx, game.ID, Patch{LastCheckedAt: &stamp}); patchErr != nil {
 			return CheckResult{}, patchErr
 		}
-		return noUpdate(game), nil
+		result := noUpdate(game)
+		l.recordCheck(ctx, game, derefString(result.From), derefString(result.To), "", ResultCurrent, "")
+		return result, nil
 	}
 	logger.Warn(logCategory, "update check failed for %s: %v", game.Title, err)
 	result := noUpdate(game)
 	result.Error = err.Error()
+	l.recordCheck(ctx, game, derefString(result.From), "", "", ResultError, err.Error())
 	return result, nil
+}
+
+// recordCheck keeps a check in the history. A failed write is logged only: it must not fail the check.
+func (l *Library) recordCheck(ctx context.Context, game Game, from, to, changelog, result, failure string) {
+	if err := l.AddCheckResult(ctx, game.ID, from, to, changelog, result, failure); err != nil {
+		logger.Warn(logCategory, "record update check for %s: %v", game.Title, err)
+	}
 }
 
 // applyUpdate compares the source answer with the stored version and saves a change when there is one.
@@ -109,9 +121,10 @@ func (l *Library) applyUpdate(ctx context.Context, game Game, info UpdateInfo) (
 
 	result := CheckResult{ID: game.ID, Title: game.Title, From: game.Version, To: stringOrNil(latest), HasUpdate: hasUpdate}
 	if !hasUpdate {
+		l.recordCheck(ctx, game, current, latest, info.Changelog, ResultCurrent, "")
 		return result, nil
 	}
-	if err := l.AddCheck(ctx, game.ID, current, latest, info.Changelog); err != nil {
+	if err := l.AddCheckResult(ctx, game.ID, current, latest, info.Changelog, ResultUpdate, ""); err != nil {
 		return result, err
 	}
 	patch := Patch{}

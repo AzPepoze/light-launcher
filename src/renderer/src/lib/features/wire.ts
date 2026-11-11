@@ -170,6 +170,17 @@ export interface WirePreview {
 	sourceLabel: string;
 }
 
+export interface WireUpdateHistoryEntry {
+	id: number;
+	gameId: number;
+	title: string;
+	checkedAt: string;
+	from: string | null;
+	to: string | null;
+	result: string;
+	error: string | null;
+}
+
 export interface WireCheckResult {
 	id: number;
 	title: string;

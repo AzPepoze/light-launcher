@@ -9,6 +9,7 @@ import {
 	toLibraryListing,
 	toPreview,
 	toSearchResponse,
+	toUpdateHistory,
 	toUpdatesSummary
 } from "./libraryMap";
 import type { Game } from "./types";
@@ -380,14 +381,42 @@ describe("toUpdatesSummary", () => {
 		);
 		expect(response.count).toBe(4);
 		expect(response.games.map((game) => game.id)).toEqual([1]);
-		expect(response.history).toEqual([]);
 		expect(response.errors).toEqual(["C: timeout"]);
 		expect(response.lastCheckedAt).toBe("2026-03-01T10:00:00Z");
 	});
 
 	it("has no last check before the first run", () => {
 		const response = toUpdatesSummary({ unseen: 0, last: null }, []);
-		expect(response).toEqual({ count: 0, games: [], history: [], errors: [], lastCheckedAt: null });
+		expect(response).toEqual({ count: 0, games: [], errors: [], lastCheckedAt: null });
+	});
+});
+
+describe("toUpdateHistory", () => {
+	it("maps checks and treats unknown results as current", () => {
+		const history = toUpdateHistory([
+			{
+				id: 9,
+				gameId: 1,
+				title: "Dust",
+				checkedAt: "2026-03-01T10:00:00Z",
+				from: "1.0",
+				to: "2.0",
+				result: "update",
+				error: null
+			},
+			{
+				id: 8,
+				gameId: 2,
+				title: "Aurora",
+				checkedAt: "2026-03-01T09:00:00Z",
+				from: null,
+				to: null,
+				result: "surprise",
+				error: null
+			}
+		]);
+		expect(history[0]).toMatchObject({ id: 9, title: "Dust", result: "update" });
+		expect(history[1].result).toBe("current");
 	});
 });
 

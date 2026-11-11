@@ -5,20 +5,34 @@ import (
 	"database/sql"
 )
 
+// The result values of one update check, as stored in the checks table.
+const (
+	ResultUpdate  = "update"
+	ResultCurrent = "current"
+	ResultError   = "error"
+)
+
 // AddCheck records a version change found by an update check.
 func (s *Store) AddCheck(ctx context.Context, gameID int64, oldVersion, newVersion, changelog string) error {
+	return s.AddCheckResult(ctx, gameID, oldVersion, newVersion, changelog, ResultUpdate, "")
+}
+
+// AddCheckResult records one update check, including checks that found nothing or failed.
+func (s *Store) AddCheckResult(ctx context.Context, gameID int64, oldVersion, newVersion, changelog, result, failure string) error {
 	_, err := s.db.ExecContext(ctx, `insert into checks (game_id, checked_at, old_version, new_version, changelog,
-		seen, applied) values (?,?,?,?,?,0,0)`,
-		gameID, nowStamp(), nullIfEmpty(oldVersion), nullIfEmpty(newVersion), nullIfEmpty(changelog))
+		seen, applied, result, error) values (?,?,?,?,?,0,0,?,?)`,
+		gameID, nowStamp(), nullIfEmpty(oldVersion), nullIfEmpty(newVersion), nullIfEmpty(changelog),
+		result, nullIfEmpty(failure))
 	return err
 }
 
 // ListChecks returns the newest recorded changes, optionally for one game.
 func (s *Store) ListChecks(ctx context.Context, gameID int64, limit int) ([]Check, error) {
-	query := `select id, game_id, checked_at, old_version, new_version, changelog, seen, applied from checks`
-	args := []any{}
+	query := `select id, game_id, checked_at, old_version, new_version, changelog, seen, applied
+		from checks where result = ?`
+	args := []any{ResultUpdate}
 	if gameID != 0 {
-		query += ` where game_id = ?`
+		query += ` and game_id = ?`
 		args = append(args, gameID)
 	}
 	query += ` order by id desc limit ?`
@@ -48,8 +62,8 @@ func (s *Store) ListChecks(ctx context.Context, gameID int64, limit int) ([]Chec
 // UnseenCount counts changes the user has not looked at yet.
 func (s *Store) UnseenCount(ctx context.Context) (int, error) {
 	var count int
-	err := s.db.QueryRowContext(ctx, `select count(*) from checks where seen = 0
-		and coalesce(new_version, '') <> coalesce(old_version, '')`).Scan(&count)
+	err := s.db.QueryRowContext(ctx, `select count(*) from checks where seen = 0 and result = ?
+		and coalesce(new_version, '') <> coalesce(old_version, '')`, ResultUpdate).Scan(&count)
 	return count, err
 }
 
@@ -65,6 +79,56 @@ func (s *Store) MarkSeen(ctx context.Context, ids []int64) error {
 	}
 	_, err := s.db.ExecContext(ctx, `update checks set seen = 1 where id in (`+placeholders(len(ids))+`)`, args...)
 	return err
+}
+
+// UpdateHistoryEntry is one recorded update check, with the game it belongs to.
+type UpdateHistoryEntry struct {
+	ID        int64   `json:"id"`
+	GameID    int64   `json:"gameId"`
+	Title     string  `json:"title"`
+	CheckedAt string  `json:"checkedAt"`
+	From      *string `json:"from"`
+	To        *string `json:"to"`
+	Result    string  `json:"result"`
+	Error     *string `json:"error"`
+}
+
+// UpdateHistory returns recent checks, newest first. before is the id to page from, or zero for the first page.
+func (s *Store) UpdateHistory(ctx context.Context, gameID int64, limit int, before int64) ([]UpdateHistoryEntry, error) {
+	query := `select c.id, c.game_id, g.title, c.checked_at, c.old_version, c.new_version, c.result, c.error
+		from checks c join games g on g.id = c.game_id where 1 = 1`
+	args := []any{}
+	if gameID != 0 {
+		query += ` and c.game_id = ?`
+		args = append(args, gameID)
+	}
+	if before > 0 {
+		query += ` and c.id < ?`
+		args = append(args, before)
+	}
+	query += ` order by c.id desc limit ?`
+	args = append(args, clamp(limit, 1, 200, 50))
+	rows, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []UpdateHistoryEntry{}
+	for rows.Next() {
+		var (
+			entry             UpdateHistoryEntry
+			from, to, failure sql.NullString
+		)
+		if err := rows.Scan(&entry.ID, &entry.GameID, &entry.Title, &entry.CheckedAt, &from, &to,
+			&entry.Result, &failure); err != nil {
+			return nil, err
+		}
+		entry.From = stringPtr(from)
+		entry.To = stringPtr(to)
+		entry.Error = stringPtr(failure)
+		out = append(out, entry)
+	}
+	return out, rows.Err()
 }
 
 // MarkApplied marks every check of a game as applied and seen.

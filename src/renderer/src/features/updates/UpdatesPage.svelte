@@ -5,11 +5,17 @@
 	import { errorMessage } from "../../lib/features/rpc";
 	import { libraryApi } from "../../lib/features/libraryApi";
 	import { ago } from "../../lib/features/format";
-	import type { UpdatesResponse } from "../../lib/features/types";
+	import type { UpdateHistoryEntry, UpdatesResponse } from "../../lib/features/types";
+
+	const HISTORY_PAGE = 25;
 
 	let updates = $state<UpdatesResponse | null>(null);
 	let checking = $state(false);
 	let error = $state("");
+	let history = $state<UpdateHistoryEntry[]>([]);
+	let historyError = $state("");
+	let historyLoading = $state(false);
+	let historyHasMore = $state(false);
 
 	const subtitle = $derived(
 		updates
@@ -18,6 +24,7 @@
 	);
 
 	onMount(() => {
+		void loadHistory(true);
 		check();
 	});
 
@@ -26,10 +33,26 @@
 		error = "";
 		try {
 			updates = await libraryApi.checkUpdates();
+			await loadHistory(true);
 		} catch (err) {
 			error = errorMessage(err);
 		} finally {
 			checking = false;
+		}
+	}
+
+	async function loadHistory(reset: boolean) {
+		historyLoading = true;
+		historyError = "";
+		const before = reset ? 0 : (history.at(-1)?.id ?? 0);
+		try {
+			const page = await libraryApi.updateHistory({ limit: HISTORY_PAGE, before });
+			history = reset ? page : [...history, ...page];
+			historyHasMore = page.length === HISTORY_PAGE;
+		} catch (err) {
+			historyError = errorMessage(err);
+		} finally {
+			historyLoading = false;
 		}
 	}
 </script>
@@ -74,19 +97,43 @@
 	</ul>
 {/if}
 
-{#if updates && updates.history.length}
+{#if history.length || historyError}
 	<section aria-labelledby="history-title">
 		<h2 id="history-title">Recent checks</h2>
+		{#if historyError}
+			<p class="notice" role="alert">{historyError}</p>
+		{/if}
 		<ul class="history">
-			{#each updates.history.slice(0, 25) as check (check.id)}
+			{#each history as check (check.id)}
 				<li>
 					<span class="title">{check.title}</span>
-					<span class="versions">{check.from ?? "?"} → {check.to ?? "?"}</span>
-					{#if check.applied}<span class="tag">Installed</span>{/if}
+					<span class="versions">
+						{#if check.result === "update"}
+							{check.from ?? "?"} → {check.to ?? "?"}
+						{:else if check.to}
+							{check.to}
+						{:else}
+							—
+						{/if}
+					</span>
+					<span class="tag" class:error={check.result === "error"}>
+						{#if check.result === "error"}
+							{check.error ?? "Check failed"}
+						{:else if check.result === "update"}
+							Update found
+						{:else}
+							Up to date
+						{/if}
+					</span>
 					<span class="when">{ago(check.checkedAt)}</span>
 				</li>
 			{/each}
 		</ul>
+		{#if historyHasMore}
+			<button class="btn sm load-older" disabled={historyLoading} onclick={() => loadHistory(false)}>
+				{historyLoading ? "Loading..." : "Show older"}
+			</button>
+		{/if}
 	</section>
 {/if}
 
@@ -187,7 +234,16 @@
 			padding: 2px 8px;
 			border-radius: var(--radius-pill);
 			border: 1px solid var(--glass-border-bright);
+
+			&.error {
+				color: var(--danger);
+				border-color: var(--danger);
+			}
 		}
+	}
+
+	.load-older {
+		margin-top: 10px;
 	}
 
 	.notice {

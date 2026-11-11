@@ -54,6 +54,13 @@ type pathPayload struct {
 	Path string `json:"path"`
 }
 
+// updateHistoryPayload pages the check history. Before is the id of the last entry already shown.
+type updateHistoryPayload struct {
+	GameID int64 `json:"gameId"`
+	Limit  int   `json:"limit"`
+	Before int64 `json:"before"`
+}
+
 func (s *service) list(ctx context.Context, filter library.Filter) (library.Listing, error) {
 	return s.lib.Listing(ctx, filter)
 }
@@ -146,6 +153,10 @@ func (s *service) checkUpdates(ctx context.Context, in checkPayload) ([]library.
 
 func (s *service) updatesSummary(ctx context.Context) (library.UpdatesSummary, error) {
 	return s.lib.UpdatesSummary(ctx)
+}
+
+func (s *service) updateHistory(ctx context.Context, in updateHistoryPayload) ([]library.UpdateHistoryEntry, error) {
+	return s.lib.UpdateHistory(ctx, in.GameID, in.Limit, in.Before)
 }
 
 func (s *service) setFavorite(ctx context.Context, in favoritePayload) (library.Game, error) {

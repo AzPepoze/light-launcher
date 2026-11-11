@@ -108,6 +108,13 @@ var migrations = []migration{
 			`create table if not exists thread_cover (url text primary key, cover_path text not null)`,
 		},
 	},
+	{
+		version: 2,
+		statements: []string{
+			`alter table checks add column result text not null default 'update'`,
+			`alter table checks add column error text`,
+		},
+	},
 }
 
 func migrate(ctx context.Context, db *sql.DB) error {

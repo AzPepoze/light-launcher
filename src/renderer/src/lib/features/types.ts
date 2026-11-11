@@ -152,24 +152,20 @@ export interface IncomingListResponse {
 	warning?: string;
 }
 
-export interface UpdateCheckRow {
+export interface UpdateHistoryEntry {
 	id: number;
 	gameId: number;
+	title: string;
 	checkedAt: string;
 	from: string | null;
 	to: string | null;
-	changelog: string | null;
-	seen: boolean;
-	applied: boolean;
-	title: string;
-	cover: string | null;
+	result: "update" | "current" | "error";
+	error: string | null;
 }
 
 export interface UpdatesResponse {
 	count: number;
 	games: Game[];
-	/** Recent checks. The history endpoint is not in the API yet, so this is empty. */
-	history: UpdateCheckRow[];
 	/** Titles of games whose check failed, with the reason. */
 	errors: string[];
 	/** When the last check ran, or null when none ran. */
