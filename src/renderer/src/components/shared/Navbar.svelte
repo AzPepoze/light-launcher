@@ -81,8 +81,7 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		/* "safe" centres the icons when there is room and lets them scroll from the top when there is not. */
-		justify-content: safe center;
+		justify-content: flex-start;
 		padding: 16px 0;
 		gap: 24px;
 		box-sizing: border-box;
@@ -101,8 +100,8 @@
 		justify-content: center;
 		cursor: pointer;
 		transition: transform var(--transition-spring);
-		position: absolute;
-		top: 20px;
+		/* In the flow above the icons, so a short window scrolls the icons and never slides them under the logo. */
+		flex-shrink: 0;
 
 		&:hover {
 			transform: scale(1.2) rotate(10deg);
@@ -123,6 +122,8 @@
 		position: relative;
 		/* A short window must scroll the icons, not squeeze them. */
 		flex-shrink: 0;
+		/* Centres the icons in the space under the logo, and collapses to nothing when they need all of it. */
+		margin-block: auto;
 	}
 
 	.indicator {
