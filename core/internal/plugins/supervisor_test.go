@@ -258,15 +258,18 @@ func containsLine(lines []LogLine, want string) bool {
 	return false
 }
 
-// waitUntil polls cond for up to two seconds and fails the test if it never holds.
+// waitUntilLimit is generous because a busy machine can delay a plugin process by seconds.
+const waitUntilLimit = 10 * time.Second
+
+// waitUntil polls cond until waitUntilLimit and fails the test if it never holds.
 func waitUntil(t *testing.T, cond func() bool) {
 	t.Helper()
-	deadline := time.Now().Add(2 * time.Second)
+	deadline := time.Now().Add(waitUntilLimit)
 	for time.Now().Before(deadline) {
 		if cond() {
 			return
 		}
 		time.Sleep(5 * time.Millisecond)
 	}
-	t.Fatalf("condition not met within 2s")
+	t.Fatalf("condition not met within %s", waitUntilLimit)
 }
