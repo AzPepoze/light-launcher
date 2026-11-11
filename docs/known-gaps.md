@@ -37,6 +37,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [x] | Consent screen on install and update. |
 | [x] | Drag and drop install (zip or folder). |
 | [ ] | Install several plugins at once from one drop or picker. Each gets its own consent. Only typecheck, tests and build so far: check the "Plugin 2 of 3" dialog and the grouped site list by eye in the real window. |
+| [ ] | Plugin screens: the consent ledger, queue bar, list rows and motion. Only typecheck, tests and build so far: check them by eye in the real window. |
 | [ ] | A folder that holds several plugin folders is skipped with a hint, not expanded. Drop each plugin folder on its own. |
 | [x] | Plugin updates from GitHub Releases: `repository` field, manual "Check for updates", update screen with consent, release `SHA256SUMS` check, and rollback when a new version does not start. |
 | [ ] | Daily plugin release check (the launcher checks once soon after start and on "Check now"; the scheduler does not run it yet). |
