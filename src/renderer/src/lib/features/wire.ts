@@ -237,6 +237,11 @@ export interface WireDownloadView {
 	finishedAt?: string;
 }
 
+/** The reply to LibraryDownloadFile: the id of the queued download. */
+export interface WireQueuedDownload {
+	id: number;
+}
+
 export interface WireDownloadsStatus {
 	installs: WireInstallProgress[] | null;
 	sevenZip: boolean;

@@ -1,27 +1,21 @@
 <script lang="ts">
 	import { platform } from "@stores/platformStore";
-	import { errorMessage } from "../../lib/features/rpc";
 	import { downloadsApi } from "../../lib/features/downloadsApi";
 	import { bytes } from "../../lib/features/format";
 	import { isFileForOs } from "../../lib/features/platform";
 	import type { GameFile } from "../../lib/features/types";
+	import { PREPARING_TEXT, queueGameFile } from "./gameFileQueue";
 
 	let { gameId, files }: { gameId: number; files: GameFile[] } = $props();
 
 	let message = $state("");
-	let queuingUrl = $state("");
+	let preparingId = $state<number | null>(null);
 
 	async function queue(file: GameFile) {
-		queuingUrl = file.url;
 		message = "";
-		try {
-			await downloadsApi.enqueue(file.url, gameId);
-			message = `Added "${file.label}" to downloads.`;
-		} catch (err) {
-			message = errorMessage(err);
-		} finally {
-			queuingUrl = "";
-		}
+		message = await queueGameFile(gameId, file, downloadsApi.enqueueFile, (id) => {
+			preparingId = id;
+		});
 	}
 </script>
 
@@ -50,11 +44,12 @@
 					</div>
 					<button
 						class="btn sm"
-						disabled={queuingUrl === file.url}
+						disabled={preparingId !== null}
+						aria-busy={preparingId === file.id}
 						aria-label="Download {file.label}"
 						onclick={() => queue(file)}
 					>
-						Download
+						{preparingId === file.id ? PREPARING_TEXT : "Download"}
 					</button>
 				</li>
 			{/each}
