@@ -27,13 +27,9 @@ func serviceLibraryUpsert(ctx context.Context, env *pluginEnv, params json.RawMe
 	if env.deps.library == nil {
 		return nil, internalError("library is not available")
 	}
-	ids := make([]int64, 0, len(req.Games))
-	for _, game := range req.Games {
-		id, err := env.deps.library.Upsert(ctx, game)
-		if err != nil {
-			return nil, internalError(err.Error())
-		}
-		ids = append(ids, id)
+	ids, err := env.deps.library.UpsertMany(ctx, req.Games)
+	if err != nil {
+		return nil, internalError(err.Error())
 	}
 	return map[string]any{"upserted": len(req.Games), "ids": ids}, nil
 }

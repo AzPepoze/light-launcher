@@ -47,6 +47,18 @@ func (f *fakeLibrary) Upsert(_ context.Context, _ contract.GameDTO) (int64, erro
 	return 6 + f.next, nil
 }
 
+func (f *fakeLibrary) UpsertMany(ctx context.Context, games []contract.GameDTO) ([]int64, error) {
+	ids := make([]int64, 0, len(games))
+	for _, game := range games {
+		id, err := f.Upsert(ctx, game)
+		if err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, nil
+}
+
 func TestLibraryUpsertReturnsIdsForDownloads(t *testing.T) {
 	env := testEnv(t, Permissions{}, nil)
 	env.deps.library = &fakeLibrary{}
