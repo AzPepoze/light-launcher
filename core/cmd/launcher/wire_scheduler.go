@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"light-launcher/core/internal/contract"
@@ -20,13 +22,17 @@ const (
 	updateCheckTimeout  = 10 * time.Minute
 	capabilitySyncGames = "sync:games"
 	capabilitySyncIndex = "sync:index"
+	capabilityListGames = "listGames"
 	methodSourceSync    = "source.sync"
 )
 
+// errImportNotWired means a source that lists its games was scheduled before the library import was set.
+var errImportNotWired = errors.New("library import is not available")
+
 // newScheduler builds the plugin sync jobs and the library update check. The scheduler itself
-// knows nothing about plugins or the library.
-func newScheduler(ctx context.Context, lib *library.Library, host *plugins.Host, sources contract.Sources, notify func(string, any)) (*scheduler.Scheduler, error) {
-	jobs := pluginSyncJobs(host, sources)
+// knows nothing about plugins or the library. importSource imports the games of a source that lists them.
+func newScheduler(ctx context.Context, lib *library.Library, host *plugins.Host, sources contract.Sources, importSource func(ctx context.Context, plugin, source string) error, notify func(string, any)) (*scheduler.Scheduler, error) {
+	jobs := pluginSyncJobs(host, sources, importSource)
 	jobs = append(jobs, scheduler.Job{
 		Name:     "library.update-check",
 		Interval: updateInterval,
@@ -44,7 +50,7 @@ func newScheduler(ctx context.Context, lib *library.Library, host *plugins.Host,
 	})
 }
 
-func pluginSyncJobs(host *plugins.Host, sources contract.Sources) []scheduler.Job {
+func pluginSyncJobs(host *plugins.Host, sources contract.Sources, importSource func(ctx context.Context, plugin, source string) error) []scheduler.Job {
 	var jobs []scheduler.Job
 	for _, info := range host.List() {
 		if !pluginRunnable(info) {
@@ -55,27 +61,48 @@ func pluginSyncJobs(host *plugins.Host, sources contract.Sources) []scheduler.Jo
 			if !syncCapable(source) {
 				continue
 			}
-			pluginID, sourceID := info.ID, source.SourceID
-			jobs = append(jobs, scheduler.Job{
-				Name:           fmt.Sprintf("plugin-sync:%s:%s", pluginID, sourceID),
-				PluginID:       pluginID,
-				Interval:       interval,
-				Jitter:         syncJobJitter,
-				Timeout:        syncJobTimeout,
-				ChangesLibrary: true,
-				Run: func(ctx context.Context) error {
-					if !pluginRunnable(findPlugin(host, pluginID)) {
-						return scheduler.ErrSkipped
-					}
-					if err := sources.Call(ctx, pluginID, methodSourceSync, map[string]string{"source": sourceID}, nil); err != nil {
-						return fmt.Errorf("sync source %s: %w", sourceID, err)
-					}
-					return nil
-				},
-			})
+			jobs = append(jobs, pluginSyncJob(host, sources, importSource, info.ID, source, interval))
 		}
 	}
 	return jobs
+}
+
+func pluginSyncJob(host *plugins.Host, sources contract.Sources, importSource func(ctx context.Context, plugin, source string) error, pluginID string, source contract.SourceInfo, interval time.Duration) scheduler.Job {
+	return scheduler.Job{
+		Name:           fmt.Sprintf("plugin-sync:%s:%s", pluginID, source.SourceID),
+		PluginID:       pluginID,
+		Interval:       interval,
+		Jitter:         syncJobJitter,
+		Timeout:        syncJobTimeout,
+		ChangesLibrary: true,
+		Run: func(ctx context.Context) error {
+			if !pluginRunnable(findPlugin(host, pluginID)) {
+				return scheduler.ErrSkipped
+			}
+			return runSourceSync(ctx, sources, importSource, pluginID, source)
+		},
+	}
+}
+
+// runSourceSync imports the games of a source that lists them. Other sources run their own source.sync.
+func runSourceSync(ctx context.Context, sources contract.Sources, importSource func(ctx context.Context, plugin, source string) error, pluginID string, source contract.SourceInfo) error {
+	if listsGames(source) {
+		return importListedGames(ctx, importSource, pluginID, source.SourceID)
+	}
+	if err := sources.Call(ctx, pluginID, methodSourceSync, map[string]string{"source": source.SourceID}, nil); err != nil {
+		return fmt.Errorf("sync source %s: %w", source.SourceID, err)
+	}
+	return nil
+}
+
+func importListedGames(ctx context.Context, importSource func(ctx context.Context, plugin, source string) error, pluginID, sourceID string) error {
+	if importSource == nil {
+		return errImportNotWired
+	}
+	if err := importSource(ctx, pluginID, sourceID); err != nil {
+		return fmt.Errorf("import games of source %s: %w", sourceID, err)
+	}
+	return nil
 }
 
 func pluginSyncInterval(host *plugins.Host, id string) time.Duration {
@@ -113,10 +140,11 @@ func pluginRunnable(info plugins.PluginInfo) bool {
 }
 
 func syncCapable(source contract.SourceInfo) bool {
-	for _, capability := range source.Capabilities {
-		if capability == capabilitySyncGames || capability == capabilitySyncIndex {
-			return true
-		}
-	}
-	return false
+	return listsGames(source) ||
+		slices.Contains(source.Capabilities, capabilitySyncGames) ||
+		slices.Contains(source.Capabilities, capabilitySyncIndex)
+}
+
+func listsGames(source contract.SourceInfo) bool {
+	return slices.Contains(source.Capabilities, capabilityListGames)
 }
