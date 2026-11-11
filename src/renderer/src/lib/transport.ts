@@ -1,4 +1,4 @@
-import type { IpcResponse } from "@shared";
+import type { IpcFieldError, IpcResponse } from "@shared";
 import { createLogger } from "@lib/logger";
 
 const log = createLogger("Transport");
@@ -62,10 +62,21 @@ async function readEnvelope<T>(response: Response, method: string): Promise<IpcR
 	return body;
 }
 
+/** A call the server refused. fields lists the inputs it rejected, when it said which ones. */
+export class InvokeError extends Error {
+	readonly fields: IpcFieldError[];
+
+	constructor(message: string, fields: IpcFieldError[] = []) {
+		super(message);
+		this.name = "InvokeError";
+		this.fields = fields;
+	}
+}
+
 async function unwrapEnvelope<T>(response: Response, label: string): Promise<T> {
 	const body = await readEnvelope<T>(response, label);
 	if (!body.success) {
-		throw new Error(body.error || `IPC error calling ${label}`);
+		throw new InvokeError(body.error || `IPC error calling ${label}`, body.fields);
 	}
 	return body.data as T;
 }
