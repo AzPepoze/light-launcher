@@ -39,7 +39,7 @@ type supervisorConfig struct {
 	crashLimit  int
 	idleTimeout *time.Duration // 0 disables and nil takes defaultIdleTimeout
 	now         func() time.Time
-	after       func(time.Duration) <-chan time.Time
+	until       func(deadline time.Time) <-chan time.Time // fires at an absolute time, so a late call cannot move the deadline
 }
 
 // Supervisor starts one plugin on first use, keeps it alive, and stops it on request.
@@ -362,8 +362,8 @@ func (c supervisorConfig) withDefaults() supervisorConfig {
 	if c.now == nil {
 		c.now = time.Now
 	}
-	if c.after == nil {
-		c.after = time.After
+	if c.until == nil {
+		c.until = func(deadline time.Time) <-chan time.Time { return time.After(time.Until(deadline)) }
 	}
 	return c
 }

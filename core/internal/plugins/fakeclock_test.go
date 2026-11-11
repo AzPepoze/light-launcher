@@ -27,10 +27,15 @@ func (c *fakeClock) Now() time.Time {
 	return c.now
 }
 
-func (c *fakeClock) After(d time.Duration) <-chan time.Time {
+// Until returns a channel that fires when the clock reaches deadline, or at once when it already has.
+func (c *fakeClock) Until(deadline time.Time) <-chan time.Time {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	timer := &fakeTimer{at: c.now.Add(d), ch: make(chan time.Time, 1)}
+	timer := &fakeTimer{at: deadline, ch: make(chan time.Time, 1)}
+	if !deadline.After(c.now) {
+		timer.ch <- c.now
+		return timer.ch
+	}
 	c.timers = append(c.timers, timer)
 	return timer.ch
 }

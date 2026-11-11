@@ -110,7 +110,7 @@ func newFixtureSupervisorWith(t *testing.T, perms Permissions, idle *time.Durati
 	}
 	if clock != nil {
 		cfg.now = clock.Now
-		cfg.after = clock.After
+		cfg.until = clock.Until
 	}
 	sup := newSupervisor(cfg)
 	t.Cleanup(sup.Shutdown)

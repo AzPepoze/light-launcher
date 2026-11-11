@@ -13,17 +13,17 @@ func (s *Supervisor) watchIdle(conn *connection) {
 		return
 	}
 	for {
-		wait, ok := s.idleWait(conn, timeout)
+		deadline, ok := s.idleDeadline(conn, timeout)
 		if !ok {
 			return
 		}
-		if wait <= 0 {
+		if !deadline.After(s.cfg.now()) {
 			if s.stopIfIdle(conn, timeout) {
 				return
 			}
 			continue
 		}
-		timer := s.cfg.after(wait)
+		timer := s.cfg.until(deadline)
 		select {
 		case <-conn.exited:
 			return
@@ -37,21 +37,18 @@ func (s *Supervisor) watchIdle(conn *connection) {
 	}
 }
 
-// idleWait returns how long to wait before the next idle check, and false when the watcher should end.
-func (s *Supervisor) idleWait(conn *connection, timeout time.Duration) (time.Duration, bool) {
+// idleDeadline returns when the next idle check is due, and false when the watcher should end.
+// It is an absolute time, so the delay between computing it and arming the timer cannot push it back.
+func (s *Supervisor) idleDeadline(conn *connection, timeout time.Duration) (time.Time, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.conn != conn || conn.stopping {
-		return 0, false
+		return time.Time{}, false
 	}
 	if s.inFlight > 0 || len(s.jobs) > 0 {
-		return timeout, true
+		return s.cfg.now().Add(timeout), true
 	}
-	remaining := timeout - s.cfg.now().Sub(s.lastActive)
-	if remaining < 0 {
-		remaining = 0
-	}
-	return remaining, true
+	return s.lastActive.Add(timeout), true
 }
 
 // stopIfIdle shuts the connection down when it is still idle. It reports whether the watcher is done.
