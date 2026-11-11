@@ -111,9 +111,6 @@ func TestRunSourceSyncReportsFailures(t *testing.T) {
 	if err := runSourceSync(t.Context(), sources, nil, "demo", browse); !errors.Is(err, boom) {
 		t.Errorf("source.sync failure = %v, want it to wrap %v", err, boom)
 	}
-	if err := runSourceSync(t.Context(), &fakeSources{}, nil, "demo", listed); !errors.Is(err, errImportNotWired) {
-		t.Errorf("missing import = %v, want %v", err, errImportNotWired)
-	}
 }
 
 func TestSyncIntervalFromSettings(t *testing.T) {

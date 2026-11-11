@@ -89,7 +89,7 @@ func (s *services) open(ctx context.Context, router *api.Router, hub *api.Hub, d
 	s.host = host
 	sources.registry = plugins.NewRegistry(host)
 
-	sched, err := newScheduler(ctx, s.library, host, sources, nil, hub.Emit)
+	sched, err := newScheduler(ctx, s.library, host, sources, libraryImporter(s.library), hub.Emit)
 	if err != nil {
 		return err
 	}

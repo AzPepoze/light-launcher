@@ -107,8 +107,6 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | No manual setting for how deep the game folders are. The automatic rule can misjudge a game folder that has three or more sub-apps and no exe of its own. |
 | [ ] | The Library UI still reads sources, tags and stats from `LibraryList`; it must switch to `LibraryOverview` and paged `LibraryList`. |
 | [ ] | `LibrarySyncSource` rejects sources that only have the sync capability (no `listGames`). |
-| [ ] | The plugin sync job does not call `ImportSource` for `listGames` sources yet (scheduler). |
-| [ ] | The `library.upsert` plugin service still saves games one by one; it should call `UpsertMany`. |
 
 ## Migration
 

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"slices"
 	"time"
@@ -25,9 +24,6 @@ const (
 	capabilityListGames = "listGames"
 	methodSourceSync    = "source.sync"
 )
-
-// errImportNotWired means a source that lists its games was scheduled before the library import was set.
-var errImportNotWired = errors.New("library import is not available")
 
 // newScheduler builds the plugin sync jobs and the library update check. The scheduler itself
 // knows nothing about plugins or the library. importSource imports the games of a source that lists them.
@@ -95,10 +91,16 @@ func runSourceSync(ctx context.Context, sources contract.Sources, importSource f
 	return nil
 }
 
-func importListedGames(ctx context.Context, importSource func(ctx context.Context, plugin, source string) error, pluginID, sourceID string) error {
-	if importSource == nil {
-		return errImportNotWired
+// libraryImporter adapts the library import to the scheduler's job signature. A progress callback is not
+// needed for a scheduled run: the library still sends its throttled change events.
+func libraryImporter(lib *library.Library) func(ctx context.Context, plugin, source string) error {
+	return func(ctx context.Context, plugin, source string) error {
+		_, err := lib.ImportSource(ctx, plugin, source, nil)
+		return err
 	}
+}
+
+func importListedGames(ctx context.Context, importSource func(ctx context.Context, plugin, source string) error, pluginID, sourceID string) error {
 	if err := importSource(ctx, pluginID, sourceID); err != nil {
 		return fmt.Errorf("import games of source %s: %w", sourceID, err)
 	}
