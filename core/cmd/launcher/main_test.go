@@ -32,16 +32,6 @@ func TestParseOptionsMakesGamePathAbsolute(t *testing.T) {
 	}
 }
 
-func TestParseOptionsAcceptsIgnoredFlags(t *testing.T) {
-	opts, err := parseOptions([]string{"--wayland", "--x11", "--ozone-platform=wayland"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(opts.ignored) != 3 {
-		t.Fatalf("ignored = %v", opts.ignored)
-	}
-}
-
 func TestParseOptionsRejectsPortOutOfRange(t *testing.T) {
 	if _, err := parseOptions([]string{"--port=70000"}); err == nil {
 		t.Fatal("port 70000 was accepted")

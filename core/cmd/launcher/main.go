@@ -31,9 +31,6 @@ var version = "dev"
 
 var validShells = map[string]bool{"auto": true, "qt": true, "webview2": true, "browser": true}
 
-// ignoredFlags are accepted so old launch scripts keep working. The launcher does nothing with them.
-var ignoredFlags = map[string]bool{"wayland": true, "x11": true, "ozone-platform": true}
-
 type options struct {
 	shell    string
 	noShell  bool
@@ -42,7 +39,6 @@ type options struct {
 	gamePath string
 	port     int
 	devToken string
-	ignored  []string
 }
 
 func main() {
@@ -62,9 +58,6 @@ func launch(args []string) int {
 	if err != nil {
 		logger.Warn("main", "%v", err)
 		return exitUsage
-	}
-	for _, name := range opts.ignored {
-		logger.Info("main", "--%s is accepted and ignored", name)
 	}
 
 	lockPath := lockFilePath()
@@ -118,9 +111,6 @@ func parseOptions(args []string) (options, error) {
 	flags.BoolVar(&opts.editLsfg, "edit-lsfg", false, "open the lsfg-vk editor on start")
 	flags.IntVar(&opts.port, "port", 0, "loopback port for the API (default: a free port)")
 	flags.StringVar(&opts.devToken, "dev-token", "", "fixed API token for the Vite dev proxy; sets port 9246 unless --port is given")
-	flags.Bool("wayland", false, "accepted and ignored")
-	flags.Bool("x11", false, "accepted and ignored")
-	flags.String("ozone-platform", "", "accepted and ignored")
 	if err := flags.Parse(args); err != nil {
 		return opts, err
 	}
@@ -130,11 +120,6 @@ func parseOptions(args []string) (options, error) {
 	if opts.port < 0 || opts.port > 65535 {
 		return opts, fmt.Errorf("port %d is out of range", opts.port)
 	}
-	flags.Visit(func(f *flag.Flag) {
-		if ignoredFlags[f.Name] {
-			opts.ignored = append(opts.ignored, f.Name)
-		}
-	})
 	if flags.NArg() > 0 {
 		gamePath, err := filepath.Abs(flags.Arg(0))
 		if err != nil {
