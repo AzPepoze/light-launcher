@@ -6,12 +6,17 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"light-launcher/core/internal/contract"
 	"light-launcher/core/internal/logger"
 )
 
-const methodPrepareDownload = "source.prepareDownload"
+const (
+	methodPrepareDownload = "source.prepareDownload"
+	methodBrowse          = "source.browse"
+	methodListFilters     = "source.listFilters"
+)
 
 var errNotSourceMethod = errors.New("only source methods can be called on a plugin source")
 
@@ -72,6 +77,27 @@ func (r *Registry) Call(ctx context.Context, plugin, method string, params any, 
 		return err
 	}
 	return sup.Call(ctx, method, params, out)
+}
+
+// Browse runs source.browse for a filtered, sorted page of games. It never saves them.
+func (r *Registry) Browse(ctx context.Context, plugin string, request contract.BrowseRequest) (contract.BrowsePage, error) {
+	var page contract.BrowsePage
+	err := r.callWithTimeout(ctx, plugin, methodBrowse, contract.BrowseTimeout, request, &page)
+	return page, err
+}
+
+// ListFilters runs source.listFilters for the values of one dynamic sidebar group.
+func (r *Registry) ListFilters(ctx context.Context, plugin string, request contract.FiltersRequest) (contract.FiltersPage, error) {
+	var page contract.FiltersPage
+	err := r.callWithTimeout(ctx, plugin, methodListFilters, contract.ListFiltersTimeout, request, &page)
+	return page, err
+}
+
+// callWithTimeout runs a source method and stops waiting after timeout.
+func (r *Registry) callWithTimeout(ctx context.Context, plugin, method string, timeout time.Duration, params, out any) error {
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	return r.Call(ctx, plugin, method, params, out)
 }
 
 // PrepareDownload runs source.prepareDownload and builds the host request from its answer.

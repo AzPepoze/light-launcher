@@ -66,6 +66,14 @@ func (f *strictSources) StartDownload(context.Context, string, any, int64) (int6
 	return 0, errors.New("StartDownload is not faked here")
 }
 
+func (f *strictSources) Browse(context.Context, string, contract.BrowseRequest) (contract.BrowsePage, error) {
+	return contract.BrowsePage{}, errors.New("Browse is not faked here")
+}
+
+func (f *strictSources) ListFilters(context.Context, string, contract.FiltersRequest) (contract.FiltersPage, error) {
+	return contract.FiltersPage{}, errors.New("ListFilters is not faked here")
+}
+
 func (f *strictSources) Call(_ context.Context, _, method string, params, out any) error {
 	raw, err := json.Marshal(params)
 	if err != nil {

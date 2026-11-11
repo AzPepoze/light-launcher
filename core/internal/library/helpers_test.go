@@ -41,6 +41,14 @@ func (f *fakeSources) StartDownload(context.Context, string, any, int64) (int64,
 	return 0, fmt.Errorf("no fake for StartDownload")
 }
 
+func (f *fakeSources) Browse(context.Context, string, contract.BrowseRequest) (contract.BrowsePage, error) {
+	return contract.BrowsePage{}, fmt.Errorf("no fake for Browse")
+}
+
+func (f *fakeSources) ListFilters(context.Context, string, contract.FiltersRequest) (contract.FiltersPage, error) {
+	return contract.FiltersPage{}, fmt.Errorf("no fake for ListFilters")
+}
+
 // openTestLibrary opens a library in a temp folder that is closed when the test ends.
 func openTestLibrary(t testing.TB, opts Options) *Library {
 	t.Helper()

@@ -46,6 +46,14 @@ func (f *fakeSources) StartDownload(context.Context, string, any, int64) (int64,
 	return 0, errors.New("not used")
 }
 
+func (f *fakeSources) Browse(context.Context, string, contract.BrowseRequest) (contract.BrowsePage, error) {
+	return contract.BrowsePage{}, errors.New("not used")
+}
+
+func (f *fakeSources) ListFilters(context.Context, string, contract.FiltersRequest) (contract.FiltersPage, error) {
+	return contract.FiltersPage{}, errors.New("not used")
+}
+
 // fakeImporter records the sources a scheduled job imports.
 type fakeImporter struct {
 	calls []string

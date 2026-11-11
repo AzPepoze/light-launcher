@@ -121,4 +121,7 @@ type Sources interface {
 	Sources() []SourceInfo
 	Call(ctx context.Context, plugin, method string, params any, out any) error
 	StartDownload(ctx context.Context, plugin string, params any, gameID int64) (downloadID int64, err error)
+	// Browse runs source.browse and ListFilters runs source.listFilters, each with its own time limit.
+	Browse(ctx context.Context, plugin string, request BrowseRequest) (BrowsePage, error)
+	ListFilters(ctx context.Context, plugin string, request FiltersRequest) (FiltersPage, error)
 }

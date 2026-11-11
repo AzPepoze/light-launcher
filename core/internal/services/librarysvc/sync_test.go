@@ -51,6 +51,14 @@ func (listingSources) StartDownload(context.Context, string, any, int64) (int64,
 	return 0, errors.New("downloads are not faked here")
 }
 
+func (listingSources) Browse(context.Context, string, contract.BrowseRequest) (contract.BrowsePage, error) {
+	return contract.BrowsePage{}, errors.New("browse is not faked here")
+}
+
+func (listingSources) ListFilters(context.Context, string, contract.FiltersRequest) (contract.FiltersPage, error) {
+	return contract.FiltersPage{}, errors.New("list filters is not faked here")
+}
+
 // emitted is one event the service sent.
 type emitted struct {
 	channel string

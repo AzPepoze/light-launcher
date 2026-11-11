@@ -34,6 +34,14 @@ func (fakeSources) StartDownload(context.Context, string, any, int64) (int64, er
 	return 0, errors.New("downloads are not faked here")
 }
 
+func (fakeSources) Browse(context.Context, string, contract.BrowseRequest) (contract.BrowsePage, error) {
+	return contract.BrowsePage{}, errors.New("browse is not faked here")
+}
+
+func (fakeSources) ListFilters(context.Context, string, contract.FiltersRequest) (contract.FiltersPage, error) {
+	return contract.FiltersPage{}, errors.New("list filters is not faked here")
+}
+
 // recordingEvents keeps the events the service emits.
 type recordingEvents struct {
 	mu     sync.Mutex

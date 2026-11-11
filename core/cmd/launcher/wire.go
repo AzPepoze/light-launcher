@@ -171,3 +171,11 @@ func (l *lateSources) Call(ctx context.Context, plugin, method string, params an
 func (l *lateSources) StartDownload(ctx context.Context, plugin string, params any, gameID int64) (int64, error) {
 	return l.registry.StartDownload(ctx, plugin, params, gameID)
 }
+
+func (l *lateSources) Browse(ctx context.Context, plugin string, request contract.BrowseRequest) (contract.BrowsePage, error) {
+	return l.registry.Browse(ctx, plugin, request)
+}
+
+func (l *lateSources) ListFilters(ctx context.Context, plugin string, request contract.FiltersRequest) (contract.FiltersPage, error) {
+	return l.registry.ListFilters(ctx, plugin, request)
+}
