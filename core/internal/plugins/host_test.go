@@ -31,7 +31,13 @@ func newTestHost(t *testing.T) *Host {
 // writeFixturePackage writes an unsigned, checksummed package that holds the fixture plugin at a version.
 func writeFixturePackage(t *testing.T, path, version string) {
 	t.Helper()
-	manifest := fixtureManifest(Permissions{Network: []string{"127.0.0.1"}})
+	writeFixturePackageWith(t, path, version, Permissions{Network: []string{"127.0.0.1"}})
+}
+
+// writeFixturePackageWith is writeFixturePackage with the permissions the manifest asks for.
+func writeFixturePackageWith(t *testing.T, path, version string, permissions Permissions) {
+	t.Helper()
+	manifest := fixtureManifest(permissions)
 	manifest.Version = version
 	manifestJSON, err := json.Marshal(manifest)
 	if err != nil {
@@ -158,6 +164,30 @@ func TestHostUpdateAndRollback(t *testing.T) {
 	}
 	if rolled.Version != "0.1.0" || rolled.Previous != "0.2.0" {
 		t.Fatalf("after rollback = %+v", rolled)
+	}
+}
+
+func TestHostRefusedUpdateKeepsPluginRunning(t *testing.T) {
+	host := newTestHost(t)
+	ctx := context.Background()
+	source := filepath.Join(t.TempDir(), "fixture.llplugin")
+	writeFixturePackage(t, source, "0.1.0")
+	if _, err := host.Install(ctx, InstallRequest{Source: source, AllowUnsigned: true, AcceptedPermissions: testConsent}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := host.CallPlugin(ctx, "fixture", "source.parseRef", json.RawMessage(`{"url":"x"}`)); err != nil {
+		t.Fatal(err)
+	}
+
+	writeFixturePackageWith(t, source, "0.2.0", Permissions{Network: []string{"127.0.0.1", "example.com"}})
+	if _, err := host.Update(ctx, "fixture", true, testConsent); !errors.Is(err, ErrNewPermissions) {
+		t.Fatalf("Update without consent: err = %v, want ErrNewPermissions", err)
+	}
+	if !host.running("fixture") {
+		t.Fatalf("a refused update stopped the running plugin")
+	}
+	if version := host.info("fixture").Version; version != "0.1.0" {
+		t.Fatalf("version after refused update = %q, want 0.1.0", version)
 	}
 }
 

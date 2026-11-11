@@ -71,8 +71,14 @@ func (h *Host) Update(ctx context.Context, id string, allowUnsigned bool, accept
 	if err := requireID(id); err != nil {
 		return PluginInfo{}, err
 	}
+	// Checks run first, so a refused update leaves the running plugin alone.
+	prepared, source, err := h.install.prepareUpdate(ctx, id, allowUnsigned, accepted)
+	if err != nil {
+		return PluginInfo{}, err
+	}
+	defer prepared.discard()
 	h.stopPlugin(id)
-	if err := h.install.Update(ctx, id, allowUnsigned, accepted); err != nil {
+	if err := h.install.commitUpdate(prepared, source); err != nil {
 		return PluginInfo{}, err
 	}
 	h.emitState(id)
