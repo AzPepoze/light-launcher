@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { LibraryState } from "./libraryState.svelte";
-	import { SORT_LABELS, type LibrarySort } from "./libraryFilters";
+	import { SORT_LABELS, sourceFilterLabel, type LibrarySort } from "./libraryFilters";
 
 	let { library }: { library: LibraryState } = $props();
 
@@ -48,7 +48,7 @@
 		<select class="input" aria-label="Source" bind:value={library.filters.source}>
 			<option value="">All sources</option>
 			{#each library.sources as item (item.source)}
-				<option value={item.source}>{item.source} ({item.count})</option>
+				<option value={item.source}>{sourceFilterLabel(item)}</option>
 			{/each}
 		</select>
 	</div>

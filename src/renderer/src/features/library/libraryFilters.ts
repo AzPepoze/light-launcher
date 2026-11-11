@@ -22,6 +22,11 @@ export const DEFAULT_FILTERS: LibraryFilters = {
 	sort: "added"
 };
 
+/** The source option text, using the label the library sent instead of the raw id. */
+export function sourceFilterLabel(item: { source: string; label: string; count: number }): string {
+	return `${item.label || item.source} (${item.count})`;
+}
+
 export const SORT_LABELS: Record<LibrarySort, string> = {
 	title: "Title",
 	added: "Recently added",

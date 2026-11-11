@@ -5,6 +5,7 @@ import {
 	filterGames,
 	hasActiveFilters,
 	sortGames,
+	sourceFilterLabel,
 	visibleGames
 } from "./libraryFilters";
 import { parseSavedFilters } from "./savedFilters";
@@ -102,6 +103,16 @@ describe("filterGames", () => {
 		expect(filterGames(games, { ...DEFAULT_FILTERS, favorite: true }).map((g) => g.id)).toEqual([
 			2
 		]);
+	});
+});
+
+describe("sourceFilterLabel", () => {
+	it("shows the source label and count instead of the raw id", () => {
+		expect(sourceFilterLabel({ source: "f95", label: "F95 Zone", count: 3 })).toBe("F95 Zone (3)");
+	});
+
+	it("falls back to the id when the API sends no label", () => {
+		expect(sourceFilterLabel({ source: "f95", label: "", count: 0 })).toBe("f95 (0)");
 	});
 });
 
