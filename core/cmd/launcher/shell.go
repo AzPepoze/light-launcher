@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -10,12 +9,10 @@ import (
 	"time"
 
 	"light-launcher/core/internal/logger"
+	"light-launcher/core/internal/shellbin"
 )
 
-const (
-	shellBinaryName  = "light-launcher-shell"
-	shellExitTimeout = 3 * time.Second
-)
+const shellExitTimeout = 3 * time.Second
 
 // resolveShell turns "auto" into the window type for this OS.
 func resolveShell(name string) string {
@@ -46,19 +43,7 @@ func openWindow(ctx context.Context, shell, url string) error {
 
 // shellPath returns the sibling shell binary and fails if it is not next to the launcher.
 func shellPath() (string, error) {
-	exe, err := os.Executable()
-	if err != nil {
-		return "", err
-	}
-	name := shellBinaryName
-	if runtime.GOOS == "windows" {
-		name += ".exe"
-	}
-	path := filepath.Join(filepath.Dir(exe), name)
-	if _, err := os.Stat(path); err != nil {
-		return "", fmt.Errorf("shell binary %s not found next to the launcher", name)
-	}
-	return path, nil
+	return shellbin.Path()
 }
 
 // shellURLEnv carries the UI URL, with its token fragment, to the shell. argv would show it in the process list.
