@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"light-launcher/core/internal/api"
+	"light-launcher/core/internal/browserassist"
 	"light-launcher/core/internal/contract"
 	"light-launcher/core/internal/downloads"
 	"light-launcher/core/internal/library"
@@ -24,15 +25,16 @@ import (
 
 // services owns the long-lived parts of one launcher run: databases, download manager, plugins and jobs.
 type services struct {
-	library     *library.Library
-	downloads   *downloads.Manager
-	downloadsDB *sql.DB
-	host        *plugins.Host
-	installer   *downloads.FolderInstaller
-	uploads     *uploads.Store
-	scheduler   *scheduler.Scheduler
-	stop        context.CancelFunc
-	jobs        sync.WaitGroup
+	library       *library.Library
+	downloads     *downloads.Manager
+	downloadsDB   *sql.DB
+	host          *plugins.Host
+	browserAssist *browserassist.Service
+	installer     *downloads.FolderInstaller
+	uploads       *uploads.Store
+	scheduler     *scheduler.Scheduler
+	stop          context.CancelFunc
+	jobs          sync.WaitGroup
 }
 
 // wireServices builds every service and registers its methods on router. Call Close when done.
@@ -72,7 +74,15 @@ func (s *services) open(ctx context.Context, router *api.Router, hub *api.Hub, d
 	s.library = lib
 	updates.library = lib
 
-	host, err := newPluginHost(dirs, lib, s.downloads)
+	browser, err := browserassist.New(browserassist.Options{
+		ProfilesDir: dirs.BrowserProfiles,
+		Enabled:     appsvc.BrowserAssistEnabled,
+	})
+	if err != nil {
+		return err
+	}
+	s.browserAssist = browser
+	host, err := newPluginHost(dirs, lib, s.downloads, browser)
 	if err != nil {
 		return err
 	}
@@ -123,12 +133,15 @@ func (s *services) startJobs(ctx context.Context) {
 	}()
 }
 
-// Close stops the jobs, the plugins and the downloads, then closes the databases.
+// Close stops the jobs, the browser window, the plugins and the downloads, then closes the databases.
 func (s *services) Close() {
 	if s.stop != nil {
 		s.stop()
 	}
 	s.jobs.Wait()
+	if s.browserAssist != nil {
+		s.browserAssist.Close()
+	}
 	if s.host != nil {
 		s.host.Shutdown()
 	}

@@ -72,4 +72,6 @@ export interface AppSettings {
 	DiscordClientId?: string;
 	/** Minutes without a plugin call before it sleeps. Zero disables sleeping. */
 	pluginIdleTimeoutMinutes?: number;
+	/** Opens the embedded browser window for plugins. Absent means on. */
+	browserAssistEnabled?: boolean;
 }

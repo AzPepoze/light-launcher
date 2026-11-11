@@ -15,7 +15,7 @@ const pluginUpdateCheckDelay = 60 * time.Second
 
 // newPluginHost creates the plugin host. Plugins may ask for these folders by name in plugin.json.
 // Secrets use the host default: the keyring when available, otherwise an encrypted file.
-func newPluginHost(dirs folders, library contract.Library, downloads contract.Downloads) (*plugins.Host, error) {
+func newPluginHost(dirs folders, library contract.Library, downloads contract.Downloads, browser plugins.BrowserAssist) (*plugins.Host, error) {
 	layout := plugins.DefaultLayout()
 	return plugins.NewHost(plugins.HostOptions{
 		Layout:      layout,
@@ -23,6 +23,7 @@ func newPluginHost(dirs folders, library contract.Library, downloads contract.Do
 		Library:     library,
 		Downloads:   downloads,
 		IdleTimeout: appsvc.PluginIdleTimeout(),
+		Browser:     browser,
 		Folders: map[string]string{
 			"$GAMES":     dirs.Games,
 			"$DOWNLOADS": dirs.Downloads,
