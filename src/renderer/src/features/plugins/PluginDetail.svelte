@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { errorMessage } from "../../lib/features/rpc";
 	import { pluginsApi } from "../../lib/features/pluginsApi";
-	import type { PluginInfo } from "../../lib/features/types";
+	import type { PluginInfo, PluginUpdatePreview } from "../../lib/features/types";
 	import PluginAccounts from "./PluginAccounts.svelte";
+	import PluginConsent from "./PluginConsent.svelte";
 	import PluginLogs from "./PluginLogs.svelte";
 	import PluginSettings from "./PluginSettings.svelte";
-	import { UNSIGNED_WARNING } from "./pluginCopy";
+	import { NO_NEW_PERMISSIONS, UNSIGNED_WARNING, UPDATE_PERMISSION_HINT } from "./pluginCopy";
 
 	let {
 		plugin,
@@ -22,6 +23,7 @@
 	let busy = $state(false);
 	let message = $state("");
 	let confirmingRemove = $state(false);
+	let pendingUpdate = $state<PluginUpdatePreview | null>(null);
 
 	async function run(action: () => Promise<void>) {
 		busy = true;
@@ -41,9 +43,24 @@
 		});
 	}
 
-	function update() {
+	/** Installs the update at once unless it adds permissions or is unsigned. Then the user confirms first. */
+	function checkUpdate() {
 		run(async () => {
-			onChanged(await pluginsApi.update(plugin.id, !plugin.signed));
+			pendingUpdate = null;
+			const check = await pluginsApi.previewUpdate(plugin);
+			if (check.newPermissions.length || !check.preview.signed) {
+				pendingUpdate = check;
+				return;
+			}
+			onChanged(await pluginsApi.update(plugin.id, false, check.preview.consent));
+		});
+	}
+
+	function confirmUpdate(shown: PluginUpdatePreview) {
+		run(async () => {
+			const next = shown.preview;
+			onChanged(await pluginsApi.update(plugin.id, !next.signed, next.consent));
+			pendingUpdate = null;
 		});
 	}
 
@@ -95,7 +112,7 @@
 		<button class="btn sm" aria-pressed={plugin.enabled} disabled={busy} onclick={toggleEnabled}>
 			{plugin.enabled ? "Disable" : "Enable"}
 		</button>
-		<button class="btn sm" disabled={busy} onclick={update}>Update</button>
+		<button class="btn sm" disabled={busy} onclick={checkUpdate}>Update</button>
 		<button class="btn sm" disabled={busy} onclick={rollback}>Roll back</button>
 		{#if confirmingRemove}
 			<button class="btn sm danger" disabled={busy} onclick={remove}>Confirm remove</button>
@@ -107,6 +124,20 @@
 
 	{#if message}
 		<p class="error" role="alert">{message}</p>
+	{/if}
+
+	{#if pendingUpdate}
+		{@const pending = pendingUpdate}
+		<PluginConsent
+			preview={pending.preview}
+			hint={UPDATE_PERMISSION_HINT}
+			lines={pending.newPermissions}
+			emptyText={NO_NEW_PERMISSIONS}
+			confirmLabel="Update plugin"
+			{busy}
+			onConfirm={() => confirmUpdate(pending)}
+			onCancel={() => (pendingUpdate = null)}
+		/>
 	{/if}
 
 	<PluginSettings pluginId={plugin.id} />

@@ -3,7 +3,8 @@
 	import { errorMessage } from "../../lib/features/rpc";
 	import { pluginsApi } from "../../lib/features/pluginsApi";
 	import type { PluginInfo, PluginPreview } from "../../lib/features/types";
-	import { LEGAL_NOTICE, PERMISSION_HINT, UNSIGNED_WARNING } from "./pluginCopy";
+	import PluginConsent from "./PluginConsent.svelte";
+	import { PERMISSION_HINT } from "./pluginCopy";
 
 	let {
 		onInstalled,
@@ -12,7 +13,6 @@
 
 	let source = $state("");
 	let preview = $state<PluginPreview | null>(null);
-	let consented = $state(false);
 	let busy = $state(false);
 	let message = $state("");
 
@@ -21,7 +21,7 @@
 		if (!link) return;
 		busy = true;
 		message = "";
-		consented = false;
+		preview = null;
 		try {
 			preview = await pluginsApi.previewPermissions(link);
 		} catch (err) {
@@ -32,12 +32,11 @@
 		}
 	}
 
-	async function install() {
-		if (!preview || !consented) return;
+	async function install(shown: PluginPreview) {
 		busy = true;
 		message = "";
 		try {
-			onInstalled(await pluginsApi.install(preview.source, !preview.signed));
+			onInstalled(await pluginsApi.install(shown.source, !shown.signed, shown.consent));
 		} catch (err) {
 			message = errorMessage(err);
 		} finally {
@@ -66,35 +65,17 @@
 	{/if}
 
 	{#if preview}
-		<article class="consent" aria-label="Plugin details">
-			<h3>{preview.name} <span class="muted">v{preview.version}</span></h3>
-
-			{#if !preview.signed}
-				<p class="notice" role="note">{UNSIGNED_WARNING}</p>
-			{/if}
-
-			<p class="label">{PERMISSION_HINT}</p>
-			{#if preview.permissions.length}
-				<ul class="permissions">
-					{#each preview.permissions as permission (permission)}
-						<li>{permission}</li>
-					{/each}
-				</ul>
-			{:else}
-				<p class="muted">No extra permissions.</p>
-			{/if}
-
-			<p class="legal">{LEGAL_NOTICE}</p>
-
-			<label class="consent-check">
-				<input type="checkbox" bind:checked={consented} />
-				<span>I trust this plugin and accept these permissions.</span>
-			</label>
-
-			<button class="btn sm primary" disabled={!consented || busy} onclick={install}>
-				Install plugin
-			</button>
-		</article>
+		{@const shown = preview}
+		<PluginConsent
+			preview={shown}
+			hint={PERMISSION_HINT}
+			lines={shown.permissions}
+			emptyText="No extra permissions."
+			confirmLabel="Install plugin"
+			{busy}
+			onConfirm={() => install(shown)}
+			onCancel={() => (preview = null)}
+		/>
 	{/if}
 </Modal>
 
@@ -120,61 +101,9 @@
 		}
 	}
 
-	.consent {
-		margin-top: 18px;
-		display: flex;
-		flex-direction: column;
-		gap: 10px;
-		align-items: flex-start;
-
-		h3 {
-			margin: 0;
-			font-size: 1.1rem;
-		}
-
-		p {
-			margin: 0;
-		}
-	}
-
-	.muted,
-	.legal {
-		font-size: 0.8rem;
-		color: var(--text-muted);
-	}
-
-	.label {
-		font-weight: 700;
-		font-size: 0.85rem;
-	}
-
-	.permissions {
-		margin: 0;
-		padding-left: 18px;
-		font-size: 0.85rem;
-		display: flex;
-		flex-direction: column;
-		gap: 4px;
-	}
-
-	.notice {
-		padding: 10px 14px;
-		border-radius: var(--radius-md);
-		border: 1px solid var(--danger);
-		font-size: 0.85rem;
-	}
-
 	.error {
 		margin: 12px 0 0;
 		font-size: 0.85rem;
 		color: var(--danger);
-	}
-
-	.consent-check {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		font-size: 0.85rem;
-		cursor: pointer;
 	}
 </style>

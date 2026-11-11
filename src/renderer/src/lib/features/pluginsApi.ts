@@ -1,4 +1,10 @@
-import { toLogLine, toPluginInfo, toPluginPreview, toPluginSettings } from "./pluginsMap";
+import {
+	newPermissionLines,
+	toLogLine,
+	toPluginInfo,
+	toPluginPreview,
+	toPluginSettings
+} from "./pluginsMap";
 import { rpc } from "./rpc";
 import type {
 	AuthState,
@@ -6,9 +12,15 @@ import type {
 	PluginLogLine,
 	PluginMethod,
 	PluginPreview,
-	PluginSettingsResponse
+	PluginSettingsResponse,
+	PluginUpdatePreview
 } from "./types";
-import type { WirePluginInfo, WirePluginLogLine, WirePluginPreview, WireSettingsView } from "./wire";
+import type {
+	WirePluginInfo,
+	WirePluginLogLine,
+	WirePluginPreview,
+	WireSettingsView
+} from "./wire";
 
 /** How many recent log lines to ask for. */
 const LOG_LINE_LIMIT = 200;
@@ -23,29 +35,34 @@ export const pluginsApi = {
 		toPluginPreview(source, await rpc<WirePluginPreview>("PluginPermissionsPreview", { source })),
 
 	/**
-	 * Unsigned packages need allowUnsigned, which the user confirms in the install dialog.
-	 * Without acceptedPermissions, the permissions from a fresh preview are accepted.
+	 * Pass the consent list the user saw in the preview. The server rejects any other list.
+	 * Unsigned packages also need allowUnsigned.
 	 */
 	install: async (
 		source: string,
 		allowUnsigned: boolean,
-		acceptedPermissions?: string[]
-	): Promise<PluginInfo> => {
-		const accepted = acceptedPermissions ?? (await pluginsApi.previewPermissions(source)).consent;
-		return toPluginInfo(
+		acceptedPermissions: string[]
+	): Promise<PluginInfo> =>
+		toPluginInfo(
 			await rpc<WirePluginInfo>("PluginInstall", {
 				source,
 				allowUnsigned,
-				acceptedPermissions: accepted
+				acceptedPermissions
 			})
-		);
+		),
+
+	/** Previews the newest version at the plugin's install source, with the permissions it adds. */
+	previewUpdate: async (plugin: PluginInfo): Promise<PluginUpdatePreview> => {
+		if (!plugin.source) throw new Error("This plugin has no install source. Install it again.");
+		const preview = await pluginsApi.previewPermissions(plugin.source);
+		return { preview, newPermissions: newPermissionLines(plugin.consent, preview.consent) };
 	},
 
-	/** A version that asks for new permissions needs acceptedPermissions that list all of them. */
+	/** Pass the consent list from previewUpdate, so a version with new permissions is accepted. */
 	update: async (
 		id: string,
 		allowUnsigned: boolean,
-		acceptedPermissions: string[] = []
+		acceptedPermissions: string[]
 	): Promise<PluginInfo> =>
 		toPluginInfo(
 			await rpc<WirePluginInfo>("PluginUpdate", { id, allowUnsigned, acceptedPermissions })
@@ -77,7 +94,10 @@ export const pluginsApi = {
 		}),
 
 	logs: async (id: string): Promise<PluginLogLine[]> => {
-		const lines = await rpc<WirePluginLogLine[] | null>("PluginLogs", { id, lines: LOG_LINE_LIMIT });
+		const lines = await rpc<WirePluginLogLine[] | null>("PluginLogs", {
+			id,
+			lines: LOG_LINE_LIMIT
+		});
 		return (lines ?? []).map(toLogLine);
 	}
 };

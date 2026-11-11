@@ -6,3 +6,7 @@ export const UNSIGNED_WARNING = "This plugin is not signed. Only install code yo
 export const COMMUNITY_PLUGINS_URL = "";
 
 export const PERMISSION_HINT = "The plugin will be able to:";
+
+export const UPDATE_PERMISSION_HINT = "This update asks for new permissions:";
+
+export const NO_NEW_PERMISSIONS = "This update asks for no new permissions.";
