@@ -44,7 +44,7 @@ This page explains how to build the Linux and Windows files from source.
 bun run build
 ```
 
-This writes `bin/light-launcher` and `bin/light-launcher-instance`. The launcher has the UI built in, so it runs without `--ui`. On Linux, `bun run build:linux` also builds the GTK window. `bun run dev` starts the Vite dev server and the launcher API instead.
+This writes `bin/light-launcher` and `bin/light-launcher-instance`. The launcher has the UI built in, so it runs without `--ui`. On Linux, `bun run build:linux` also builds the GTK window. `bun run dev` detects the OS and opens the native window on the Vite page; `bun run dev:browser` uses the browser instead.
 
 > [!NOTE]
 > The local build scripts use Bash. On Windows, run them from Git Bash or WSL, or use `bun run dev`.
@@ -69,12 +69,14 @@ The `<version>` comes from `git describe --tags --always`. A leading `v` is remo
 
 ## Build one part
 
-| Part                     | Command                                                                                                                |
-| :----------------------- | :--------------------------------------------------------------------------------------------------------------------- |
-| Launcher with UI         | `bash scripts/build-launcher.sh bin/light-launcher`                                                                    |
-| GTK shell (Linux)        | `cd shell/gtk && go build -ldflags="-s -w" -o light-launcher-shell .`                                                  |
-| WebView2 shell (Windows) | `cd shell/webview2 && GOOS=windows GOARCH=amd64 go build -ldflags="-s -w -H=windowsgui" -o light-launcher-shell.exe .` |
-| Instance                 | `go build -ldflags="-s -w" -o light-launcher-instance ./core/cmd/instance`                                             |
+| Part                     | Bun script                     | Command                                                                                                                                  |
+| :----------------------- | :----------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------- |
+| Launcher with UI         | `bun run build:launcher`       | `bash scripts/build-launcher.sh bin/light-launcher`                                                                                      |
+| GTK shell (Linux)        | `bun run build:shell:gtk`      | `cd shell/gtk && go build -ldflags="-s -w" -o ../../bin/light-launcher-shell .`                                                          |
+| WebView2 shell (Windows) | `bun run build:shell:webview2` | `cd shell/webview2 && GOOS=windows GOARCH=amd64 go build -ldflags="-s -w -H=windowsgui" -o ../../bin/light-launcher-shell.exe .`          |
+| Instance                 | `bun run build:instance`       | `go build -ldflags="-s -w" -o bin/light-launcher-instance ./core/cmd/instance`                                                           |
+
+`build:shell:webview2` builds on Windows. The release script cross-compiles the same shell from Linux.
 
 The stripped GTK shell is about 3 MB. The GTK and WebKit libraries are not in the file. They come from your system packages.
 
