@@ -23,6 +23,7 @@ function makeView(overrides: Partial<WireDownloadView> = {}): WireDownloadView {
 		speed: 250,
 		connections: 4,
 		install: false,
+		rateLimited: false,
 		createdAt: "2026-01-01T00:00:00Z",
 		...overrides
 	};
@@ -41,6 +42,7 @@ function makeItem(overrides: Partial<DownloadItem> = {}): DownloadItem {
 		speed: 250,
 		eta: 3,
 		connections: 4,
+		rateLimited: false,
 		createdAt: "2026-01-01T00:00:00Z",
 		finishedAt: null,
 		...overrides
@@ -73,6 +75,7 @@ describe("toDownloadItem", () => {
 			speed: 250,
 			eta: 3,
 			connections: 4,
+			rateLimited: false,
 			createdAt: "2026-01-01T00:00:00Z",
 			finishedAt: null
 		});
@@ -147,20 +150,22 @@ describe("hasDownload", () => {
 });
 
 describe("toInstallProgress", () => {
-	it("maps an active install with the title passed in", () => {
+	it("maps an active install with the title and eta the API sent", () => {
 		const install = toInstallProgress(
 			{
 				downloadId: 1,
 				gameId: 7,
+				title: "Dust Runner",
 				state: "active",
 				phase: "unpacking",
 				done: 250,
 				total: 1000,
 				progress: 0.25,
 				speed: 250,
+				eta: 3,
 				engine: "7-Zip"
 			},
-			"Dust Runner"
+			"file.zip"
 		);
 		expect(install).toEqual({
 			downloadId: 1,
@@ -178,6 +183,25 @@ describe("toInstallProgress", () => {
 		});
 	});
 
+	it("falls back to the file name when the API has no title", () => {
+		const install = toInstallProgress(
+			{
+				downloadId: 1,
+				gameId: 0,
+				state: "active",
+				phase: "extracting",
+				done: 0,
+				total: 0,
+				progress: null,
+				speed: 0,
+				eta: null
+			},
+			"file.zip"
+		);
+		expect(install.title).toBe("file.zip");
+		expect(install.eta).toBeNull();
+	});
+
 	it("keeps the done phase and the error text", () => {
 		const done = toInstallProgress(
 			{
@@ -188,7 +212,8 @@ describe("toInstallProgress", () => {
 				done: 1,
 				total: 1,
 				progress: 1,
-				speed: 0
+				speed: 0,
+				eta: null
 			},
 			"x"
 		);
@@ -205,6 +230,7 @@ describe("toInstallProgress", () => {
 				total: 0,
 				progress: null,
 				speed: 0,
+				eta: null,
 				error: "bad archive"
 			},
 			"x"
@@ -216,17 +242,35 @@ describe("toInstallProgress", () => {
 });
 
 describe("toDownloadsList", () => {
-	it("returns the rows and the speed limit, with no installs yet", () => {
-		const list = toDownloadsList([makeView()], {
-			connections: 4,
-			maxActive: 2,
-			hostConnections: 4,
-			retries: 3,
-			speedLimitKBps: 512,
-			keepArchives: false
+	it("returns the rows, running installs, speed limit and 7-Zip state from the status", () => {
+		const list = toDownloadsList([makeView({ id: 5, filename: "game.7z" })], {
+			installs: [
+				{
+					downloadId: 5,
+					gameId: 2,
+					state: "active",
+					phase: "extracting",
+					done: 10,
+					total: 100,
+					progress: 0.1,
+					speed: 10,
+					eta: 9
+				}
+			],
+			sevenZip: false,
+			speedLimitKBps: 512
 		});
 		expect(list.items).toHaveLength(1);
-		expect(list.installs).toEqual([]);
+		expect(list.installs).toHaveLength(1);
+		expect(list.installs[0].title).toBe("game.7z");
+		expect(list.installs[0].eta).toBe(9);
 		expect(list.speedLimitKBps).toBe(512);
+		expect(list.sevenZip).toBe(false);
+	});
+
+	it("treats a missing install list as empty", () => {
+		const list = toDownloadsList([], { installs: null, sevenZip: true, speedLimitKBps: 0 });
+		expect(list.installs).toEqual([]);
+		expect(list.sevenZip).toBe(true);
 	});
 });

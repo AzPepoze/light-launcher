@@ -7,7 +7,7 @@ import type {
 } from "./types";
 import type {
 	WireDownloadProgress,
-	WireDownloadSettings,
+	WireDownloadsStatus,
 	WireDownloadView,
 	WireInstallProgress
 } from "./wire";
@@ -54,6 +54,7 @@ export function toDownloadItem(wire: WireDownloadView): DownloadItem {
 		speed: wire.speed,
 		eta: estimateEta(wire.total - wire.received, wire.speed),
 		connections: wire.connections,
+		rateLimited: wire.rateLimited,
 		createdAt: wire.createdAt,
 		finishedAt: wire.finishedAt ?? null
 	};
@@ -83,18 +84,18 @@ export function hasDownload(items: DownloadItem[], id: number): boolean {
 	return items.some((item) => item.id === id);
 }
 
-/** The Go side sends no title for installs, so the caller passes the download's file name. */
-export function toInstallProgress(wire: WireInstallProgress, title: string): InstallProgress {
+/** The title comes from the library. When the game has none, the caller's fallback (the file name) is used. */
+export function toInstallProgress(wire: WireInstallProgress, fallbackTitle: string): InstallProgress {
 	return {
 		downloadId: wire.downloadId,
 		gameId: wire.gameId,
-		title,
+		title: wire.title || fallbackTitle,
 		phase: toPhase(wire.phase),
 		done: wire.done,
 		total: wire.total,
 		progress: wire.progress,
 		speed: wire.speed,
-		eta: estimateEta(wire.total - wire.done, wire.speed),
+		eta: wire.eta,
 		engine: orNull(wire.engine),
 		state: wire.state === "done" || wire.state === "error" ? wire.state : "active",
 		error: orNull(wire.error)
@@ -103,11 +104,16 @@ export function toInstallProgress(wire: WireInstallProgress, title: string): Ins
 
 export function toDownloadsList(
 	views: WireDownloadView[],
-	settings: WireDownloadSettings
+	status: WireDownloadsStatus
 ): DownloadsListResponse {
+	const items = views.map(toDownloadItem);
+	const fileNames = new Map(items.map((item) => [item.id, item.filename]));
 	return {
-		items: views.map(toDownloadItem),
-		installs: [],
-		speedLimitKBps: settings.speedLimitKBps
+		items,
+		installs: (status.installs ?? []).map((install) =>
+			toInstallProgress(install, fileNames.get(install.downloadId) ?? "")
+		),
+		speedLimitKBps: status.speedLimitKBps,
+		sevenZip: status.sevenZip
 	};
 }
