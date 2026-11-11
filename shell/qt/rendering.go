@@ -17,6 +17,12 @@ const (
 // rendering, which makes scrolling and animation choppy.
 var gpuFlags = []string{"--ignore-gpu-blocklist", "--enable-gpu-rasterization"}
 
+const blinkFeaturesPrefix = "--enable-blink-features="
+
+// blinkFeatures are Blink features that are off by default on Linux. MiddleClickAutoscroll gives the
+// Chrome-style middle-click drag scrolling that Windows browsers have.
+var blinkFeatures = []string{"MiddleClickAutoscroll"}
+
 // chromiumFlags adds the rendering flags to the ones the user already set. A flag that is already
 // there is not added twice, and the user's own flags always stay.
 func chromiumFlags(existing string, disableGPU bool) string {
@@ -24,17 +30,36 @@ func chromiumFlags(existing string, disableGPU bool) string {
 	if disableGPU {
 		wanted = []string{"--disable-gpu"}
 	}
+	flags := addMissing(strings.Fields(existing), wanted)
+	flags = mergeBlinkFeatures(flags, blinkFeatures)
+	return strings.Join(flags, " ")
+}
+
+// addMissing appends the wanted flags that are not in flags yet.
+func addMissing(flags, wanted []string) []string {
 	present := map[string]bool{}
-	for _, flag := range strings.Fields(existing) {
+	for _, flag := range flags {
 		present[flag] = true
 	}
-	flags := strings.Fields(existing)
 	for _, flag := range wanted {
 		if !present[flag] {
 			flags = append(flags, flag)
 		}
 	}
-	return strings.Join(flags, " ")
+	return flags
+}
+
+// mergeBlinkFeatures puts the features into one --enable-blink-features flag, keeping any the user listed.
+func mergeBlinkFeatures(flags, features []string) []string {
+	for index, flag := range flags {
+		if !strings.HasPrefix(flag, blinkFeaturesPrefix) {
+			continue
+		}
+		listed := strings.Split(strings.TrimPrefix(flag, blinkFeaturesPrefix), ",")
+		flags[index] = blinkFeaturesPrefix + strings.Join(addMissing(listed, features), ",")
+		return flags
+	}
+	return append(flags, blinkFeaturesPrefix+strings.Join(features, ","))
 }
 
 // configureRendering must run before Qt starts, because Chromium reads its flags once.
