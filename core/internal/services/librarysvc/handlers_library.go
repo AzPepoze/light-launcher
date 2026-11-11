@@ -51,10 +51,6 @@ type checkPayload struct {
 	Force bool    `json:"force"`
 }
 
-type pathPayload struct {
-	Path string `json:"path"`
-}
-
 // downloadFilePayload names one saved file of a game. The file id comes from the game's file list.
 type downloadFilePayload struct {
 	GameID int64 `json:"gameId"`
@@ -202,10 +198,6 @@ func (s *service) setFavorite(ctx context.Context, in favoritePayload) (library.
 	}
 	s.changed(in.ID)
 	return game, nil
-}
-
-func (s *service) scanFolder(ctx context.Context, in pathPayload) (library.ScanReport, error) {
-	return s.lib.ScanFolder(ctx, in.Path)
 }
 
 func (s *service) launch(ctx context.Context, in idPayload) (library.LaunchResult, error) {

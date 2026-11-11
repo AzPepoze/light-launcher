@@ -87,7 +87,7 @@ func TestRegisterAddsEveryLibraryMethod(t *testing.T) {
 		"LibraryList", "LibraryGet", "LibraryUpdate", "LibraryRemove", "LibrarySearch", "LibraryBrowse", "LibraryFilters", "LibraryPreview",
 		"LibraryAddFromUrl", "LibraryLinkLocal", "LibraryCheckUpdates", "LibrarySetFavorite",
 		"LibraryOverview", "LibrarySyncSource",
-		"LibraryScanFolder", "LibraryLaunch", "LibraryLinkFolder", "LibraryUpdatesSummary",
+		"LibraryLaunch", "LibraryLinkFolder", "LibraryUpdatesSummary",
 		"LibraryUpdateHistory", "LibraryDownloadFile",
 		"IncomingList", "IncomingLink", "IncomingIgnore", "IncomingCreateLocal",
 	}
