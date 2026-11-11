@@ -2,6 +2,9 @@
 //
 // The launcher passes the URL in the LL_URL environment variable. A URL argument is the fallback.
 // Usage: [LL_URL=<url>] light-launcher-shell [--transparent] [url]
+//
+// The --assist mode instead shows one web page for a human to use and reports the download the page
+// starts. It never acts on the page: the user logs in, presses the buttons and solves any challenge.
 package main
 
 import (
@@ -34,15 +37,24 @@ func parseOptions(args []string) (options, error) {
 	if err != nil {
 		return options{}, err
 	}
-	// url.Parse errors repeat the input, which holds the token, so the error is replaced.
-	target, err := url.Parse(raw)
+	target, err := parseTarget(raw)
 	if err != nil {
-		return options{}, errors.New("URL is not valid")
-	}
-	if (target.Scheme != "http" && target.Scheme != "https") || target.Host == "" {
-		return options{}, errors.New("URL must be http:// or https:// with a host")
+		return options{}, err
 	}
 	return options{url: target, transparent: *transparent}, nil
+}
+
+// parseTarget validates a page URL. url.Parse errors repeat the input, which can hold a token,
+// so the error is replaced.
+func parseTarget(raw string) (*url.URL, error) {
+	target, err := url.Parse(raw)
+	if err != nil {
+		return nil, errors.New("URL is not valid")
+	}
+	if (target.Scheme != "http" && target.Scheme != "https") || target.Host == "" {
+		return nil, errors.New("URL must be http:// or https:// with a host")
+	}
+	return target, nil
 }
 
 // shellURL returns the UI URL from LL_URL, or from the single argument when LL_URL is not set.
@@ -57,7 +69,12 @@ func shellURL(args []string) (string, error) {
 }
 
 func main() {
-	opts, err := parseOptions(os.Args[1:])
+	args := os.Args[1:]
+	if wantsAssist(args) {
+		os.Exit(runAssist(args))
+	}
+
+	opts, err := parseOptions(args)
 	if err != nil {
 		log.Error("args", "%v", err)
 		log.Error("args", "usage: LL_URL=<url> light-launcher-shell [--transparent]")
