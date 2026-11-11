@@ -43,7 +43,8 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | Host option for a download folder, a subfolder per game, install after download and delete archive (in progress). |
 | [ ] | The launcher never calls `source.sync` and never schedules update checks. Plugin sync and interval settings have no effect until a scheduler exists. |
 | [x] | A running plugin gets a `settings.changed` notice when settings are saved (no restart; plugins must read settings per call). |
-| [ ] | Browser assist (Chrome or Edge over CDP) is not implemented in the host. |
+| [ ] | Browser assist (Chrome or Edge over CDP) is not implemented in the host (in progress). |
+| [ ] | Embedded browser assist: open the page in a Qt WebEngine window or WebView2 window of the shell and catch the download there. Needs a launcher-to-shell control channel; external browser stays as the fallback. |
 | [ ] | Plugin secrets saved before the cleanup change are not removed when the plugin is removed. |
 | [ ] | OS-level sandbox for plugins (permissions only cover host services today). |
 | [ ] | Resource limits for plugins (CPU, memory). |
