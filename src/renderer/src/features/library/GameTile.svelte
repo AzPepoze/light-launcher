@@ -13,7 +13,7 @@
 <button class="tile" onclick={() => onOpen(game)} aria-label="Open {game.title}">
 	<div class="cover" style:aspect-ratio={shape.aspect}>
 		{#if game.cover || game.coverLocal}
-			<CoverImage {game} />
+			<CoverImage {game} framed />
 		{:else}
 			<span class="material-icons placeholder" aria-hidden="true">videogame_asset</span>
 		{/if}
