@@ -85,10 +85,9 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 
 | Status | Item |
 |---|---|
-| [ ] | Old data is not moved on first start. |
-| [ ] | The old Electron flags file is not read. |
-| [ ] | Old config paths are not rewritten. |
-| [ ] | Run the new app against real old data (not tried yet). |
+| Won't do | Moving old Electron-era data on first start. The only user chose a clean start, so v2 may break old data. |
+| Won't do | Reading the old Electron flags file and rewriting old config paths. |
+| [ ] | Keep schemas of new data versioned from now on, so later releases can migrate. |
 
 ## Code quality
 
