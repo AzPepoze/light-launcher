@@ -1,6 +1,7 @@
 package runtimesvc
 
 import (
+	"encoding/json"
 	"errors"
 	"path/filepath"
 	"reflect"
@@ -10,6 +11,16 @@ import (
 	"light-launcher/core/internal/config"
 	"light-launcher/core/internal/types"
 )
+
+// seedActivity stores one entry under the key the service derives from gamePath, so it works on every OS.
+func seedActivity(t *testing.T, gamePath, entry string) {
+	t.Helper()
+	key, err := json.Marshal(activityKey(gamePath))
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, activityStorePath(), `{"games": {`+string(key)+`: `+entry+`}}`)
+}
 
 // cmdlines builds a readCmdline function from a pid to NUL-separated arguments map.
 func cmdlines(values map[int]string) func(int) (string, error) {
@@ -59,6 +70,7 @@ func TestParsePids(t *testing.T) {
 }
 
 func TestRefreshKeepsStartTimeWhileRunning(t *testing.T) {
+	skipUnlessLinux(t)
 	isolateHome(t)
 	tracker := &sessionTracker{firstSeen: map[int]int64{}}
 	read := cmdlines(map[int]string{42: instanceCmdline("/games/Game.exe", "Game")})
@@ -133,7 +145,7 @@ func TestRefreshDefaultsGameNameFromFileName(t *testing.T) {
 
 func TestSyncActivitySessionsMovesActiveMarker(t *testing.T) {
 	isolateHome(t)
-	writeFile(t, activityStorePath(), `{"games": {"/old/game.exe": {"gamePath": "/old/Game.exe", "gameName": "Old", "lastPlayedAt": 100, "totalPlaytimeSeconds": 60, "activeSince": 100}}}`)
+	seedActivity(t, "/old/Game.exe", `{"gamePath": "/old/Game.exe", "gameName": "Old", "lastPlayedAt": 100, "totalPlaytimeSeconds": 60, "activeSince": 100}`)
 
 	session := types.RunningSession{Pid: 1, GamePath: "/new/Game.exe", GameName: "New", StartedAt: 500}
 	if err := syncActivitySessions([]types.RunningSession{session}); err != nil {
@@ -141,10 +153,10 @@ func TestSyncActivitySessionsMovesActiveMarker(t *testing.T) {
 	}
 
 	store := loadActivityStore()
-	if oldEntry := store.Games["/old/game.exe"]; isActive(oldEntry) {
+	if oldEntry := store.Games[activityKey("/old/Game.exe")]; isActive(oldEntry) {
 		t.Errorf("old game still active: %+v", oldEntry)
 	}
-	newEntry, ok := store.Games["/new/game.exe"]
+	newEntry, ok := store.Games[activityKey("/new/Game.exe")]
 	if !ok || !isActive(newEntry) || *newEntry.ActiveSince != 500 || newEntry.GameName != "New" {
 		t.Errorf("new game entry = %+v, want active since 500", newEntry)
 	}
@@ -152,14 +164,14 @@ func TestSyncActivitySessionsMovesActiveMarker(t *testing.T) {
 
 func TestRecordLaunchStartsSessionAndKeepsPlaytime(t *testing.T) {
 	isolateHome(t)
-	writeFile(t, activityStorePath(), `{"games": {"/games/game.exe": {"gamePath": "/games/Game.exe", "gameName": "Game", "lastPlayedAt": 10, "totalPlaytimeSeconds": 60}}}`)
+	seedActivity(t, "/games/Game.exe", `{"gamePath": "/games/Game.exe", "gameName": "Game", "lastPlayedAt": 10, "totalPlaytimeSeconds": 60}`)
 
 	options := types.LaunchOptions{ID: "abc", Name: "Game", GamePath: "/games/Game.exe"}
 	if err := recordLaunch(options); err != nil {
 		t.Fatalf("recordLaunch: %v", err)
 	}
 
-	entry := loadActivityStore().Games["/games/game.exe"]
+	entry := loadActivityStore().Games[activityKey("/games/Game.exe")]
 	if !isActive(entry) || entry.TotalPlaytimeSeconds != 60 || entry.ProfileID != "abc" {
 		t.Errorf("entry = %+v, want an active session, kept playtime 60 and profile abc", entry)
 	}

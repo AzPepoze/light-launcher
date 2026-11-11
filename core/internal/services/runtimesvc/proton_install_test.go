@@ -35,6 +35,7 @@ func buildProtonArchive(t *testing.T) []byte {
 }
 
 func TestInstallProtonVersionExtractsArchive(t *testing.T) {
+	skipUnlessLinux(t)
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 	archive := buildProtonArchive(t)

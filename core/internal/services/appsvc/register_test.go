@@ -49,7 +49,10 @@ func TestRegisteredHandlersDecodeRouterPayloads(t *testing.T) {
 	ctx := context.Background()
 
 	folder := t.TempDir()
-	payload := json.RawMessage(`{"path":"` + folder + `"}`)
+	payload, err := json.Marshal(map[string]string{"path": folder})
+	if err != nil {
+		t.Fatal(err)
+	}
 	isDir, err := router.Dispatch(ctx, "IsDir", payload)
 	if err != nil || isDir != true {
 		t.Fatalf("IsDir = %v, %v", isDir, err)

@@ -37,6 +37,7 @@ func linuxLaunch() types.LaunchOptions {
 }
 
 func TestBuildInstanceArgsOnLinux(t *testing.T) {
+	skipUnlessLinux(t)
 	t.Setenv("LIGHT_LAUNCHER_DISCORD_CLIENT_ID", "")
 	settings := types.AppSettings{DiscordClientId: "123"}
 
@@ -100,6 +101,7 @@ func TestParseLaunchMultiplier(t *testing.T) {
 }
 
 func TestResolveProtonPathFallsBackToFirstInstall(t *testing.T) {
+	skipUnlessLinux(t)
 	home := isolateHome(t)
 	protonDir := filepath.Join(home, ".steam", "root", "compatibilitytools.d", "GE-Proton9")
 	writeFile(t, filepath.Join(protonDir, "proton"), "")
