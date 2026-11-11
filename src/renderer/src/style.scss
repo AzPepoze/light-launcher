@@ -322,3 +322,44 @@ html {
 		background-clip: padding-box;
 	}
 }
+
+/* Motion tokens shared by the library and plugin screens. */
+:root {
+	--motion-quick: 140ms;
+	--motion-base: 240ms;
+	--motion-slow: 420ms;
+	--motion-stagger: 55ms;
+}
+
+/* Placeholder block for content that is still loading. */
+.skeleton {
+	background: linear-gradient(
+		100deg,
+		var(--bg-surface) 30%,
+		var(--bg-elevated) 50%,
+		var(--bg-surface) 70%
+	);
+	background-size: 250% 100%;
+	animation: ll-shimmer 1.4s linear infinite;
+}
+
+@keyframes ll-shimmer {
+	from {
+		background-position: 150% 0;
+	}
+	to {
+		background-position: -50% 0;
+	}
+}
+
+/* People who ask for less motion get the final state at once, with no looping animation. */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+}
