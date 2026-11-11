@@ -121,6 +121,7 @@ var migrations = []migration{
 			`alter table game_files add column plugin_file_id text`,
 		},
 	},
+	searchMigration,
 }
 
 func migrate(ctx context.Context, db *sql.DB) error {
