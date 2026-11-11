@@ -15,6 +15,8 @@ type PluginState struct {
 	Unsigned            bool     `json:"unsigned,omitempty"`
 	DisabledReason      string   `json:"disabledReason,omitempty"`
 	AcceptedPermissions []string `json:"acceptedPermissions,omitempty"`
+	// SecretKeys lists the secrets the plugin stored. Keyrings cannot list keys, so uninstall reads them here.
+	SecretKeys []string `json:"secretKeys,omitempty"`
 }
 
 // stateStore keeps state.json in step with memory. It is safe for concurrent use.

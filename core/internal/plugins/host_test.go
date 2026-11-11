@@ -6,6 +6,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 	"time"
 )
@@ -188,6 +189,29 @@ func TestHostRefusedUpdateKeepsPluginRunning(t *testing.T) {
 	}
 	if version := host.info("fixture").Version; version != "0.1.0" {
 		t.Fatalf("version after refused update = %q, want 0.1.0", version)
+	}
+}
+
+func TestHostRemoveDeletesPluginSecrets(t *testing.T) {
+	host := newTestHost(t)
+	ctx := context.Background()
+	source := filepath.Join(t.TempDir(), "fixture.llplugin")
+	writeFixturePackage(t, source, "0.1.0")
+	if _, err := host.Install(ctx, InstallRequest{Source: source, AllowUnsigned: true, AcceptedPermissions: testConsent}); err != nil {
+		t.Fatal(err)
+	}
+	if err := host.deps.secrets.Set(ctx, "fixture", "token", "abc"); err != nil {
+		t.Fatal(err)
+	}
+	if keys := host.install.state.get("fixture").SecretKeys; !slices.Equal(keys, []string{"token"}) {
+		t.Fatalf("tracked secret keys = %v, want [token]", keys)
+	}
+
+	if err := host.Remove("fixture", false); err != nil {
+		t.Fatalf("Remove: %v", err)
+	}
+	if _, found, err := host.deps.secrets.Get(ctx, "fixture", "token"); err != nil || found {
+		t.Fatalf("secret after Remove: found = %v, err = %v; want it deleted", found, err)
 	}
 }
 
