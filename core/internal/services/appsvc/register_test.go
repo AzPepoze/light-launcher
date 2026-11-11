@@ -16,7 +16,7 @@ var registeredMethods = []string{
 	"GetAppSettings", "SaveAppSettings", "GetConfig", "SaveGameConfig",
 	"GetAllGames", "RemoveGame", "SearchExecutables", "GetAutoScannedGames",
 	"AddScanFolder", "RemoveScanFolder", "UpdateScanFolderConfig", "RenameScanFolder",
-	"GetScanFolderConfig", "BlacklistGame", "UnblacklistGame",
+	"GetScanFolderConfig", "SetPreferredLauncher", "ClearPreferredLauncher", "BlacklistGame", "UnblacklistGame",
 	"GetGameActivity", "PickFile", "PickFolder", "PickFileCustom",
 }
 

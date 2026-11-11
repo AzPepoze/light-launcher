@@ -32,6 +32,16 @@ type folderPayload struct {
 	FolderPath string `json:"folderPath"`
 }
 
+// preferredLauncherPayload names the game folder and the launcher the user picked.
+type preferredLauncherPayload struct {
+	Folder string `json:"folder"`
+	Path   string `json:"path"`
+}
+
+type launcherFolderPayload struct {
+	Folder string `json:"folder"`
+}
+
 // searchPayload leaves MaxDepth nil when the UI omits it, which means unlimited depth.
 type searchPayload struct {
 	FolderPath   string   `json:"folderPath"`

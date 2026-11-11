@@ -50,6 +50,12 @@ func registerGameMethods(r *api.Router, svc *service) {
 	r.Handle("GetScanFolderConfig", api.Typed(func(_ context.Context, in folderPayload) (types.ScanFolderConfig, error) {
 		return svc.getScanFolderConfig(in.FolderPath), nil
 	}))
+	r.Handle("SetPreferredLauncher", api.Typed(func(_ context.Context, in preferredLauncherPayload) (types.GameInfo, error) {
+		return svc.setPreferredLauncher(in.Folder, in.Path)
+	}))
+	r.Handle("ClearPreferredLauncher", api.Typed(func(_ context.Context, in launcherFolderPayload) (types.GameInfo, error) {
+		return svc.clearPreferredLauncher(in.Folder)
+	}))
 	r.Handle("BlacklistGame", api.Typed(func(_ context.Context, in executablePayload) (any, error) {
 		return nil, svc.blacklistGame(in.ExecutablePath)
 	}))
