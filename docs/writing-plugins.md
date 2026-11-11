@@ -63,6 +63,7 @@ For web requests, secrets, files and downloads, a plugin asks the launcher. The 
 | `http.request`                                                                      | `network` lists the host |
 | `secrets.get`, `secrets.set`, `secrets.delete`                                      | `secrets: true`          |
 | `extract`                                                                           | `fs` lists a folder      |
+| `downloads.enqueue` with `root: "games"` or `install: true`                         | `fs` lists `$GAMES`      |
 | `browser.assist`                                                                    | `browser: true`          |
 | `storage.get`, `storage.set`, `downloads.enqueue`, `library.upsert`, `settings.get` | None                     |
 

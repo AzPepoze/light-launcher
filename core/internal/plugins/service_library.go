@@ -9,44 +9,8 @@ import (
 	"light-launcher/core/internal/contract"
 )
 
-type downloadParams struct {
-	URL      string            `json:"url"`
-	Filename string            `json:"filename"`
-	Headers  map[string]string `json:"headers"`
-}
-
 type libraryParams struct {
 	Games []contract.GameDTO `json:"games"`
-}
-
-// serviceDownloadsEnqueue queues a file for the host downloader. The URL host must be in the network grant.
-func serviceDownloadsEnqueue(ctx context.Context, env *pluginEnv, params json.RawMessage) (any, error) {
-	req, err := decodeParams[downloadParams](params)
-	if err != nil {
-		return nil, err
-	}
-	target, err := parseHTTPTarget(req.URL)
-	if err != nil {
-		return nil, err
-	}
-	if !env.manifest.Permissions.allowsHost(target.Hostname()) {
-		return nil, hostDenied(target.Hostname())
-	}
-	if !isPlainFileName(req.Filename) {
-		return nil, invalidParams("filename must be a plain file name")
-	}
-	if env.deps.downloads == nil {
-		return nil, internalError("downloads are not available")
-	}
-	id, err := env.deps.downloads.Enqueue(ctx, contract.DownloadRequest{
-		URL:      req.URL,
-		Headers:  req.Headers,
-		Filename: req.Filename,
-	})
-	if err != nil {
-		return nil, internalError(err.Error())
-	}
-	return map[string]int64{"id": id}, nil
 }
 
 // serviceLibraryUpsert saves games. Each game must come from a source this plugin contributes.
