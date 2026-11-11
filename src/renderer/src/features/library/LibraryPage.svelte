@@ -1,6 +1,6 @@
 <script lang="ts">
 	import PageHeader from "@components/shared/PageHeader.svelte";
-	import { onMount } from "svelte";
+	import { onMount, tick } from "svelte";
 	import type { Game } from "../../lib/features/types";
 	import AddGameDialog from "./AddGameDialog.svelte";
 	import FilterBar from "./FilterBar.svelte";
@@ -8,6 +8,7 @@
 	import GameGroup from "./GameGroup.svelte";
 	import IncomingPanel from "./IncomingPanel.svelte";
 	import { LibraryState } from "./libraryState.svelte";
+	import { revealDoneMs, revealOrder } from "./libraryMotion";
 
 	type Tab = "games" | "incoming";
 
@@ -15,20 +16,38 @@
 	let tab = $state<Tab>("games");
 	let selectedId = $state<number | null>(null);
 	let addOpen = $state(false);
+	let revealed = $state(false);
 
 	const selected = $derived(selectedId === null ? undefined : library.gameById(selectedId));
 	const subtitle = $derived(
 		`${library.stats.total} games · ${library.stats.installed} installed` +
 			(library.stats.updates ? ` · ${library.stats.updates} updates` : ""),
 	);
+	const revealPlan = $derived(revealOrder(library.groups));
+	const hasTiles = $derived(library.visible.length > 0);
+	const tileReveal = $derived(revealed ? new Map<number, number>() : revealPlan);
 
 	onMount(() => {
 		library.load();
 		return library.subscribe();
 	});
 
+	// Ends the first reveal once its last tile has finished, so later renders never replay it.
+	$effect(() => {
+		if (!hasTiles || revealed) return;
+		const timer = setTimeout(() => (revealed = true), revealDoneMs(revealPlan.size));
+		return () => clearTimeout(timer);
+	});
+
 	function openGame(game: Game) {
 		selectedId = game.id;
+	}
+
+	async function closeGame() {
+		const id = selectedId;
+		selectedId = null;
+		await tick();
+		document.querySelector<HTMLElement>(`[data-game-id="${id}"]`)?.focus();
 	}
 
 	function addedGame(game: Game) {
@@ -43,68 +62,85 @@
 	}
 </script>
 
-<PageHeader title="Library" {subtitle} icon="collections_bookmark">
-	<div class="tabs" role="tablist" aria-label="Library views">
-		<button
-			role="tab"
-			class="btn sm"
-			class:primary={tab === "games"}
-			aria-selected={tab === "games"}
-			onclick={() => (tab = "games")}
-		>
-			Games
+<div class="library">
+	<PageHeader title="Library" {subtitle} icon="collections_bookmark">
+		<div class="tabs" role="tablist" aria-label="Library views">
+			<button
+				role="tab"
+				class="btn sm"
+				class:primary={tab === "games"}
+				aria-selected={tab === "games"}
+				onclick={() => (tab = "games")}
+			>
+				Games
+			</button>
+			<button
+				role="tab"
+				class="btn sm"
+				class:primary={tab === "incoming"}
+				aria-selected={tab === "incoming"}
+				onclick={() => (tab = "incoming")}
+			>
+				Incoming
+			</button>
+		</div>
+		<button class="btn sm primary" onclick={() => (addOpen = true)}>
+			<span class="material-icons" aria-hidden="true">add</span> Add game
 		</button>
-		<button
-			role="tab"
-			class="btn sm"
-			class:primary={tab === "incoming"}
-			aria-selected={tab === "incoming"}
-			onclick={() => (tab = "incoming")}
-		>
-			Incoming
-		</button>
-	</div>
-	<button class="btn sm primary" onclick={() => (addOpen = true)}>
-		<span class="material-icons" aria-hidden="true">add</span> Add game
-	</button>
-</PageHeader>
+	</PageHeader>
 
-{#if tab === "incoming"}
-	<IncomingPanel onChanged={() => library.load()} />
-{:else if selected}
-	<GameDetail game={selected} {library} onBack={() => (selectedId = null)} onRemoved={gameRemoved} />
-{:else if library.loading}
-	<p class="status">Loading library...</p>
-{:else if library.error}
-	<div class="status">
-		<p>{library.error}</p>
-		<button class="btn sm" onclick={() => library.load()}>Retry</button>
-	</div>
-{:else if library.stats.total === 0}
-	<div class="status">
-		<p>No games yet. Add a link or scan your folders.</p>
-		<button class="btn sm primary" onclick={() => (addOpen = true)}>Add game</button>
-	</div>
-{:else}
-	<FilterBar {library} />
-
-	{#if library.visible.length === 0}
+	{#if tab === "incoming"}
+		<IncomingPanel onChanged={() => library.load()} />
+	{:else if selected}
+		<GameDetail game={selected} {library} onBack={closeGame} onRemoved={gameRemoved} />
+	{:else if library.loading}
+		<p class="status">Loading library...</p>
+	{:else if library.error}
 		<div class="status">
-			<p>No games match these filters.</p>
-			<button class="btn sm" onclick={() => library.resetFilters()}>Clear filters</button>
+			<p>{library.error}</p>
+			<button class="btn sm" onclick={() => library.load()}>Retry</button>
+		</div>
+	{:else if library.stats.total === 0}
+		<div class="status">
+			<p>No games yet. Add a link or scan your folders.</p>
+			<button class="btn sm primary" onclick={() => (addOpen = true)}>Add game</button>
 		</div>
 	{:else}
-		{#each library.groups as group (group.source)}
-			<GameGroup {group} onOpen={openGame} />
-		{/each}
-	{/if}
-{/if}
+		<FilterBar {library} />
 
-{#if addOpen}
-	<AddGameDialog onAdded={addedGame} onClose={() => (addOpen = false)} />
-{/if}
+		{#if library.visible.length === 0}
+			<div class="status">
+				<p>No games match these filters.</p>
+				<button class="btn sm" onclick={() => library.resetFilters()}>Clear filters</button>
+			</div>
+		{:else}
+			{#each library.groups as group (group.source)}
+				<GameGroup {group} reveal={tileReveal} onOpen={openGame} />
+			{/each}
+		{/if}
+	{/if}
+
+	{#if addOpen}
+		<AddGameDialog onAdded={addedGame} onClose={() => (addOpen = false)} />
+	{/if}
+</div>
 
 <style lang="scss">
+	.library {
+		font-size: 1rem;
+		line-height: 1.5;
+
+		/* Shared buttons read at the same size as the rest of the page. */
+		:global(.btn.sm) {
+			font-size: 0.875rem;
+		}
+
+		:global(.btn:focus-visible) {
+			outline: 2px solid var(--accent-primary);
+			outline-offset: 2px;
+		}
+	}
+
 	.tabs {
 		display: flex;
 		gap: 6px;

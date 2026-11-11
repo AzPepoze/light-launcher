@@ -6,70 +6,102 @@
 	let {
 		game,
 		shape,
+		sourceLabel,
+		revealIndex,
 		onOpen
-	}: { game: Game; shape: TileShape; onOpen: (game: Game) => void } = $props();
+	}: {
+		game: Game;
+		shape: TileShape;
+		sourceLabel: string;
+		/** Position in the first reveal, or undefined when the tile does not animate in. */
+		revealIndex?: number;
+		onOpen: (game: Game) => void;
+	} = $props();
 </script>
 
-<button class="tile" onclick={() => onOpen(game)} aria-label="Open {game.title}">
-	<div class="cover" style:aspect-ratio={shape.aspect}>
+<button
+	class="tile"
+	class:reveal={revealIndex !== undefined}
+	style:--reveal-index={revealIndex}
+	data-game-id={game.id}
+	onclick={() => onOpen(game)}
+	aria-label="Open {game.title}"
+>
+	<span class="cover" style:aspect-ratio={shape.aspect}>
 		{#if game.cover || game.coverLocal}
 			<CoverImage {game} framed />
 		{:else}
 			<span class="material-icons placeholder" aria-hidden="true">videogame_asset</span>
 		{/if}
-		<div class="badges">
+		<span class="badges">
 			{#if game.favorite}
 				<span class="material-icons badge" title="Favorite">favorite</span>
 			{/if}
 			{#if game.updateAvailable}
 				<span class="badge update">Update</span>
 			{/if}
-		</div>
-	</div>
-	<p class="title">{game.title}</p>
-	<p class="meta">{game.installed ? "Installed" : game.source}</p>
+		</span>
+	</span>
+	<span class="title">{game.title}</span>
+	<span class="meta">{sourceLabel}{game.installed ? " · Installed" : ""}</span>
 </button>
 
 <style lang="scss">
+	@keyframes tile-reveal {
+		from {
+			opacity: 0;
+			transform: translateY(8px);
+		}
+	}
+
 	.tile {
 		display: flex;
 		flex-direction: column;
-		gap: 6px;
+		gap: 8px;
 		padding: 0;
-		border: 2px solid transparent;
+		border: none;
 		border-radius: var(--radius-md);
 		background: transparent;
 		color: var(--text-main);
 		text-align: left;
 		cursor: pointer;
 		font: inherit;
-		transition: border-color var(--transition-fast), transform var(--transition-fast);
 
-		&:hover {
-			border-color: var(--glass-border-bright);
-			transform: translateY(-2px);
+		&.reveal {
+			animation: tile-reveal var(--motion-base) var(--ease-out) both;
+			animation-delay: calc(var(--reveal-index) * var(--motion-stagger));
 		}
 
 		&:focus-visible {
-			outline: none;
-			border-color: var(--accent-primary);
+			outline: 2px solid var(--accent-primary);
+			outline-offset: 2px;
+		}
+
+		&:hover .cover,
+		&:focus-visible .cover {
+			transform: scale(1.03);
+		}
+
+		&:active .cover {
+			transform: scale(0.97);
 		}
 	}
 
 	.cover {
+		display: flex;
 		position: relative;
 		width: 100%;
+		align-items: center;
+		justify-content: center;
 		border-radius: var(--radius-md);
 		overflow: hidden;
 		background: var(--bg-elevated);
-		display: flex;
-		align-items: center;
-		justify-content: center;
+		transition: transform var(--motion-quick) var(--ease-out);
 	}
 
 	.placeholder {
 		font-size: 40px;
-		color: var(--text-dim);
+		color: var(--text-muted);
 	}
 
 	.badges {
@@ -88,26 +120,29 @@
 		color: var(--text-main);
 
 		&.update {
-			font-size: 11px;
+			font-size: 0.75rem;
 			font-weight: 800;
 			background: var(--accent-primary);
 			color: var(--bg-base);
 		}
 	}
 
-	.title {
-		margin: 0;
-		font-size: 0.85rem;
-		font-weight: 700;
-		white-space: nowrap;
+	.title,
+	.meta {
+		display: block;
 		overflow: hidden;
+		white-space: nowrap;
 		text-overflow: ellipsis;
 	}
 
+	.title {
+		font-size: 1.05rem;
+		font-weight: 600;
+		line-height: 1.3;
+	}
+
 	.meta {
-		margin: 0;
-		font-size: 0.72rem;
-		color: var(--text-dim);
-		text-transform: capitalize;
+		font-size: 0.875rem;
+		color: var(--text-muted);
 	}
 </style>
