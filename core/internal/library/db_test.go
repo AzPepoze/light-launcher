@@ -2,6 +2,7 @@ package library
 
 import (
 	"context"
+	"database/sql"
 	"path/filepath"
 	"testing"
 )
@@ -57,6 +58,48 @@ func TestReopenKeepsDataAndVersion(t *testing.T) {
 	}
 	if version != len(migrations) {
 		t.Errorf("user_version = %d, want %d", version, len(migrations))
+	}
+}
+
+func TestMigrationFromV1KeepsChecks(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "library.db")
+	db, err := sql.Open("sqlite", "file:"+path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, statement := range migrations[0].statements {
+		if _, err := db.ExecContext(context.Background(), statement); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := db.ExecContext(context.Background(), `pragma user_version = 1`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.ExecContext(context.Background(), `insert into games
+		(source, source_id, url, title, tags, screenshots, status, added_at, updated_at)
+		values ('manual', 'old-1', 'file://old-1', 'Old Game', '[]', '[]', 'unknown', '2026-01-01', '2026-01-01')`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.ExecContext(context.Background(), `insert into checks
+		(game_id, checked_at, old_version, new_version, changelog, seen, applied)
+		values (1, '2026-02-01', '1.0', '2.0', '', 0, 0)`); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	lib, err := Open(context.Background(), Options{DBPath: path})
+	if err != nil {
+		t.Fatalf("upgrade v1 database: %v", err)
+	}
+	defer lib.Close()
+	entries, err := lib.UpdateHistory(context.Background(), 0, 10, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 1 || entries[0].Title != "Old Game" || entries[0].Result != ResultUpdate {
+		t.Errorf("history after upgrade = %+v, want the old check as an update", entries)
 	}
 }
 
