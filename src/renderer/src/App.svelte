@@ -30,6 +30,13 @@
 	import CommandPalette from "@components/shared/CommandPalette.svelte";
 	import { commandPaletteState } from "@components/shared/CommandPaletteState.svelte";
 	import { createLogger } from "@lib/logger";
+	import {
+		isFpsMeterShortcut,
+		isTypingTarget,
+		loadFpsMeterVisible,
+		saveFpsMeterVisible,
+	} from "@lib/fpsMeterPreference";
+	import FpsMeter from "@components/dev/FpsMeter.svelte";
 
 	const log = createLogger("App");
 
@@ -159,6 +166,20 @@
 		}
 	}
 
+	let fpsMeterVisible = loadFpsMeterVisible();
+
+	function toggleFpsMeter(e: KeyboardEvent) {
+		if (!isFpsMeterShortcut(e) || isTypingTarget(e.target)) return;
+		e.preventDefault();
+		fpsMeterVisible = !fpsMeterVisible;
+		saveFpsMeterVisible(fpsMeterVisible);
+	}
+
+	onMount(() => {
+		document.addEventListener("keydown", toggleFpsMeter);
+		return () => document.removeEventListener("keydown", toggleFpsMeter);
+	});
+
 	function handleNavigate(page: string) {
 		changePage(page);
 	}
@@ -267,6 +288,9 @@
 	</div>
 
 	<NotificationHost />
+	{#if fpsMeterVisible}
+		<FpsMeter />
+	{/if}
 </main>
 
 <style lang="scss">
