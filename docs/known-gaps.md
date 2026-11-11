@@ -16,6 +16,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | Run the NSIS installer on Windows (`makensis` is not installed on the build machine). |
 | [ ] | Code signing for the Windows binaries and installer. |
 | [x] | Windows core and unit tests pass under Wine. |
+| [x] | Download folders, install folders and file names follow Windows rules, so data made on Linux opens on Windows. |
 | [ ] | Check old Windows 10 without WebView2 (the installer needs the bootstrapper). |
 
 ## Release and repos

@@ -110,6 +110,18 @@ For web requests, secrets, files and downloads, a plugin asks the launcher. The 
 
 Omit every field to keep the default: save into the downloads folder and do not install. `root: "games"` and `install: true` need `$GAMES` in the plugin's `fs` permission; the launcher refuses them otherwise.
 
+### Folder name rules
+
+Every name in `subfolder` and `installSubfolder`, and every download `filename`, must be a plain name that works on Linux and Windows.
+
+| Rule | Details |
+| :--- | :--- |
+| One segment | No `/` or `\`, and no drive letters. Join folders with `/` in `subfolder`. |
+| Allowed characters | No `<`, `>`, `:`, `"`, `\|`, `?` or `*`. Spaces, dots inside the name, unicode and emoji are fine. |
+| End of name | Must not end with a dot or a space. |
+| Reserved names | Not a Windows device name, with or without an extension: `CON`, `PRN`, `AUX`, `NUL`, `COM1` to `COM9`, `LPT1` to `LPT9`. |
+| Length | A name is at most 255 bytes and a whole `subfolder` path at most 240 bytes. |
+
 Map the plugin's settings to these fields: a `downloadFolder` setting to `subfolder`, `installAfterDownload` to `install`, `installFolder` to `installSubfolder`, and `deleteArchive` to `deleteArchive`. Use `root: "games"` when the user picked a folder inside the games folder. Read the settings on each call, as described above.
 
 ## Settings form
