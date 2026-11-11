@@ -8,6 +8,7 @@
 //   - source.wait {ms}: answers after a delay, to keep a call in flight
 //   - source.progress {id, done, total}: reports a progress job
 //   - source.crash: exits at once, to test restarts
+//   - source.listGames {source, scope, cursor, limit}: pages through 250 fixed games
 package main
 
 import (
@@ -17,6 +18,14 @@ import (
 	"os"
 	"strconv"
 	"time"
+)
+
+const (
+	codeInvalidParams = -32602
+	listGamesTotal    = 250
+	listGamesMaxLimit = 200
+	fixtureSource     = "fixture"
+	fixtureScope      = "mine"
 )
 
 type message struct {
@@ -82,6 +91,8 @@ func handle(msg message) {
 		respond(msg.ID, nil)
 	case "source.crash":
 		os.Exit(3)
+	case "source.listGames":
+		answerListGames(msg)
 	default:
 		respondError(msg.ID, -32601, "method not found: "+msg.Method)
 	}
@@ -100,6 +111,87 @@ func prepareDownload() map[string]any {
 		"installSubfolder": "Pack",
 		"deleteArchive":    false,
 		"futureField":      "ignored",
+	}
+}
+
+type listGamesParams struct {
+	Source string `json:"source"`
+	Scope  string `json:"scope"`
+	Cursor string `json:"cursor"`
+	Limit  int    `json:"limit"`
+}
+
+type fixtureGame struct {
+	Source   string `json:"source"`
+	SourceID string `json:"sourceId"`
+	URL      string `json:"url"`
+	Title    string `json:"title"`
+}
+
+type listGamesResult struct {
+	Games      []fixtureGame `json:"games"`
+	NextCursor string        `json:"nextCursor,omitempty"`
+	Total      int           `json:"total"`
+}
+
+func answerListGames(msg message) {
+	result, err := listGames(msg.Params)
+	if err != nil {
+		respondError(msg.ID, codeInvalidParams, err.Error())
+		return
+	}
+	respond(msg.ID, result)
+}
+
+// listGames returns one page of the fixed game list. The cursor is the offset of the next game.
+func listGames(raw json.RawMessage) (listGamesResult, error) {
+	var params listGamesParams
+	if err := json.Unmarshal(raw, &params); err != nil {
+		return listGamesResult{}, fmt.Errorf("params: %w", err)
+	}
+	if params.Source != fixtureSource {
+		return listGamesResult{}, fmt.Errorf("unknown source %q", params.Source)
+	}
+	if params.Scope != fixtureScope {
+		return listGamesResult{}, fmt.Errorf("unknown scope %q", params.Scope)
+	}
+	if params.Limit < 1 || params.Limit > listGamesMaxLimit {
+		return listGamesResult{}, fmt.Errorf("limit must be 1 to %d, not %d", listGamesMaxLimit, params.Limit)
+	}
+	offset, err := parseCursor(params.Cursor)
+	if err != nil {
+		return listGamesResult{}, err
+	}
+	end := min(offset+params.Limit, listGamesTotal)
+	result := listGamesResult{Games: make([]fixtureGame, 0, end-offset), Total: listGamesTotal}
+	for i := offset; i < end; i++ {
+		result.Games = append(result.Games, fixtureGameAt(i))
+	}
+	if end < listGamesTotal {
+		result.NextCursor = strconv.Itoa(end)
+	}
+	return result, nil
+}
+
+func parseCursor(cursor string) (int, error) {
+	if cursor == "" {
+		return 0, nil
+	}
+	offset, err := strconv.Atoi(cursor)
+	if err != nil || offset < 0 || offset >= listGamesTotal {
+		return 0, fmt.Errorf("bad cursor %q", cursor)
+	}
+	return offset, nil
+}
+
+// fixtureGameAt returns game number i (starting at 0). Its ids are stable across runs.
+func fixtureGameAt(i int) fixtureGame {
+	sourceID := fmt.Sprintf("game-%03d", i+1)
+	return fixtureGame{
+		Source:   fixtureSource,
+		SourceID: sourceID,
+		URL:      "https://example.test/g/" + sourceID,
+		Title:    fmt.Sprintf("Fixture game %03d", i+1),
 	}
 }
 
