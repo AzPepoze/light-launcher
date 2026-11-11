@@ -15,10 +15,16 @@ type Config struct {
 	UI     fs.FS
 	Router *api.Router
 	Hub    *api.Hub
+	Covers CoverSource
 	Token  string
 	Port   int
 	// OnOpen receives a game path sent by a second launch.
 	OnOpen func(gamePath string) error
+}
+
+// CoverSource finds the cached cover file of a game.
+type CoverSource interface {
+	CoverFile(id int64) (path string, ok bool)
 }
 
 type server struct {
@@ -31,8 +37,8 @@ type server struct {
 
 // New returns the handler for the launcher's HTTP server. It panics on a config that cannot work.
 func New(cfg Config) http.Handler {
-	if cfg.UI == nil || cfg.Router == nil || cfg.Hub == nil || cfg.OnOpen == nil || cfg.Token == "" {
-		panic("server: UI, Router, Hub, OnOpen and Token are required")
+	if cfg.UI == nil || cfg.Router == nil || cfg.Hub == nil || cfg.Covers == nil || cfg.OnOpen == nil || cfg.Token == "" {
+		panic("server: UI, Router, Hub, Covers, OnOpen and Token are required")
 	}
 	host := fmt.Sprintf("127.0.0.1:%d", cfg.Port)
 	s := &server{
@@ -48,6 +54,7 @@ func New(cfg Config) http.Handler {
 	mux.HandleFunc("POST /api/ready", s.handleReady)
 	mux.HandleFunc("GET /api/platform", s.handlePlatform)
 	mux.HandleFunc("POST /api/open", s.handleOpen)
+	mux.HandleFunc("GET /api/cover/{id}", s.handleCover)
 	// Unknown API paths must not fall through to the UI's index.html.
 	mux.Handle("/api/", http.NotFoundHandler())
 	mux.Handle("/", serveUI(cfg.UI))
