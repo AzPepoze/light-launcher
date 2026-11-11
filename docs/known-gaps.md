@@ -36,7 +36,9 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [x] | Consent screen on install and update. |
 | [x] | Drag and drop install (zip or folder). |
 | [x] | Plugin updates from GitHub Releases: `repository` field, manual "Check for updates", update screen with consent, release `SHA256SUMS` check, and rollback when a new version does not start. |
-| [ ] | Daily plugin release check and a release workflow in each plugin repo (the launcher checks once soon after start and on "Check now"; there is no scheduler yet). |
+| [ ] | Daily plugin release check (the launcher checks once soon after start and on "Check now"; the scheduler does not run it yet). |
+| [x] | Release workflow in each plugin repo (not yet run on GitHub). |
+| [ ] | The scheduler reads plugin sync intervals once at start, so a plugin installed later or a changed interval needs a restart. |
 | [ ] | Updating a dropped-in plugin without a `repository` field (drop the new version again). A dropped-in plugin that names a repository does update from GitHub. |
 | [x] | Settings form built from each plugin's `settings.schema.json`. |
 | [ ] | Nested objects in a settings schema are not drawn (only top-level fields). |
@@ -45,10 +47,10 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | Host option for a download folder, a subfolder per game, install after download and delete archive (in progress). |
 | [x] | The launcher never calls `source.sync` and never schedules update checks. Plugin sync and interval settings have no effect until a scheduler exists. |
 | [x] | A running plugin gets a `settings.changed` notice when settings are saved (no restart; plugins must read settings per call). |
-| [ ] | Embedded browser assist on Linux (Qt): the host starts the shell in assist mode and reads its download event. A real plugin run is still to do. |
+| [x] | Embedded browser assist on Linux (Qt): the host starts the shell in assist mode and reads its download event. Run in a real window against a local test page. |
+| [ ] | No plugin calls the host `browser.assist` service yet (F95 still uses its own Chrome code), so a real plugin download through the embedded window is untested. |
 | [ ] | Embedded browser assist on Windows (WebView2) is untested on Windows. |
-| [ ] | Qt assist mode cannot list cookies restored from disk on Qt 6.11: `loadAllCookies()` emits no `cookieAdded` signals, so the captured `Cookie` header can miss them until the page sets a cookie in that run. |
-| [ ] | Plugin secrets saved before the cleanup change are not removed when the plugin is removed. |
+| [ ] | Qt assist mode cannot list cookies restored from disk on Qt 6.11: `loadAllCookies()` emits no `cookieAdded` signals, so the captured `Cookie` header can miss a login from an earlier run until the page sets that cookie again. Cookies set during the run are captured. || [ ] | Plugin secrets saved before the cleanup change are not removed when the plugin is removed. |
 | [x] | Stop plugins that stay idle for 5 minutes, with `pluginIdleTimeoutMinutes` to change or disable it. |
 | [ ] | Check the "Sleeping" plugin badge by eye in the real window (only typecheck, tests and build so far). |
 | [ ] | OS-level sandbox for plugins (permissions only cover host services today). |
@@ -80,6 +82,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [x] | Library page groups local games and plugin games. |
 | [x] | Cached screenshots are served through the media route and shown in the detail panel. |
 | [ ] | Covers behind a login (F95) may fail because media fetches send no cookies. |
+| [ ] | Remove the old `/api/cover/{id}` route (the media route replaced it). |
 | [x] | Cover and screenshot images are evicted from memory least-recently-used first (200 entries). |
 | [x] | Source filter shows labels from the library instead of raw ids. |
 | [x] | The game detail can link an existing install folder. |
