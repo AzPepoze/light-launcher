@@ -113,7 +113,7 @@ var pendingFolderRenames = map[string]string{
 func TestParseManifestAcceptsRealPluginFiles(t *testing.T) {
 	for _, repo := range []string{"light-launcher-plugin-itch", "light-launcher-plugin-f95"} {
 		t.Run(repo, func(t *testing.T) {
-			path := filepath.Join("/mnt/6AB2DBF3B2DBC1AD/Project", repo, "plugin.json")
+			path := filepath.Join(pluginRepoParent(), repo, "plugin.json")
 			data, err := os.ReadFile(path)
 			if os.IsNotExist(err) {
 				t.Skipf("%s not present", path)

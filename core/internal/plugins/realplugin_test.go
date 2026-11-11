@@ -8,8 +8,17 @@ import (
 	"testing"
 )
 
-// pluginRepoParent holds the sibling plugin repositories. They are only read, never written.
-const pluginRepoParent = "/mnt/6AB2DBF3B2DBC1AD/Project"
+// pluginReposEnv overrides the folder that holds the sibling plugin repositories.
+const pluginReposEnv = "LL_PLUGIN_REPOS"
+
+// pluginRepoParent is the folder that holds the sibling plugin repositories, which are only read.
+// By default it is the folder next to this repository (the tests run in core/internal/plugins).
+func pluginRepoParent() string {
+	if dir := os.Getenv(pluginReposEnv); dir != "" {
+		return dir
+	}
+	return filepath.Join("..", "..", "..", "..")
+}
 
 // TestRealPluginsHandshake compiles each real plugin with bun into a temp folder and runs its handshake.
 // The compile writes to the temp folder, so the plugin repositories stay unchanged.
@@ -23,7 +32,7 @@ func TestRealPluginsHandshake(t *testing.T) {
 	}
 	for _, name := range []string{"itch", "f95"} {
 		t.Run(name, func(t *testing.T) {
-			source := filepath.Join(pluginRepoParent, "light-launcher-plugin-"+name)
+			source := filepath.Join(pluginRepoParent(), "light-launcher-plugin-"+name)
 			if _, err := os.Stat(filepath.Join(source, "src", "main.ts")); err != nil {
 				t.Skipf("plugin repo not present: %v", err)
 			}
