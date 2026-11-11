@@ -174,6 +174,24 @@ While the launcher is open it keeps two kinds of work running in the background.
 
 The first run starts 30 to 120 seconds after the launcher opens, and a restart keeps the saved run times. A job that fails waits longer each time, up to 6 hours. Disabled plugins are skipped.
 
+## Download a game file
+
+A game from a plugin lists its files on the game page. Click **Download** to queue one.
+
+| What you see | What it means |
+| :--- | :--- |
+| The file appears in Downloads | The file is downloading. |
+| **Finish the step in the browser window** | The plugin needs a step that only you can do. A browser window opens. Finish the step there, such as pressing the site's download button. |
+| An error message under the file list | The window was closed, the step ran out of time (the plugin sets the limit, up to 10 minutes), or another browser window is already open. Click **Download** to try again. |
+
+> [!IMPORTANT]
+> Nothing is automated. The launcher never presses buttons or fills in forms for you. Some downloads open a browser window, and you finish the step in it.
+
+> [!NOTE]
+> Only one browser window runs at a time. A second download that needs a window shows an error until the first window is closed.
+
+A file of a game without a plugin (for example a game you added by hand) downloads from the link saved with it.
+
 ## Plugin commands
 
 ```text

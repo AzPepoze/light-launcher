@@ -46,7 +46,10 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | SDK docs for the `settings.changed` notification and the `x-ll-*` schema extensions. |
 | [ ] | Check the settings form by eye in the real window (only typecheck, tests and build so far). |
 | [x] | Host options for a download folder, a subfolder per game, install after download and delete archive, including the optional `source.prepareDownload` result hints. |
-| [ ] | The library download button still calls `DownloadEnqueue` with the file URL, so it does not call `source.prepareDownload` yet; the plugin's download hints need that wiring to take effect in the UI. |
+| [ ] | The game file download button is wired to `source.prepareDownload` but only tested with fakes and the fixture plugin. Click it in the real window with a plugin that opens the browser step. |
+| [ ] | A file saved before this version has no plugin file id, so its `source.prepareDownload` call gets an empty `id`. Adding the game again from its link saves the ids. There is no button that only refreshes files. |
+| [ ] | Closing the browser window during a file download is covered by a unit test only. Check the error text in the real window. |
+| [ ] | The Download button's busy text ("Finish the step in the browser window") is checked by typecheck and build only. Look at it in the real window. |
 | [x] | The launcher never calls `source.sync` and never schedules update checks. Plugin sync and interval settings have no effect until a scheduler exists. |
 | [x] | A running plugin gets a `settings.changed` notice when settings are saved (no restart; plugins must read settings per call). |
 | [x] | Embedded browser assist on Linux (Qt): the host starts the shell in assist mode and reads its download event. Run in a real window against a local test page. |
