@@ -101,14 +101,16 @@
 	on:mouseenter={handleMouseEnter}
 	on:mouseleave={handleMouseLeave}
 	role="group"
+	aria-label={game.name}
 >
-	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
 		class="game-icon-container"
 		on:click={handleLaunch}
+		on:keydown={(e) => e.key === "Enter" && handleLaunch()}
 		role="button"
 		tabindex="0"
+		aria-label={game.name}
 	>
 		{#if isSelectionMode}
 			<CardSelectionCheckbox {isSelected} />
@@ -124,7 +126,7 @@
 					bind:this={iconImgEl}
 					use:iconFade={icon}
 					src={icon}
-					alt={game.name}
+					alt=""
 					class="game-icon"
 					decoding="async"
 					draggable="false"
@@ -144,30 +146,35 @@
 		</div>
 	</div>
 
-	<div class="game-footer">
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div class="card-info" on:click={handleLaunch}>
 		<span class="game-name" title={game.name}>{game.name}</span>
-		<LauncherMenu {game} onChoose={onChooseLauncher} />
-		<button
-			class="config-btn"
-			title="Configure"
-			on:click|stopPropagation={handleConfigure}
-		>
-			<span class="material-icons">settings</span>
-		</button>
+		<div class="card-actions">
+			<LauncherMenu {game} onChoose={onChooseLauncher} placement="top" />
+			<button
+				class="config-btn"
+				type="button"
+				title="Configure"
+				aria-label="Configure {game.name}"
+				on:click|stopPropagation={handleConfigure}
+			>
+				<span class="material-icons">settings</span>
+			</button>
+		</div>
 	</div>
 </div>
 
 <style lang="scss">
 	.game-card {
-		display: flex;
-		flex-direction: column;
-		gap: 12px;
+		--card-pad: 8px;
+		--glow-spread: 6px;
 		position: relative;
 		// 6px margins plus the glow must fit the grid cell, or the paint containment clips them.
 		width: calc(100% - 12px);
 		max-width: 190px;
 		margin: 6px;
-		padding: 8px;
+		padding: var(--card-pad);
 		--mx: 50%;
 		--my: 50%;
 		--spotlight-rgb: 255, 255, 255;
@@ -177,8 +184,8 @@
 		&::before {
 			content: "";
 			position: absolute;
-			inset: -6px;
-			border-radius: calc(var(--radius-lg) + 6px);
+			inset: calc(var(--glow-spread) * -1);
+			border-radius: calc(var(--radius-lg) + var(--glow-spread));
 			background: radial-gradient(
 				circle closest-side,
 				rgba(var(--spotlight-rgb), 0.32) 86%,
@@ -217,22 +224,15 @@
 				}
 
 				img.game-icon {
-					transform: scale(1.08);
+					transform: scale(1.06);
 					filter: brightness(1.05);
 				}
 			}
 
-			.game-footer .game-name {
-				color: var(--text-main);
-				white-space: normal;
-				overflow: visible;
-				word-break: break-all;
-			}
-
-			.config-btn {
+			.card-info {
 				opacity: 1;
-				visibility: visible;
-				transform: scale(1);
+				transform: none;
+				pointer-events: auto;
 			}
 		}
 
@@ -315,6 +315,11 @@
 		transition: border-color var(--motion-base) var(--ease-out);
 		z-index: 1;
 		overflow: hidden;
+
+		&:focus-visible {
+			outline: 2px solid var(--accent-primary);
+			outline-offset: 3px;
+		}
 
 		&::before {
 			content: "";
@@ -453,58 +458,109 @@
 		transform: scale(0.92);
 	}
 
-	.game-footer {
+	.card-info {
+		position: absolute;
+		left: var(--card-pad);
+		right: var(--card-pad);
+		bottom: var(--card-pad);
+		z-index: 5;
 		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		padding: 0 4px;
-		position: relative;
-		z-index: 2;
+		flex-direction: column;
+		gap: 6px;
+		padding: 22px 8px 8px;
+		border-radius: 0 0 calc(var(--radius-lg) - 2px) calc(var(--radius-lg) - 2px);
+		background: linear-gradient(
+			to top,
+			rgba(var(--bg-base-rgb), 0.92) 0%,
+			rgba(var(--bg-base-rgb), 0.7) 55%,
+			rgba(var(--bg-base-rgb), 0) 100%
+		);
+		opacity: 0;
+		transform: translateY(8px);
+		transition:
+			opacity var(--motion-base) var(--ease-out),
+			transform var(--motion-base) var(--ease-out);
+		pointer-events: none;
 
 		.game-name {
-			font-size: 0.95rem;
+			font-size: 0.9rem;
 			font-weight: 800;
-			color: var(--text-muted);
+			letter-spacing: -0.2px;
+			line-height: 1.2;
+			color: var(--text-main);
 			white-space: nowrap;
 			overflow: hidden;
 			text-overflow: ellipsis;
-			flex: 1;
-			transition: color var(--transition-fast);
-			letter-spacing: -0.2px;
-			line-height: 1.2;
+		}
+	}
+
+	.card-actions {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		min-width: 0;
+	}
+
+	.config-btn {
+		margin-left: auto;
+		flex-shrink: 0;
+		width: 28px;
+		height: 28px;
+		padding: 0;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		background: rgba(var(--bg-surface-rgb), 0.7);
+		border: 1px solid var(--glass-border);
+		border-radius: var(--radius-pill);
+		color: var(--text-main);
+		cursor: pointer;
+		transition:
+			transform var(--motion-quick) var(--ease-spring),
+			background var(--motion-quick) var(--ease-out),
+			border-color var(--motion-quick) var(--ease-out);
+
+		.material-icons {
+			font-size: 16px;
 		}
 
-		.config-btn {
-			background: var(--bg-surface);
-			border: 2px solid rgba(255, 255, 255, 0.05);
-			padding: 8px;
-			border-radius: var(--radius-pill);
-			cursor: pointer;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			transition: transform var(--transition-spring), background var(--transition-fast), border-color var(--transition-fast);
-			color: var(--text-main);
-			margin-left: 6px;
+		&:hover {
+			background: var(--bg-elevated);
+			border-color: var(--accent-secondary);
+			transform: rotate(90deg);
+		}
 
-			&:hover {
-				background: var(--bg-elevated);
-				transform: rotate(90deg) scale(1.1);
-				border-color: var(--accent-secondary);
-			}
+		&:focus-visible {
+			outline: 2px solid var(--accent-primary);
+			outline-offset: 2px;
+		}
+	}
 
-			.material-icons {
-				font-size: 16px;
-			}
+	// No hover: the overlay is the only place the name and settings live.
+	@media (hover: none) {
+		.card-info {
+			opacity: 1;
+			transform: none;
+			pointer-events: auto;
 		}
 	}
 
 	@media (prefers-reduced-motion: reduce) {
 		.game-card {
 			&:hover,
-			&:focus-within {
+			&:focus-within,
+			&:active {
 				transform: none;
 			}
+
+			&::before {
+				transition: none;
+			}
+		}
+
+		.card-info {
+			transform: none;
+			transition: none;
 		}
 
 		.game-icon-container::before {

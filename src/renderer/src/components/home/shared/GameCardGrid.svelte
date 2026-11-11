@@ -61,7 +61,8 @@
 <style lang="scss">
 	.games-grid {
 		display: grid;
-		gap: 28px;
+		// Small gap: each card carries its own 8px glow padding and 6px margin.
+		gap: 12px;
 		width: 100%;
 		max-width: 100%;
 		padding: 12px;

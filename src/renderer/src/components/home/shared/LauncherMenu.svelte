@@ -6,6 +6,8 @@
 	export let game: GameInfo;
 	/** Receives the picked launcher path, or null for automatic. */
 	export let onChoose: (launcherPath: string | null) => void = () => {};
+	/** Cards paint-clip their box, so the panel has to open back over the cover. */
+	export let placement: "bottom" | "top" = "bottom";
 
 	let isOpen = false;
 
@@ -16,7 +18,7 @@
 </script>
 
 {#if game.launcherCount > 1}
-	<div class="launcher-menu">
+	<div class="launcher-menu" class:up={placement === "top"}>
 		<!-- Stops propagation so the window click that closes AppMenu does not run for this button. -->
 		<button
 			type="button"
@@ -30,7 +32,7 @@
 			<span class="material-icons">tune</span>
 			<span>{launcherCountLabel(game.launcherCount)}</span>
 		</button>
-		<AppMenu visible={isOpen} mode="anchor" onClose={() => (isOpen = false)}>
+		<AppMenu visible={isOpen} mode="anchor" {placement} onClose={() => (isOpen = false)}>
 			<button type="button" class="menu-item" on:click|stopPropagation={() => choose(null)}>
 				<span class="material-icons">autorenew</span>
 				<span>Use automatic</span>
@@ -52,6 +54,12 @@
 	.launcher-menu {
 		position: relative;
 		display: inline-flex;
+
+		// Keep the panel inside the card, whose box is clipped by content-visibility.
+		&.up {
+			--app-menu-max-height: 132px;
+			--app-menu-anchor-width: 158px;
+		}
 	}
 
 	.launcher-note {

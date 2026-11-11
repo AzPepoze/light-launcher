@@ -7,6 +7,8 @@
 	export let y: number = 0;
 	/** 'cursor' = fixed at x/y with backdrop, 'anchor' = absolute anchored to trigger */
 	export let mode: "cursor" | "anchor" = "cursor";
+	/** Which side of the trigger an anchored panel opens on. */
+	export let placement: "bottom" | "top" = "bottom";
 	export let onClose: () => void = () => {};
 
 	let menuEl: HTMLDivElement;
@@ -78,7 +80,8 @@
 	}
 
 	// transform origin based on mode
-	$: transformOrigin = mode === "anchor" ? "top right" : "top left";
+	$: transformOrigin =
+		mode === "anchor" ? (placement === "top" ? "bottom left" : "top right") : "top left";
 </script>
 
 <svelte:window on:keydown={handleKeydown} on:click={handleAnchorOutsideClick} />
@@ -114,6 +117,7 @@
 			class="app-menu-panel anchor glass"
 			class:open={isOpen && !isClosing}
 			class:closing={isClosing}
+			class:anchor-top={placement === "top"}
 			style="transform-origin: {transformOrigin};"
 			role="menu"
 		>
@@ -171,8 +175,28 @@
 			right: 0;
 			top: calc(100% + 8px);
 			min-width: 180px;
+			max-height: var(--app-menu-max-height, none);
+			overflow-y: auto;
 			z-index: 100;
 			box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+
+			&.anchor-top {
+				top: auto;
+				right: auto;
+				bottom: 0;
+				left: 0;
+				width: var(--app-menu-anchor-width, auto);
+				min-width: 0;
+				transform: translateY(8px) scale(0.96);
+
+				&.open {
+					transform: translateY(0) scale(1);
+				}
+
+				&.closing {
+					transform: translateY(6px) scale(0.97);
+				}
+			}
 		}
 	}
 

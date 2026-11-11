@@ -102,10 +102,6 @@
 				<div class="skeleton-icon-large skeleton-shimmer">
 					<span class="material-icons skeleton-logo">sports_esports</span>
 				</div>
-				<div class="skeleton-footer">
-					<div class="skeleton-line name skeleton-shimmer"></div>
-					<div class="skeleton-button skeleton-shimmer"></div>
-				</div>
 			</div>
 		{/if}
 	{/if}
@@ -125,10 +121,10 @@
 			overflow: visible;
 		}
 
-		// Skip layout and paint of cards outside the viewport; 240px is the grid card height.
+		// Skip layout and paint of cards outside the viewport; 202px is the grid card height.
 		&.grid {
 			content-visibility: auto;
-			contain-intrinsic-size: auto 240px;
+			contain-intrinsic-size: auto 202px;
 		}
 	}
 
@@ -162,12 +158,10 @@
 	}
 
 	.skeleton-grid-card {
-		display: flex;
-		flex-direction: column;
-		gap: 12px;
-		width: 100%;
-		max-width: 200px;
+		width: calc(100% - 12px);
+		max-width: 190px;
 		margin: 6px;
+		padding: 8px;
 		box-sizing: border-box;
 
 		.skeleton-icon-large {
@@ -179,30 +173,6 @@
 			display: flex;
 			align-items: center;
 			justify-content: center;
-		}
-
-		.skeleton-footer {
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			padding: 0 4px;
-			height: 36px;
-		}
-
-		.skeleton-line.name {
-			height: 14px;
-			background: rgba(255, 255, 255, 0.04);
-			border-radius: var(--radius-sm, 4px);
-			width: 65%;
-			animation: skeleton-pulse 2s infinite ease-in-out;
-		}
-
-		.skeleton-button {
-			width: 32px;
-			height: 32px;
-			border-radius: 50%;
-			background: rgba(255, 255, 255, 0.03);
-			border: 2px solid rgba(255, 255, 255, 0.05);
 		}
 	}
 
