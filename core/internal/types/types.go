@@ -92,6 +92,25 @@ type LsfgProfileData struct {
 	AllowFp16       bool    `json:"allowFp16"`
 }
 
+// LauncherKind says what an executable of a game folder is.
+type LauncherKind string
+
+const (
+	LauncherMain       LauncherKind = "main"
+	LauncherUnrealStub LauncherKind = "unreal-stub"
+	LauncherX86        LauncherKind = "x86"
+	LauncherOther      LauncherKind = "other"
+)
+
+// Launcher is one executable that starts a game folder.
+type Launcher struct {
+	Name    string       `json:"name"`
+	Path    string       `json:"path"`
+	Kind    LauncherKind `json:"kind"`
+	Primary bool         `json:"primary"`
+}
+
+// GameInfo is one card. Path, Name and Config describe the primary launcher.
 type GameInfo struct {
 	Name          string        `json:"name"`
 	Path          string        `json:"path"`
@@ -99,6 +118,9 @@ type GameInfo struct {
 	Config        LaunchOptions `json:"config"`
 	IsRecent      bool          `json:"isRecent"`
 	IsAutoScanned bool          `json:"isAutoScanned"`
+	Folder        string        `json:"folder"`
+	Launchers     []Launcher    `json:"launchers"`
+	LauncherCount int           `json:"launcherCount"`
 }
 
 type ScannedFolderGroup struct {

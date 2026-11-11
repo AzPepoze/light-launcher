@@ -11,6 +11,7 @@ import (
 )
 
 // getAllGames lists the saved game configs. A game is flagged auto-scanned when it lives under a scan folder.
+// Each config is one launcher here; the grouped view of scan folders is getAutoScannedGames.
 func (s *service) getAllGames() []types.GameInfo {
 	configs := s.games.List()
 	scanFolders := s.settings.Load().ScanFolders
@@ -21,16 +22,30 @@ func (s *service) getAllGames() []types.GameInfo {
 		if cleaned == "" {
 			continue
 		}
-		games = append(games, types.GameInfo{
-			Name:          gameConfigName(gameConfig),
-			Path:          cleaned,
-			Icon:          "",
-			Config:        gameConfig,
-			IsRecent:      false,
-			IsAutoScanned: isInAnyFolder(scanFolders, cleaned),
-		})
+		games = append(games, singleLauncherGame(gameConfig, cleaned, isInAnyFolder(scanFolders, cleaned)))
 	}
 	return games
+}
+
+// singleLauncherGame builds a card for a game that has one launcher, such as a game added by hand.
+func singleLauncherGame(gameConfig types.LaunchOptions, cleaned string, autoScanned bool) types.GameInfo {
+	launcher := types.Launcher{
+		Name:    config.NameWithoutExt(cleaned),
+		Path:    cleaned,
+		Kind:    types.LauncherMain,
+		Primary: true,
+	}
+	return types.GameInfo{
+		Name:          gameConfigName(gameConfig),
+		Path:          cleaned,
+		Icon:          "",
+		Config:        gameConfig,
+		IsRecent:      false,
+		IsAutoScanned: autoScanned,
+		Folder:        cleaned,
+		Launchers:     []types.Launcher{launcher},
+		LauncherCount: 1,
+	}
 }
 
 func gameConfigName(cfg types.LaunchOptions) string {
@@ -70,8 +85,18 @@ func (s *service) removeConfigFolder(name, id string) error {
 	return os.RemoveAll(folder)
 }
 
-// searchExecutables lists .exe files under folderPath, skipping names that match excludeNames.
+// searchExecutables lists the .exe paths under folderPath, skipping names that match excludeNames.
 func searchExecutables(folderPath string, maxDepth int, excludeNames []string) []string {
+	files := scanExecutables(folderPath, maxDepth, excludeNames)
+	paths := make([]string, 0, len(files))
+	for _, file := range files {
+		paths = append(paths, file.Path)
+	}
+	return paths
+}
+
+// scanExecutables lists the .exe files under folderPath with their sizes.
+func scanExecutables(folderPath string, maxDepth int, excludeNames []string) []scannedFile {
 	return scanDirectoryFiles(folderPath, scanOptions{
 		MaxDepth:        maxDepth,
 		ExcludePatterns: excludeNames,

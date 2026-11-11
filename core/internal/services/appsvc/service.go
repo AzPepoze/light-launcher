@@ -25,13 +25,14 @@ type activityStore interface {
 
 // service owns the stores the UI methods share.
 type service struct {
-	settings settingsStore
-	games    gameConfigStore
-	activity activityStore
+	settings    settingsStore
+	games       gameConfigStore
+	activity    activityStore
+	preferences preferenceStore
 }
 
-func newService(settings settingsStore, games gameConfigStore, activity activityStore) *service {
-	return &service{settings: settings, games: games, activity: activity}
+func newService(settings settingsStore, games gameConfigStore, activity activityStore, preferences preferenceStore) *service {
+	return &service{settings: settings, games: games, activity: activity, preferences: preferences}
 }
 
 func newDefaultService() *service {
@@ -40,5 +41,6 @@ func newDefaultService() *service {
 		settings,
 		config.NewGameStore(config.GetConfigDirectory()),
 		activity.New(config.ActivityFilePath(), settings),
+		newLauncherPreferences(launcherPreferencesPath()),
 	)
 }

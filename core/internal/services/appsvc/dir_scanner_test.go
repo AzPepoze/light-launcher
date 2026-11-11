@@ -63,9 +63,9 @@ func TestScanDirectoryFilesFiltersByDepthExtensionAndExclude(t *testing.T) {
 	if len(found) != len(want) {
 		t.Fatalf("found %v, want %d files", found, len(want))
 	}
-	for _, path := range found {
-		if !want[path] {
-			t.Errorf("unexpected file %s", path)
+	for _, file := range found {
+		if !want[file.Path] {
+			t.Errorf("unexpected file %s", file.Path)
 		}
 	}
 }
@@ -77,7 +77,7 @@ func TestScanDirectoryFilesMissingFolderIsEmpty(t *testing.T) {
 	}
 }
 
-func mustWrite(t *testing.T, path string) {
+func mustWrite(t testing.TB, path string) {
 	t.Helper()
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		t.Fatal(err)

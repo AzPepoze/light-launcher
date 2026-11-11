@@ -30,7 +30,7 @@ func (s *service) getAutoScannedGames(force bool) ([]types.ScannedFolderGroup, e
 	}
 
 	settings := s.settings.Load()
-	index := newScanIndex(settings.ScanFolders, s.games.List())
+	index := newScanIndex(settings.ScanFolders, s.games.List(), s.preferences.Preferred())
 	blacklist := blacklistSet(settings.Blacklist)
 
 	groups := []types.ScannedFolderGroup{}
@@ -63,13 +63,16 @@ func storeScanGroups(groups []types.ScannedFolderGroup) {
 type scanIndex struct {
 	manualPaths   map[string]bool
 	configsByPath map[string]types.LaunchOptions
+	remembered    map[string]string
 }
 
 // newScanIndex records configs added by hand, which are never auto-scanned twice.
-func newScanIndex(scanFolders []string, configs []types.LaunchOptions) scanIndex {
+// remembered maps each game folder to the launcher the user chose.
+func newScanIndex(scanFolders []string, configs []types.LaunchOptions, remembered map[string]string) scanIndex {
 	index := scanIndex{
 		manualPaths:   map[string]bool{},
 		configsByPath: map[string]types.LaunchOptions{},
+		remembered:    remembered,
 	}
 	for _, cfg := range configs {
 		p := config.CleanPath(config.FirstNonEmpty(cfg.LauncherPath, cfg.GamePath))
@@ -101,13 +104,10 @@ func (s *service) scanFolderGroup(folderCfg types.ScanFolderConfig, index scanIn
 		excludeNames = config.DefaultScanExcludeNames()
 	}
 
+	exes := keepScannable(scanExecutables(folder, folderCfg.Depth, excludeNames), blacklist, index)
 	games := []types.GameInfo{}
-	for _, exePath := range searchExecutables(folder, folderCfg.Depth, excludeNames) {
-		normalized := config.PathKey(exePath)
-		if blacklist[normalized] || index.manualPaths[normalized] {
-			continue
-		}
-		game, err := s.scannedGame(exePath, normalized, index)
+	for _, root := range groupGameRoots(folder, exes, index.remembered) {
+		game, err := s.scannedGame(root, index)
 		if err != nil {
 			return types.ScannedFolderGroup{}, err
 		}
@@ -121,23 +121,55 @@ func (s *service) scanFolderGroup(folderCfg types.ScanFolderConfig, index scanIn
 	}, nil
 }
 
-// scannedGame returns the game for one executable, saving a default config the first time it is seen.
-func (s *service) scannedGame(exePath, normalized string, index scanIndex) (types.GameInfo, error) {
-	name := config.NameWithoutExt(exePath)
-	cfg, known := index.configsByPath[normalized]
-	if !known {
-		cfg = newDefaultGameConfig(name, exePath)
-		if err := s.games.Save(&cfg); err != nil {
+// keepScannable drops executables the user blacklisted or added by hand.
+func keepScannable(exes []scannedFile, blacklist map[string]bool, index scanIndex) []scannedFile {
+	kept := make([]scannedFile, 0, len(exes))
+	for _, exe := range exes {
+		normalized := config.PathKey(exe.Path)
+		if blacklist[normalized] || index.manualPaths[normalized] {
+			continue
+		}
+		kept = append(kept, exe)
+	}
+	return kept
+}
+
+// scannedGame returns the card for one game root. Every launcher keeps its own config.
+func (s *service) scannedGame(root gameRoot, index scanIndex) (types.GameInfo, error) {
+	var primaryConfig types.LaunchOptions
+	for _, launcher := range root.launchers {
+		cfg, err := s.launcherConfig(launcher.Path, index)
+		if err != nil {
 			return types.GameInfo{}, err
 		}
-		index.configsByPath[normalized] = cfg
+		if launcher.Primary {
+			primaryConfig = cfg
+		}
 	}
+	primary := primaryLauncher(root)
 	return types.GameInfo{
-		Name:          name,
-		Path:          exePath,
+		Name:          gameName(root),
+		Path:          primary.Path,
 		Icon:          "",
-		Config:        cfg,
+		Config:        primaryConfig,
 		IsRecent:      false,
 		IsAutoScanned: true,
+		Folder:        root.folder,
+		Launchers:     root.launchers,
+		LauncherCount: len(root.launchers),
 	}, nil
+}
+
+// launcherConfig returns the config of one executable, saving a default config the first time it is seen.
+func (s *service) launcherConfig(exePath string, index scanIndex) (types.LaunchOptions, error) {
+	normalized := config.PathKey(exePath)
+	if cfg, known := index.configsByPath[normalized]; known {
+		return cfg, nil
+	}
+	cfg := newDefaultGameConfig(config.NameWithoutExt(exePath), exePath)
+	if err := s.games.Save(&cfg); err != nil {
+		return types.LaunchOptions{}, err
+	}
+	index.configsByPath[normalized] = cfg
+	return cfg, nil
 }
