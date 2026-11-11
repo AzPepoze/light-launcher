@@ -1,12 +1,18 @@
 package contract
 
-import "time"
+import (
+	"errors"
+	"time"
+)
 
 // Time limits for the browse calls. A browse page can be slow on a busy site, a list of filter values should be quick.
 const (
 	BrowseTimeout      = 20 * time.Second
 	ListFiltersTimeout = 10 * time.Second
 )
+
+// ErrInvalidCursor means the source does not know the page cursor, usually because the filters or sort changed.
+var ErrInvalidCursor = errors.New("the list changed; start again from the first page")
 
 // BrowseRequest asks a source for one page of its games, filtered and sorted. It never saves games.
 type BrowseRequest struct {

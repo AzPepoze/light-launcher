@@ -83,7 +83,23 @@ func (r *Registry) Call(ctx context.Context, plugin, method string, params any, 
 func (r *Registry) Browse(ctx context.Context, plugin string, request contract.BrowseRequest) (contract.BrowsePage, error) {
 	var page contract.BrowsePage
 	err := r.callWithTimeout(ctx, plugin, methodBrowse, contract.BrowseTimeout, request, &page)
+	if isInvalidCursor(err) {
+		return contract.BrowsePage{}, contract.ErrInvalidCursor
+	}
 	return page, err
+}
+
+// invalidCursorCode is the error data code a plugin sends when it does not know a browse cursor.
+const invalidCursorCode = "invalid_cursor"
+
+// isInvalidCursor reports whether a plugin error says the browse cursor is unknown.
+func isInvalidCursor(err error) bool {
+	var rpcErr *RPCError
+	if !errors.As(err, &rpcErr) {
+		return false
+	}
+	data, ok := rpcErr.Data.(map[string]any)
+	return ok && data["code"] == invalidCursorCode
 }
 
 // ListFilters runs source.listFilters for the values of one dynamic sidebar group.

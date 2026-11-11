@@ -10,10 +10,11 @@ import (
 
 // Capabilities a source plugin lists in contract.SourceInfo.Capabilities.
 const (
-	CapabilityBrowse       = "browse"
-	CapabilityUpdateCheck  = "updateCheck"
-	CapabilityResolveFiles = "resolveFiles"
-	CapabilityListGames    = "listGames"
+	CapabilityBrowse        = "browse"
+	CapabilityUpdateCheck   = "updateCheck"
+	CapabilityResolveFiles  = "resolveFiles"
+	CapabilityListGames     = "listGames"
+	CapabilityBrowseFilters = "browse:filters"
 )
 
 // Plugin methods the library calls. Params and results mirror the old provider types.
