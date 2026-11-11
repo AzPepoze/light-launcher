@@ -47,6 +47,25 @@ The install dialog shows the plugin's permissions. The command line prints them 
 >
 > Removing a plugin also deletes its saved secrets, such as sign-in cookies and API keys.
 
+## Updates
+
+A plugin can name its update source in `plugin.json`:
+
+```json
+{ "repository": "github:owner/repo" }
+```
+
+| Where it came from | How it updates                                                                   |
+| :----------------- | :------------------------------------------------------------------------------- |
+| A GitHub release   | The Plugins page shows "Update available (x.y.z)". Press the button and confirm. |
+| A file or folder   | No update badge. Install the new package again.                                  |
+
+Updates are always manual. The launcher checks for releases once shortly after start, and when you press "Check for updates". It never installs an update by itself, and there is no auto-update setting.
+
+The update opens the same consent screen as an install. New permissions are listed first. A package that names a different repository than the installed version shows a warning, so an update cannot quietly move a plugin to another repository.
+
+The check and the download only use GitHub hosts. The launcher ignores releases without a `.llplugin` asset and verifies the release `SHA256SUMS` file when one is attached. A version that does not start after the update is rolled back to the previous one.
+
 ## Trust levels
 
 The launcher checks each package before it installs it.

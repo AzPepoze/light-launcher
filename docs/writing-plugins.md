@@ -19,8 +19,30 @@ This page gives an overview of how a plugin works. The full guide, with code, is
 | Settings schema | Optional. A JSON Schema file. The launcher builds a settings form from it.        |
 | Checksums       | A `SHA256SUMS` file with a checksum for each file in the package.                 |
 | Signature       | Optional. A `SIGNATURE` file. See [Plugins](plugins.md#trust-levels).             |
+| Repository      | Optional. `github:owner/repo` enables update checks on the Plugins page.          |
 
 The package is a zip file with the `.llplugin` extension.
+
+## Publish updates on GitHub Releases
+
+Add the repository to `plugin.json`:
+
+```json
+{ "repository": "github:owner/repo" }
+```
+
+Publish each version as a GitHub release:
+
+| Part      | Rule                                                                              |
+| :-------- | :-------------------------------------------------------------------------------- |
+| Tag       | The plugin version, such as `v2.1.0`.                                             |
+| Package   | Name the asset `<id>-<version>.llplugin`, for example `my-plugin-2.1.0.llplugin`. |
+| Checksums | Optional. Attach `SHA256SUMS` with `<sha256>  <id>-<version>.llplugin`.           |
+| Notes     | The release body is shown as plain text on the plugin page.                       |
+
+The launcher reads the latest release. A release with no `.llplugin` asset does not offer an update. Pre-releases are skipped unless the launcher enables them, and updates are always manual: the user presses Update and confirms the permissions.
+
+The installed manifest must keep naming the same repository. An update that names another repository still installs, but the consent screen shows a warning.
 
 ## How the messages flow
 

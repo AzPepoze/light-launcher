@@ -34,8 +34,9 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 |---|---|
 | [x] | Consent screen on install and update. |
 | [x] | Drag and drop install (zip or folder). |
-| [ ] | Plugin updater from GitHub Releases: `repository` manifest field, release check at start and daily, "Check now", update screen with consent, and a release workflow in each plugin repo. |
-| [ ] | Updating a plugin that was dropped in (it has no web source, so drop the new version again). |
+| [x] | Plugin updates from GitHub Releases: `repository` field, manual "Check for updates", update screen with consent, release `SHA256SUMS` check, and rollback when a new version does not start. |
+| [ ] | Daily plugin release check and a release workflow in each plugin repo (the launcher checks once soon after start and on "Check now"; there is no scheduler yet). |
+| [ ] | Updating a dropped-in plugin without a `repository` field (drop the new version again). A dropped-in plugin that names a repository does update from GitHub. |
 | [x] | Settings form built from each plugin's `settings.schema.json`. |
 | [ ] | Nested objects in a settings schema are not drawn (only top-level fields). |
 | [ ] | SDK docs for the `settings.changed` notification and the `x-ll-*` schema extensions. |
