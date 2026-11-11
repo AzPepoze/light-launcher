@@ -7,6 +7,11 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"sort"
+	"strings"
+	"unicode/utf8"
+
+	"light-launcher/core/internal/api"
 )
 
 // loadSettingsSchema reads the JSON Schema named in contributes.settings. It returns nil when the plugin has none.
@@ -26,60 +31,119 @@ func loadSettingsSchema(inst installedPlugin) (map[string]any, error) {
 	return schema, nil
 }
 
-// validateSettings checks values against the parts of JSON Schema the launcher supports:
-// type, enum, minimum, maximum, required, properties and additionalProperties.
-func validateSettings(schema map[string]any, values map[string]any) error {
-	return validateObject(schema, values, "settings")
+// applySettingsDefaults returns a copy of values with the schema default of every missing top-level property.
+func applySettingsDefaults(schema map[string]any, values map[string]any) map[string]any {
+	result := make(map[string]any, len(values))
+	for key, value := range values {
+		result[key] = value
+	}
+	properties, _ := schema["properties"].(map[string]any)
+	for key, raw := range properties {
+		property, _ := raw.(map[string]any)
+		defaultValue, hasDefault := property["default"]
+		if _, saved := result[key]; hasDefault && !saved {
+			result[key] = defaultValue
+		}
+	}
+	return result
 }
 
-func validateObject(schema map[string]any, value map[string]any, path string) error {
+// validateSettings checks values against the supported JSON Schema keywords. It returns an
+// *api.FieldsError with one entry per bad field, or nil when every value is valid.
+func validateSettings(schema map[string]any, values map[string]any) error {
+	problems := checkObject(schema, values, "", nil)
+	if len(problems) == 0 {
+		return nil
+	}
+	return &api.FieldsError{Fields: problems}
+}
+
+func checkObject(schema map[string]any, value map[string]any, prefix string, problems []api.FieldError) []api.FieldError {
 	for _, name := range requiredNames(schema) {
 		if _, ok := value[name]; !ok {
-			return fmt.Errorf("%s.%s is required", path, name)
+			problems = append(problems, api.FieldError{Field: prefix + name, Message: "is required"})
 		}
 	}
 	properties, _ := schema["properties"].(map[string]any)
-	for key, item := range value {
+	for _, key := range sortedKeys(value) {
+		field := prefix + key
 		propertySchema, known := properties[key].(map[string]any)
 		if !known {
 			if schema["additionalProperties"] == false {
-				return fmt.Errorf("%s.%s is not a known setting", path, key)
+				problems = append(problems, api.FieldError{Field: field, Message: "is not a known setting"})
 			}
 			continue
 		}
-		if err := validateValue(propertySchema, item, path+"."+key); err != nil {
-			return err
-		}
+		problems = checkValue(propertySchema, value[key], field, problems)
 	}
-	return nil
+	return problems
 }
 
-func validateValue(schema map[string]any, value any, path string) error {
+// checkValue checks one value. A type mismatch stops the other checks, so one mistake gives one message.
+func checkValue(schema map[string]any, value any, field string, problems []api.FieldError) []api.FieldError {
 	if typeName, ok := schema["type"].(string); ok && !matchesType(typeName, value) {
-		return fmt.Errorf("%s must be of type %s", path, typeName)
+		return append(problems, api.FieldError{Field: field, Message: "must be " + describeType(typeName)})
 	}
 	if enum, ok := schema["enum"].([]any); ok && !containsValue(enum, value) {
-		return fmt.Errorf("%s has a value that is not allowed", path)
+		return append(problems, api.FieldError{Field: field, Message: "must be one of: " + joinOptions(enum)})
 	}
-	if number, ok := value.(float64); ok {
-		if err := checkRange(schema, number, path); err != nil {
-			return err
-		}
+	switch typed := value.(type) {
+	case float64:
+		return checkNumber(schema, typed, field, problems)
+	case string:
+		return checkString(schema, typed, field, problems)
+	case []any:
+		return checkArray(schema, typed, field, problems)
+	case map[string]any:
+		return checkObject(schema, typed, field+".", problems)
 	}
-	if object, ok := value.(map[string]any); ok {
-		return validateObject(schema, object, path)
-	}
-	return nil
+	return problems
 }
 
-func checkRange(schema map[string]any, number float64, path string) error {
+func checkNumber(schema map[string]any, number float64, field string, problems []api.FieldError) []api.FieldError {
 	if minimum, ok := schema["minimum"].(float64); ok && number < minimum {
-		return fmt.Errorf("%s must be at least %v", path, minimum)
+		problems = append(problems, api.FieldError{Field: field, Message: fmt.Sprintf("must be at least %v", minimum)})
 	}
 	if maximum, ok := schema["maximum"].(float64); ok && number > maximum {
-		return fmt.Errorf("%s must be at most %v", path, maximum)
+		problems = append(problems, api.FieldError{Field: field, Message: fmt.Sprintf("must be at most %v", maximum)})
 	}
-	return nil
+	return problems
+}
+
+func checkString(schema map[string]any, text string, field string, problems []api.FieldError) []api.FieldError {
+	length := utf8.RuneCountInString(text)
+	if minLength, ok := schema["minLength"].(float64); ok && float64(length) < minLength {
+		problems = append(problems, api.FieldError{Field: field, Message: fmt.Sprintf("must be at least %v characters", minLength)})
+	}
+	if maxLength, ok := schema["maxLength"].(float64); ok && float64(length) > maxLength {
+		problems = append(problems, api.FieldError{Field: field, Message: fmt.Sprintf("must be at most %v characters", maxLength)})
+	}
+	return problems
+}
+
+// checkArray checks the list size, duplicates and each item. Item messages name the item number.
+func checkArray(schema map[string]any, items []any, field string, problems []api.FieldError) []api.FieldError {
+	if minItems, ok := schema["minItems"].(float64); ok && float64(len(items)) < minItems {
+		problems = append(problems, api.FieldError{Field: field, Message: fmt.Sprintf("must have at least %v items", minItems)})
+	}
+	if maxItems, ok := schema["maxItems"].(float64); ok && float64(len(items)) > maxItems {
+		problems = append(problems, api.FieldError{Field: field, Message: fmt.Sprintf("must have at most %v items", maxItems)})
+	}
+	if schema["uniqueItems"] == true && hasDuplicates(items) {
+		problems = append(problems, api.FieldError{Field: field, Message: "must not contain duplicates"})
+	}
+	itemSchema, ok := schema["items"].(map[string]any)
+	if !ok {
+		return problems
+	}
+	for index, item := range items {
+		var itemProblems []api.FieldError
+		itemProblems = checkValue(itemSchema, item, field, itemProblems)
+		for _, problem := range itemProblems {
+			problems = append(problems, api.FieldError{Field: field, Message: fmt.Sprintf("item %d %s", index+1, problem.Message)})
+		}
+	}
+	return problems
 }
 
 func requiredNames(schema map[string]any) []string {
@@ -121,6 +185,26 @@ func matchesType(typeName string, value any) bool {
 	}
 }
 
+// describeType is the wording used after "must be" in an error message.
+func describeType(typeName string) string {
+	switch typeName {
+	case "string":
+		return "text"
+	case "boolean":
+		return "true or false"
+	case "number":
+		return "a number"
+	case "integer":
+		return "a whole number"
+	case "array":
+		return "a list"
+	case "object":
+		return "an object"
+	default:
+		return typeName
+	}
+}
+
 func containsValue(options []any, value any) bool {
 	for _, option := range options {
 		if reflect.DeepEqual(option, value) {
@@ -128,4 +212,32 @@ func containsValue(options []any, value any) bool {
 		}
 	}
 	return false
+}
+
+func hasDuplicates(items []any) bool {
+	for i := range items {
+		for j := i + 1; j < len(items); j++ {
+			if reflect.DeepEqual(items[i], items[j]) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func joinOptions(options []any) string {
+	texts := make([]string, 0, len(options))
+	for _, option := range options {
+		texts = append(texts, fmt.Sprint(option))
+	}
+	return strings.Join(texts, ", ")
+}
+
+func sortedKeys(values map[string]any) []string {
+	keys := make([]string, 0, len(values))
+	for key := range values {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return keys
 }

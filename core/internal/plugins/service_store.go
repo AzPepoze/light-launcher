@@ -65,13 +65,13 @@ func serviceStorageSet(_ context.Context, env *pluginEnv, params json.RawMessage
 	return nil, nil
 }
 
-// serviceSettingsGet returns {"settings": saved} for this plugin.
+// serviceSettingsGet returns {"settings": saved values with schema defaults} for this plugin.
 func serviceSettingsGet(_ context.Context, env *pluginEnv, _ json.RawMessage) (any, error) {
-	settings := map[string]any{}
-	if err := readJSONFile(filepath.Join(env.dataDir, settingsFileName), &settings); err != nil {
+	saved := map[string]any{}
+	if err := readJSONFile(filepath.Join(env.dataDir, settingsFileName), &saved); err != nil {
 		return nil, internalError(err.Error())
 	}
-	return map[string]any{"settings": settings}, nil
+	return map[string]any{"settings": applySettingsDefaults(env.settingsSchema, saved)}, nil
 }
 
 func (env *pluginEnv) readStorage() (map[string]json.RawMessage, error) {

@@ -65,8 +65,13 @@ func (h *Host) supervisorFor(id string) (*Supervisor, error) {
 	if err != nil {
 		return nil, err
 	}
+	schema, err := loadSettingsSchema(inst)
+	if err != nil {
+		return nil, err
+	}
 	dataDir := h.layout.DataDir(id)
 	env := newPluginEnv(inst.manifest, dataDir, h.deps, h.linesFor(id))
+	env.settingsSchema = schema
 	cfg := h.tuning
 	cfg.manifest = inst.manifest
 	cfg.dir = inst.dir

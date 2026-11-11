@@ -49,6 +49,9 @@ func TestSettingsGetReturnsSchemaAndValues(t *testing.T) {
 	if view.Values["region"] != "eu" {
 		t.Errorf("values = %v, want region eu", view.Values)
 	}
+	if view.Values["retries"] != 2.0 || view.Values["verbose"] != true {
+		t.Errorf("values = %v, want the schema defaults for unsaved keys", view.Values)
+	}
 }
 
 func TestSettingsGetWithoutSchemaReturnsNullSchema(t *testing.T) {

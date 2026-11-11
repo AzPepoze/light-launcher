@@ -24,11 +24,11 @@ func (h *Host) SettingsGet(id string) (SettingsView, error) {
 	if err != nil {
 		return SettingsView{}, err
 	}
-	values := map[string]any{}
-	if err := readJSONFile(h.settingsPath(id), &values); err != nil {
+	saved := map[string]any{}
+	if err := readJSONFile(h.settingsPath(id), &saved); err != nil {
 		return SettingsView{}, err
 	}
-	return SettingsView{Schema: schema, Values: values}, nil
+	return SettingsView{Schema: schema, Values: applySettingsDefaults(schema, saved)}, nil
 }
 
 // SettingsSet saves the settings after they pass the plugin's settings schema.
@@ -41,10 +41,11 @@ func (h *Host) SettingsSet(id string, values map[string]any) error {
 	if err != nil {
 		return err
 	}
-	if schema != nil {
-		if err := validateSettings(schema, values); err != nil {
-			return err
-		}
+	if values == nil {
+		values = map[string]any{}
+	}
+	if err := validateSettings(schema, values); err != nil {
+		return err
 	}
 	return writeJSONFile(h.settingsPath(id), values)
 }
