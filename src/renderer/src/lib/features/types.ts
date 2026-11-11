@@ -10,10 +10,15 @@ export interface Game {
 	developer: string | null;
 	engine: string | null;
 	tags: string[];
-	/** Remote cover image. Cached local covers have no served URL yet. */
+	/** Remote cover image. */
 	cover: string | null;
+	/** Cover file cached by the launcher, relative to the media folder. */
+	coverLocal: string | null;
 	screenshots: string[];
+	/** Plain text, with tags and scripts removed. */
 	description: string | null;
+	/** True while the game is running. */
+	running: boolean;
 	favorite: boolean;
 	notes: string | null;
 	installed: boolean;
@@ -39,7 +44,7 @@ export interface LibraryStats {
 export interface LibraryListResponse {
 	items: Game[];
 	stats: LibraryStats;
-	sources: { source: string; count: number }[];
+	sources: { source: string; label: string; count: number }[];
 	tags: { tag: string; count: number }[];
 }
 
@@ -79,6 +84,8 @@ export interface SearchHit {
 	url: string;
 	title: string;
 	source: string;
+	/** How well the title matches the query, about 0 to 2.5. */
+	score: number;
 }
 
 export interface SearchResponse {
@@ -98,6 +105,21 @@ export interface GamePreview {
 	cover: string | null;
 	url: string;
 	existing: { id: number; title: string; installed: boolean } | null;
+	/** Download files the source lists for the game. Empty when the source cannot list them. */
+	files: PreviewFile[];
+	sourceLabel: string;
+}
+
+export interface PreviewFile {
+	id: string;
+	label: string;
+	url: string;
+	filename: string | null;
+	size: number | null;
+	host: string | null;
+	kind: string;
+	platform: string;
+	requiresAuth: boolean;
 }
 
 export interface IncomingSuggestion {
@@ -144,10 +166,12 @@ export interface UpdateCheckRow {
 export interface UpdatesResponse {
 	count: number;
 	games: Game[];
-	/** Recent checks. The API does not list them yet, so this is empty. */
+	/** Recent checks. The history endpoint is not in the API yet, so this is empty. */
 	history: UpdateCheckRow[];
 	/** Titles of games whose check failed, with the reason. */
 	errors: string[];
+	/** When the last check ran, or null when none ran. */
+	lastCheckedAt: string | null;
 }
 
 export type DownloadStatus = "queued" | "downloading" | "paused" | "done" | "error" | "canceled";
@@ -164,6 +188,8 @@ export interface DownloadItem {
 	speed: number;
 	eta: number | null;
 	connections: number;
+	/** True while a total speed limit applies to this download. */
+	rateLimited: boolean;
 	createdAt: string;
 	finishedAt: string | null;
 }
@@ -193,10 +219,12 @@ export interface Toast {
 
 export interface DownloadsListResponse {
 	items: DownloadItem[];
-	/** Install snapshots are only sent as events, so this starts empty. */
+	/** Installs running now. */
 	installs: InstallProgress[];
 	/** 0 means no limit. */
 	speedLimitKBps: number;
+	/** True when 7-Zip is installed. Without it, some archives unpack more slowly or not at all. */
+	sevenZip: boolean;
 }
 
 export type DownloadAction = "pause" | "resume" | "cancel" | "retry" | "remove";
@@ -211,6 +239,13 @@ export interface PluginInfo {
 	signed: boolean;
 	status: PluginStatus;
 	error: string | null;
+	/** Why the plugin is switched off, when the launcher turned it off. */
+	disabledReason: string | null;
+	author: string;
+	description: string;
+	homepage: string;
+	/** True when the plugin has a settings form. */
+	hasSettings: boolean;
 	/** Source ids this plugin contributes. */
 	sources: string[];
 }
@@ -223,6 +258,8 @@ export interface PluginPreview {
 	signed: boolean;
 	/** Plain-language permission lines for the user. */
 	permissions: string[];
+	/** The entries to send back as accepted permissions when the user agrees. */
+	consent: string[];
 }
 
 export interface JsonSchemaProperty {
@@ -242,13 +279,13 @@ export interface JsonSchema {
 }
 
 export interface PluginSettingsResponse {
-	/** The settings schema. The API does not send it yet, so this is null. */
+	/** The settings schema from plugin.json, or null when the plugin has no settings. */
 	schema: JsonSchema | null;
 	values: Record<string, unknown>;
 }
 
 export interface PluginLogLine {
-	/** The API does not send times yet, so this is empty. */
+	/** When the launcher received the line, as an RFC 3339 time. */
 	time: string;
 	level: "debug" | "info" | "warn" | "error";
 	message: string;

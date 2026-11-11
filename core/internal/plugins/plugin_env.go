@@ -3,10 +3,10 @@ package plugins
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 
 	"light-launcher/core/internal/api"
 	"light-launcher/core/internal/contract"
@@ -134,7 +134,7 @@ func (env *pluginEnv) handleProgress(params json.RawMessage) {
 
 // log writes one line to the launcher log and to the plugin's log buffer.
 func (env *pluginEnv) log(level, message string) {
-	env.lines.add(fmt.Sprintf("[%s] %s", level, message))
+	env.lines.add(LogLine{Time: time.Now().UTC().Format(time.RFC3339Nano), Level: level, Text: message})
 	switch strings.ToLower(level) {
 	case "debug":
 		logger.Debug(env.category(), "%s", message)
@@ -166,32 +166,39 @@ func (env *pluginEnv) sourceIDs() map[string]bool {
 	return ids
 }
 
+// LogLine is one line a plugin logged. Time is when the launcher received it, in RFC 3339 with UTC.
+type LogLine struct {
+	Time  string `json:"time"`
+	Level string `json:"level,omitempty"`
+	Text  string `json:"text"`
+}
+
 // lineRing keeps the last lines a plugin wrote, for the UI log view.
 type lineRing struct {
 	mu    sync.Mutex
 	max   int
-	lines []string
+	lines []LogLine
 }
 
 func newLineRing(max int) *lineRing {
 	return &lineRing{max: max}
 }
 
-func (r *lineRing) add(line string) {
+func (r *lineRing) add(line LogLine) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.lines = append(r.lines, line)
 	if over := len(r.lines) - r.max; over > 0 {
-		r.lines = append([]string(nil), r.lines[over:]...)
+		r.lines = append([]LogLine(nil), r.lines[over:]...)
 	}
 }
 
 // tail returns the last n lines, or all of them when n is 0 or larger.
-func (r *lineRing) tail(n int) []string {
+func (r *lineRing) tail(n int) []LogLine {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if n <= 0 || n > len(r.lines) {
 		n = len(r.lines)
 	}
-	return append([]string(nil), r.lines[len(r.lines)-n:]...)
+	return append([]LogLine(nil), r.lines[len(r.lines)-n:]...)
 }

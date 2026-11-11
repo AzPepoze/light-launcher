@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
 	isRemovedPlugin,
-	parseLogLine,
 	permissionLabels,
+	toLogLine,
 	toPluginInfo,
 	toPluginPreview,
 	toPluginSettings
@@ -30,6 +30,10 @@ function makeWire(overrides: Partial<WirePluginInfo> = {}): WirePluginInfo {
 		sources: [
 			{ plugin: "com.example.store", sourceId: "example", label: "Example", capabilities: [] }
 		],
+		author: "Ada",
+		description: "Finds games.",
+		homepage: "https://example.test",
+		hasSettings: false,
 		...overrides
 	};
 }
@@ -68,8 +72,21 @@ describe("toPluginInfo", () => {
 			signed: true,
 			status: "ok",
 			error: null,
+			disabledReason: null,
+			author: "Ada",
+			description: "Finds games.",
+			homepage: "https://example.test",
+			hasSettings: false,
 			sources: ["example"]
 		});
+	});
+
+	it("passes the disabled reason and the settings flag through", () => {
+		const info = toPluginInfo(
+			makeWire({ enabled: false, disabledReason: "crashed 5 times", hasSettings: true })
+		);
+		expect(info.disabledReason).toBe("crashed 5 times");
+		expect(info.hasSettings).toBe(true);
 	});
 
 	it("shows a broken plugin as an error with its reason", () => {
@@ -94,7 +111,8 @@ describe("toPluginPreview", () => {
 				version: "1.0.0",
 				permissions: { ...NO_PERMISSIONS, network: ["api.example.test"] }
 			},
-			unsigned: true
+			unsigned: true,
+			consent: ["network:api.example.test"]
 		});
 		expect(preview).toEqual({
 			source: "https://example.test/p.zip",
@@ -102,29 +120,36 @@ describe("toPluginPreview", () => {
 			name: "Example Store",
 			version: "1.0.0",
 			signed: false,
-			permissions: ["Connect to api.example.test"]
+			permissions: ["Connect to api.example.test"],
+			consent: ["network:api.example.test"]
 		});
 	});
 });
 
-describe("parseLogLine", () => {
-	it("reads the level from the bracket prefix", () => {
-		expect(parseLogLine("[warn] retrying login")).toEqual({
-			time: "",
-			level: "warn",
-			message: "retrying login"
-		});
+describe("toLogLine", () => {
+	it("maps the level, time and text the launcher sent", () => {
+		expect(
+			toLogLine({ time: "2026-03-01T10:00:00Z", level: "warn", text: "retrying login" })
+		).toEqual({ time: "2026-03-01T10:00:00Z", level: "warn", message: "retrying login" });
 	});
 
-	it("keeps a line with no known level as info", () => {
-		expect(parseLogLine("plain text")).toEqual({ time: "", level: "info", message: "plain text" });
+	it("counts a line with no or an unknown level as info", () => {
+		expect(toLogLine({ time: "t", text: "plain" }).level).toBe("info");
+		expect(toLogLine({ time: "t", level: "trace", text: "x" }).level).toBe("info");
 	});
 });
 
 describe("toPluginSettings", () => {
-	it("has no schema and empty values when nothing is saved", () => {
-		expect(toPluginSettings(null)).toEqual({ schema: null, values: {} });
-		expect(toPluginSettings({ region: "eu" })).toEqual({ schema: null, values: { region: "eu" } });
+	it("passes the schema from plugin.json and the saved values", () => {
+		const schema = { type: "object" as const, properties: { region: { type: "string" as const } } };
+		expect(toPluginSettings({ schema, values: { region: "eu" } })).toEqual({
+			schema,
+			values: { region: "eu" }
+		});
+	});
+
+	it("has no schema and empty values for a plugin without settings", () => {
+		expect(toPluginSettings({ schema: null, values: null })).toEqual({ schema: null, values: {} });
 	});
 });
 

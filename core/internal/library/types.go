@@ -19,11 +19,14 @@ type Game struct {
 	Tags             []string       `json:"tags"`
 	CoverPath        *string        `json:"coverPath"`
 	CoverURL         *string        `json:"coverUrl"`
+	CoverLocal       *string        `json:"coverLocal"`
 	Screenshots      []string       `json:"screenshots"`
 	Description      *string        `json:"description"`
+	DescriptionText  *string        `json:"descriptionText"`
 	Changelog        *string        `json:"changelog"`
 	Rating           *float64       `json:"rating"`
 	Status           string         `json:"status"`
+	Running          bool           `json:"running"`
 	Favorite         int            `json:"favorite"`
 	Hidden           int            `json:"hidden"`
 	Notes            *string        `json:"notes"`

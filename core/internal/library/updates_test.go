@@ -35,7 +35,7 @@ func f95Game(t *testing.T, lib *Library, version string) Game {
 
 func TestCheckGameRecordsNewerVersion(t *testing.T) {
 	sources := updateSources(func(any) (any, error) {
-		return map[string]string{"version": "0.8", "changelog": "more things"}, nil
+		return map[string]any{"update": map[string]string{"version": "0.8", "changelog": "more things"}}, nil
 	})
 	lib := openTestLibrary(t, Options{Sources: sources})
 	game := f95Game(t, lib, "0.7")
@@ -109,7 +109,9 @@ func (r *recordingInstaller) InstallUpdate(context.Context, Game, string) error 
 }
 
 func TestAutoUpdateCallsInstallerOnlyWhenFlagged(t *testing.T) {
-	sources := updateSources(func(any) (any, error) { return map[string]string{"version": "2.0"}, nil })
+	sources := updateSources(func(any) (any, error) {
+		return map[string]any{"update": map[string]string{"version": "2.0"}}, nil
+	})
 	installer := &recordingInstaller{}
 	lib := openTestLibrary(t, Options{
 		Sources:    sources,

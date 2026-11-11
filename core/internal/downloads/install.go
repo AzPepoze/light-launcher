@@ -25,9 +25,16 @@ type FolderInstaller struct {
 	Root   string      // library folder; every game gets a folder here
 	Events api.Events  // optional; receives install progress and warnings
 	Titles TitleLookup // optional; without it the folder is named after the archive
+
+	running runningInstalls
 }
 
 var _ Installer = (*FolderInstaller)(nil)
+
+// ActiveInstalls returns the installs that are running now, with their latest progress.
+func (in *FolderInstaller) ActiveInstalls() []InstallProgress {
+	return in.running.list()
+}
 
 // installResult is what a finished install leaves behind.
 type installResult struct {
@@ -38,7 +45,7 @@ type installResult struct {
 
 // Install unpacks the archive, finds the launcher and moves the game into the library.
 func (in *FolderInstaller) Install(ctx context.Context, downloadID, gameID int64, archivePath string) error {
-	rep := newInstallReporter(in.Events, downloadID, gameID)
+	rep := newInstallReporter(in.Events, &in.running, downloadID, gameID)
 	result, err := in.install(ctx, downloadID, gameID, archivePath, rep)
 	if err != nil {
 		logger.Warn(logCategory, "install of download %d failed: %v", downloadID, err)
@@ -63,6 +70,8 @@ func (in *FolderInstaller) install(ctx context.Context, downloadID, gameID int64
 		return installResult{}, err
 	}
 
+	title := in.titleOf(ctx, gameID)
+	rep.titled(title)
 	rep.phase("extracting")
 	in.warnIfSevenZipMissing(archivePath)
 	err := Extract(ctx, archivePath, staging, ExtractOptions{
@@ -87,7 +96,7 @@ func (in *FolderInstaller) install(ctx context.Context, downloadID, gameID int64
 	if err != nil {
 		return installResult{}, err
 	}
-	target, err := in.targetFolder(ctx, gameID, archivePath)
+	target, err := in.targetFolder(gameID, archivePath, title)
 	if err != nil {
 		return installResult{}, err
 	}
@@ -121,13 +130,23 @@ func (in *FolderInstaller) warnIfSevenZipMissing(archivePath string) {
 	}
 }
 
-// targetFolder picks a free folder in the library for the game.
-func (in *FolderInstaller) targetFolder(ctx context.Context, gameID int64, archivePath string) (string, error) {
+// titleOf returns the game's title from the lookup, or "" when there is none.
+func (in *FolderInstaller) titleOf(ctx context.Context, gameID int64) string {
+	if in.Titles == nil {
+		return ""
+	}
+	title, err := in.Titles(ctx, gameID)
+	if err != nil {
+		return ""
+	}
+	return title
+}
+
+// targetFolder picks a free folder in the library for the game. The title names it, or else the archive does.
+func (in *FolderInstaller) targetFolder(gameID int64, archivePath, title string) (string, error) {
 	name := strings.TrimSuffix(filepath.Base(archivePath), filepath.Ext(archivePath))
-	if in.Titles != nil {
-		if title, err := in.Titles(ctx, gameID); err == nil && title != "" {
-			name = title
-		}
+	if title != "" {
+		name = title
 	}
 	base := folderName(name, gameID)
 	for n := 1; ; n++ {

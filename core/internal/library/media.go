@@ -75,6 +75,31 @@ func (m *mediaCache) cacheImage(ctx context.Context, rawURL, kind string) (strin
 	return file, nil
 }
 
+// localPath returns a cached file as a path relative to the media folder, or nil when it is not there.
+func (m *mediaCache) localPath(path *string) *string {
+	if path == nil {
+		return nil
+	}
+	rel, ok := m.relPath(*path)
+	if !ok {
+		return nil
+	}
+	return &rel
+}
+
+// relPath returns path relative to the media folder, with slashes, or false when path is outside it.
+func (m *mediaCache) relPath(path string) (string, bool) {
+	if m.dir == "" {
+		return "", false
+	}
+	rel, err := filepath.Rel(m.dir, path)
+	if err != nil || rel == "." || rel == ".." || filepath.IsAbs(rel) ||
+		strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return "", false
+	}
+	return filepath.ToSlash(rel), true
+}
+
 func (m *mediaCache) fetch(ctx context.Context, rawURL string) ([]byte, string, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
 	if err != nil {
@@ -151,6 +176,21 @@ func (l *Library) AttachCover(ctx context.Context, game Game) (Game, error) {
 		return game, err
 	}
 	return l.Patch(ctx, game.ID, Patch{CoverPath: &path})
+}
+
+// CoverFile returns the cached cover of a game, when the file is on disk inside the media folder.
+func (l *Library) CoverFile(id int64) (string, bool) {
+	game, err := l.Get(context.Background(), id)
+	if err != nil || game.CoverPath == nil {
+		return "", false
+	}
+	if _, ok := l.media.relPath(*game.CoverPath); !ok {
+		return "", false
+	}
+	if _, err := os.Stat(*game.CoverPath); err != nil {
+		return "", false
+	}
+	return *game.CoverPath, true
 }
 
 // CacheScreenshots downloads up to eight screenshots. Failures are logged and skipped.

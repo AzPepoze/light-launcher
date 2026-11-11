@@ -4,16 +4,31 @@ import (
 	"path/filepath"
 )
 
-// SettingsGet returns the settings the user saved for a plugin. Empty when none were saved.
-func (h *Host) SettingsGet(id string) (map[string]any, error) {
+// SettingsView is what the settings form needs: the schema from plugin.json, null when the plugin has none,
+// and the values the user saved, empty when none were saved.
+type SettingsView struct {
+	Schema map[string]any `json:"schema"`
+	Values map[string]any `json:"values"`
+}
+
+// SettingsGet returns the settings schema and the saved values of an installed plugin.
+func (h *Host) SettingsGet(id string) (SettingsView, error) {
 	if err := requireID(id); err != nil {
-		return nil, err
+		return SettingsView{}, err
 	}
-	settings := map[string]any{}
-	if err := readJSONFile(h.settingsPath(id), &settings); err != nil {
-		return nil, err
+	inst, err := h.loadInstalled(id)
+	if err != nil {
+		return SettingsView{}, err
 	}
-	return settings, nil
+	schema, err := loadSettingsSchema(inst)
+	if err != nil {
+		return SettingsView{}, err
+	}
+	values := map[string]any{}
+	if err := readJSONFile(h.settingsPath(id), &values); err != nil {
+		return SettingsView{}, err
+	}
+	return SettingsView{Schema: schema, Values: values}, nil
 }
 
 // SettingsSet saves the settings after they pass the plugin's settings schema.

@@ -1,4 +1,4 @@
-import { parseLogLine, toPluginInfo, toPluginPreview, toPluginSettings } from "./pluginsMap";
+import { toLogLine, toPluginInfo, toPluginPreview, toPluginSettings } from "./pluginsMap";
 import { rpc } from "./rpc";
 import type {
 	AuthState,
@@ -8,7 +8,7 @@ import type {
 	PluginPreview,
 	PluginSettingsResponse
 } from "./types";
-import type { WirePluginInfo, WirePluginPreview } from "./wire";
+import type { WirePluginInfo, WirePluginLogLine, WirePluginPreview, WireSettingsView } from "./wire";
 
 /** How many recent log lines to ask for. */
 const LOG_LINE_LIMIT = 200;
@@ -22,12 +22,34 @@ export const pluginsApi = {
 	previewPermissions: async (source: string): Promise<PluginPreview> =>
 		toPluginPreview(source, await rpc<WirePluginPreview>("PluginPermissionsPreview", { source })),
 
-	/** Unsigned packages need allowUnsigned, which the user confirms in the install dialog. */
-	install: async (source: string, allowUnsigned: boolean): Promise<PluginInfo> =>
-		toPluginInfo(await rpc<WirePluginInfo>("PluginInstall", { source, allowUnsigned })),
+	/**
+	 * Unsigned packages need allowUnsigned, which the user confirms in the install dialog.
+	 * Without acceptedPermissions, the permissions from a fresh preview are accepted.
+	 */
+	install: async (
+		source: string,
+		allowUnsigned: boolean,
+		acceptedPermissions?: string[]
+	): Promise<PluginInfo> => {
+		const accepted = acceptedPermissions ?? (await pluginsApi.previewPermissions(source)).consent;
+		return toPluginInfo(
+			await rpc<WirePluginInfo>("PluginInstall", {
+				source,
+				allowUnsigned,
+				acceptedPermissions: accepted
+			})
+		);
+	},
 
-	update: async (id: string, allowUnsigned: boolean): Promise<PluginInfo> =>
-		toPluginInfo(await rpc<WirePluginInfo>("PluginUpdate", { id, allowUnsigned })),
+	/** A version that asks for new permissions needs acceptedPermissions that list all of them. */
+	update: async (
+		id: string,
+		allowUnsigned: boolean,
+		acceptedPermissions: string[] = []
+	): Promise<PluginInfo> =>
+		toPluginInfo(
+			await rpc<WirePluginInfo>("PluginUpdate", { id, allowUnsigned, acceptedPermissions })
+		),
 
 	/** Removal keeps the plugin's data folder. */
 	remove: (id: string) => rpc<void>("PluginRemove", { id, deleteData: false }),
@@ -39,7 +61,7 @@ export const pluginsApi = {
 		toPluginInfo(await rpc<WirePluginInfo>("PluginSetEnabled", { id, enabled })),
 
 	settingsGet: async (id: string): Promise<PluginSettingsResponse> =>
-		toPluginSettings(await rpc<Record<string, unknown> | null>("PluginSettingsGet", { id })),
+		toPluginSettings(await rpc<WireSettingsView>("PluginSettingsGet", { id })),
 
 	settingsSet: (id: string, values: Record<string, unknown>) =>
 		rpc<void>("PluginSettingsSet", { id, settings: values }),
@@ -55,7 +77,7 @@ export const pluginsApi = {
 		}),
 
 	logs: async (id: string): Promise<PluginLogLine[]> => {
-		const lines = await rpc<string[] | null>("PluginLogs", { id, lines: LOG_LINE_LIMIT });
-		return (lines ?? []).map(parseLogLine);
+		const lines = await rpc<WirePluginLogLine[] | null>("PluginLogs", { id, lines: LOG_LINE_LIMIT });
+		return (lines ?? []).map(toLogLine);
 	}
 };

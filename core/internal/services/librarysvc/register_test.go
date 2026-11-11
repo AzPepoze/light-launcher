@@ -25,7 +25,7 @@ func (fakeSources) Call(_ context.Context, _, method string, _ any, out any) err
 	if method != "source.search" {
 		return nil
 	}
-	raw, _ := json.Marshal([]contract.GameDTO{{Source: "f95", SourceID: "9", URL: "https://f95/9", Title: "Found Game"}})
+	raw, _ := json.Marshal(map[string][]contract.GameDTO{"games": {{Source: "f95", SourceID: "9", URL: "https://f95/9", Title: "Found Game"}}})
 	return json.Unmarshal(raw, out)
 }
 
@@ -72,7 +72,7 @@ func TestRegisterAddsEveryLibraryMethod(t *testing.T) {
 	want := []string{
 		"LibraryList", "LibraryGet", "LibraryUpdate", "LibraryRemove", "LibrarySearch", "LibraryPreview",
 		"LibraryAddFromUrl", "LibraryLinkLocal", "LibraryCheckUpdates", "LibrarySetFavorite",
-		"LibraryImportLegacy", "LibraryScanFolder", "LibraryLaunch",
+		"LibraryImportLegacy", "LibraryScanFolder", "LibraryLaunch", "LibraryLinkFolder", "LibraryUpdatesSummary",
 		"IncomingList", "IncomingLink", "IncomingIgnore", "IncomingCreateLocal",
 	}
 	got := router.Methods()
@@ -121,12 +121,12 @@ func TestLibraryListAndRemoveKeepHistory(t *testing.T) {
 	router, _ := setup(t)
 	id := createManual(t, router)
 
-	page := call(t, router, "LibraryList", `{"search":"manual"}`).(library.Page)
+	page := call(t, router, "LibraryList", `{"search":"manual"}`).(library.Listing)
 	if page.Total != 1 {
 		t.Errorf("list total = %d, want 1", page.Total)
 	}
 	call(t, router, "LibraryRemove", idJSON(id, ""))
-	page = call(t, router, "LibraryList", `{}`).(library.Page)
+	page = call(t, router, "LibraryList", `{}`).(library.Listing)
 	if page.Total != 0 {
 		t.Errorf("list total after remove = %d, want 0", page.Total)
 	}

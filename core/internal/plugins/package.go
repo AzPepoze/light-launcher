@@ -23,6 +23,8 @@ func (p preparedPackage) discard() {
 type Preview struct {
 	Manifest Manifest `json:"manifest"`
 	Unsigned bool     `json:"unsigned"`
+	// Consent is the permission list to send back as acceptedPermissions.
+	Consent []string `json:"consent"`
 }
 
 // preparePackage downloads (for URLs), unpacks and verifies a package without installing it.

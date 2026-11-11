@@ -69,7 +69,7 @@ func dispatch(ctx context.Context, host *Host, command string, rest []string, ou
 	case "install":
 		return cliInstall(ctx, host, target, flags["--allow-unsigned"], out)
 	case "update":
-		info, err := host.Update(ctx, target, flags["--allow-unsigned"])
+		info, err := host.Update(ctx, target, flags["--allow-unsigned"], nil)
 		return reportChange(info, err, "updated", out)
 	case "rollback":
 		info, err := host.Rollback(target)
@@ -110,8 +110,13 @@ func splitFlags(args []string) ([]string, map[string]bool, error) {
 	return positional, flags, nil
 }
 
+// cliInstall accepts the permissions the package asks for. The command line is the consent step.
 func cliInstall(ctx context.Context, host *Host, source string, allowUnsigned bool, out io.Writer) error {
-	info, err := host.Install(ctx, InstallRequest{Source: source, AllowUnsigned: allowUnsigned})
+	preview, err := host.PermissionsPreview(ctx, source)
+	if err != nil {
+		return err
+	}
+	info, err := host.Install(ctx, InstallRequest{Source: source, AllowUnsigned: allowUnsigned, AcceptedPermissions: preview.Consent})
 	if err != nil {
 		return err
 	}

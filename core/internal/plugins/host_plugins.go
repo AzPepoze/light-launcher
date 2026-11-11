@@ -22,12 +22,18 @@ type PluginInfo struct {
 	Unsigned       bool                  `json:"unsigned"`
 	Permissions    Permissions           `json:"permissions"`
 	Sources        []contract.SourceInfo `json:"sources"`
+	Author         string                `json:"author"`
+	Description    string                `json:"description"`
+	Homepage       string                `json:"homepage"`
+	HasSettings    bool                  `json:"hasSettings"`
 }
 
 // InstallRequest asks for one package, from a local path or an https URL.
+// AcceptedPermissions must list the permissions the plugin asks for, as the preview's consent list.
 type InstallRequest struct {
-	Source        string `json:"source"`
-	AllowUnsigned bool   `json:"allowUnsigned"`
+	Source              string   `json:"source"`
+	AllowUnsigned       bool     `json:"allowUnsigned"`
+	AcceptedPermissions []string `json:"acceptedPermissions"`
 }
 
 // List returns every installed plugin, sorted by id.
@@ -51,7 +57,7 @@ func (h *Host) PermissionsPreview(ctx context.Context, source string) (Preview, 
 
 // Install adds a plugin from a package. Unsigned packages need AllowUnsigned.
 func (h *Host) Install(ctx context.Context, req InstallRequest) (PluginInfo, error) {
-	id, err := h.install.Install(ctx, req.Source, req.AllowUnsigned)
+	id, err := h.install.Install(ctx, req.Source, req.AllowUnsigned, req.AcceptedPermissions)
 	if err != nil {
 		return PluginInfo{}, err
 	}
@@ -59,13 +65,14 @@ func (h *Host) Install(ctx context.Context, req InstallRequest) (PluginInfo, err
 	return h.info(id), nil
 }
 
-// Update installs the newest version from the source the plugin came from.
-func (h *Host) Update(ctx context.Context, id string, allowUnsigned bool) (PluginInfo, error) {
+// Update installs the newest version from the source the plugin came from. A version that asks for new
+// permissions needs accepted to list all of them.
+func (h *Host) Update(ctx context.Context, id string, allowUnsigned bool, accepted []string) (PluginInfo, error) {
 	if err := requireID(id); err != nil {
 		return PluginInfo{}, err
 	}
 	h.stopPlugin(id)
-	if err := h.install.Update(ctx, id, allowUnsigned); err != nil {
+	if err := h.install.Update(ctx, id, allowUnsigned, accepted); err != nil {
 		return PluginInfo{}, err
 	}
 	h.emitState(id)
@@ -119,7 +126,7 @@ func (h *Host) SetEnabled(id string, enabled bool) (PluginInfo, error) {
 }
 
 // Logs returns the last lines a plugin wrote. A count of 0 returns all kept lines.
-func (h *Host) Logs(id string, lines int) ([]string, error) {
+func (h *Host) Logs(id string, lines int) ([]LogLine, error) {
 	if err := requireID(id); err != nil {
 		return nil, err
 	}
@@ -147,6 +154,10 @@ func (h *Host) info(id string) PluginInfo {
 	info.Version = inst.version
 	info.Previous = inst.previous
 	info.Permissions = inst.manifest.Permissions
+	info.Author = inst.manifest.Author
+	info.Description = inst.manifest.Description
+	info.Homepage = inst.manifest.Homepage
+	info.HasSettings = inst.manifest.Contributes.Settings != nil
 	info.Sources = sourceInfos(id, inst.manifest)
 	info.Running = h.running(id)
 	switch {

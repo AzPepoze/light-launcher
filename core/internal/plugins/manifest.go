@@ -21,6 +21,10 @@ type Manifest struct {
 	Entry       map[string]string `json:"entry"`
 	Contributes Contributes       `json:"contributes"`
 	Permissions Permissions       `json:"permissions"`
+	// Author, Description and Homepage are optional and only shown to the user.
+	Author      string `json:"author,omitempty"`
+	Description string `json:"description,omitempty"`
+	Homepage    string `json:"homepage,omitempty"`
 }
 
 // Contributes lists what the plugin adds to the launcher.

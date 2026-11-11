@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"sync"
 	"testing"
+	"time"
 )
 
 // recordingEvents remembers which channels were emitted.
@@ -40,19 +41,23 @@ func TestNotifyEmitsProgressAndKeepsLogLines(t *testing.T) {
 	if !events.has("plugin-progress") {
 		t.Fatalf("progress did not reach the event sink")
 	}
-	if lines := env.lines.tail(0); len(lines) != 1 || lines[0] != "[info] scanning" {
-		t.Fatalf("log lines = %v", lines)
+	lines := env.lines.tail(0)
+	if len(lines) != 1 || lines[0].Level != "info" || lines[0].Text != "scanning" {
+		t.Fatalf("log lines = %+v", lines)
+	}
+	if _, err := time.Parse(time.RFC3339Nano, lines[0].Time); err != nil {
+		t.Errorf("log time %q is not RFC 3339: %v", lines[0].Time, err)
 	}
 }
 
 func TestLineRingKeepsLastLines(t *testing.T) {
 	ring := newLineRing(3)
-	for _, line := range []string{"a", "b", "c", "d", "e"} {
-		ring.add(line)
+	for _, text := range []string{"a", "b", "c", "d", "e"} {
+		ring.add(LogLine{Text: text})
 	}
 	got := ring.tail(2)
-	if len(got) != 2 || got[0] != "d" || got[1] != "e" {
-		t.Fatalf("tail(2) = %v", got)
+	if len(got) != 2 || got[0].Text != "d" || got[1].Text != "e" {
+		t.Fatalf("tail(2) = %+v", got)
 	}
 	if all := ring.tail(0); len(all) != 3 {
 		t.Fatalf("tail(0) = %v, want the 3 kept lines", all)

@@ -1,7 +1,7 @@
 import { toDownloadItem, toDownloadsList } from "./downloadsMap";
 import { rpc } from "./rpc";
 import type { DownloadAction, DownloadItem, DownloadsListResponse } from "./types";
-import type { WireDownloadSettings, WireDownloadView } from "./wire";
+import type { WireDownloadsStatus, WireDownloadView } from "./wire";
 
 const ACTION_METHODS: Record<Exclude<DownloadAction, "remove">, string> = {
 	pause: "DownloadPause",
@@ -12,11 +12,11 @@ const ACTION_METHODS: Record<Exclude<DownloadAction, "remove">, string> = {
 
 export const downloadsApi = {
 	list: async (): Promise<DownloadsListResponse> => {
-		const [views, settings] = await Promise.all([
+		const [views, status] = await Promise.all([
 			rpc<WireDownloadView[] | null>("DownloadsList"),
-			rpc<WireDownloadSettings>("DownloadsGetSettings")
+			rpc<WireDownloadsStatus>("DownloadsStatus")
 		]);
-		return toDownloadsList(views ?? [], settings);
+		return toDownloadsList(views ?? [], status);
 	},
 
 	/** A game file is installed after it downloads. A direct link is only saved. */

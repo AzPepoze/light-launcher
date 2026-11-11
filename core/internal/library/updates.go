@@ -2,6 +2,7 @@ package library
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"strings"
 	"time"
@@ -25,6 +26,41 @@ type CheckResult struct {
 	Error     string  `json:"error,omitempty"`
 }
 
+// lastRunKey is the meta key that keeps the last update check.
+const lastRunKey = "lastUpdateCheck"
+
+// UpdateRun is one update check: when it ran and what each game answered.
+type UpdateRun struct {
+	CheckedAt string        `json:"checkedAt"`
+	Results   []CheckResult `json:"results"`
+}
+
+// UpdatesSummary is what the updates view shows before the user checks again.
+type UpdatesSummary struct {
+	Unseen int        `json:"unseen"`
+	Last   *UpdateRun `json:"last"`
+}
+
+// UpdatesSummary returns the number of unseen updates and the last check, if there was one.
+func (l *Library) UpdatesSummary(ctx context.Context) (UpdatesSummary, error) {
+	unseen, err := l.UnseenCount(ctx)
+	if err != nil {
+		return UpdatesSummary{}, err
+	}
+	summary := UpdatesSummary{Unseen: unseen}
+	raw, found, err := l.GetMeta(ctx, lastRunKey)
+	if err != nil {
+		return UpdatesSummary{}, err
+	}
+	if found {
+		var run UpdateRun
+		if err := json.Unmarshal([]byte(raw), &run); err == nil {
+			summary.Last = &run
+		}
+	}
+	return summary, nil
+}
+
 // CheckGame asks the game's source for a newer version and records what it finds.
 func (l *Library) CheckGame(ctx context.Context, id int64) (CheckResult, error) {
 	game, err := l.Get(ctx, id)
@@ -37,17 +73,18 @@ func (l *Library) CheckGame(ctx context.Context, id int64) (CheckResult, error) 
 	}
 
 	stamp := nowStamp()
-	var update *UpdateInfo
-	if err := l.sources.Call(ctx, info.Plugin, methodCheckUpdate, gameRefOf(game), &update); err != nil {
+	var reply updateReply
+	params := gameParams{Source: info.SourceID, Game: gameRefOf(game)}
+	if err := l.sources.Call(ctx, info.Plugin, methodCheckUpdate, params, &reply); err != nil {
 		return l.handleCheckError(ctx, game, stamp, err)
 	}
 	if _, err := l.Patch(ctx, id, Patch{LastCheckedAt: &stamp}); err != nil {
 		return CheckResult{}, err
 	}
-	if update == nil {
+	if reply.Update == nil {
 		return noUpdate(game), nil
 	}
-	return l.applyUpdate(ctx, game, *update)
+	return l.applyUpdate(ctx, game, *reply.Update)
 }
 
 func (l *Library) handleCheckError(ctx context.Context, game Game, stamp string, err error) (CheckResult, error) {
@@ -127,11 +164,20 @@ func (l *Library) CheckAll(ctx context.Context, ids []int64, skipRecent bool) ([
 		}
 		results = append(results, result)
 	}
+	l.saveRun(ctx, results)
 	count, err := l.UnseenCount(ctx)
 	if err == nil {
 		l.notify("library.updates", map[string]any{"count": count})
 	}
 	return results, nil
+}
+
+// saveRun keeps the results of a check for the updates view. A failed save is logged only.
+func (l *Library) saveRun(ctx context.Context, results []CheckResult) {
+	run := UpdateRun{CheckedAt: nowStamp(), Results: results}
+	if err := l.setMetaJSON(ctx, lastRunKey, run); err != nil {
+		logger.Warn(logCategory, "could not save the update check: %v", err)
+	}
 }
 
 func (l *Library) checkTargets(ctx context.Context, ids []int64, skipRecent bool) ([]Game, error) {

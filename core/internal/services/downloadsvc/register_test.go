@@ -45,7 +45,7 @@ func TestRegisterAddsAllDownloadMethods(t *testing.T) {
 	r := newRouter(t)
 	want := []string{
 		"DownloadsList", "DownloadEnqueue", "DownloadPause", "DownloadResume", "DownloadCancel",
-		"DownloadRetry", "DownloadRemove", "DownloadSetSpeedLimit", "DownloadsGetSettings", "DownloadsSetSettings",
+		"DownloadRetry", "DownloadRemove", "DownloadSetSpeedLimit", "DownloadsStatus", "DownloadsGetSettings", "DownloadsSetSettings",
 	}
 	got := r.Methods()
 	for _, name := range want {

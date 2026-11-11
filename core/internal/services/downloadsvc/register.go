@@ -41,6 +41,7 @@ func Register(r *api.Router, _ api.Events, m *downloads.Manager) {
 	r.Handle("DownloadRetry", idAction(m.Retry))
 	r.Handle("DownloadRemove", api.Typed(remove(m)))
 	r.Handle("DownloadSetSpeedLimit", api.Typed(setSpeedLimit(m)))
+	r.Handle("DownloadsStatus", api.NoInput(status(m)))
 	r.Handle("DownloadsGetSettings", api.NoInput(getSettings(m)))
 	r.Handle("DownloadsSetSettings", api.Typed(setSettings(m)))
 }
@@ -67,6 +68,12 @@ func remove(m *downloads.Manager) func(context.Context, removeRequest) (okRespon
 func setSpeedLimit(m *downloads.Manager) func(context.Context, speedLimitRequest) (downloads.Settings, error) {
 	return func(_ context.Context, in speedLimitRequest) (downloads.Settings, error) {
 		return m.SetSpeedLimit(in.SpeedLimitKBps), nil
+	}
+}
+
+func status(m *downloads.Manager) func(context.Context) (downloads.Status, error) {
+	return func(context.Context) (downloads.Status, error) {
+		return m.Status(), nil
 	}
 }
 

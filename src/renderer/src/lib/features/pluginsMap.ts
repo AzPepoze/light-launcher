@@ -1,8 +1,14 @@
 import type { PluginInfo, PluginLogLine, PluginPreview, PluginSettingsResponse } from "./types";
-import type { WirePermissions, WirePluginInfo, WirePluginPreview, WireRemovedPlugin } from "./wire";
+import type {
+	WirePermissions,
+	WirePluginInfo,
+	WirePluginLogLine,
+	WirePluginPreview,
+	WireRemovedPlugin,
+	WireSettingsView
+} from "./wire";
 
-/** Log lines look like "[warn] message". The Go side sends no times. */
-const LOG_LINE = /^\[(debug|info|warn|error)\] ?(.*)$/s;
+const LOG_LEVELS: readonly PluginLogLine["level"][] = ["debug", "info", "warn", "error"];
 
 export function permissionLabels(permissions: WirePermissions): string[] {
 	return [
@@ -23,6 +29,11 @@ export function toPluginInfo(wire: WirePluginInfo): PluginInfo {
 		signed: !wire.unsigned,
 		status: wire.status === "broken" ? "error" : "ok",
 		error: wire.error || null,
+		disabledReason: wire.disabledReason || null,
+		author: wire.author,
+		description: wire.description,
+		homepage: wire.homepage,
+		hasSettings: wire.hasSettings,
 		sources: (wire.sources ?? []).map((source) => source.sourceId)
 	};
 }
@@ -35,19 +46,19 @@ export function toPluginPreview(source: string, wire: WirePluginPreview): Plugin
 		name: manifest.name,
 		version: manifest.version,
 		signed: !wire.unsigned,
-		permissions: permissionLabels(manifest.permissions)
+		permissions: permissionLabels(manifest.permissions),
+		consent: wire.consent ?? []
 	};
 }
 
-export function parseLogLine(line: string): PluginLogLine {
-	const match = LOG_LINE.exec(line);
-	if (!match) return { time: "", level: "info", message: line };
-	return { time: "", level: match[1] as PluginLogLine["level"], message: match[2] };
+/** Unknown or missing levels count as info. */
+export function toLogLine(wire: WirePluginLogLine): PluginLogLine {
+	const level = LOG_LEVELS.find((known) => known === wire.level) ?? "info";
+	return { time: wire.time, level, message: wire.text };
 }
 
-/** The API has no settings schema yet, so the form stays empty. */
-export function toPluginSettings(values: Record<string, unknown> | null): PluginSettingsResponse {
-	return { schema: null, values: values ?? {} };
+export function toPluginSettings(wire: WireSettingsView): PluginSettingsResponse {
+	return { schema: wire.schema ?? null, values: wire.values ?? {} };
 }
 
 export function isRemovedPlugin(

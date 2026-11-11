@@ -32,10 +32,12 @@ type Options struct {
 	DownloadsDir string
 	// WatchFolder returns the current watch folder. It is read on every poll, so changes apply without a restart.
 	WatchFolder func() string
-	Sources     contract.Sources
-	Launcher    Launcher
-	Installer   Installer
-	Sink        ArchiveSink
+	// GamesDir returns the folder that holds installed games. Only install folders inside it are ever deleted.
+	GamesDir  func() string
+	Sources   contract.Sources
+	Launcher  Launcher
+	Installer Installer
+	Sink      ArchiveSink
 	// AutoUpdate reports whether a game should be installed as soon as an update is found.
 	AutoUpdate func(Game) bool
 	// UpdateRecheck skips games checked more recently than this in scheduled runs. Zero checks every game.
@@ -89,6 +91,45 @@ func (l *Library) notify(channel string, data any) {
 	if l.opts.Notify != nil {
 		l.opts.Notify(channel, data)
 	}
+}
+
+// Get returns one game with its running state and local cover path set.
+func (l *Library) Get(ctx context.Context, id int64) (Game, error) {
+	game, err := l.Store.Get(ctx, id)
+	if err != nil {
+		return Game{}, err
+	}
+	l.decorate(&game)
+	return game, nil
+}
+
+// Patch is Store.Patch, returning the decorated row.
+func (l *Library) Patch(ctx context.Context, id int64, p Patch) (Game, error) {
+	game, err := l.Store.Patch(ctx, id, p)
+	if err != nil {
+		return Game{}, err
+	}
+	l.decorate(&game)
+	return game, nil
+}
+
+// List is Store.List, with every returned row decorated.
+func (l *Library) List(ctx context.Context, f Filter) (Page, error) {
+	page, err := l.Store.List(ctx, f)
+	if err != nil {
+		return Page{}, err
+	}
+	for i := range page.Items {
+		l.decorate(&page.Items[i])
+	}
+	return page, nil
+}
+
+// decorate fills the fields that depend on the running process, not only on the stored row.
+func (l *Library) decorate(game *Game) {
+	game.Running = l.launches.isRunning(game.ID)
+	game.CoverLocal = l.media.localPath(game.CoverPath)
+	game.DescriptionText = plainText(game.Description)
 }
 
 func (l *Library) watchFolder() string {
