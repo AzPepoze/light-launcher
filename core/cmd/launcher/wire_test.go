@@ -29,6 +29,7 @@ func TestWireServicesRegistersEveryService(t *testing.T) {
 	for _, want := range []string{
 		"GetInitialGamePath", "GetAppSettings", "GetAllGames", "RunGame", "GetPlatform",
 		"GetSystemInfo", "LibraryList", "PluginsList", "DownloadsList", "DownloadEnqueue",
+		"SchedulerStatus", "SchedulerRunNow",
 	} {
 		if !slices.Contains(methods, want) {
 			t.Errorf("method %s is not registered", want)

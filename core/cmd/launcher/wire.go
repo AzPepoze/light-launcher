@@ -11,11 +11,13 @@ import (
 	"light-launcher/core/internal/library"
 	"light-launcher/core/internal/logger"
 	"light-launcher/core/internal/plugins"
+	"light-launcher/core/internal/scheduler"
 	"light-launcher/core/internal/services/appsvc"
 	"light-launcher/core/internal/services/downloadsvc"
 	"light-launcher/core/internal/services/librarysvc"
 	"light-launcher/core/internal/services/pluginsvc"
 	"light-launcher/core/internal/services/runtimesvc"
+	"light-launcher/core/internal/services/schedulersvc"
 	"light-launcher/core/internal/services/systemsvc"
 	"light-launcher/core/internal/uploads"
 )
@@ -28,6 +30,7 @@ type services struct {
 	host        *plugins.Host
 	installer   *downloads.FolderInstaller
 	uploads     *uploads.Store
+	scheduler   *scheduler.Scheduler
 	stop        context.CancelFunc
 	jobs        sync.WaitGroup
 }
@@ -76,6 +79,12 @@ func (s *services) open(ctx context.Context, router *api.Router, hub *api.Hub, d
 	s.host = host
 	sources.registry = plugins.NewRegistry(host)
 
+	sched, err := newScheduler(ctx, s.library, host, sources, hub.Emit)
+	if err != nil {
+		return err
+	}
+	s.scheduler = sched
+
 	s.registerMethods(router, hub, sources)
 	s.startJobs(ctx)
 	return nil
@@ -93,10 +102,11 @@ func (s *services) registerMethods(router *api.Router, hub *api.Hub, sources con
 	pluginsvc.Register(router, hub, s.host, s.uploads)
 	librarysvc.Register(router, hub, s.library, sources)
 	downloadsvc.Register(router, hub, s.downloads)
+	schedulersvc.Register(router, hub, s.scheduler)
 	logger.Info("api", "registered %d methods", len(router.Methods()))
 }
 
-// startJobs runs the watch folder poller and the update checks until Close.
+// startJobs runs the watch folder poller and the background scheduler until Close.
 func (s *services) startJobs(ctx context.Context) {
 	s.jobs.Add(2)
 	go func() {
@@ -105,7 +115,7 @@ func (s *services) startJobs(ctx context.Context) {
 	}()
 	go func() {
 		defer s.jobs.Done()
-		s.library.RunUpdateScheduler(ctx, updateInterval)
+		s.scheduler.Run(ctx)
 	}()
 }
 

@@ -3,7 +3,6 @@ package library
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"strings"
 	"time"
 
@@ -231,22 +230,6 @@ func sinceOrZero(now time.Time, recheck time.Duration) time.Time {
 		return time.Time{}
 	}
 	return now.Add(-recheck)
-}
-
-// RunUpdateScheduler checks due games every interval until ctx is done.
-func (l *Library) RunUpdateScheduler(ctx context.Context, interval time.Duration) {
-	ticker := time.NewTicker(interval)
-	defer ticker.Stop()
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-			if _, err := l.CheckAll(ctx, nil, true); err != nil && !errors.Is(err, context.Canceled) {
-				logger.Warn(logCategory, "scheduled update check failed: %v", err)
-			}
-		}
-	}
 }
 
 func noUpdate(game Game) CheckResult {
