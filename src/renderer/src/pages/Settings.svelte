@@ -2,6 +2,8 @@
 	import PageHeader from "@components/shared/PageHeader.svelte";
 	import { settingsStore } from "@stores/settingsStore";
 	import { isLinux, platform } from "@stores/platformStore";
+	import { pendingSettingsSection } from "@stores/navigationStore";
+	import { sectionScroll } from "@lib/features/settingsSection";
 	import * as service from "@lib/settingsService";
 	import { onMount } from "svelte";
 	import ScanFoldersSetting from "@components/settings/ScanFoldersSetting.svelte";
@@ -43,6 +45,17 @@
 	onMount(async () => {
 		await refreshAppSettings();
 	});
+
+	$effect(() => {
+		const scroll = sectionScroll($pendingSettingsSection, prefersReducedMotion());
+		if (!scroll) return;
+		document.getElementById(scroll.id)?.scrollIntoView({ behavior: scroll.behavior, block: "start" });
+		pendingSettingsSection.set(null);
+	});
+
+	function prefersReducedMotion(): boolean {
+		return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+	}
 
 	settingsStore.subscribe((val) => {
 		currentSettings = val;
