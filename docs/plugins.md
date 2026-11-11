@@ -128,9 +128,6 @@ The window keeps its cookies and logins in a profile folder for each plugin:
 
 Sign in once and the site remembers you until its session ends. To forget the login, close the window and delete that folder. See [File locations](usage.md#file-locations).
 
-> [!NOTE]
-> On Linux, Qt may leave cookies restored from an earlier run out of the `Cookie` header it reports. The page still has them. If a download needs that cookie, let the site set it in this window first.
-
 ## Accounts and settings
 
 Some sources need you to sign in.

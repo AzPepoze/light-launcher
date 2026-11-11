@@ -44,10 +44,13 @@ tar -xzf light-launcher-<version>-linux-x64.tar.gz -C ~/apps/light-launcher
 
 ## What it needs
 
-| Need                     | Why                               | Package (Arch)  |
-| :----------------------- | :-------------------------------- | :-------------- |
-| umu-launcher (`umu-run`) | Starts Windows games with Proton. | `umu-launcher`  |
-| Qt6 WebEngine            | Shows the window.                 | `qt6-webengine` |
+| Need                     | Why                                      | Package (Arch)  |
+| :----------------------- | :--------------------------------------- | :-------------- |
+| umu-launcher (`umu-run`) | Starts Windows games with Proton.        | `umu-launcher`  |
+| Qt6 WebEngine            | Shows the window.                        | `qt6-webengine` |
+| Qt6 SQLite driver        | Reads cookies restored from the profile. | `qt6-base`      |
+
+On Debian and Ubuntu, the SQLite driver is in the separate `libqt6sql6-sqlite` package.
 
 Optional:
 

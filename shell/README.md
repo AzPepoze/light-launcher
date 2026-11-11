@@ -60,7 +60,7 @@ light-launcher-shell --assist <url> --profile <dir> [--title <text>] [--message 
 > [!IMPORTANT]
 > Assist mode is for a human. The window is a normal embedded browser. The user logs in, waits for timers, presses the download button and solves any challenge by hand. The shell does not click, type, fill forms, solve CAPTCHAs, spoof fingerprints or hide that it is an embedded browser. There are no stealth flags.
 
-When the page starts a download, the shell cancels it, prints one `download` line and exits. Nothing is written to disk. `blob:` and `data:` downloads are canceled without a line because there is no address to download. New windows open in the same window, and only `http` and `https` navigation is allowed.
+When the page starts a download, the shell cancels it, prints one `download` line and exits. Nothing is written to disk. `blob:` and `data:` downloads are canceled without a line because there is no address to download. New windows open in the same window, and only `http` and `https` navigation is allowed. Cookies restored from the profile folder are included in the `Cookie` header.
 
 Assist mode writes NDJSON to `stdout`, one object per line, and flushes every line. Logs go to `stderr`.
 
@@ -99,7 +99,6 @@ In normal mode the shell adds `window.llShell` to every page it loads. Assist mo
 | :--- | :--- |
 | Qt bridge | Pages talk to the shell through console messages. Only the launcher's own address can use it. |
 | Qt page origin | The launcher origin is the scheme and host of the address you pass in. Other origins get no answers. |
-| Qt restored cookies | Qt 6.11 does not announce cookies restored from disk through `loadAllCookies()`, so the assist `Cookie` header can miss them until the page sets a cookie in that run. The page itself still receives the cookies. |
 | WebView2 | Not run on a real Windows machine yet. See the build page. |
 | WebView2 assist output | Cross-compiled and unit-tested only. Not run on real Windows or Wine yet. |
 | WebView2 download capture | The `go-webview2` package has no download event or cookie manager, so the shell adds a small COM wrapper for `ICoreWebView2_4`, the cookie manager and the user agent setting. |

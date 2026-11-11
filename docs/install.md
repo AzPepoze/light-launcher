@@ -32,6 +32,7 @@ Some words used below:
 | :----------------------- | :--------- | :--------- | :------------------------------------------------- |
 | umu-launcher (`umu-run`) | Required   | Not needed | Starts Windows games with Proton.                  |
 | Qt6 WebEngine            | Required   | Not needed | Draws the launcher window.                         |
+| Qt6 SQLite driver        | Required   | Not needed | Reads cookies restored in the embedded browser.    |
 | WebView2 Runtime         | Not needed | Required   | Draws the launcher window. Windows 11 includes it. |
 | 7-Zip                    | Optional   | Optional   | Unpacks `.7z` files. Must be on PATH.              |
 | Steam                    | Optional   | Not used   | Lets you use Proton versions from Steam.           |

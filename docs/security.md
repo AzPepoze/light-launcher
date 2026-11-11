@@ -67,8 +67,6 @@ A plugin with the `browser` permission can ask the launcher to open the embedded
 
 Cookies and logins stay in `<base folder>/browser-profiles/<plugin id>`. Anything that runs as your user can read that folder. Sign out of the site or delete the folder to remove the saved login. Set `browserAssistEnabled` to `false` in `settings.json` to turn the whole feature off.
 
-On Linux, Qt may leave cookies restored from disk out of the `Cookie` header it reports, even though the page still has them. The F95 plugin's final download may then need the user to let the site set the cookie in that window first.
-
 ## Trust and signing
 
 A package has a `SHA256SUMS` file with a checksum for every file. The launcher refuses a package when a file does not match, or when a file is not listed.
