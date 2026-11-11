@@ -1,6 +1,6 @@
 [Desktop Entry]
 Name=LightLauncher
-Comment=Ultra-lightweight Linux gaming launcher powered by Go and Qt
+Comment=Ultra-lightweight Linux gaming launcher powered by Go and WebKitGTK
 Exec=/usr/bin/light-launcher %U
 Icon=light-launcher
 Terminal=false

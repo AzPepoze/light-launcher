@@ -5,11 +5,11 @@
 pkgname=light-launcher-bin
 pkgver=1.0.0
 pkgrel=1
-pkgdesc="Ultra-lightweight, customizable Linux gaming launcher powered by Go and Qt (prebuilt)"
+pkgdesc="Ultra-lightweight, customizable Linux gaming launcher powered by Go and WebKitGTK (prebuilt)"
 arch=('x86_64')
 url="https://github.com/AzPepoze/light-launcher"
 license=('MIT')
-depends=('umu-launcher' 'qt6-base' 'qt6-webengine')
+depends=('umu-launcher' 'gtk4' 'webkitgtk-6.0')
 optdepends=(
   'steam: run games with Steam Proton versions'
   'protonplus: recommended for managing Proton versions'
