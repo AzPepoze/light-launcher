@@ -5,13 +5,11 @@
 	import { observeOnce } from "@lib/lazyObserver";
 	import GridCard from "@components/home/gamecards/GridCard.svelte";
 	import ListGridCard from "@components/home/gamecards/ListGridCard.svelte";
-	import PerspectiveCard from "@components/home/gamecards/PerspectiveCard.svelte";
 
 	export let game: any;
 	export let icon: string = "";
 	export let isRunning: boolean = false;
-	export let view: "grid" | "list-grid" | "perspective" = "grid";
-	export let active: boolean = false; // For perspective view
+	export let view: "grid" | "list-grid" = "grid";
 	export let isSelectionMode: boolean = false;
 	export let isSelected: boolean = false;
 	export let onLaunch: (game: any) => void = () => {};
@@ -56,7 +54,7 @@
 					{onChooseLauncher}
 					{onSelect}
 				/>
-			{:else if view === "list-grid"}
+			{:else}
 				<ListGridCard
 					{game}
 					{icon}
@@ -67,16 +65,6 @@
 					{onConfigure}
 					{onChooseLauncher}
 					{onSelect}
-				/>
-			{:else}
-				<PerspectiveCard
-					{game}
-					{icon}
-					{isRunning}
-					{active}
-					{onLaunch}
-					{onConfigure}
-					{onChooseLauncher}
 				/>
 			{/if}
 		</div>
@@ -89,12 +77,6 @@
 				<div class="skeleton-info">
 					<div class="skeleton-line name"></div>
 					<div class="skeleton-line path"></div>
-				</div>
-			</div>
-		{:else if view === "perspective"}
-			<div class="skeleton-perspective-card">
-				<div class="skeleton-icon-large">
-					<span class="material-icons skeleton-logo">sports_esports</span>
 				</div>
 			</div>
 		{:else}
@@ -221,29 +203,6 @@
 				height: 10px;
 				width: 50%;
 			}
-		}
-	}
-
-	.skeleton-perspective-card {
-		width: 220px;
-		height: 310px;
-		background: var(--bg-surface, rgba(255, 255, 255, 0.02));
-		border: 2px solid rgba(255, 255, 255, 0.05);
-		border-radius: var(--radius-lg, 12px);
-		perspective: 1000px;
-		flex-shrink: 0;
-		transform: rotateY(-15deg);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		box-sizing: border-box;
-
-		.skeleton-icon-large {
-			width: 100%;
-			height: 100%;
-			display: flex;
-			align-items: center;
-			justify-content: center;
 		}
 	}
 

@@ -46,6 +46,13 @@
 		await refreshAppSettings();
 	});
 
+	onMount(() => {
+		const unsubscribe = settingsStore.subscribe((val) => {
+			currentSettings = val;
+		});
+		return unsubscribe;
+	});
+
 	// Subscribing after mount means the section exists when the first request is handled. This page uses the
 	// older component syntax, so it must not use $effect: one rune would switch the whole page to runes mode.
 	onMount(() => pendingSettingsSection.subscribe(scrollToPendingSection));
@@ -60,10 +67,6 @@
 	function prefersReducedMotion(): boolean {
 		return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 	}
-
-	settingsStore.subscribe((val) => {
-		currentSettings = val;
-	});
 
 	function handleThemeToggle() {
 		service.toggleTheme();

@@ -5,34 +5,6 @@ import { createLogger } from "./logger";
 
 const log = createLogger("formService");
 
-export interface FormState<T> {
-	data: T;
-	isLoading: boolean;
-	error: string;
-	isSuccess: boolean;
-}
-
-/**
- * Creates a new form state with default values
- */
-export function createFormState<T>(defaults: T): FormState<T> {
-	return {
-		data: structuredClone(defaults),
-		isLoading: false,
-		error: "",
-		isSuccess: false
-	};
-}
-
-/**
- * Resets form state to defaults
- */
-export function resetFormState<T>(state: FormState<T>, defaults: T): void {
-	state.data = structuredClone(defaults);
-	state.error = "";
-	state.isSuccess = false;
-}
-
 /**
  * Merges loaded data with existing options while preserving defaults
  */
@@ -122,14 +94,4 @@ export function parseMemoryValue(value: string): number {
 		return num / 1024; // Convert MB to GB
 	}
 	return num;
-}
-
-/**
- * Formats numeric GB value to string with unit
- */
-export function formatMemoryValue(gb: number): string {
-	if (gb < 1) {
-		return Math.round(gb * 1024) + "M";
-	}
-	return Math.round(gb * 10) / 10 + "G";
 }

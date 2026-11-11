@@ -12,7 +12,7 @@
 	import { runState } from "@stores/runState";
 	import { currentFeatures, isPageAvailable, loadPlatform } from "@stores/platformStore";
 	import { settingsStore } from "@stores/settingsStore";
-	import { onMount } from "svelte";
+	import { onMount, type Component } from "svelte";
 	import { cubicOut } from "svelte/easing";
 	import { fly } from "svelte/transition";
 	import EditLsfg from "./pages/EditLsfg.svelte";
@@ -37,6 +37,7 @@
 		saveFpsMeterVisible,
 	} from "@lib/fpsMeterPreference";
 	import FpsMeter from "@components/dev/FpsMeter.svelte";
+	import { routeOrder } from "./app/routes";
 
 	const log = createLogger("App");
 
@@ -67,19 +68,18 @@
 		}));
 	}
 
-	const PAGE_ORDER: Record<string, number> = {
-		home: 0,
-		manager: 1,
-		run: 2,
-		versions: 3,
-		prefix: 4,
-		utils: 5,
-		settings: 6,
-		editlsfg: 7,
-		library: 8,
-		downloads: 9,
-		updates: 10,
-		plugins: 11,
+	const pageComponents: Record<string, Component> = {
+		home: Home,
+		manager: GameManager,
+		run: Run,
+		versions: Versions,
+		prefix: Prefix,
+		utils: Utils,
+		settings: Settings,
+		library: LibraryPage,
+		downloads: DownloadsPage,
+		updates: UpdatesPage,
+		plugins: PluginsPage,
 	};
 
 	let activePage = "home";
@@ -89,9 +89,7 @@
 	function changePage(newPage: string) {
 		if (!newPage || newPage === activePage) return;
 		if (!isPageAvailable(newPage, currentFeatures())) return;
-		const prevIndex = PAGE_ORDER[activePage] ?? 0;
-		const newIndex = PAGE_ORDER[newPage] ?? 0;
-		navDirection = newIndex >= prevIndex ? 1 : -1;
+		navDirection = routeOrder(newPage) >= routeOrder(activePage) ? 1 : -1;
 		activePage = newPage;
 		scrolled = false;
 	}
@@ -252,30 +250,10 @@
 					}}
 				>
 					<div class="content-zone" class:full-width={activePage === "home" || activePage === "editlsfg" || activePage === "manager" || activePage === "prefix"} class:home-zone={activePage === "home"} class:prefix-zone={activePage === "prefix"}>
-						{#if activePage === "home"}
-							<Home />
-						{:else if activePage === "manager"}
-							<GameManager />
-						{:else if activePage === "run"}
-							<Run />
-						{:else if activePage === "versions"}
-							<Versions />
-						{:else if activePage === "prefix"}
-							<Prefix />
-						{:else if activePage === "utils"}
-							<Utils />
-						{:else if activePage === "settings"}
-							<Settings />
-						{:else if activePage === "editlsfg"}
+						{#if activePage === "editlsfg"}
 							<EditLsfg gamePath={editLsfgGamePath} />
-						{:else if activePage === "library"}
-							<LibraryPage />
-						{:else if activePage === "downloads"}
-							<DownloadsPage />
-						{:else if activePage === "updates"}
-							<UpdatesPage />
-						{:else if activePage === "plugins"}
-							<PluginsPage />
+						{:else if Object.hasOwn(pageComponents, activePage)}
+							<svelte:component this={pageComponents[activePage]} />
 						{:else}
 							<div class="placeholder">
 								Page "{activePage}" not implemented yet.

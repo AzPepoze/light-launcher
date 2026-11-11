@@ -14,8 +14,6 @@ import type {
 	ProtonTool,
 	PrefixConfigWithProton,
 	PrefixStats,
-	ProtonVariant,
-	GitHubRelease,
 	PlatformInfo
 } from "@shared";
 import { invoke, pickWithShell } from "../transport";
@@ -97,8 +95,6 @@ export const GetListGpus = () => invoke<string[]>("GetListGpus");
 export const ListPrefixes = () => invoke<string[]>("ListPrefixes");
 export const CreatePrefix = (name: string) => invoke<void>("CreatePrefix", { name });
 export const GetPrefixBaseDir = () => invoke<string>("GetPrefixBaseDir");
-export const GetPrefixCreatedAt = (prefixName: string) =>
-	invoke<number | null>("GetPrefixCreatedAt", { prefixName });
 export const GetPrefixStats = (prefixName: string) =>
 	invoke<PrefixStats>("GetPrefixStats", { prefixName });
 export const RemovePrefix = (name: string) => invoke<void>("RemovePrefix", { name });
@@ -113,11 +109,6 @@ export const RunPrefixTool = (prefixPath: string, toolName: string, protonPath: 
 
 // Proton Runtimes
 export const ScanProtonVersions = () => invoke<ProtonTool[]>("ScanProtonVersions");
-export const GetProtonVariants = () => invoke<ProtonVariant[]>("GetProtonVariants");
-export const GetProtonReleases = (variantID: string) =>
-	invoke<GitHubRelease[]>("GetProtonReleases", { variantID });
-export const InstallProtonVersion = (url: string, version: string) =>
-	invoke<void>("InstallProtonVersion", { url, version });
 
 // LSFG Tooling
 export const GetUtilsStatus = () => invoke<UtilsStatus>("GetUtilsStatus");
@@ -148,8 +139,6 @@ export const SaveLsfgProfile = (
 	});
 export const DisableLsfgProfile = (profileName: string, gamePath: string) =>
 	invoke<void>("DisableLsfgProfile", { profileName, gamePath });
-export const RemoveProfile = (mainExecutablePath: string) =>
-	invoke<void>("RemoveProfile", { mainExecutablePath });
 export const InstallLsfg = () => invoke<void>("InstallLsfg");
 export const UninstallLsfg = () => invoke<void>("UninstallLsfg");
 

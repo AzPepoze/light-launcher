@@ -545,6 +545,7 @@
 					{handleRightClick}
 					{handleQuickLaunch}
 					{handleConfigure}
+					{handleChooseLauncher}
 					{toggleGameSelection}
 					{loadIcon}
 				/>
@@ -560,6 +561,7 @@
 					{handleRightClick}
 					{handleQuickLaunch}
 					{handleConfigure}
+					{handleChooseLauncher}
 					{toggleGameSelection}
 					{loadIcon}
 				/>

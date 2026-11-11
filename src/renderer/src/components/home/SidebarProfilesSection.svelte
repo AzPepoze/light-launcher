@@ -12,6 +12,7 @@
 	export let handleRightClick: (event: MouseEvent, game: any) => void;
 	export let handleQuickLaunch: (game: any, showLogs?: boolean) => Promise<void>;
 	export let handleConfigure: (game: any) => void;
+	export let handleChooseLauncher: (game: any, launcherPath: string | null) => void = () => {};
 	export let toggleGameSelection: (game: any, shiftKey: boolean, ctrlKey?: boolean) => void;
 	export let loadIcon: (path: string, customIconPath?: string | null) => void = () => {};
 </script>
@@ -35,6 +36,7 @@
 		{handleRightClick}
 		{handleQuickLaunch}
 		{handleConfigure}
+		{handleChooseLauncher}
 		{toggleGameSelection}
 		{loadIcon}
 	/>

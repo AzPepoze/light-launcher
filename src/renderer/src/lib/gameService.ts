@@ -66,30 +66,3 @@ export async function registerGame(executablePath: string, prefixPath: string): 
 		throw error;
 	}
 }
-
-/**
- * Registers multiple games at once
- */
-export async function batchRegisterGames(
-	scannedExecutables: ScannedExecutable[],
-	discardedPaths: Set<string>,
-	targetPrefixPath: string
-): Promise<number> {
-	const gamesToRegister = scannedExecutables.filter((exe) => !discardedPaths.has(exe.path));
-	let successfullyAddedCount = 0;
-
-	for (const game of gamesToRegister) {
-		try {
-			await registerGame(game.path, targetPrefixPath);
-			successfullyAddedCount++;
-		} catch (error) {
-			log.error(`Failed to register ${game.name}`, error);
-		}
-	}
-
-	if (successfullyAddedCount > 0) {
-		notifications.add(`Successfully added ${successfullyAddedCount} games to library`, "success");
-	}
-
-	return successfullyAddedCount;
-}

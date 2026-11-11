@@ -5,8 +5,7 @@ import {
 	PickFileCustom,
 	AddScanFolder,
 	RemoveScanFolder,
-	UnblacklistGame,
-	PickFolder
+	UnblacklistGame
 } from "@lib/api";
 import { notifications } from "@stores/notificationStore";
 import { settingsStore } from "@stores/settingsStore";
@@ -159,15 +158,5 @@ export async function unblacklistGame(path: string): Promise<void> {
 	} catch (err) {
 		notifications.add(`Failed to restore game: ${err}`, "error");
 		throw err;
-	}
-}
-
-export async function browseScanFolder(): Promise<string | null> {
-	try {
-		const path = await PickFolder();
-		return path || null;
-	} catch (err) {
-		notifications.add("Failed to select folder", "error");
-		return null;
 	}
 }

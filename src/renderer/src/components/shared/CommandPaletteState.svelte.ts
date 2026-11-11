@@ -3,8 +3,8 @@ import { navigationCommand } from "@stores/navigationStore";
 import { loadExeIcon } from "@lib/iconService";
 import { quickLaunchGame } from "@lib/homeService";
 import { createLogger } from "@lib/logger";
-import protonIcon from "@icons/protron_forked.png";
 import { currentFeatures, isPageAvailable } from "@stores/platformStore";
+import { routes } from "../../app/routes";
 
 const log = createLogger("CommandPalette");
 
@@ -21,15 +21,15 @@ export class CommandPaletteState {
 	resultsContainer = $state<HTMLDivElement | null>(null);
 	previousFocusElement = $state<HTMLElement | null>(null);
 
-	readonly PAGES = [
-		{ page: "home", name: "Go to Home", icon: "home" },
-		{ page: "manager", name: "Go to Game Manager", icon: "monitor_heart" },
-		{ page: "run", name: "Go to Launch Configuration", icon: "play_arrow" },
-		{ page: "utils", name: "Go to Utilities", icon: "handyman" },
-		{ page: "settings", name: "Go to Appearance & Settings", icon: "settings" },
-		{ page: "versions", name: "Go to Proton Versions", icon: protonIcon, isCustomIcon: true },
-		{ page: "prefix", name: "Go to WINE Prefixes", icon: "folder" }
-	].map((entry) => ({ ...entry, action: () => this.navigateTo(entry.page) }));
+	readonly PAGES = routes
+		.filter((route) => !route.hidden)
+		.map((route) => ({
+			page: route.id,
+			name: route.paletteLabel ?? `Go to ${route.label}`,
+			icon: route.icon,
+			isCustomIcon: route.isCustomIcon,
+			action: () => this.navigateTo(route.id)
+		}));
 
 	/** Pages the current platform supports. */
 	availablePages() {
