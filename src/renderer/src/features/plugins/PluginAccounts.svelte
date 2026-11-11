@@ -111,10 +111,8 @@
 
 	h3 {
 		margin: 0;
-		font-size: 0.8rem;
-		font-weight: 800;
-		letter-spacing: 1px;
-		text-transform: uppercase;
+		font-size: 1.25rem;
+		font-weight: 600;
 		color: var(--text-muted);
 	}
 
@@ -124,7 +122,7 @@
 
 	.legal,
 	.muted {
-		font-size: 0.8rem;
+		font-size: 0.875rem;
 		color: var(--text-muted);
 	}
 
@@ -151,11 +149,11 @@
 		justify-content: space-between;
 		gap: 12px;
 		font-weight: 700;
-		font-size: 0.9rem;
+		font-size: 0.9375rem;
 	}
 
 	.status {
-		font-size: 0.75rem;
+		font-size: 0.875rem;
 		font-weight: 600;
 		color: var(--text-muted);
 	}
@@ -172,7 +170,7 @@
 	}
 
 	.error {
-		font-size: 0.85rem;
+		font-size: 0.9375rem;
 		color: var(--danger);
 	}
 

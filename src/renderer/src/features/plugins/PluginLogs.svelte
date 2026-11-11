@@ -67,10 +67,8 @@
 
 	h3 {
 		margin: 0;
-		font-size: 0.8rem;
-		font-weight: 800;
-		letter-spacing: 1px;
-		text-transform: uppercase;
+		font-size: 1.25rem;
+		font-weight: 600;
 		color: var(--text-muted);
 	}
 
@@ -79,12 +77,12 @@
 	}
 
 	.muted {
-		font-size: 0.85rem;
+		font-size: 0.9375rem;
 		color: var(--text-muted);
 	}
 
 	.error {
-		font-size: 0.85rem;
+		font-size: 0.9375rem;
 		color: var(--danger);
 	}
 
@@ -97,7 +95,7 @@
 		border-radius: var(--radius-md);
 		background: var(--bg-input);
 		font-family: monospace;
-		font-size: 0.75rem;
+		font-size: 0.875rem;
 		display: flex;
 		flex-direction: column;
 		gap: 4px;
@@ -109,7 +107,7 @@
 		}
 
 		.time {
-			color: var(--text-dim);
+			color: var(--text-muted);
 			flex-shrink: 0;
 		}
 

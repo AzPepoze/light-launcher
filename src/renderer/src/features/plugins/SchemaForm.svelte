@@ -54,20 +54,20 @@
 
 	.group h4 {
 		margin: 0;
-		font-size: 0.75rem;
-		font-weight: 800;
-		letter-spacing: 1px;
-		text-transform: uppercase;
+		font-size: 1rem;
+		font-weight: 600;
+		letter-spacing: 0;
+		text-transform: none;
 		color: var(--text-muted);
 	}
 
 	.advanced {
 		summary {
 			cursor: pointer;
-			font-size: 0.75rem;
-			font-weight: 800;
-			letter-spacing: 1px;
-			text-transform: uppercase;
+			font-size: 1rem;
+			font-weight: 600;
+			letter-spacing: 0;
+			text-transform: none;
 			color: var(--text-muted);
 		}
 

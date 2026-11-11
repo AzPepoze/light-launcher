@@ -142,8 +142,8 @@
 		gap: 6px;
 
 		label {
-			font-size: 0.85rem;
-			font-weight: 700;
+			font-size: 0.9375rem;
+			font-weight: 600;
 		}
 
 		p {
@@ -170,7 +170,7 @@
 			border-radius: 11px;
 			background: var(--bg-input);
 			border: 2px solid var(--glass-border);
-			transition: background var(--transition-fast);
+			transition: background var(--motion-quick) var(--ease-out);
 			flex-shrink: 0;
 
 			&::after {
@@ -182,7 +182,7 @@
 				height: 14px;
 				border-radius: 50%;
 				background: var(--text-muted);
-				transition: transform var(--transition-fast);
+				transition: transform var(--motion-quick) var(--ease-out);
 			}
 		}
 
@@ -212,12 +212,12 @@
 	}
 
 	.hint {
-		font-size: 0.75rem;
+		font-size: 0.875rem;
 		color: var(--text-muted);
 	}
 
 	.error {
-		font-size: 0.75rem;
+		font-size: 0.875rem;
 		color: var(--danger);
 	}
 
@@ -226,7 +226,7 @@
 		padding: 0;
 		border: none;
 		background: none;
-		font-size: 0.75rem;
+		font-size: 0.875rem;
 		font-weight: 700;
 		color: var(--accent-primary);
 		cursor: pointer;
