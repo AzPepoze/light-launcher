@@ -251,6 +251,26 @@ On Linux, the window size and position are saved in `~/.config/light-launcher/wi
 > [!IMPORTANT]
 > `launcher.lock` holds the API token. Do not share it. See [Security](security.md).
 
+## Frame rate meter
+
+Press **Ctrl+Shift+F** to show a small panel in the top-right corner. Press it again to hide it. The panel stays off after a restart until you turn it on again.
+
+Use it to check smoothness. Open the same page in a normal browser and compare the numbers.
+
+| Row | What it shows |
+| :--- | :--- |
+| `fps` | Frames drawn in the last second. |
+| `p50` | Typical time for one frame, over the last 120 frames. |
+| `p95` | Time that 95 of 100 frames beat, over the last 120 frames. A high value means stutters. |
+| `worst, 5 s` | The slowest frame in the last 5 seconds. |
+| `long frames, 5 s` | Frames more than 1.5 times the typical time, in the last 5 seconds. |
+| `display ≈ N Hz` | The refresh rate of your monitor, estimated from the fastest frames. |
+
+fps near the display rate and no long frames means smooth. If fps stays at 60 on a 180 Hz display, the window may be capped at 60 fps. Compare it with a browser.
+
+> [!NOTE]
+> The meter only runs while it is shown. Hidden, it costs nothing.
+
 ## Known gaps
 
 These parts are not finished in this version.
