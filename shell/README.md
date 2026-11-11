@@ -116,6 +116,7 @@ The dialogs are native GTK4 file dialogs.
 | GTK bridge | Pages talk to the shell through `window.webkit.messageHandlers.llshell`. Only the launcher's own address can use it. |
 | GTK page origin | The launcher origin is the scheme and host of the address you pass in. Other origins get no answers. |
 | GTK geometry | The window opens at the default size each time. Position and size are not saved. |
+| WebView2 bridge | Only the launcher's own address can use it. Other origins get no answers. |
 | WebView2 | Not run on a real Windows machine yet. See the build page. |
 | WebView2 assist output | Cross-compiled and unit-tested only. Not run on real Windows or Wine yet. |
 | WebView2 download capture | The `go-webview2` package has no download event or cookie manager, so the shell adds a small COM wrapper for `ICoreWebView2_4`, the cookie manager and the user agent setting. |

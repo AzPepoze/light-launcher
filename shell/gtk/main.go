@@ -1,3 +1,5 @@
+//go:build linux
+
 // Command light-launcher-shell shows the launcher UI in a native GTK4 WebKitGTK window.
 //
 // The launcher passes the URL in the LL_URL environment variable. A URL argument is the fallback.
@@ -11,7 +13,7 @@ import (
 	"os"
 	"runtime"
 
-	"light-launcher/shell/logx"
+	"light-launcher/shell/common/logx"
 )
 
 var log = logx.New(os.Stderr)

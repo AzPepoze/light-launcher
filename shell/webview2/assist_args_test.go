@@ -1,6 +1,10 @@
 package main
 
-import "testing"
+import (
+	"testing"
+
+	"light-launcher/shell/common/assist"
+)
 
 func TestAssistRequested(t *testing.T) {
 	tests := []struct {
@@ -36,14 +40,14 @@ func TestParseAssistOptions(t *testing.T) {
 			args:        []string{"--assist", "https://example.com/page", "--profile", `C:\profiles\example`},
 			wantURL:     "https://example.com/page",
 			wantProfile: `C:\profiles\example`,
-			wantTitle:   assistTitle,
+			wantTitle:   assist.Title,
 		},
 		{
 			name:        "flags before URL",
 			args:        []string{"--assist", "--profile", `C:\profiles\example`, "http://example.com/download"},
 			wantURL:     "http://example.com/download",
 			wantProfile: `C:\profiles\example`,
-			wantTitle:   assistTitle,
+			wantTitle:   assist.Title,
 		},
 		{
 			name:        "all options",
@@ -58,7 +62,7 @@ func TestParseAssistOptions(t *testing.T) {
 			args:        []string{"--assist", "https://example.com", "--profile", "/tmp/profile", "--title", ""},
 			wantURL:     "https://example.com",
 			wantProfile: "/tmp/profile",
-			wantTitle:   assistTitle,
+			wantTitle:   assist.Title,
 		},
 	}
 	for _, test := range tests {
@@ -105,25 +109,5 @@ func TestParseAssistOptionsRejectsBadArguments(t *testing.T) {
 				t.Fatalf("parseAssistOptions(%q) succeeded, want an error", test.args)
 			}
 		})
-	}
-}
-
-func TestIsHTTPAddress(t *testing.T) {
-	tests := []struct {
-		address string
-		want    bool
-	}{
-		{address: "https://example.com/file.zip", want: true},
-		{address: "http://example.com", want: true},
-		{address: "blob:https://example.com/1234", want: false},
-		{address: "data:text/plain,hello", want: false},
-		{address: "file:///C:/file.zip", want: false},
-		{address: "about:blank", want: false},
-		{address: "", want: false},
-	}
-	for _, test := range tests {
-		if got := isHTTPAddress(test.address); got != test.want {
-			t.Errorf("isHTTPAddress(%q) = %v, want %v", test.address, got, test.want)
-		}
 	}
 }

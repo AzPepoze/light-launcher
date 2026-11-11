@@ -36,8 +36,8 @@ jobs:
       - name: Go tests
         run: go test ./...
 
-      - name: Logger tests
-        working-directory: shell/logx
+      - name: Shell common tests
+        working-directory: shell/common
         run: go test ./...
 
   bun:

@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+
+	"light-launcher/shell/common/assist"
+	"light-launcher/shell/common/urlx"
 )
 
 const (
 	assistFlag        = "--assist"
-	assistUsage       = "usage: light-launcher-shell --assist <url> --profile <dir> [--title <text>] [--message <text>]"
-	assistTitle       = "LightLauncher"
 	assistProfileFlag = "--profile"
 	assistTitleFlag   = "--title"
 	assistMessageFlag = "--message"
@@ -35,7 +36,7 @@ func parseAssistOptions(args []string) (assistOptions, error) {
 	if len(args) == 0 || args[0] != assistFlag {
 		return assistOptions{}, fmt.Errorf("assist mode starts with %s", assistFlag)
 	}
-	opts := assistOptions{title: assistTitle}
+	opts := assistOptions{title: assist.Title}
 	var rawURL string
 	for i := 1; i < len(args); i++ {
 		switch arg := args[i]; arg {
@@ -77,15 +78,11 @@ func parseAssistOptions(args []string) (assistOptions, error) {
 		return assistOptions{}, errors.New("--profile is required")
 	}
 	if opts.title == "" {
-		opts.title = assistTitle
+		opts.title = assist.Title
 	}
-	target, err := url.Parse(rawURL)
+	target, err := urlx.ParseTarget(rawURL)
 	if err != nil {
-		// url.Parse repeats the input, which may hold a token, so the error is replaced.
-		return assistOptions{}, errors.New("URL is not valid")
-	}
-	if !isHTTPURL(target) {
-		return assistOptions{}, errors.New("URL must be http:// or https:// with a host")
+		return assistOptions{}, err
 	}
 	opts.url = target
 	return opts, nil
@@ -97,18 +94,4 @@ func flagValue(args []string, index int, name string) (string, int, error) {
 		return "", index, fmt.Errorf("%s needs a value", name)
 	}
 	return args[index+1], index + 1, nil
-}
-
-// isHTTPURL reports whether target is an http or https address with a host.
-func isHTTPURL(target *url.URL) bool {
-	if target == nil {
-		return false
-	}
-	return (target.Scheme == "http" || target.Scheme == "https") && target.Host != ""
-}
-
-// isHTTPAddress applies isHTTPURL to a raw address, such as a download or navigation URI.
-func isHTTPAddress(raw string) bool {
-	target, err := url.Parse(raw)
-	return err == nil && isHTTPURL(target)
 }

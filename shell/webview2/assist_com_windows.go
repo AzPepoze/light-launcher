@@ -9,6 +9,8 @@ import (
 
 	"github.com/jchv/go-webview2/pkg/edge"
 	"golang.org/x/sys/windows"
+
+	"light-launcher/shell/common/assist"
 )
 
 // The go-webview2 package exposes the window and navigation calls but not the
@@ -402,7 +404,7 @@ type cookieListVtable struct {
 	getValueAtIndex edge.ComProc
 }
 
-func (l *cookieList) cookies() ([]cookiePair, error) {
+func (l *cookieList) cookies() ([]assist.CookiePair, error) {
 	var count uint32
 	hr, _, _ := l.vtbl.getCount.Call(
 		uintptr(unsafe.Pointer(l)),
@@ -411,7 +413,7 @@ func (l *cookieList) cookies() ([]cookiePair, error) {
 	if failed(hr) {
 		return nil, hresultError(hr)
 	}
-	cookies := make([]cookiePair, 0, count)
+	cookies := make([]assist.CookiePair, 0, count)
 	for index := uint32(0); index < count; index++ {
 		var cookie *cookieObject
 		hr, _, _ := l.vtbl.getValueAtIndex.Call(
@@ -434,7 +436,7 @@ func (l *cookieList) cookies() ([]cookiePair, error) {
 		if valueErr != nil {
 			return nil, valueErr
 		}
-		cookies = append(cookies, cookiePair{Name: name, Value: value})
+		cookies = append(cookies, assist.CookiePair{Name: name, Value: value})
 	}
 	return cookies, nil
 }

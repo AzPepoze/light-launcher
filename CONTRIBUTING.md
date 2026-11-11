@@ -14,7 +14,7 @@ Bug reports, ideas, documentation fixes and pull requests are welcome.
 | `core/internal`     | Shared Go code: library, downloads, plugins, API, config and logging. |
 | `shell/gtk`         | The Linux window program (WebKitGTK 6.0 and GTK4).                    |
 | `shell/webview2`    | The Windows window program (WebView2).                                |
-| `shell/logx`        | A small logger used by the shells.                                    |
+| `shell/common`      | Shared shell code: logger, events, bridge and URL helpers.            |
 | `src/renderer`      | The Svelte 5 UI.                                                      |
 | `src/shared`        | TypeScript types and helpers shared by the UI.                        |
 | `scripts`           | Build scripts for the Linux and Windows release files.                |
@@ -110,7 +110,7 @@ bun run test
 bun run e2e
 
 # Window programs
-(cd shell/logx && go test ./...)
+(cd shell/common && go test ./...)
 (cd shell/gtk && go vet ./... && go test ./... && go build -o ../../bin/light-launcher-shell .)
 (cd shell/webview2 && GOOS=windows GOARCH=amd64 go vet ./...)
 ```

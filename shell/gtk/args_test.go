@@ -1,8 +1,12 @@
+//go:build linux
+
 package main
 
 import (
 	"strings"
 	"testing"
+
+	"light-launcher/shell/common/assist"
 )
 
 func TestParseOptionsKeepsNormalMode(t *testing.T) {
@@ -19,53 +23,25 @@ func TestParseOptionsKeepsNormalMode(t *testing.T) {
 	}
 }
 
-func TestShellURLPrefersTheEnvironment(t *testing.T) {
+func TestParseOptionsPrefersTheEnvironment(t *testing.T) {
 	t.Setenv("LL_URL", "http://127.0.0.1:1/#token")
-	got, err := shellURL([]string{"https://example.com"})
+	opts, err := parseOptions([]string{"https://example.com"})
 	if err != nil {
-		t.Fatalf("shellURL: %v", err)
+		t.Fatalf("parseOptions: %v", err)
 	}
-	if want := "http://127.0.0.1:1/#token"; got != want {
-		t.Fatalf("shellURL = %q, want %q", got, want)
+	if got, want := opts.url.String(), "http://127.0.0.1:1/#token"; got != want {
+		t.Errorf("url = %q, want %q", got, want)
 	}
 }
 
-func TestShellURLRejectsMissingOrExtraArguments(t *testing.T) {
+func TestParseOptionsRejectsBadURLWithoutLeakingIt(t *testing.T) {
 	t.Setenv("LL_URL", "")
-	for _, args := range [][]string{nil, {"https://example.com", "https://example.org"}} {
-		if _, err := shellURL(args); err == nil {
-			t.Errorf("shellURL(%q) succeeded, want an error", args)
-		}
-	}
-}
-
-func TestParseTarget(t *testing.T) {
-	tests := []struct {
-		raw  string
-		want string
-	}{
-		{raw: "https://example.com/page?q=1", want: "https://example.com/page?q=1"},
-		{raw: "http://127.0.0.1:8080/file", want: "http://127.0.0.1:8080/file"},
-	}
-	for _, test := range tests {
-		target, err := parseTarget(test.raw)
-		if err != nil {
-			t.Fatalf("parseTarget(%q): %v", test.raw, err)
-		}
-		if got := target.String(); got != test.want {
-			t.Errorf("parseTarget(%q) = %q, want %q", test.raw, got, test.want)
-		}
-	}
-}
-
-func TestParseTargetRejectsBadURL(t *testing.T) {
-	for _, raw := range []string{"", "ftp://example.com", "https:///page", "not a url", "https://example.com/%zz"} {
-		if _, err := parseTarget(raw); err == nil {
-			t.Errorf("parseTarget(%q) succeeded, want an error", raw)
-		}
-	}
 	const secret = "https://example.com/%zz?token=private"
-	if _, err := parseTarget(secret); err == nil || strings.Contains(err.Error(), "token=private") {
+	_, err := parseOptions([]string{secret})
+	if err == nil {
+		t.Fatal("expected an error")
+	}
+	if strings.Contains(err.Error(), "token=private") {
 		t.Fatalf("error leaks the input: %v", err)
 	}
 }
@@ -119,7 +95,7 @@ func TestParseAssistOptionsDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatalf("parseAssistOptions: %v", err)
 	}
-	if got, want := opts.title, assistTitle; got != want {
+	if got, want := opts.title, assist.Title; got != want {
 		t.Errorf("title = %q, want %q", got, want)
 	}
 	if opts.message != "" {

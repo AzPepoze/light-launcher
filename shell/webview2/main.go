@@ -7,15 +7,15 @@
 package main
 
 import (
-	"errors"
 	"flag"
-	"fmt"
 	"net/url"
 	"os"
 
 	"github.com/jchv/go-webview2"
 
-	"light-launcher/shell/logx"
+	"light-launcher/shell/common/assist"
+	"light-launcher/shell/common/logx"
+	"light-launcher/shell/common/urlx"
 )
 
 const (
@@ -39,30 +39,15 @@ func parseOptions(args []string) (options, error) {
 	if err := flags.Parse(args); err != nil {
 		return options{}, err
 	}
-	raw, err := shellURL(flags.Args())
+	raw, err := urlx.ShellURL(os.Getenv(urlx.EnvURL), flags.Args())
 	if err != nil {
 		return options{}, err
 	}
-	// url.Parse errors repeat the input, which holds the token, so the error is replaced.
-	target, err := url.Parse(raw)
+	target, err := urlx.ParseTarget(raw)
 	if err != nil {
-		return options{}, errors.New("URL is not valid")
-	}
-	if (target.Scheme != "http" && target.Scheme != "https") || target.Host == "" {
-		return options{}, errors.New("URL must be http:// or https:// with a host")
+		return options{}, err
 	}
 	return options{url: target, transparent: *transparent}, nil
-}
-
-// shellURL returns the UI URL from LL_URL, or from the single argument when LL_URL is not set.
-func shellURL(args []string) (string, error) {
-	if value := os.Getenv("LL_URL"); value != "" {
-		return value, nil
-	}
-	if len(args) != 1 {
-		return "", fmt.Errorf("expected one URL, got %d arguments", len(args))
-	}
-	return args[0], nil
 }
 
 func main() {
@@ -74,7 +59,7 @@ func main() {
 	if err != nil {
 		log.Error("args", "%v", err)
 		log.Error("args", "usage: LL_URL=<url> light-launcher-shell.exe [--transparent]")
-		log.Error("args", assistUsage)
+		log.Error("args", assist.Usage)
 		os.Exit(2)
 	}
 	if opts.transparent {
@@ -103,17 +88,26 @@ func main() {
 	defer w.Destroy()
 
 	w.SetSize(minWidth, minHeight, webview2.HintMin)
-	if err := bindNativeFunctions(w); err != nil {
+	launcherOrigin := urlx.Origin(opts.url)
+	secret, err := newBridgeSecret()
+	if err != nil {
+		log.Error("bridge", "%v", err)
+		os.Exit(1)
+	}
+	if err := bindNativeFunctions(w, launcherOrigin, secret, nativeActions{
+		pick: func(method string, id int) { go pickInBackground(w, method, id) },
+		open: openInBrowser,
+	}); err != nil {
 		log.Error("bridge", "cannot bind native functions: %v", err)
 		os.Exit(1)
 	}
-	w.Init(bridgeScript)
+	script, err := bridgeScriptFor(launcherOrigin, secret)
+	if err != nil {
+		log.Error("bridge", "%v", err)
+		os.Exit(1)
+	}
+	w.Init(script)
 	w.Navigate(opts.url.String())
-	log.Info("window", "opened %s", origin(opts.url))
+	log.Info("window", "opened %s", launcherOrigin)
 	w.Run()
-}
-
-// origin returns scheme and host without the path, query or token. Logs use this, never the full URL.
-func origin(u *url.URL) string {
-	return u.Scheme + "://" + u.Host
 }

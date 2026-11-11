@@ -11,6 +11,9 @@ import (
 
 	"github.com/jchv/go-webview2/pkg/edge"
 	"golang.org/x/sys/windows"
+
+	"light-launcher/shell/common/assist"
+	"light-launcher/shell/common/urlx"
 )
 
 const (
@@ -51,7 +54,7 @@ type assistHost struct {
 	hwnd     uintptr
 	chromium *edge.Chromium
 	webview  *webview
-	emitter  *eventEmitter
+	emitter  *assist.Writer
 
 	downloadSeen bool
 	closing      bool
@@ -72,27 +75,27 @@ func runAssist(args []string) int {
 	opts, err := parseAssistOptions(args)
 	if err != nil {
 		log.Error("args", "%v", err)
-		fmt.Fprintln(os.Stderr, assistUsage)
+		fmt.Fprintln(os.Stderr, assist.Usage)
 		return 2
 	}
 
-	emitter := newEventEmitter(os.Stdout)
+	emitter := assist.NewWriter(os.Stdout)
 	if !webView2Installed() {
 		err := errors.New("WebView2 runtime is not installed")
 		log.Error("window", "%v", err)
-		emitter.emit(errorEvent(err.Error()))
+		emitter.Write(assist.Error(err.Error()))
 		return 1
 	}
 
 	host, err := newAssistHost(opts, emitter)
 	if err != nil {
 		log.Error("window", "%v", err)
-		emitter.emit(errorEvent(err.Error()))
+		emitter.Write(assist.Error(err.Error()))
 		return 1
 	}
 	defer host.destroy()
 
-	if err := emitter.emit(readyEvent()); err != nil {
+	if err := emitter.Write(assist.Ready()); err != nil {
 		log.Error("assist", "cannot write ready event: %v", err)
 		return 1
 	}
@@ -106,7 +109,7 @@ func runAssist(args []string) int {
 		return 1
 	}
 	if !host.downloadSeen {
-		if err := emitter.emit(closedEvent()); err != nil {
+		if err := emitter.Write(assist.Closed()); err != nil {
 			log.Error("assist", "cannot write closed event: %v", err)
 			return 1
 		}
@@ -114,7 +117,7 @@ func runAssist(args []string) int {
 	return 0
 }
 
-func newAssistHost(opts assistOptions, emitter *eventEmitter) (*assistHost, error) {
+func newAssistHost(opts assistOptions, emitter *assist.Writer) (*assistHost, error) {
 	profile, err := filepath.Abs(opts.profile)
 	if err != nil {
 		return nil, fmt.Errorf("profile path: %w", err)
@@ -201,7 +204,7 @@ func (h *assistHost) onNavigationStarting(args *navigationStartingArgs) {
 		args.putCancel(true)
 		return
 	}
-	if isHTTPAddress(uri) {
+	if urlx.IsWebAddress(uri) {
 		return
 	}
 	log.Info("assist", "blocked a navigation that is not http or https")
@@ -219,7 +222,7 @@ func (h *assistHost) onNewWindow(args *newWindowArgs) {
 		log.Warn("assist", "cannot read popup address: %v", err)
 		return
 	}
-	if !isHTTPAddress(uri) {
+	if !urlx.IsWebAddress(uri) {
 		log.Info("assist", "blocked a popup that is not http or https")
 		return
 	}
@@ -243,7 +246,7 @@ func (h *assistHost) onDownload(args *downloadStartingArgs) {
 		h.fail(fmt.Sprintf("cannot read download address: %v", err))
 		return
 	}
-	if !isHTTPAddress(uri) {
+	if !urlx.IsWebAddress(uri) {
 		log.Info("assist", "ignored a download that is not http or https")
 		return
 	}
@@ -256,7 +259,7 @@ func (h *assistHost) onDownload(args *downloadStartingArgs) {
 	if path, err := args.resultFilePath(); err != nil {
 		log.Warn("assist", "cannot read download file name: %v", err)
 	} else {
-		filename = resultFileName(path)
+		filename = assist.ResultFileName(path)
 	}
 
 	size := int64(-1)
@@ -278,7 +281,7 @@ func (h *assistHost) onDownload(args *downloadStartingArgs) {
 		return
 	}
 	handler := newGetCookiesHandler(func(result uintptr, list *cookieList) {
-		var cookies []cookiePair
+		var cookies []assist.CookiePair
 		switch {
 		case failed(result):
 			log.Warn("assist", "cookie lookup failed: %v", hresultError(result))
@@ -312,7 +315,7 @@ func (h *assistHost) cancelDownload(args *downloadStartingArgs) {
 	}
 }
 
-func (h *assistHost) finishDownload(uri, filename string, size int64, referer string, cookies []cookiePair) {
+func (h *assistHost) finishDownload(uri, filename string, size int64, referer string, cookies []assist.CookiePair) {
 	if h.finished || h.failed {
 		return
 	}
@@ -321,8 +324,8 @@ func (h *assistHost) finishDownload(uri, filename string, size int64, referer st
 	if err != nil {
 		log.Warn("assist", "cannot read user agent: %v", err)
 	}
-	headers := downloadHeaders(cookies, referer, userAgent)
-	if err := h.emitter.emit(newDownloadEvent(uri, filename, size, headers)); err != nil {
+	headers := assist.DownloadHeaders(assist.CookieHeader(cookies), referer, userAgent)
+	if err := h.emitter.Write(assist.DownloadWithHeaders(uri, filename, size, headers)); err != nil {
 		log.Error("assist", "cannot write download event: %v", err)
 	}
 	h.closeWindow()
@@ -335,7 +338,7 @@ func (h *assistHost) fail(message string) {
 	}
 	h.failed = true
 	log.Error("assist", "%s", message)
-	h.emitter.emit(errorEvent(message))
+	h.emitter.Write(assist.Error(message))
 	h.closeWindow()
 }
 

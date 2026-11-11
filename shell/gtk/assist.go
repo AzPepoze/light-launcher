@@ -1,20 +1,22 @@
+//go:build linux
+
 package main
 
 import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"light-launcher/shell/common/assist"
+	"light-launcher/shell/common/urlx"
 )
 
-const (
-	assistTitle   = "LightLauncher"
-	assistUsage   = "usage: light-launcher-shell --assist <url> --profile <dir> [--title <text>] [--message <text>]"
-	assistLogName = "assist"
-)
+const assistLogName = "assist"
 
 type assistOptions struct {
 	target  *url.URL
@@ -39,7 +41,7 @@ func parseAssistOptions(args []string) (assistOptions, error) {
 	flags := flag.NewFlagSet("light-launcher-shell --assist", flag.ContinueOnError)
 	target := flags.String("assist", "", "page URL")
 	profile := flags.String("profile", "", "persistent browser profile folder")
-	title := flags.String("title", assistTitle, "window title")
+	title := flags.String("title", assist.Title, "window title")
 	message := flags.String("message", "", "banner text above the page")
 	if err := flags.Parse(args); err != nil {
 		return assistOptions{}, err
@@ -50,12 +52,12 @@ func parseAssistOptions(args []string) (assistOptions, error) {
 	if *profile == "" {
 		return assistOptions{}, errors.New("--profile is required")
 	}
-	page, err := parseTarget(*target)
+	page, err := urlx.ParseTarget(*target)
 	if err != nil {
 		return assistOptions{}, err
 	}
 	if *title == "" {
-		*title = assistTitle
+		*title = assist.Title
 	}
 	return assistOptions{target: page, profile: *profile, title: *title, message: *message}, nil
 }
@@ -64,7 +66,7 @@ func runAssist(args []string) int {
 	opts, err := parseAssistOptions(args)
 	if err != nil {
 		log.Error("args", "%v", err)
-		log.Error("args", assistUsage)
+		log.Error("args", assist.Usage)
 		return exitBadArgs
 	}
 	profile, err := prepareProfile(opts.profile)
@@ -74,8 +76,8 @@ func runAssist(args []string) int {
 		return exitFailure
 	}
 
-	session := newAssistSession(newEventWriter(os.Stdout))
-	log.Info(assistLogName, "opened %s", urlOrigin(opts.target))
+	session := newAssistSession(assist.NewWriter(os.Stdout))
+	log.Info(assistLogName, "opened %s", urlx.Origin(opts.target))
 	config := gtkConfig{
 		url:        opts.target.String(),
 		title:      opts.title,
@@ -112,4 +114,10 @@ func prepareProfile(dir string) (string, error) {
 		return "", fmt.Errorf("create profile folder: %w", err)
 	}
 	return absolute, nil
+}
+
+func writeError(out io.Writer, message string) {
+	if err := assist.NewWriter(out).Write(assist.Error(message)); err != nil {
+		log.Error("assist", "cannot write error event: %v", err)
+	}
 }

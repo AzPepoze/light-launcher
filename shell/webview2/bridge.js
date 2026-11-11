@@ -1,5 +1,15 @@
-// Defines window.llShell and sends outside links to the default browser. Runs before each page script.
+// Defines window.llShell and sends outside links to the default browser. Runs before each page.
+// The launcher origin and per-run secret are filled in by bridge.go before injection.
 (function () {
+	const launcherOrigin = __LL_ORIGIN__;
+	const secret = __LL_SECRET__;
+	if (window.top !== window) return;
+
+	const pageOrigin = location.origin;
+	if (pageOrigin !== launcherOrigin) return;
+
+	const requestPick = window.llRequestPick;
+	const openExternal = window.llOpenExternal;
 	const pending = new Map();
 	let nextId = 1;
 
@@ -7,7 +17,7 @@
 		return new Promise((resolve) => {
 			const id = nextId++;
 			pending.set(id, resolve);
-			window.llRequestPick(method, id);
+			requestPick(secret, pageOrigin, method, id);
 		});
 	}
 
@@ -28,7 +38,7 @@
 		const isWeb = target.protocol === "http:" || target.protocol === "https:";
 		if (isWeb && target.origin !== location.origin) {
 			event.preventDefault();
-			window.llOpenExternal(target.href);
+			openExternal(secret, pageOrigin, target.href);
 		}
 	});
 })();
