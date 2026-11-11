@@ -15,6 +15,8 @@ export interface Game {
 	/** Cover file cached by the launcher, relative to the media folder. */
 	coverLocal: string | null;
 	screenshots: string[];
+	/** Cached screenshot files, relative to the media folder. Null where a screenshot is not cached. */
+	screenshotLocals: (string | null)[];
 	/** Plain text, with tags and scripts removed. */
 	description: string | null;
 	/** True while the game is running. */

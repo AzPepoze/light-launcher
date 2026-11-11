@@ -19,6 +19,7 @@ export interface WireGame {
 	coverUrl: string | null;
 	coverLocal: string | null;
 	screenshots: string[] | null;
+	screenshotsLocal: (string | null)[] | null;
 	description: string | null;
 	descriptionText: string | null;
 	changelog: string | null;

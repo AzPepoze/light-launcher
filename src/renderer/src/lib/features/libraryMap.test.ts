@@ -29,6 +29,7 @@ function makeWire(overrides: Partial<WireGame> = {}): WireGame {
 		coverUrl: "https://example.test/7.jpg",
 		coverLocal: "covers/7.jpg",
 		screenshots: null,
+		screenshotsLocal: null,
 		description: "<p>First line</p><p>Second &amp; last</p>",
 		descriptionText: "First line\n\nSecond & last",
 		changelog: null,
@@ -64,6 +65,7 @@ function makeGame(overrides: Partial<Game>): Game {
 		cover: null,
 		coverLocal: null,
 		screenshots: [],
+		screenshotLocals: [],
 		description: null,
 		running: false,
 		favorite: false,
@@ -128,9 +130,20 @@ describe("toGame", () => {
 	});
 
 	it("uses empty lists for null tags and screenshots", () => {
-		const game = toGame(makeWire({ tags: null, screenshots: null }));
+		const game = toGame(makeWire({ tags: null, screenshots: null, screenshotsLocal: null }));
 		expect(game.tags).toEqual([]);
 		expect(game.screenshots).toEqual([]);
+		expect(game.screenshotLocals).toEqual([]);
+	});
+
+	it("maps cached screenshot paths in screenshot order", () => {
+		const game = toGame(
+			makeWire({
+				screenshots: ["https://x/1.png", "https://x/2.png"],
+				screenshotsLocal: ["screenshots/a.png", null]
+			})
+		);
+		expect(game.screenshotLocals).toEqual(["screenshots/a.png", null]);
 	});
 
 	it("is not installed without an install folder", () => {

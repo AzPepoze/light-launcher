@@ -64,7 +64,7 @@ func run(ctx context.Context, cfg runConfig) error {
 		UI:      cfg.UI,
 		Router:  router,
 		Hub:     hub,
-		Covers:  svc.library,
+		Media:   svc.library,
 		Uploads: svc.uploads,
 		Token:   token,
 		Port:    port,

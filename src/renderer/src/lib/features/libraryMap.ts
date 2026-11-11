@@ -75,6 +75,7 @@ export function toGame(wire: WireGame): Game {
 		cover: wire.coverUrl,
 		coverLocal: wire.coverLocal,
 		screenshots: wire.screenshots ?? [],
+		screenshotLocals: wire.screenshotsLocal ?? [],
 		description: wire.descriptionText,
 		running: wire.running,
 		favorite: wire.favorite === 1,

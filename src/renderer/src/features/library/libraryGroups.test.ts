@@ -15,6 +15,7 @@ function makeGame(id: number, source: string): Game {
 		cover: null,
 		coverLocal: null,
 		screenshots: [],
+		screenshotLocals: [],
 		description: null,
 		running: false,
 		favorite: false,

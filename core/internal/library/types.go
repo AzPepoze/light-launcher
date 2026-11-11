@@ -21,6 +21,7 @@ type Game struct {
 	CoverURL         *string        `json:"coverUrl"`
 	CoverLocal       *string        `json:"coverLocal"`
 	Screenshots      []string       `json:"screenshots"`
+	ScreenshotsLocal []*string      `json:"screenshotsLocal"`
 	Description      *string        `json:"description"`
 	DescriptionText  *string        `json:"descriptionText"`
 	Changelog        *string        `json:"changelog"`

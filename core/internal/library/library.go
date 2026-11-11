@@ -132,6 +132,7 @@ func (l *Library) List(ctx context.Context, f Filter) (Page, error) {
 func (l *Library) decorate(game *Game) {
 	game.Running = l.launches.isRunning(game.ID)
 	game.CoverLocal = l.media.localPath(game.CoverPath)
+	game.ScreenshotsLocal = l.media.localPaths(game.Screenshots, "screenshots")
 	game.DescriptionText = plainText(game.Description)
 }
 

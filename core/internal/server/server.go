@@ -16,7 +16,7 @@ type Config struct {
 	UI      fs.FS
 	Router  *api.Router
 	Hub     *api.Hub
-	Covers  CoverSource
+	Media   MediaSource
 	Uploads *uploads.Store
 	Token   string
 	Port    int
@@ -24,9 +24,10 @@ type Config struct {
 	OnOpen func(gamePath string) error
 }
 
-// CoverSource finds the cached cover file of a game.
-type CoverSource interface {
+// MediaSource finds the cached image files of a game.
+type MediaSource interface {
 	CoverFile(id int64) (path string, ok bool)
+	ScreenshotFile(id int64, index int) (path string, ok bool)
 }
 
 type server struct {
@@ -39,8 +40,8 @@ type server struct {
 
 // New returns the handler for the launcher's HTTP server. It panics on a config that cannot work.
 func New(cfg Config) http.Handler {
-	if cfg.UI == nil || cfg.Router == nil || cfg.Hub == nil || cfg.Covers == nil || cfg.Uploads == nil || cfg.OnOpen == nil || cfg.Token == "" {
-		panic("server: UI, Router, Hub, Covers, Uploads, OnOpen and Token are required")
+	if cfg.UI == nil || cfg.Router == nil || cfg.Hub == nil || cfg.Media == nil || cfg.Uploads == nil || cfg.OnOpen == nil || cfg.Token == "" {
+		panic("server: UI, Router, Hub, Media, Uploads, OnOpen and Token are required")
 	}
 	host := fmt.Sprintf("127.0.0.1:%d", cfg.Port)
 	s := &server{
@@ -56,6 +57,9 @@ func New(cfg Config) http.Handler {
 	mux.HandleFunc("POST /api/ready", s.handleReady)
 	mux.HandleFunc("GET /api/platform", s.handlePlatform)
 	mux.HandleFunc("POST /api/open", s.handleOpen)
+	mux.HandleFunc("GET /api/media/cover/{id}", s.handleCover)
+	mux.HandleFunc("GET /api/media/screenshot/{id}/{index}", s.handleScreenshot)
+	// The cover route predates the media route and stays for older UI builds.
 	mux.HandleFunc("GET /api/cover/{id}", s.handleCover)
 	mux.HandleFunc("POST /api/plugin-upload", s.handleUpload)
 	// Unknown API paths must not fall through to the UI's index.html.

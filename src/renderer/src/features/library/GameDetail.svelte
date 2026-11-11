@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from "svelte";
 	import CoverImage from "@components/shared/CoverImage.svelte";
+	import ScreenshotImage from "@components/shared/ScreenshotImage.svelte";
 	import { errorMessage } from "../../lib/features/rpc";
 	import { libraryApi } from "../../lib/features/libraryApi";
 	import type { Game, GameChange, GameFile } from "../../lib/features/types";
@@ -126,8 +127,15 @@
 
 	{#if game.screenshots.length}
 		<ul class="shots" aria-label="Screenshots">
-			{#each game.screenshots as shot (shot)}
-				<li><img src={shot} alt="" loading="lazy" /></li>
+			{#each game.screenshots as shot, index (shot)}
+				<li>
+					<ScreenshotImage
+						gameId={game.id}
+						{index}
+						local={game.screenshotLocals[index] ?? null}
+						remote={shot}
+					/>
+				</li>
 			{/each}
 		</ul>
 	{/if}
@@ -262,13 +270,6 @@
 
 		li {
 			flex: 0 0 240px;
-		}
-
-		img {
-			width: 100%;
-			aspect-ratio: 16 / 9;
-			object-fit: cover;
-			border-radius: var(--radius-sm);
 		}
 	}
 

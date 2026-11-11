@@ -23,11 +23,19 @@ const (
 	testHost  = "127.0.0.1:4321"
 )
 
-// fakeCovers maps game ids to cover files.
-type fakeCovers map[int64]string
+// fakeMedia maps game ids to cached cover and screenshot files.
+type fakeMedia struct {
+	covers      map[int64]string
+	screenshots map[int64]map[int]string
+}
 
-func (c fakeCovers) CoverFile(id int64) (string, bool) {
-	path, ok := c[id]
+func (m *fakeMedia) CoverFile(id int64) (string, bool) {
+	path, ok := m.covers[id]
+	return path, ok
+}
+
+func (m *fakeMedia) ScreenshotFile(id int64, index int) (string, bool) {
+	path, ok := m.screenshots[id][index]
 	return path, ok
 }
 
@@ -36,14 +44,18 @@ type fixture struct {
 	handler   http.Handler
 	router    *api.Router
 	hub       *api.Hub
-	covers    fakeCovers
+	media     *fakeMedia
 	uploadDir string
 	opened    []string
 }
 
 func newFixture(t *testing.T, port int) *fixture {
 	t.Helper()
-	fx := &fixture{router: api.NewRouter(), hub: api.NewHub(), covers: fakeCovers{}}
+	fx := &fixture{
+		router: api.NewRouter(),
+		hub:    api.NewHub(),
+		media:  &fakeMedia{covers: map[int64]string{}, screenshots: map[int64]map[int]string{}},
+	}
 	fx.uploadDir = filepath.Join(t.TempDir(), "uploads")
 	uploadStore, err := uploads.Open(fx.uploadDir)
 	if err != nil {
@@ -57,7 +69,7 @@ func newFixture(t *testing.T, port int) *fixture {
 		UI:      ui,
 		Router:  fx.router,
 		Hub:     fx.hub,
-		Covers:  fx.covers,
+		Media:   fx.media,
 		Uploads: uploadStore,
 		Token:   testToken,
 		Port:    port,

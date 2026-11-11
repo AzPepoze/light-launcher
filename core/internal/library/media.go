@@ -85,6 +85,43 @@ func (m *mediaCache) localPath(path *string) *string {
 	return &rel
 }
 
+// localPaths returns the cached path of every image relative to the media folder, or nil per missing file.
+func (m *mediaCache) localPaths(urls []string, kind string) []*string {
+	out := make([]*string, len(urls))
+	for i, rawURL := range urls {
+		out[i] = m.cachedRelative(rawURL, kind)
+	}
+	return out
+}
+
+// cachedRelative returns the cached image for a URL relative to the media folder, or nil when it is not cached.
+func (m *mediaCache) cachedRelative(rawURL, kind string) *string {
+	path, ok := m.cachedFile(rawURL, kind)
+	if !ok {
+		return nil
+	}
+	rel, ok := m.relPath(path)
+	if !ok {
+		return nil
+	}
+	return &rel
+}
+
+// cachedFile returns the absolute cached file for an image URL, or false when it is not on disk.
+func (m *mediaCache) cachedFile(rawURL, kind string) (string, bool) {
+	if m.dir == "" || !isHTTPURL(rawURL) {
+		return "", false
+	}
+	path := findCached(filepath.Join(m.dir, kind), urlHash(rawURL))
+	if path == "" {
+		return "", false
+	}
+	if _, err := os.Stat(path); err != nil {
+		return "", false
+	}
+	return path, true
+}
+
 // relPath returns path relative to the media folder, with slashes, or false when path is outside it.
 func (m *mediaCache) relPath(path string) (string, bool) {
 	if m.dir == "" {
@@ -189,6 +226,15 @@ func (l *Library) CoverFile(id int64) (string, bool) {
 		return "", false
 	}
 	return *game.CoverPath, true
+}
+
+// ScreenshotFile returns the cached screenshot at index, when the file is on disk inside the media folder.
+func (l *Library) ScreenshotFile(id int64, index int) (string, bool) {
+	game, err := l.Get(context.Background(), id)
+	if err != nil || index < 0 || index >= len(game.Screenshots) {
+		return "", false
+	}
+	return l.media.cachedFile(game.Screenshots[index], "screenshots")
 }
 
 // CacheScreenshots downloads up to eight screenshots. Failures are logged and skipped.

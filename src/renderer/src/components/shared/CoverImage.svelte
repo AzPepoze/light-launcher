@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { CoverSource } from "../../lib/features/coverCache";
-	import { useCover } from "../../lib/features/useCover.svelte";
+	import type { CoverSource } from "../../lib/features/mediaCache";
+	import { useCover } from "../../lib/features/useMedia.svelte";
 
 	/** Shows the whole image centered over a blurred copy of itself. */
 	let { game, framed = false }: { game: CoverSource; framed?: boolean } = $props();

@@ -9,6 +9,8 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+
+	"light-launcher/core/internal/contract"
 )
 
 func TestCacheImageDownloadsOnceAndKeepsBytes(t *testing.T) {
@@ -66,6 +68,74 @@ func TestCacheImageRejectsNonHTTPURLs(t *testing.T) {
 	media := newMediaCache(t.TempDir())
 	if _, err := media.cacheImage(context.Background(), "file:///etc/passwd", "covers"); err == nil {
 		t.Error("file URLs must be rejected")
+	}
+}
+
+func TestCachedScreenshotsGetLocalPathsAndFiles(t *testing.T) {
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits.Add(1)
+		w.Header().Set("Content-Type", "image/png")
+		w.Write([]byte("png-bytes"))
+	}))
+	defer server.Close()
+
+	lib := openTestLibrary(t, Options{})
+	ctx := context.Background()
+	id, err := lib.Upsert(ctx, contract.GameDTO{
+		Source: "manual", SourceID: "shots-1", URL: "file://shots-1", Title: "Shots",
+		Screenshots: []string{server.URL + "/1.png", server.URL + "/2.png"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	game, err := lib.Get(ctx, id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lib.CacheScreenshots(ctx, game)
+
+	game, err = lib.Get(ctx, id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(game.ScreenshotsLocal) != 2 {
+		t.Fatalf("screenshotsLocal = %v, want two entries", game.ScreenshotsLocal)
+	}
+	for i, local := range game.ScreenshotsLocal {
+		if local == nil || !strings.HasPrefix(*local, "screenshots/") {
+			t.Errorf("screenshotsLocal[%d] = %v, want a path in screenshots/", i, local)
+		}
+	}
+	for i := range game.Screenshots {
+		if _, ok := lib.ScreenshotFile(id, i); !ok {
+			t.Errorf("ScreenshotFile(%d) = missing, want the cached file", i)
+		}
+	}
+	if _, ok := lib.ScreenshotFile(id, 2); ok {
+		t.Error("an index past the last screenshot must not resolve")
+	}
+}
+
+func TestUncachedScreenshotHasNoLocalPath(t *testing.T) {
+	lib := openTestLibrary(t, Options{})
+	ctx := context.Background()
+	id, err := lib.Upsert(ctx, contract.GameDTO{
+		Source: "manual", SourceID: "shots-2", URL: "file://shots-2", Title: "No shots",
+		Screenshots: []string{"https://example.test/not-downloaded.png"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	game, err := lib.Get(ctx, id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(game.ScreenshotsLocal) != 1 || game.ScreenshotsLocal[0] != nil {
+		t.Errorf("screenshotsLocal = %v, want one nil entry", game.ScreenshotsLocal)
+	}
+	if _, ok := lib.ScreenshotFile(id, 0); ok {
+		t.Error("an uncached screenshot must not resolve")
 	}
 }
 

@@ -22,6 +22,7 @@ function makeGame(overrides: Partial<Game>): Game {
 		cover: null,
 		coverLocal: null,
 		screenshots: [],
+		screenshotLocals: [],
 		description: null,
 		running: false,
 		favorite: false,
