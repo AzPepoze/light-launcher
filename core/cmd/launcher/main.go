@@ -29,7 +29,7 @@ const (
 // version is the launcher version. The release build sets it with -ldflags "-X main.version=...".
 var version = "dev"
 
-var validShells = map[string]bool{"auto": true, "qt": true, "webview2": true, "browser": true}
+var validShells = map[string]bool{"auto": true, "gtk": true, "webview2": true, "browser": true}
 
 type options struct {
 	shell    string
@@ -105,7 +105,7 @@ func apiEndpoint(opts options) (int, string) {
 func parseOptions(args []string) (options, error) {
 	var opts options
 	flags := flag.NewFlagSet("light-launcher", flag.ContinueOnError)
-	flags.StringVar(&opts.shell, "shell", "auto", "window type: auto, qt, webview2 or browser")
+	flags.StringVar(&opts.shell, "shell", "auto", "window type: auto, gtk, webview2 or browser")
 	flags.BoolVar(&opts.noShell, "no-shell", false, "serve the UI and print the URL, without a window")
 	flags.StringVar(&opts.uiDir, "ui", "", "directory with the built UI (default: embedded UI, else ui next to the executable)")
 	flags.BoolVar(&opts.editLsfg, "edit-lsfg", false, "open the lsfg-vk editor on start")
