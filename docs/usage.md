@@ -226,6 +226,7 @@ Inside the base folder:
 | `logs/`                               | Game logs. The last 10 are kept.                                        |
 | `plugins/`                            | Installed plugins, trusted keys and state.                              |
 | `plugin-data/<id>/`                   | Data each plugin saves, including its settings.                         |
+| `browser-profiles/<id>/`              | Cookies and logins from the browser window of one plugin.               |
 | `launcher.lock`                       | The port and token of the running launcher. Only your user can read it. |
 
 On Linux, the window size and position are saved in `~/.config/light-launcher/window-geometry`.

@@ -103,11 +103,33 @@ Each plugin lists what it may use in its `plugin.json`. The launcher shows this 
 | `network`  | Make web requests to the listed sites only.                                                             |
 | `fs`       | Read and write files in named folders, such as `$GAMES` or `$DOWNLOADS`.                                |
 | `secrets`  | Save and read secrets, such as sign-in cookies, in a secure store. See [Security](security.md#secrets). |
-| `browser`  | Open your browser and catch a download link.                                                            |
+| `browser`  | Open a built-in browser window for a manual step and catch the download link.                          |
 | `exec`     | Start other programs. See the note below.                                                               |
 
 > [!WARNING]
 > `exec` is listed in the permission list, but no launcher service checks it yet. A plugin program can still run other programs by itself. See [Security](security.md#honest-limits).
+
+## Browser assist
+
+Some sites need a normal browser step: sign in, wait for a timer, solve a challenge and press the download button. A plugin with the `browser` permission can ask the launcher to open a window for that step.
+
+The launcher starts the same `light-launcher-shell` program it uses for its own window, in assist mode. The window is a normal embedded browser window about 1000x720. No external browser is needed.
+
+> [!IMPORTANT]
+> You do everything in the window by hand: sign in, wait, solve any challenge and press the download button. Nothing is automated. The launcher does not click, type, fill forms, solve CAPTCHAs, spoof fingerprints or hide that the window is embedded. There are no stealth flags.
+
+The shell only watches for the download the page starts. It cancels that download, so the browser writes nothing to disk, sends the launcher its address, file name, size and the request headers it knows (such as `Cookie`), then closes. The launcher downloads the file through the plugin with the normal download checks.
+
+The window keeps its cookies and logins in a profile folder for each plugin:
+
+```text
+<base folder>/browser-profiles/<plugin id>
+```
+
+Sign in once and the site remembers you until its session ends. To forget the login, close the window and delete that folder. See [File locations](usage.md#file-locations).
+
+> [!NOTE]
+> On Linux, Qt may leave cookies restored from an earlier run out of the `Cookie` header it reports. The page still has them. If a download needs that cookie, let the site set it in this window first.
 
 ## Accounts and settings
 

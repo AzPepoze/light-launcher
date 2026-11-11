@@ -45,8 +45,8 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | Host option for a download folder, a subfolder per game, install after download and delete archive (in progress). |
 | [x] | The launcher never calls `source.sync` and never schedules update checks. Plugin sync and interval settings have no effect until a scheduler exists. |
 | [x] | A running plugin gets a `settings.changed` notice when settings are saved (no restart; plugins must read settings per call). |
-| [ ] | Browser assist (Chrome or Edge over CDP) is not implemented in the host (in progress). |
-| [ ] | Embedded browser assist: open the page in a Qt WebEngine window or WebView2 window of the shell and catch the download there. Needs a launcher-to-shell control channel; external browser stays as the fallback. |
+| [ ] | Embedded browser assist on Linux (Qt): the host starts the shell in assist mode and reads its download event. A real plugin run is still to do. |
+| [ ] | Embedded browser assist on Windows (WebView2) is untested on Windows. |
 | [ ] | Qt assist mode cannot list cookies restored from disk on Qt 6.11: `loadAllCookies()` emits no `cookieAdded` signals, so the captured `Cookie` header can miss them until the page sets a cookie in that run. |
 | [ ] | Plugin secrets saved before the cleanup change are not removed when the plugin is removed. |
 | [x] | Stop plugins that stay idle for 5 minutes, with `pluginIdleTimeoutMinutes` to change or disable it. |
@@ -62,7 +62,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | Ask F95 Zone staff for written permission. Until then the README says it is not approved. |
 | [ ] | Add a contact line to the README that works while the repo is private (an issue only works on a public repo). |
 | [ ] | Cannot set: patch-over-full, skip extras, include pre-releases (the parser does not keep that information). |
-| [ ] | Real browser-assist run against a real Chrome (the debug-port change is untested). |
+| [ ] | Delete the F95 plugin's own CDP code once the host browser assist service is used. |
 
 ## itch.io plugin
 

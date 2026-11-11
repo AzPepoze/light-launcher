@@ -50,8 +50,24 @@ A plugin declares its permissions in `plugin.json`. The launcher checks them bef
 | `network`  | Web requests (`http.request`) to the listed hosts | Request is refused with a permission error.                        |
 | `fs`       | File extraction, by folder                        | Request is refused. A path outside the granted folders is refused. |
 | `secrets`  | Secret read, write and delete                     | Request is refused.                                                |
-| `browser`  | Browser capture                                   | Request is refused.                                                |
+| `browser`  | Start the embedded browser window                 | Request is refused.                                                |
 | `exec`     | Not checked by any service yet                    | Nothing is stopped. See below.                                     |
+
+## Browser assist
+
+A plugin with the `browser` permission can ask the launcher to open the embedded browser window. This is a manual step, not automation. The user signs in, waits, solves any challenge and presses the download button by hand. The window shows a normal web page. The host does not click, type, fill forms, solve CAPTCHAs, spoof fingerprints or hide that the browser is embedded, and it passes no stealth flags.
+
+| Area         | What the host does                                                                                        |
+| :----------- | :-------------------------------------------------------------------------------------------------------- |
+| Page address | Starts `light-launcher-shell --assist <url> --profile <dir>`. Only `http` and `https` addresses with a host are accepted. |
+| Window       | Reads newline-delimited JSON from the shell's stdout. Logs go to stderr and are not parsed.               |
+| Download     | Accepts one `download` event: address, file name, size and the headers the shell knows (`Cookie`, `Referer`, `User-Agent` when present). The shell cancels that download, so the browser writes nothing. |
+| Limits       | One window at a time. Each output line is capped, and so is the whole output. Unknown events and malformed lines are ignored. |
+| Stop         | Kills the shell and its helpers on a timeout, a cancel, a closed window, a capture, or when the launcher exits. |
+
+Cookies and logins stay in `<base folder>/browser-profiles/<plugin id>`. Anything that runs as your user can read that folder. Sign out of the site or delete the folder to remove the saved login. Set `browserAssistEnabled` to `false` in `settings.json` to turn the whole feature off.
+
+On Linux, Qt may leave cookies restored from disk out of the `Cookie` header it reports, even though the page still has them. The F95 plugin's final download may then need the user to let the site set the cookie in that window first.
 
 ## Trust and signing
 
