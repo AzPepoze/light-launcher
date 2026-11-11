@@ -41,7 +41,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | SDK docs for the `settings.changed` notification and the `x-ll-*` schema extensions. |
 | [ ] | Check the settings form by eye in the real window (only typecheck, tests and build so far). |
 | [ ] | Host option for a download folder, a subfolder per game, install after download and delete archive (in progress). |
-| [ ] | The launcher never calls `source.sync` and never schedules update checks. Plugin sync and interval settings have no effect until a scheduler exists. |
+| [x] | The launcher never calls `source.sync` and never schedules update checks. Plugin sync and interval settings have no effect until a scheduler exists. |
 | [x] | A running plugin gets a `settings.changed` notice when settings are saved (no restart; plugins must read settings per call). |
 | [ ] | Browser assist (Chrome or Edge over CDP) is not implemented in the host (in progress). |
 | [ ] | Embedded browser assist: open the page in a Qt WebEngine window or WebView2 window of the shell and catch the download there. Needs a launcher-to-shell control channel; external browser stays as the fallback. |
