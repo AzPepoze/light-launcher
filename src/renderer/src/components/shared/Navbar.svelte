@@ -81,11 +81,16 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		justify-content: center;
+		/* "safe" centres the icons when there is room and lets them scroll from the top when there is not. */
+		justify-content: safe center;
 		padding: 16px 0;
 		gap: 24px;
 		box-sizing: border-box;
 		position: relative;
+		overflow-x: hidden;
+		overflow-y: auto;
+		scrollbar-width: thin;
+		scrollbar-color: var(--glass-border) transparent;
 	}
 
 	.brand-logo {
@@ -116,6 +121,8 @@
 		align-items: center;
 		gap: 4px;
 		position: relative;
+		/* A short window must scroll the icons, not squeeze them. */
+		flex-shrink: 0;
 	}
 
 	.indicator {
@@ -139,6 +146,7 @@
 		justify-content: center;
 		width: 44px;
 		height: 44px;
+		flex-shrink: 0;
 		border: none;
 		background: transparent;
 		color: var(--text-muted);

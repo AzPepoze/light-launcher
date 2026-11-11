@@ -188,7 +188,8 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		justify-content: center;
+		/* "safe" keeps the content reachable by scrolling when the window is too short to centre it. */
+		justify-content: safe center;
 		text-align: center;
 		flex: 1;
 		min-height: 0;
@@ -198,6 +199,11 @@
 		background: transparent;
 		border: none;
 		box-shadow: none;
+
+		/* Without this a short window squeezes the icon into an oval and the buttons into slivers. */
+		> * {
+			flex-shrink: 0;
+		}
 
 		.empty-icon-bg {
 			width: 88px;
