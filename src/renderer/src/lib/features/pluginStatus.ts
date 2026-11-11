@@ -6,8 +6,8 @@ export type PluginStatusKind = "error" | "disabled" | "sleeping" | "unsigned" | 
 export function pluginStatusKind(
 	plugin: Pick<PluginInfo, "status" | "enabled" | "idle" | "signed">
 ): PluginStatusKind {
-	if (plugin.status === "error") return "error";
-	if (!plugin.enabled) return "disabled";
+	if (plugin.status === "broken") return "error";
+	if (!plugin.enabled || plugin.status === "disabled") return "disabled";
 	if (plugin.idle) return "sleeping";
 	if (!plugin.signed) return "unsigned";
 	return "enabled";

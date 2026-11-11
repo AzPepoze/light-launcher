@@ -133,14 +133,14 @@ describe("newPermissionLines", () => {
 });
 
 describe("toPluginInfo", () => {
-	it("maps the Go status to ok or error and reads source ids", () => {
+	it("keeps the Go status and reads source ids", () => {
 		expect(toPluginInfo(makeWire())).toEqual({
 			id: "com.example.store",
 			name: "Example Store",
 			version: "1.0.0",
 			enabled: true,
 			signed: true,
-			status: "ok",
+			status: "stopped",
 			idle: false,
 			lastActiveAt: null,
 			error: null,
@@ -155,6 +155,13 @@ describe("toPluginInfo", () => {
 			consent: []
 		});
 	});
+
+	it.each(["broken", "disabled", "running", "stopped"] as const)(
+		"preserves the %s status instead of collapsing it",
+		(status) => {
+			expect(toPluginInfo(makeWire({ status })).status).toBe(status);
+		}
+	);
 
 	it("keeps the install source, repository and installed permissions", () => {
 		const info = toPluginInfo(
@@ -187,7 +194,7 @@ describe("toPluginInfo", () => {
 
 	it("shows a broken plugin as an error with its reason", () => {
 		const info = toPluginInfo(makeWire({ status: "broken", error: "plugin.json missing" }));
-		expect(info.status).toBe("error");
+		expect(info.status).toBe("broken");
 		expect(info.error).toBe("plugin.json missing");
 	});
 
@@ -205,10 +212,15 @@ describe("toPluginPreview", () => {
 				id: "com.example.store",
 				name: "Example Store",
 				version: "1.0.0",
+				apiVersion: "1",
+				minHost: "0.0.0",
+				entry: {},
+				contributes: {},
 				permissions: { ...NO_PERMISSIONS, network: ["api.example.test"] }
 			},
 			unsigned: true,
-			consent: ["network:api.example.test"]
+			consent: ["network:api.example.test"],
+			repositoryChanged: false
 		});
 		expect(preview).toEqual({
 			source: "https://example.test/p.zip",
@@ -229,6 +241,10 @@ describe("toPluginPreview", () => {
 				id: "com.example.store",
 				name: "Example Store",
 				version: "2.0.0",
+				apiVersion: "1",
+				minHost: "0.0.0",
+				entry: {},
+				contributes: {},
 				permissions: NO_PERMISSIONS
 			},
 			unsigned: false,

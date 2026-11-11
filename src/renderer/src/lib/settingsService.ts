@@ -15,9 +15,10 @@ import type { AppSettings } from "@shared";
 const log = createLogger("settingsService");
 
 /**
- * Loads application settings from the backend
+ * Loads application settings from the backend. Null means the call failed; the
+ * caller keeps whatever defaults it already shows.
  */
-export async function loadAppSettings(): Promise<any> {
+export async function loadAppSettings(): Promise<AppSettings | null> {
 	try {
 		const settings = await GetAppSettings();
 		return settings;
@@ -44,7 +45,7 @@ export async function saveAppSettings(
 /**
  * Toggles the transparent window mode and restarts the app
  */
-export async function toggleTransparentMode(currentSettings: any): Promise<void> {
+export async function toggleTransparentMode(currentSettings: AppSettings): Promise<void> {
 	try {
 		const newSettings = { ...currentSettings, TransparentMode: !currentSettings.TransparentMode };
 		await SaveAppSettings(newSettings);
@@ -61,7 +62,7 @@ export async function toggleTransparentMode(currentSettings: any): Promise<void>
 /**
  * Toggles Native Wayland (Ozone platform) mode and restarts the app
  */
-export async function toggleNativeWayland(currentSettings: any): Promise<void> {
+export async function toggleNativeWayland(currentSettings: AppSettings): Promise<void> {
 	try {
 		const newSettings = { ...currentSettings, NativeWayland: !currentSettings.NativeWayland };
 		await SaveAppSettings(newSettings);

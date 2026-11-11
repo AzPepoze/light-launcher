@@ -1,12 +1,14 @@
 import { siteLines } from "./consentSites";
 import { FILES_PREFIX, NETWORK_PREFIX, permissionTag } from "./permissionTags";
 import type {
+	JsonSchema,
 	PermissionLines,
 	PermissionRow,
 	PluginInfo,
 	PluginLogLine,
 	PluginPreview,
 	PluginSettingsResponse,
+	PluginStatus,
 	PluginUpdateStatus,
 	PluginUpdatesStatus
 } from "./types";
@@ -22,6 +24,14 @@ import type {
 } from "./wire";
 
 const LOG_LEVELS: readonly PluginLogLine["level"][] = ["debug", "info", "warn", "error"];
+
+// The four statuses core/internal/plugins/host_plugins.go sets on PluginInfo.
+const PLUGIN_STATUSES: readonly PluginStatus[] = ["broken", "disabled", "running", "stopped"];
+
+/** Keeps a real server status; an unknown value from a newer host reads as stopped. */
+export function toPluginStatus(value: string): PluginStatus {
+	return PLUGIN_STATUSES.find((status) => status === value) ?? "stopped";
+}
 
 // Consent entries from the server, as in core/internal/plugins/consent.go.
 const FLAG_LABELS = new Map([
@@ -61,9 +71,7 @@ function consentRow(entry: string): PermissionRow {
 
 /** Splits consent entries into grouped site lines and one row for each other entry. */
 export function consentLines(entries: string[]): PermissionLines {
-	const hosts = entries
-		.filter(isNetworkEntry)
-		.map((entry) => entry.slice(NETWORK_PREFIX.length));
+	const hosts = entries.filter(isNetworkEntry).map((entry) => entry.slice(NETWORK_PREFIX.length));
 	const other = entries.filter((entry) => !isNetworkEntry(entry)).map(consentRow);
 	return { sites: siteLines(hosts), other };
 }
@@ -92,7 +100,7 @@ export function toPluginInfo(wire: WirePluginInfo): PluginInfo {
 		version: wire.version,
 		enabled: wire.enabled,
 		signed: !wire.unsigned,
-		status: wire.status === "broken" ? "error" : "ok",
+		status: toPluginStatus(wire.status),
 		idle: wire.idle ?? false,
 		lastActiveAt: wire.lastActiveAt ?? null,
 		error: wire.error || null,
@@ -157,7 +165,9 @@ export function toLogLine(wire: WirePluginLogLine): PluginLogLine {
 }
 
 export function toPluginSettings(wire: WireSettingsView): PluginSettingsResponse {
-	return { schema: wire.schema ?? null, values: wire.values ?? {} };
+	// The plugin's JSON schema is decoded as a map on the Go side. The form reads
+	// the keywords it knows and ignores the rest.
+	return { schema: (wire.schema as JsonSchema | null) ?? null, values: wire.values ?? {} };
 }
 
 export function isRemovedPlugin(

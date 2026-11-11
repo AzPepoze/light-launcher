@@ -50,8 +50,11 @@ function makeWire(overrides: Partial<WireGame> = {}): WireGame {
 		exeArgs: null,
 		lastPlayedAt: null,
 		playtimeS: 120,
+		sourceUpdatedAt: null,
+		lastCheckedAt: null,
 		addedAt: "2026-01-01T00:00:00Z",
 		updatedAt: "2026-01-02T00:00:00Z",
+		extra: null,
 		...overrides
 	};
 }
@@ -252,8 +255,11 @@ describe("toWireListRequest", () => {
 			search: "dark",
 			source: "f95",
 			tags: ["rpg"],
+			status: null,
 			favorite: true,
+			installed: null,
 			updates: false,
+			hidden: false,
 			sort: "added",
 			order: "desc",
 			offset: 120,
@@ -262,9 +268,9 @@ describe("toWireListRequest", () => {
 		});
 	});
 
-	it("leaves installed out unless the installed filter is on", () => {
+	it("sends installed as null unless the installed filter is on", () => {
 		const request = toWireListRequest(QUERY, { offset: 0, limit: 60, wantTotal: false });
-		expect(request).not.toHaveProperty("installed");
+		expect(request.installed).toBeNull();
 	});
 
 	it("sends installed as true when the filter is on", () => {

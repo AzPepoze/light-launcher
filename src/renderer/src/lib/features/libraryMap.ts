@@ -30,8 +30,8 @@ import type {
 	WireGameUpdate,
 	WireIncomingItem,
 	WireIncomingReport,
+	WireLibraryFilter,
 	WireLibraryList,
-	WireLibraryListRequest,
 	WireLibraryOverview,
 	WireLibraryStats,
 	WirePreview,
@@ -148,21 +148,23 @@ const SORT_REQUESTS: Record<LibrarySort, { sort: string; order: "asc" | "desc" }
 export function toWireListRequest(
 	query: LibraryQuery,
 	page: LibraryPageRequest
-): WireLibraryListRequest {
-	const request: WireLibraryListRequest = {
+): WireLibraryFilter {
+	const request: WireLibraryFilter = {
 		search: query.search,
 		source: query.source,
 		tags: query.tags,
+		status: null,
 		favorite: query.favorite,
+		// Go takes a pointer here: null means "any install state", not false.
+		installed: query.installed ? true : null,
 		updates: query.updates,
+		hidden: false,
 		sort: SORT_REQUESTS[query.sort].sort,
 		order: SORT_REQUESTS[query.sort].order,
 		offset: page.offset,
 		limit: page.limit,
 		wantTotal: page.wantTotal
 	};
-	// The server treats installed as a yes or no filter, so it is only sent when it is on.
-	if (query.installed) request.installed = true;
 	return request;
 }
 

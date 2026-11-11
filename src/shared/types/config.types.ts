@@ -1,77 +1,26 @@
-export interface LsfgConfig {
-	Enabled: boolean;
-	Multiplier: string;
-	PerfMode: boolean;
-	DllPath: string;
-	Gpu: string;
-	FlowScale: string;
-	Pacing: string;
-	AllowFp16: boolean;
-}
+// These types mirror core/internal/types. The field declarations live in the
+// generated wire file so a Go change cannot drift from the renderer by hand.
+// Regenerate with: go run ./core/cmd/gentypes
+import type {
+	WireAppSettings,
+	WireExtrasConfig,
+	WireGamescopeConfig,
+	WireLaunchOptions,
+	WireLsfgConfig,
+	WireMemoryConfig,
+	WireScanFolderConfig
+} from "../contract/wire.generated";
 
-export interface GamescopeConfig {
-	Enabled: boolean;
-	Width: string;
-	Height: string;
-	OutputWidth: string;
-	OutputHeight: string;
-	RefreshRate: string;
-	FramerateLimit: string;
-	WindowMode: string;
-	Scaler: string;
-	Filter: string;
-	Sharpness: string;
-	HDR: boolean;
-	AdaptiveSync: boolean;
-	Mangoapp: boolean;
-	CustomArgs: string;
-}
+export type LsfgConfig = WireLsfgConfig;
 
-export interface MemoryConfig {
-	Enabled: boolean;
-	Value: string;
-}
+export type GamescopeConfig = WireGamescopeConfig;
 
-export interface ExtrasConfig {
-	EnableMangoHud: boolean;
-	EnableGamemode: boolean;
-	Lsfg: LsfgConfig;
-	Gamescope: GamescopeConfig;
-	Memory: MemoryConfig;
-}
+export type MemoryConfig = WireMemoryConfig;
 
-export interface LaunchOptions {
-	ID: string;
-	Name: string;
-	LauncherPath: string;
-	GamePath: string;
-	UseGamePath: boolean;
-	PrefixPath: string;
-	ProtonPath: string;
-	UseCustomProton: boolean;
-	CustomArgs: string;
-	CustomIconPath?: string;
-	Extras: ExtrasConfig;
-}
+export type ExtrasConfig = WireExtrasConfig;
 
-export interface ScanFolderConfig {
-	Path: string;
-	Depth: number;
-	ExcludeNames: string[];
-}
+export type LaunchOptions = WireLaunchOptions;
 
-export interface AppSettings {
-	TransparentMode: boolean;
-	NativeWayland?: boolean;
-	ScanFolders: string[];
-	ScanFolderConfigs: ScanFolderConfig[];
-	Blacklist: string[];
-	CustomPrefixDir?: string;
-	TrackPlaytime?: boolean;
-	DiscordRichPresence?: boolean;
-	DiscordClientId?: string;
-	/** Minutes without a plugin call before it sleeps. Zero disables sleeping. */
-	pluginIdleTimeoutMinutes?: number;
-	/** Opens the embedded browser window for plugins. Absent means on. */
-	browserAssistEnabled?: boolean;
-}
+export type ScanFolderConfig = WireScanFolderConfig;
+
+export type AppSettings = WireAppSettings;

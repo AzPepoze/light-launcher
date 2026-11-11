@@ -119,7 +119,7 @@
 			{#if !plugin.signed}
 				<span class="badge warn">Unsigned</span>
 			{/if}
-			{#if plugin.status === "error"}
+			{#if plugin.status === "broken"}
 				<span class="badge warn">Error</span>
 			{/if}
 			{#if update?.available}

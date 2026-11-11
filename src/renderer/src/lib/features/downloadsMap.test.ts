@@ -8,7 +8,7 @@ import {
 	toInstallProgress
 } from "./downloadsMap";
 import type { DownloadItem } from "./types";
-import type { WireDownloadView } from "./wire";
+import type { WireDownloadState, WireDownloadView } from "./wire";
 
 function makeView(overrides: Partial<WireDownloadView> = {}): WireDownloadView {
 	return {
@@ -92,7 +92,7 @@ describe("toDownloadItem", () => {
 	});
 
 	it("falls back to queued for an unknown state", () => {
-		expect(toDownloadItem(makeView({ state: "weird" })).status).toBe("queued");
+		expect(toDownloadItem(makeView({ state: "weird" as WireDownloadState })).status).toBe("queued");
 	});
 });
 

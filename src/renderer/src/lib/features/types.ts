@@ -274,7 +274,7 @@ export interface DownloadsListResponse {
 
 export type DownloadAction = "pause" | "resume" | "cancel" | "retry" | "remove";
 
-export type PluginStatus = "ok" | "error";
+export type PluginStatus = "broken" | "disabled" | "running" | "stopped";
 
 export interface PluginInfo {
 	id: string;
