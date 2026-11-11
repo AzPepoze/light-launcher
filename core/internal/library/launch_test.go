@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 )
@@ -24,7 +25,7 @@ func (b *blockingLauncher) Launch(_ context.Context, exePath, args, name string)
 func installedGame(t *testing.T, lib *Library) (Game, string) {
 	t.Helper()
 	dir := t.TempDir()
-	if err := os.WriteFile(filepath.Join(dir, "run.sh"), []byte("#!/bin/sh"), 0o755); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, launchFixtureName), []byte("#!/bin/sh"), 0o755); err != nil {
 		t.Fatal(err)
 	}
 	game := upsertGame(t, lib, "launch", "Launch Me")
@@ -34,6 +35,16 @@ func installedGame(t *testing.T, lib *Library) (Game, string) {
 	}
 	game, _ = lib.Get(context.Background(), game.ID)
 	return game, dir
+}
+
+// launchFixtureName is a file the executable detector accepts on the current OS.
+var launchFixtureName = fixtureNameFor(runtime.GOOS)
+
+func fixtureNameFor(goos string) string {
+	if goos == "windows" {
+		return "run.exe"
+	}
+	return "run.sh"
 }
 
 func TestLaunchStartsGameAndBlocksSecondLaunch(t *testing.T) {
@@ -46,10 +57,10 @@ func TestLaunchStartsGameAndBlocksSecondLaunch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("launch: %v", err)
 	}
-	if !result.Started || result.ExePath != filepath.Join(dir, "run.sh") {
+	if !result.Started || result.ExePath != filepath.Join(dir, launchFixtureName) {
 		t.Errorf("result = %+v", result)
 	}
-	if got := <-launcher.started; got != filepath.Join(dir, "run.sh")+"|--fullscreen|Launch Me" {
+	if got := <-launcher.started; got != filepath.Join(dir, launchFixtureName)+"|--fullscreen|Launch Me" {
 		t.Errorf("launcher got %q", got)
 	}
 
