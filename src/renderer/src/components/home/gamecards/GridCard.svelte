@@ -45,6 +45,10 @@
 		onLaunch(game);
 	}
 
+	function handleKeydown(event: KeyboardEvent) {
+		if (event.key === "Enter") handleLaunch();
+	}
+
 	function handleConfigure() {
 		onConfigure(game);
 	}
@@ -101,13 +105,12 @@
 	on:mouseenter={handleMouseEnter}
 	on:mouseleave={handleMouseLeave}
 	role="group"
-	aria-label={game.name}
 >
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
 		class="game-icon-container"
 		on:click={handleLaunch}
-		on:keydown={(e) => e.key === "Enter" && handleLaunch()}
+		on:keydown={handleKeydown}
 		role="button"
 		tabindex="0"
 		aria-label={game.name}
