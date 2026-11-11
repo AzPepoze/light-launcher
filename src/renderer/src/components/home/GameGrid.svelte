@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { afterUpdate, onDestroy, onMount } from "svelte";
+	import { onDestroy, onMount, tick } from "svelte";
 	import ContextMenu from "@components/shared/ContextMenu.svelte";
 	import SidebarPanel from "@components/home/SidebarPanel.svelte";
 	import FolderGroup from "@components/home/FolderGroup.svelte";
@@ -277,7 +277,6 @@
 		window.addEventListener("wheel", markUserScroll, { passive: true });
 		window.addEventListener("touchstart", markUserScroll, { passive: true });
 		window.addEventListener("pointerdown", markUserScroll, { passive: true });
-		scheduleStuckCheck();
 	});
 
 	onDestroy(() => {
@@ -300,19 +299,28 @@
 		setIconQueuePaused(false);
 	});
 
-	afterUpdate(() => {
-		if (restoredForView !== currentView) {
-			const el = getScroller();
-			if (el) {
-				restoredForView = currentView;
-				const saved = getHomeScroll();
-				if (saved > 0 && el.scrollTop !== saved) {
-					el.scrollTop = saved;
-				}
-			}
-		}
+	// Reactive statements instead of afterUpdate: afterUpdate makes Svelte deep-read every prop
+	// on each change, which runs once per icon that streams in.
+	$: restoreHomeScroll(currentView);
+	$: stuckInputs = [currentView, scannedFolderGroups, filteredGames, selectedGroupKey];
+	$: recheckStuckHeaders(stuckInputs);
+
+	function recheckStuckHeaders(_inputs: unknown[]) {
 		scheduleStuckCheck();
-	});
+	}
+
+	function restoreHomeScroll(view: string) {
+		void tick().then(() => {
+			if (restoredForView === view) return;
+			const el = getScroller();
+			if (!el) return;
+			restoredForView = view;
+			const saved = getHomeScroll();
+			if (saved > 0 && el.scrollTop !== saved) {
+				el.scrollTop = saved;
+			}
+		});
+	}
 
 	// Rubber-band marquee: pointerdown arms it, >5px movement starts it.
 	type MarqueeRect = { x: number; y: number; w: number; h: number };
