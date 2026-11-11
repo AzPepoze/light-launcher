@@ -312,6 +312,12 @@ func TestExtractStaysInGrantedFolders(t *testing.T) {
 	})
 	expectCode(t, err, CodePermissionDenied)
 
+	_, err = callService(t, env, "extract", map[string]string{
+		"archive":     archive,
+		"destination": filepath.Join(games, "CON"),
+	})
+	expectCode(t, err, CodeInvalidParams)
+
 	_, err = callService(t, env, "extract", map[string]string{"archive": "pack.zip", "destination": games})
 	expectCode(t, err, CodeInvalidParams)
 }

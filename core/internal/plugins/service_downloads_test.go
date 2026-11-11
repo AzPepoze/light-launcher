@@ -4,10 +4,29 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 
 	"light-launcher/core/internal/contract"
 )
+
+func TestIsPlainFileName(t *testing.T) {
+	valid := []string{"game.zip", "My Game 1.0.zip", "日本語.zip", "🎮.zip", "a.b.c"}
+	for _, name := range valid {
+		if !isPlainFileName(name) {
+			t.Errorf("isPlainFileName(%q) = false, want true", name)
+		}
+	}
+	invalid := []string{
+		"", ".", "..", "dir/file", `dir\file`, "CON", "con.txt", "NUL.tar.gz",
+		"game:1.zip", "game?.zip", "name.", "name ", strings.Repeat("a", 256),
+	}
+	for _, name := range invalid {
+		if isPlainFileName(name) {
+			t.Errorf("isPlainFileName(%q) = true, want false", name)
+		}
+	}
+}
 
 // fakeDownloads records the last request and returns a fixed error when one is set.
 type fakeDownloads struct {

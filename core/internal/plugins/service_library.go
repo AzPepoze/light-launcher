@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"light-launcher/core/internal/contract"
+	"light-launcher/core/internal/downloads"
 )
 
 type libraryParams struct {
@@ -46,7 +47,7 @@ func checkGameSources(games []contract.GameDTO, sources map[string]bool) error {
 	return nil
 }
 
-// isPlainFileName rejects empty names, dot names and anything with a folder part.
+// isPlainFileName rejects anything that is not one safe path segment on every OS.
 func isPlainFileName(name string) bool {
-	return name != "" && name != "." && name != ".." && filepath.Base(name) == name
+	return filepath.Base(name) == name && downloads.ValidateName(name) == nil
 }

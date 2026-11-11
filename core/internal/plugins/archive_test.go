@@ -69,3 +69,12 @@ func TestSafeEntryNameCleansSlashPaths(t *testing.T) {
 		t.Fatalf("safeEntryName = %q, %v", name, err)
 	}
 }
+
+func TestSafeEntryNameRejectsUnportableNames(t *testing.T) {
+	cases := []string{"CON", "bin/con.txt", "a?.txt", "trailing.", "trailing "}
+	for _, name := range cases {
+		if _, err := safeEntryName(name); err == nil {
+			t.Errorf("safeEntryName(%q) was accepted", name)
+		}
+	}
+}

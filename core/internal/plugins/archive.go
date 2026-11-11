@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"light-launcher/core/internal/downloads"
 )
 
 const (
@@ -58,6 +60,11 @@ func safeEntryName(name string) (string, error) {
 	clean := path.Clean(strings.TrimSuffix(name, "/"))
 	if clean == "." || clean == ".." || strings.HasPrefix(clean, "../") {
 		return "", fmt.Errorf("unsafe package path %q", name)
+	}
+	for _, segment := range strings.Split(clean, "/") {
+		if err := downloads.ValidateName(segment); err != nil {
+			return "", fmt.Errorf("unsafe package path %q: %w", name, err)
+		}
 	}
 	return clean, nil
 }
