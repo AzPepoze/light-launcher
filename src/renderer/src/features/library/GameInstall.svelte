@@ -9,6 +9,48 @@
 	let sourceUrl = $state("");
 	let message = $state("");
 	let linking = $state(false);
+	let folderPath = $state("");
+	let showFolderField = $state(false);
+	let linkingFolder = $state(false);
+	let folderMessage = $state("");
+	let folderError = $state("");
+
+	async function linkFolder(path: string) {
+		const folder = path.trim();
+		if (!folder) {
+			folderError = "Enter a folder path.";
+			return;
+		}
+		linkingFolder = true;
+		folderError = "";
+		folderMessage = "";
+		try {
+			library.replaceGame(await libraryApi.linkFolder(game.id, folder));
+			folderMessage = "Linked folder.";
+			folderPath = "";
+			showFolderField = false;
+		} catch (err) {
+			folderError = errorMessage(err);
+		} finally {
+			linkingFolder = false;
+		}
+	}
+
+	async function pickFolder() {
+		const shell = window.llShell;
+		if (!shell?.pickFolder) {
+			showFolderField = true;
+			return;
+		}
+		folderError = "";
+		folderMessage = "";
+		try {
+			const picked = await shell.pickFolder();
+			if (picked) await linkFolder(picked);
+		} catch (err) {
+			folderError = errorMessage(err);
+		}
+	}
 
 	async function linkSource() {
 		const url = sourceUrl.trim();
@@ -34,6 +76,29 @@
 		<p class="path" title={game.installDir}>{game.installDir}</p>
 	{:else}
 		<p class="muted">Not installed. Download a file above, or link a source page.</p>
+	{/if}
+
+	<div class="link">
+		<button class="btn sm" disabled={linkingFolder} onclick={pickFolder}>Link folder</button>
+		{#if showFolderField}
+			<input
+				class="input"
+				bind:value={folderPath}
+				placeholder="/path/to/game"
+				aria-label="Game folder"
+				onkeydown={(event) => event.key === "Enter" && linkFolder(folderPath)}
+			/>
+			<button class="btn sm" disabled={linkingFolder} onclick={() => linkFolder(folderPath)}>
+				Link
+			</button>
+			<button class="btn sm" onclick={() => (showFolderField = false)}>Cancel</button>
+		{/if}
+	</div>
+
+	{#if folderError}
+		<p class="error" role="alert">{folderError}</p>
+	{:else if folderMessage}
+		<p class="muted" role="status">{folderMessage}</p>
 	{/if}
 
 	<div class="link">
@@ -79,6 +144,11 @@
 
 	.muted {
 		color: var(--text-muted);
+		font-size: 0.85rem;
+	}
+
+	.error {
+		color: var(--danger);
 		font-size: 0.85rem;
 	}
 

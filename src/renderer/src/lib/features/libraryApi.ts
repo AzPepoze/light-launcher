@@ -82,6 +82,10 @@ export const libraryApi = {
 	linkSource: async (id: number, url: string): Promise<Game> =>
 		toGame(await rpc<WireGame>("LibraryLinkLocal", { id, url })),
 
+	/** Points a game at an existing install folder. */
+	linkFolder: async (id: number, path: string): Promise<Game> =>
+		toGame(await rpc<WireGame>("LibraryLinkFolder", { id, path })),
+
 	/** Checks every game for a newer version, ignoring the recheck interval, then returns the updates. */
 	checkUpdates: async (): Promise<UpdatesResponse> => {
 		const request: WireUpdateCheckRequest = { force: true };
