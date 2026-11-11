@@ -90,7 +90,7 @@ func (s *services) registerMethods(router *api.Router, hub *api.Hub, sources con
 	appsvc.Register(router, hub)
 	runtimesvc.Register(router, hub)
 	systemsvc.Register(router, hub)
-	pluginsvc.Register(router, hub, s.host)
+	pluginsvc.Register(router, hub, s.host, s.uploads)
 	librarysvc.Register(router, hub, s.library, sources)
 	downloadsvc.Register(router, hub, s.downloads)
 	logger.Info("api", "registered %d methods", len(router.Methods()))

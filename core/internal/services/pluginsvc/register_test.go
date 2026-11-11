@@ -10,6 +10,7 @@ import (
 
 	"light-launcher/core/internal/api"
 	"light-launcher/core/internal/plugins"
+	"light-launcher/core/internal/uploads"
 )
 
 type silentEvents struct{}
@@ -27,8 +28,12 @@ func newRouter(t *testing.T) *api.Router {
 		t.Fatal(err)
 	}
 	t.Cleanup(host.Shutdown)
+	store, err := uploads.Open(filepath.Join(base, "uploads"))
+	if err != nil {
+		t.Fatal(err)
+	}
 	router := api.NewRouter()
-	Register(router, silentEvents{}, host)
+	Register(router, silentEvents{}, host, store)
 	return router
 }
 

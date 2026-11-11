@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 
 	"light-launcher/core/internal/api"
+	"light-launcher/core/internal/logger"
 	"light-launcher/core/internal/plugins"
+	"light-launcher/core/internal/uploads"
 )
 
 // updateInput updates a plugin. AcceptedPermissions is needed when the new version asks for more permissions.
@@ -52,6 +54,13 @@ type logsInput struct {
 	Lines int    `json:"lines"`
 }
 
+// removeUpload deletes the upload that source is in. A failure only leaves a folder to clear on the next start.
+func removeUpload(store *uploads.Store, source string) {
+	if err := store.Remove(source); err != nil {
+		logger.Warn("plugins", "remove upload: %v", err)
+	}
+}
+
 // pluginCall runs a command when one is named, and a source method otherwise.
 func pluginCall(ctx context.Context, host *plugins.Host, in callInput) (any, error) {
 	if in.Command != "" {
@@ -61,14 +70,19 @@ func pluginCall(ctx context.Context, host *plugins.Host, in callInput) (any, err
 }
 
 // Register adds the plugin methods to r. Host events such as "plugin-state" go to ev.
-func Register(r *api.Router, ev api.Events, host *plugins.Host) {
+// Installs from an upload remove that upload once it is installed.
+func Register(r *api.Router, ev api.Events, host *plugins.Host, uploads *uploads.Store) {
 	host.SetEvents(ev)
 
 	r.Handle("PluginsList", api.NoInput(func(context.Context) (any, error) {
 		return host.List(), nil
 	}))
 	r.Handle("PluginInstall", api.Typed(func(ctx context.Context, in plugins.InstallRequest) (any, error) {
-		return host.Install(ctx, in)
+		info, err := host.Install(ctx, in)
+		if err == nil {
+			removeUpload(uploads, in.Source)
+		}
+		return info, err
 	}))
 	r.Handle("PluginUpdate", api.Typed(func(ctx context.Context, in updateInput) (any, error) {
 		return host.Update(ctx, in.ID, in.AllowUnsigned, in.AcceptedPermissions)
