@@ -30,21 +30,33 @@ export interface ScreenshotSource {
 	remote: string;
 }
 
-function useMediaImage(request: () => MediaRequest): { readonly url: string | null } {
+export interface MediaImage {
+	/** The URL to show, or null when there is nothing to show. */
+	readonly url: string | null;
+	/** True until the URL is decided, so the page can show a placeholder. */
+	readonly pending: boolean;
+}
+
+function useMediaImage(request: () => MediaRequest): MediaImage {
 	const scope = `media-${++nextScope}`;
 	let url = $state<string | null>(null);
+	let pending = $state(true);
 
 	$effect(() => {
 		const wanted = request();
 		let active = true;
 		url = null;
+		pending = true;
 		if (wanted.key === null) {
 			media.release(scope);
 			url = wanted.fallback;
+			pending = false;
 			return;
 		}
 		void media.load(scope, wanted.key, wanted.route).then((local) => {
-			if (active) url = local ?? wanted.fallback;
+			if (!active) return;
+			url = local ?? wanted.fallback;
+			pending = false;
 		});
 		return () => {
 			active = false;
@@ -56,6 +68,9 @@ function useMediaImage(request: () => MediaRequest): { readonly url: string | nu
 	return {
 		get url() {
 			return url;
+		},
+		get pending() {
+			return pending;
 		}
 	};
 }
@@ -64,7 +79,7 @@ function useMediaImage(request: () => MediaRequest): { readonly url: string | nu
  * The image URL to show for a game's cover. It is the cached copy when the launcher has one,
  * otherwise the remote cover. Call it during component setup.
  */
-export function useCover(getGame: () => CoverSource): { readonly url: string | null } {
+export function useCover(getGame: () => CoverSource): MediaImage {
 	return useMediaImage(() => {
 		const game = getGame();
 		return {
@@ -79,7 +94,7 @@ export function useCover(getGame: () => CoverSource): { readonly url: string | n
  * The image URL to show for one screenshot. It is the cached copy when the launcher has one,
  * otherwise the remote link. Call it during component setup.
  */
-export function useScreenshot(getShot: () => ScreenshotSource): { readonly url: string | null } {
+export function useScreenshot(getShot: () => ScreenshotSource): MediaImage {
 	return useMediaImage(() => {
 		const shot = getShot();
 		return {
