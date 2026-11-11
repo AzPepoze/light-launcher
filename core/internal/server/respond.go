@@ -4,13 +4,16 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+
+	"light-launcher/core/internal/api"
 )
 
-// envelope is the reply shape of the invoke and open calls.
+// envelope is the reply shape of the invoke and open calls. Fields is set when a validation failed.
 type envelope struct {
-	Success bool   `json:"success"`
-	Data    any    `json:"data,omitempty"`
-	Error   string `json:"error,omitempty"`
+	Success bool             `json:"success"`
+	Data    any              `json:"data,omitempty"`
+	Error   string           `json:"error,omitempty"`
+	Fields  []api.FieldError `json:"fields,omitempty"`
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {

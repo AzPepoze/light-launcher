@@ -69,6 +69,78 @@ For web requests, secrets, files and downloads, a plugin asks the launcher. The 
 > [!WARNING]
 > A plugin that opens its own network connections is not stopped by the launcher. See [Security](security.md#honest-limits).
 
+## Settings form
+
+The launcher draws a settings form from a JSON Schema file. Point to it in `plugin.json`:
+
+```json
+{ "contributes": { "settings": { "$ref": "settings.schema.json" } } }
+```
+
+Here is a small schema:
+
+```json
+{
+	"type": "object",
+	"properties": {
+		"folder": { "type": "string", "title": "Download folder", "x-ll-widget": "folder" },
+		"hosts": {
+			"type": "array",
+			"title": "Host order",
+			"items": { "type": "string", "enum": ["a", "b"] },
+			"uniqueItems": true,
+			"default": ["a", "b"]
+		},
+		"timeout": {
+			"type": "integer",
+			"minimum": 1,
+			"maximum": 60,
+			"default": 10,
+			"x-ll-advanced": true
+		}
+	}
+}
+```
+
+### Supported keywords
+
+| Keyword                               | Used on         | Effect                                                                     |
+| :------------------------------------ | :-------------- | :------------------------------------------------------------------------- |
+| `type`                                | Every field     | `string`, `number`, `integer`, `boolean` or `array`. Others are not drawn. |
+| `title`                               | Every field     | The label. Defaults to the property name.                                  |
+| `description`                         | Every field     | A hint under the input.                                                    |
+| `examples`                            | Every field     | Shown under the input as "Examples: ...".                                  |
+| `default`                             | Every field     | Used when no value is saved. The form offers "Reset to default".           |
+| `enum`                                | String, number  | A select. For a list, the items are picked from it.                        |
+| `minimum`, `maximum`                  | Number, integer | The allowed range.                                                         |
+| `minLength`, `maxLength`              | String          | The length in characters.                                                  |
+| `items`                               | Array           | The item type: `string`, or an `enum` of strings or numbers.               |
+| `minItems`, `maxItems`, `uniqueItems` | Array           | The list size, and whether items may repeat.                               |
+| `required`                            | Top level       | Names the fields that must have a value.                                   |
+| `additionalProperties`                | Top level       | `false` rejects keys that are not in the schema.                           |
+
+### Launcher extensions
+
+These keywords start with `x-ll-`. Other tools ignore them.
+
+| Extension       | Values           | Effect                                                                                                                         |
+| :-------------- | :--------------- | :----------------------------------------------------------------------------------------------------------------------------- |
+| `x-ll-group`    | Any text         | Fields with the same group sit under one heading. Groups appear in the order they first show up.                               |
+| `x-ll-widget`   | `folder`, `file` | A path box for a string. A Browse button opens the system picker when the desktop app provides one. The text box always works. |
+| `x-ll-advanced` | `true`           | The field moves into a collapsed "Advanced" section at the end of the form.                                                    |
+
+### Saving and reading
+
+| Event                       | What happens                                                                                                 |
+| :-------------------------- | :----------------------------------------------------------------------------------------------------------- |
+| User clicks Save            | The launcher checks every value. Each bad field gets its own message. If any field is bad, nothing is saved. |
+| Save succeeds               | The settings file is replaced in one step. A crash during the save keeps the old file.                       |
+| Plugin calls `settings.get` | It gets the saved values, with the schema `default` for each key that is not saved.                          |
+| Save succeeds, plugin runs  | The plugin gets a `settings.changed` notification with `{"settings": {...}}`. The plugin is not restarted.   |
+
+> [!TIP]
+> Call `settings.get` each time your plugin needs a value, or reload when `settings.changed` arrives. A plugin that keeps the values from its start keeps the old ones until it restarts.
+
 ## Next steps
 
 - Read the SDK guide, starting with `docs/writing-a-plugin.md`.

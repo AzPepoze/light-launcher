@@ -1,51 +1,88 @@
 <script lang="ts">
-	import { onMount } from "svelte";
 	import { errorMessage } from "../../lib/features/rpc";
 	import { pluginsApi } from "../../lib/features/pluginsApi";
-	import SchemaForm from "./SchemaForm.svelte";
 	import {
-		buildSchemaFields,
-		collectValues,
-		rawFormValues,
-		type RawValues,
-		type SchemaField,
-	} from "./schemaForm";
+		buildSettingsFields,
+		buildSettingsSections,
+		changedKeys,
+		cloneRaw,
+		collectSettings,
+		rawSettings,
+		serverErrors,
+		type RawSettings,
+		type SettingsField,
+		type SettingsSection
+	} from "../../lib/features/settingsForm";
+	import { InvokeError } from "../../lib/transport";
+	import SchemaForm from "./SchemaForm.svelte";
 
 	let { pluginId }: { pluginId: string } = $props();
 
-	let fields = $state<SchemaField[]>([]);
-	let raw = $state<RawValues>({});
+	const FIX_FIELDS = "Fix the highlighted fields.";
+
+	let fields = $state<SettingsField[]>([]);
+	let sections = $state<SettingsSection[]>([]);
+	/** The form state at load or at the last save. Revert and the unsaved-changes check compare with it. */
+	let baseline = $state<RawSettings>({});
+	let raw = $state<RawSettings>({});
 	let errors = $state<Record<string, string>>({});
 	let loading = $state(true);
 	let saving = $state(false);
 	let message = $state("");
+	let loadId = 0;
 
-	onMount(async () => {
+	let dirty = $derived(changedKeys(fields, raw, baseline).length > 0);
+
+	async function load(id: string) {
+		const current = ++loadId;
+		loading = true;
+		message = "";
+		errors = {};
 		try {
-			const response = await pluginsApi.settingsGet(pluginId);
-			fields = buildSchemaFields(response.schema);
-			raw = rawFormValues(fields, response.values);
+			const response = await pluginsApi.settingsGet(id);
+			if (current !== loadId) return;
+			fields = buildSettingsFields(response.schema);
+			sections = buildSettingsSections(fields);
+			baseline = rawSettings(fields, response.values);
+			raw = cloneRaw(baseline);
 		} catch (err) {
-			message = errorMessage(err);
+			if (current === loadId) message = errorMessage(err);
 		} finally {
-			loading = false;
+			if (current === loadId) loading = false;
 		}
+	}
+
+	$effect(() => {
+		void load(pluginId);
 	});
 
 	async function save() {
-		const result = collectValues(fields, raw);
-		errors = result.errors;
+		const check = collectSettings(fields, raw);
+		errors = check.errors;
 		message = "";
-		if (Object.keys(result.errors).length > 0) return;
+		if (Object.keys(check.errors).length > 0) {
+			message = FIX_FIELDS;
+			return;
+		}
+		const saved = cloneRaw(raw);
 		saving = true;
 		try {
-			await pluginsApi.settingsSet(pluginId, result.values);
+			await pluginsApi.settingsSet(pluginId, check.values);
+			baseline = saved;
 			message = "Saved.";
 		} catch (err) {
-			message = errorMessage(err);
+			const problems = err instanceof InvokeError ? err.fields : [];
+			errors = serverErrors(problems);
+			message = problems.length > 0 ? FIX_FIELDS : errorMessage(err);
 		} finally {
 			saving = false;
 		}
+	}
+
+	function revert() {
+		raw = cloneRaw(baseline);
+		errors = {};
+		message = "";
 	}
 </script>
 
@@ -55,17 +92,21 @@
 	{#if loading}
 		<p class="muted">Loading settings...</p>
 	{:else if fields.length === 0}
-		<p class="muted">This plugin has no settings.</p>
+		<p class="muted" role={message ? "alert" : undefined}>
+			{message || "This plugin has no settings."}
+		</p>
 	{:else}
-		<SchemaForm {fields} bind:raw {errors} />
+		<SchemaForm {sections} bind:raw {errors} />
 		<div class="footer">
-			<button class="btn sm primary" disabled={saving} onclick={save}>Save settings</button>
+			<button class="btn sm" type="button" disabled={!dirty || saving} onclick={revert}>
+				Revert
+			</button>
+			<button class="btn sm primary" type="button" disabled={!dirty || saving} onclick={save}>
+				Save settings
+			</button>
+			{#if dirty}<span class="muted">Unsaved changes</span>{/if}
 			{#if message}<span class="muted" role="status">{message}</span>{/if}
 		</div>
-	{/if}
-
-	{#if !loading && fields.length === 0 && message}
-		<p class="muted" role="alert">{message}</p>
 	{/if}
 </section>
 
@@ -93,6 +134,7 @@
 
 	.footer {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
 		gap: 12px;
 	}

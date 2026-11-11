@@ -28,14 +28,15 @@ type serviceDeps struct {
 
 // pluginEnv is what the host gives one running plugin: its identity, grants, data and logs.
 type pluginEnv struct {
-	id        string
-	manifest  Manifest
-	dataDir   string
-	deps      *serviceDeps
-	lines     *lineRing
-	storageMu sync.Mutex
-	peerMu    sync.Mutex
-	peer      *Peer // the connection of the running plugin, set on each start
+	id             string
+	manifest       Manifest
+	dataDir        string
+	settingsSchema map[string]any // nil when the plugin has no settings
+	deps           *serviceDeps
+	lines          *lineRing
+	storageMu      sync.Mutex
+	peerMu         sync.Mutex
+	peer           *Peer // the connection of the running plugin, set on each start
 }
 
 // setPeer records the connection of a newly started plugin.

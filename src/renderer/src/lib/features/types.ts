@@ -273,14 +273,25 @@ export interface PluginUpdatePreview {
 	newPermissions: string[];
 }
 
+/** The JSON Schema keywords the settings form reads, plus the x-ll-* extensions. See docs/writing-plugins.md. */
 export interface JsonSchemaProperty {
 	type?: "string" | "number" | "integer" | "boolean" | "object" | "array";
 	title?: string;
 	description?: string;
-	default?: string | number | boolean;
+	default?: unknown;
+	examples?: unknown[];
 	enum?: (string | number)[];
 	minimum?: number;
 	maximum?: number;
+	minLength?: number;
+	maxLength?: number;
+	minItems?: number;
+	maxItems?: number;
+	uniqueItems?: boolean;
+	items?: JsonSchemaProperty;
+	"x-ll-group"?: string;
+	"x-ll-widget"?: "folder" | "file";
+	"x-ll-advanced"?: boolean;
 }
 
 export interface JsonSchema {

@@ -1,129 +1,78 @@
 <script lang="ts">
-	import type { RawValues, SchemaField } from "./schemaForm";
+	import type { RawSettings, SettingsField, SettingsSection } from "../../lib/features/settingsForm";
+	import FormField from "./FormField.svelte";
 
 	let {
-		fields,
+		sections,
 		raw = $bindable(),
 		errors,
 	}: {
-		fields: SchemaField[];
-		raw: RawValues;
+		sections: SettingsSection[];
+		raw: RawSettings;
 		errors: Record<string, string>;
 	} = $props();
 
-	function setText(key: string, event: Event) {
-		raw[key] = (event.currentTarget as HTMLInputElement | HTMLSelectElement).value;
-	}
-
-	function setChecked(key: string, event: Event) {
-		raw[key] = (event.currentTarget as HTMLInputElement).checked;
-	}
-
-	function textValue(key: string): string {
-		const value = raw[key];
-		return typeof value === "string" ? value : "";
+	function hasError(section: SettingsSection): boolean {
+		return section.fields.some((field) => Boolean(errors[field.key]));
 	}
 </script>
 
-<div class="form">
+{#snippet fieldList(fields: SettingsField[])}
 	{#each fields as field (field.key)}
-		{@const errorId = `${field.key}-error`}
-		<div class="field">
-			{#if field.kind === "boolean"}
-				<label class="check">
-					<input
-						type="checkbox"
-						checked={raw[field.key] === true}
-						onchange={(event) => setChecked(field.key, event)}
-						aria-describedby={errorId}
-					/>
-					<span>{field.label}</span>
-				</label>
-			{:else}
-				<label for={field.key}>{field.label}{field.required ? " *" : ""}</label>
-				{#if field.kind === "select"}
-					<select
-						id={field.key}
-						class="input"
-						value={textValue(field.key)}
-						onchange={(event) => setText(field.key, event)}
-						aria-describedby={errorId}
-					>
-						{#each field.options as option (option)}
-							<option value={String(option)}>{option}</option>
-						{/each}
-					</select>
-				{:else if field.kind === "number"}
-					<input
-						id={field.key}
-						class="input"
-						type="number"
-						step={field.integer ? 1 : "any"}
-						min={field.min}
-						max={field.max}
-						value={textValue(field.key)}
-						oninput={(event) => setText(field.key, event)}
-						aria-describedby={errorId}
-						aria-invalid={Boolean(errors[field.key])}
-					/>
-				{:else}
-					<input
-						id={field.key}
-						class="input"
-						type="text"
-						value={textValue(field.key)}
-						oninput={(event) => setText(field.key, event)}
-						aria-describedby={errorId}
-						aria-invalid={Boolean(errors[field.key])}
-					/>
+		<FormField {field} bind:raw error={errors[field.key]} />
+	{/each}
+{/snippet}
+
+<div class="form">
+	{#each sections as section}
+		{#if section.advanced}
+			<details class="advanced" open={hasError(section)}>
+				<summary>{section.title}</summary>
+				<div class="fields">
+					{@render fieldList(section.fields)}
+				</div>
+			</details>
+		{:else}
+			<div class="group">
+				{#if section.title}
+					<h4>{section.title}</h4>
 				{/if}
-			{/if}
-			{#if field.description}
-				<p class="hint">{field.description}</p>
-			{/if}
-			{#if errors[field.key]}
-				<p class="error" id={errorId} role="alert">{errors[field.key]}</p>
-			{/if}
-		</div>
+				{@render fieldList(section.fields)}
+			</div>
+		{/if}
 	{/each}
 </div>
 
 <style lang="scss">
-	.form {
+	.form,
+	.group,
+	.fields {
 		display: flex;
 		flex-direction: column;
 		gap: 14px;
 	}
 
-	.field {
-		display: flex;
-		flex-direction: column;
-		gap: 6px;
-
-		label {
-			font-size: 0.85rem;
-			font-weight: 700;
-		}
-
-		p {
-			margin: 0;
-		}
-	}
-
-	.check {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		cursor: pointer;
-	}
-
-	.hint {
+	.group h4 {
+		margin: 0;
 		font-size: 0.75rem;
+		font-weight: 800;
+		letter-spacing: 1px;
+		text-transform: uppercase;
 		color: var(--text-muted);
 	}
 
-	.error {
-		font-size: 0.75rem;
-		color: var(--danger);
+	.advanced {
+		summary {
+			cursor: pointer;
+			font-size: 0.75rem;
+			font-weight: 800;
+			letter-spacing: 1px;
+			text-transform: uppercase;
+			color: var(--text-muted);
+		}
+
+		.fields {
+			margin-top: 14px;
+		}
 	}
 </style>
