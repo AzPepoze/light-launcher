@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	"light-launcher/core/internal/config"
 )
@@ -19,10 +20,11 @@ type scanOptions struct {
 	ExcludePatterns []string
 }
 
-// scannedFile is a file found by a scan, with the size taken from the directory entry.
+// scannedFile is a file found by a scan, with the size and modification time taken from the directory entry.
 type scannedFile struct {
-	Path string
-	Size int64
+	Path    string
+	Size    int64
+	ModTime time.Time
 }
 
 // scanDirectoryFiles lists files under dir that match the options. Unreadable folders are skipped.
@@ -88,7 +90,7 @@ func (s *dirScanner) addFile(fullPath string, entry os.DirEntry) {
 	if err != nil {
 		return
 	}
-	s.results = append(s.results, scannedFile{Path: fullPath, Size: info.Size()})
+	s.results = append(s.results, scannedFile{Path: fullPath, Size: info.Size(), ModTime: info.ModTime()})
 }
 
 func (s *dirScanner) isExcluded(name string) bool {

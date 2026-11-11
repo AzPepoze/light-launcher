@@ -12,6 +12,7 @@ import (
 type gameRoot struct {
 	folder    string
 	launchers []types.Launcher
+	exe       scannedFile // the primary launcher's file, with the size and time used to cache its version info
 }
 
 // minContainerChildren is how many game folders a folder must hold to count as a category.
@@ -113,20 +114,26 @@ func groupGameRoots(watched string, exes []scannedFile, remembered map[string]st
 		if len(launchers) == 0 {
 			continue
 		}
-		roots = append(roots, gameRoot{folder: bucket.folder, launchers: launchers})
+		roots = append(roots, gameRoot{
+			folder:    bucket.folder,
+			launchers: launchers,
+			exe:       findScannedFile(bucket.exes, launchers[0].Path),
+		})
 	}
 	return roots
+}
+
+// findScannedFile returns the scanned file at path. The path always comes from exes, so it is found.
+func findScannedFile(exes []scannedFile, path string) scannedFile {
+	for _, exe := range exes {
+		if exe.Path == path {
+			return exe
+		}
+	}
+	return scannedFile{Path: path}
 }
 
 // primaryLauncher returns the launcher that starts the game. pickPrimaryLauncher puts it first.
 func primaryLauncher(root gameRoot) types.Launcher {
 	return root.launchers[0]
-}
-
-// gameName is the folder name for a game with several launchers, and the launcher name otherwise.
-func gameName(root gameRoot) string {
-	if len(root.launchers) > 1 {
-		return config.BaseName(root.folder)
-	}
-	return primaryLauncher(root).Name
 }

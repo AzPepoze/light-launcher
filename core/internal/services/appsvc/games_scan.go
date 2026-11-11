@@ -148,7 +148,7 @@ func (s *service) scannedGame(root gameRoot, index scanIndex) (types.GameInfo, e
 	}
 	primary := primaryLauncher(root)
 	return types.GameInfo{
-		Name:          gameName(root),
+		Name:          gameName(root, primaryConfig.Name),
 		Path:          primary.Path,
 		Icon:          "",
 		Config:        primaryConfig,
