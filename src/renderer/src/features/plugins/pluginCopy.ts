@@ -13,6 +13,13 @@ export const UPDATE_PERMISSION_HINT = "This update asks for new permissions:";
 
 export const NO_NEW_PERMISSIONS = "This update asks for no new permissions.";
 
+export const REPOSITORY_CHANGED_WARNING =
+	"This update names a different repository than the installed version.";
+
+export const CHECK_UPDATES_LABEL = "Check for updates";
+
+export const CHECKING_UPDATES_LABEL = "Checking...";
+
 export const DROP_HINT = "Drop a plugin zip or folder here";
 
 export const DROP_OVERLAY_TEXT = "Drop to check the plugin";

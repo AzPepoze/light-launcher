@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { errorMessage } from "../../lib/features/rpc";
+	import { ago } from "../../lib/features/format";
 	import { pluginsApi } from "../../lib/features/pluginsApi";
-	import type { PluginInfo, PluginUpdatePreview } from "../../lib/features/types";
+	import type { PluginInfo, PluginUpdatePreview, PluginUpdateStatus } from "../../lib/features/types";
 	import PluginAccounts from "./PluginAccounts.svelte";
 	import PluginConsent from "./PluginConsent.svelte";
 	import PluginLogs from "./PluginLogs.svelte";
@@ -10,11 +11,13 @@
 
 	let {
 		plugin,
+		update,
 		onChanged,
 		onRemoved,
 		onBack,
 	}: {
 		plugin: PluginInfo;
+		update: PluginUpdateStatus | null;
 		onChanged: (plugin: PluginInfo) => void;
 		onRemoved: (id: string) => void;
 		onBack: () => void;
@@ -43,23 +46,30 @@
 		});
 	}
 
-	/** Installs the update at once unless it adds permissions or is unsigned. Then the user confirms first. */
-	function checkUpdate() {
+	/** Shows the consent screen for the release the last check found. */
+	function previewUpdate(release: PluginUpdateStatus) {
 		run(async () => {
 			pendingUpdate = null;
-			const check = await pluginsApi.previewUpdate(plugin);
-			if (check.newPermissions.length || !check.preview.signed) {
-				pendingUpdate = check;
+			if (!release.assetUrl) {
+				message = "This release has no plugin package.";
 				return;
 			}
-			onChanged(await pluginsApi.update(plugin.id, false, check.preview.consent));
+			pendingUpdate = await pluginsApi.previewUpdate(plugin, release.assetUrl, release.sha256 ?? "");
 		});
 	}
 
 	function confirmUpdate(shown: PluginUpdatePreview) {
 		run(async () => {
 			const next = shown.preview;
-			onChanged(await pluginsApi.update(plugin.id, !next.signed, next.consent));
+			onChanged(
+				await pluginsApi.update(
+					plugin.id,
+					!next.signed,
+					next.consent,
+					shown.source,
+					shown.sha256 ?? ""
+				)
+			);
 			pendingUpdate = null;
 		});
 	}
@@ -88,6 +98,9 @@
 			<h2>{plugin.name}</h2>
 			<p class="muted">
 				v{plugin.version}
+				{#if plugin.repository}
+					<span>Updates from {plugin.repository}</span>
+				{/if}
 			</p>
 		</div>
 		<div class="badges">
@@ -97,6 +110,9 @@
 			{/if}
 			{#if plugin.status === "error"}
 				<span class="badge warn">Error</span>
+			{/if}
+			{#if update?.available}
+				<span class="badge update">Update available ({update.version})</span>
 			{/if}
 		</div>
 	</header>
@@ -108,11 +124,29 @@
 		<p class="notice">{UNSIGNED_WARNING}</p>
 	{/if}
 
+	{#if update?.available}
+		<section class="release" aria-label="Update available">
+			<div class="release-head">
+				<p class="release-title">Update available: v{update.version}</p>
+				{#if update.publishedAt}
+					<span class="muted">{ago(update.publishedAt)}</span>
+				{/if}
+			</div>
+			{#if update.notes}
+				<p class="notes">{update.notes}</p>
+			{/if}
+			<button class="btn sm primary" disabled={busy} onclick={() => previewUpdate(update)}>
+				Update to v{update.version}
+			</button>
+		</section>
+	{:else if update?.error}
+		<p class="error" role="alert">Update check failed: {update.error}</p>
+	{/if}
+
 	<div class="actions">
 		<button class="btn sm" aria-pressed={plugin.enabled} disabled={busy} onclick={toggleEnabled}>
 			{plugin.enabled ? "Disable" : "Enable"}
 		</button>
-		<button class="btn sm" disabled={busy} onclick={checkUpdate}>Update</button>
 		<button class="btn sm" disabled={busy} onclick={rollback}>Roll back</button>
 		{#if confirmingRemove}
 			<button class="btn sm danger" disabled={busy} onclick={remove}>Confirm remove</button>
@@ -197,6 +231,41 @@
 			border-color: var(--danger);
 			color: var(--danger);
 		}
+
+		&.update {
+			border-color: var(--accent-primary);
+			color: var(--accent-primary);
+		}
+	}
+
+	.release {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		align-items: flex-start;
+		padding: 12px 14px;
+		border-radius: var(--radius-md);
+		border: 1px solid var(--glass-border-bright);
+		background: var(--bg-surface);
+	}
+
+	.release-head {
+		display: flex;
+		gap: 12px;
+		align-items: baseline;
+		flex-wrap: wrap;
+	}
+
+	.release-title {
+		margin: 0;
+		font-weight: 700;
+	}
+
+	.notes {
+		margin: 0;
+		font-size: 0.85rem;
+		color: var(--text-muted);
+		white-space: pre-wrap;
 	}
 
 	.notice {

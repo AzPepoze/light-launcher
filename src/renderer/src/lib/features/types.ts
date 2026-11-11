@@ -242,6 +242,7 @@ export interface PluginInfo {
 	author: string;
 	description: string;
 	homepage: string;
+	repository: string | null;
 	/** True when the plugin has a settings form. */
 	hasSettings: boolean;
 	/** Source ids this plugin contributes. */
@@ -262,6 +263,9 @@ export interface PluginPreview {
 	permissions: string[];
 	/** The entries to send back as accepted permissions when the user agrees. */
 	consent: string[];
+	/** True when the new version names a different repository than the installed one. */
+	repositoryChanged: boolean;
+	installedRepository: string | null;
 }
 
 export interface PluginUpdatePreview {
@@ -269,6 +273,30 @@ export interface PluginUpdatePreview {
 	preview: PluginPreview;
 	/** Plain-language lines for the permissions the new version adds. */
 	newPermissions: string[];
+	/** Where the update package is downloaded from. */
+	source: string;
+	/** Release checksum, when the release publishes SHA256SUMS. */
+	sha256: string | null;
+}
+
+export interface PluginUpdateStatus {
+	id: string;
+	installedVersion: string;
+	available: boolean;
+	version: string | null;
+	assetUrl: string | null;
+	sha256Url: string | null;
+	sha256: string | null;
+	/** Release notes as plain text. */
+	notes: string | null;
+	publishedAt: string | null;
+	error: string | null;
+}
+
+export interface PluginUpdatesStatus {
+	/** When the last check ran, as an RFC 3339 time. */
+	checkedAt: string | null;
+	plugins: PluginUpdateStatus[];
 }
 
 /** The JSON Schema keywords the settings form reads, plus the x-ll-* extensions. See docs/writing-plugins.md. */

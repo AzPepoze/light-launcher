@@ -1,17 +1,37 @@
 <script lang="ts">
 	import PageHeader from "@components/shared/PageHeader.svelte";
 	import { onMount } from "svelte";
+	import { ago } from "../../lib/features/format";
 	import { errorMessage, listen } from "../../lib/features/rpc";
-	import { PLUGIN_NOTIFY_EVENT, PLUGIN_STATE_EVENT } from "../../lib/features/events";
+	import {
+		PLUGIN_NOTIFY_EVENT,
+		PLUGIN_STATE_EVENT,
+		PLUGIN_UPDATES_EVENT
+	} from "../../lib/features/events";
 	import { pluginsApi } from "../../lib/features/pluginsApi";
-	import { isRemovedPlugin, toPluginInfo } from "../../lib/features/pluginsMap";
+	import {
+		isRemovedPlugin,
+		toPluginInfo,
+		toPluginUpdatesStatus
+	} from "../../lib/features/pluginsMap";
 	import { planPluginUpload, uploadPlugin, type UploadFile } from "../../lib/features/pluginUpload";
-	import type { PluginInfo } from "../../lib/features/types";
-	import type { WirePluginInfo, WirePluginNotify, WireRemovedPlugin } from "../../lib/features/wire";
+	import type { PluginInfo, PluginUpdateStatus, PluginUpdatesStatus } from "../../lib/features/types";
+	import type {
+		WirePluginInfo,
+		WirePluginNotify,
+		WirePluginUpdatesStatus,
+		WireRemovedPlugin
+	} from "../../lib/features/wire";
 	import PluginDetail from "./PluginDetail.svelte";
 	import PluginDropZone from "./PluginDropZone.svelte";
 	import PluginInstallDialog from "./PluginInstallDialog.svelte";
-	import { COMMUNITY_PLUGINS_URL, UPLOAD_PROBLEM_COPY, UPLOADING_TEXT } from "./pluginCopy";
+	import {
+		CHECKING_UPDATES_LABEL,
+		CHECK_UPDATES_LABEL,
+		COMMUNITY_PLUGINS_URL,
+		UPLOAD_PROBLEM_COPY,
+		UPLOADING_TEXT
+	} from "./pluginCopy";
 
 	let plugins = $state<PluginInfo[]>([]);
 	let loading = $state(true);
@@ -23,16 +43,34 @@
 	let droppedSource = $state("");
 	let uploading = $state(false);
 	let uploadError = $state("");
+	let updates = $state<PluginUpdatesStatus>({ checkedAt: null, plugins: [] });
+	let checkingUpdates = $state(false);
+	let updatesError = $state("");
 
 	const selected = $derived(plugins.find((plugin) => plugin.id === selectedId));
+	const updateCount = $derived(updates.plugins.filter((item) => item.available).length);
+	const updateProblems = $derived(
+		updates.plugins
+			.flatMap((item) => (item.error ? [item.error] : []))
+			.filter((message, index, all) => all.indexOf(message) === index)
+	);
 	const subtitle = $derived(
-		loading ? "Loading plugins" : `${plugins.length} ${plugins.length === 1 ? "plugin" : "plugins"} installed`,
+		loading
+			? "Loading plugins"
+			: `${plugins.length} ${plugins.length === 1 ? "plugin" : "plugins"} installed${
+					updateCount ? `, ${updateCount} ${updateCount === 1 ? "update" : "updates"}` : ""
+				}`,
 	);
 
 	onMount(() => {
 		load();
+		loadUpdates();
 		return subscribe();
 	});
+
+	function updateFor(id: string): PluginUpdateStatus | null {
+		return updates.plugins.find((item) => item.id === id) ?? null;
+	}
 
 	async function load() {
 		loading = true;
@@ -46,12 +84,35 @@
 		}
 	}
 
+	async function loadUpdates() {
+		try {
+			updates = await pluginsApi.updatesStatus();
+		} catch (err) {
+			updatesError = errorMessage(err);
+		}
+	}
+
+	async function checkUpdates() {
+		checkingUpdates = true;
+		updatesError = "";
+		try {
+			updates = await pluginsApi.checkUpdates();
+		} catch (err) {
+			updatesError = errorMessage(err);
+		} finally {
+			checkingUpdates = false;
+		}
+	}
+
 	/** Keeps the list in step with plugin events. Returns a function that stops them. */
 	function subscribe(): () => void {
 		const stops = [
 			listen<WirePluginInfo | WireRemovedPlugin>(PLUGIN_STATE_EVENT, onState),
 			listen<WirePluginNotify>(PLUGIN_NOTIFY_EVENT, (event) => {
 				notice = `${event.plugin}: ${event.message}`;
+			}),
+			listen<WirePluginUpdatesStatus>(PLUGIN_UPDATES_EVENT, (event) => {
+				updates = toPluginUpdatesStatus(event);
 			})
 		];
 		return () => stops.forEach((stop) => stop());
@@ -113,6 +174,12 @@
 </script>
 
 <PageHeader title="Plugins" {subtitle} icon="extension">
+	{#if updates.checkedAt}
+		<span class="checked">Checked {ago(updates.checkedAt)}</span>
+	{/if}
+	<button class="btn sm" disabled={checkingUpdates} onclick={checkUpdates}>
+		{checkingUpdates ? CHECKING_UPDATES_LABEL : CHECK_UPDATES_LABEL}
+	</button>
 	<button class="btn sm primary" onclick={() => openInstall()}>Install</button>
 </PageHeader>
 
@@ -120,6 +187,14 @@
 	{#if notice}
 		<p class="notice" role="status">{notice}</p>
 	{/if}
+
+	{#if updatesError}
+		<p class="upload-error" role="alert">{updatesError}</p>
+	{/if}
+
+	{#each updateProblems as problem (problem)}
+		<p class="upload-error" role="alert">{problem}</p>
+	{/each}
 
 	{#if uploading}
 		<p class="notice" role="status">{UPLOADING_TEXT}</p>
@@ -138,7 +213,13 @@
 		<p class="status">Loading plugins...</p>
 	{:else if selected}
 		{#key selected.id}
-			<PluginDetail plugin={selected} onChanged={replacePlugin} onRemoved={removed} onBack={() => (selectedId = null)} />
+			<PluginDetail
+				plugin={selected}
+				update={updateFor(selected.id)}
+				onChanged={replacePlugin}
+				onRemoved={removed}
+				onBack={() => (selectedId = null)}
+			/>
 		{/key}
 	{:else if plugins.length === 0}
 		<div class="status">
@@ -163,6 +244,9 @@
 							<span class="badge">{plugin.enabled ? "Enabled" : "Disabled"}</span>
 							{#if !plugin.signed}<span class="badge warn">Unsigned</span>{/if}
 							{#if plugin.status === "error"}<span class="badge warn">Error</span>{/if}
+							{#if updateFor(plugin.id)?.available}
+								<span class="badge update">Update available ({updateFor(plugin.id)?.version})</span>
+							{/if}
 						</span>
 					</button>
 				</li>
@@ -241,6 +325,16 @@
 			border-color: var(--danger);
 			color: var(--danger);
 		}
+
+		&.update {
+			border-color: var(--accent-primary);
+			color: var(--accent-primary);
+		}
+	}
+
+	.checked {
+		font-size: 0.8rem;
+		color: var(--text-muted);
 	}
 
 	.status {

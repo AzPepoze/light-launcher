@@ -7,7 +7,8 @@ import {
 	toLogLine,
 	toPluginInfo,
 	toPluginPreview,
-	toPluginSettings
+	toPluginSettings,
+	toPluginUpdatesStatus
 } from "./pluginsMap";
 import type { WirePermissions, WirePluginInfo } from "./wire";
 
@@ -39,7 +40,6 @@ function makeWire(overrides: Partial<WirePluginInfo> = {}): WirePluginInfo {
 		...overrides
 	};
 }
-
 describe("consentLabel", () => {
 	it("writes a plain line for each kind of entry", () => {
 		expect(consentLabel("network:api.example.test")).toBe("Connect to api.example.test");
@@ -110,6 +110,7 @@ describe("toPluginInfo", () => {
 			author: "Ada",
 			description: "Finds games.",
 			homepage: "https://example.test",
+			repository: null,
 			hasSettings: false,
 			sources: ["example"],
 			source: null,
@@ -117,14 +118,16 @@ describe("toPluginInfo", () => {
 		});
 	});
 
-	it("keeps the install source and the installed permissions", () => {
+	it("keeps the install source, repository and installed permissions", () => {
 		const info = toPluginInfo(
 			makeWire({
 				source: "https://example.test/store.zip",
+				repository: "github:ada/example",
 				permissions: { ...NO_PERMISSIONS, exec: true, network: ["api.example.test"] }
 			})
 		);
 		expect(info.source).toBe("https://example.test/store.zip");
+		expect(info.repository).toBe("github:ada/example");
 		expect(info.consent).toEqual(["exec", "network:api.example.test"]);
 	});
 
@@ -168,8 +171,27 @@ describe("toPluginPreview", () => {
 			version: "1.0.0",
 			signed: false,
 			permissions: ["Connect to api.example.test"],
-			consent: ["network:api.example.test"]
+			consent: ["network:api.example.test"],
+			repositoryChanged: false,
+			installedRepository: null
 		});
+	});
+
+	it("flags a package that names another repository", () => {
+		const preview = toPluginPreview("https://example.test/p.zip", {
+			manifest: {
+				id: "com.example.store",
+				name: "Example Store",
+				version: "2.0.0",
+				permissions: NO_PERMISSIONS
+			},
+			unsigned: false,
+			consent: [],
+			repositoryChanged: true,
+			installedRepository: "github:ada/example"
+		});
+		expect(preview.repositoryChanged).toBe(true);
+		expect(preview.installedRepository).toBe("github:ada/example");
 	});
 });
 
@@ -197,6 +219,44 @@ describe("toPluginSettings", () => {
 
 	it("has no schema and empty values for a plugin without settings", () => {
 		expect(toPluginSettings({ schema: null, values: null })).toEqual({ schema: null, values: {} });
+	});
+});
+
+describe("toPluginUpdatesStatus", () => {
+	it("maps the cached check results and keeps plain text notes", () => {
+		const status = toPluginUpdatesStatus({
+			checkedAt: "2026-03-01T10:00:00Z",
+			plugins: [
+				{
+					id: "com.example.store",
+					installedVersion: "1.0.0",
+					available: true,
+					version: "1.1.0",
+					assetUrl: "https://github.test/store.llplugin",
+					sha256: "abc",
+					notes: "<b>Fixes</b> a bug.",
+					publishedAt: "2026-02-01T10:00:00Z"
+				}
+			]
+		});
+		expect(status.checkedAt).toBe("2026-03-01T10:00:00Z");
+		expect(status.plugins[0]).toEqual({
+			id: "com.example.store",
+			installedVersion: "1.0.0",
+			available: true,
+			version: "1.1.0",
+			assetUrl: "https://github.test/store.llplugin",
+			sha256Url: null,
+			sha256: "abc",
+			notes: "<b>Fixes</b> a bug.",
+			publishedAt: "2026-02-01T10:00:00Z",
+			error: null
+		});
+	});
+
+	it("returns an empty list when nothing was checked", () => {
+		expect(toPluginUpdatesStatus(null)).toEqual({ checkedAt: null, plugins: [] });
+		expect(toPluginUpdatesStatus({ plugins: null })).toEqual({ checkedAt: null, plugins: [] });
 	});
 });
 

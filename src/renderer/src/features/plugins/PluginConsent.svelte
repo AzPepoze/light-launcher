@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { PluginPreview } from "../../lib/features/types";
-	import { LEGAL_NOTICE, UNSIGNED_WARNING } from "./pluginCopy";
+	import { LEGAL_NOTICE, REPOSITORY_CHANGED_WARNING, UNSIGNED_WARNING } from "./pluginCopy";
 
 	let {
 		preview,
@@ -32,6 +32,15 @@
 
 	{#if !preview.signed}
 		<p class="notice" role="note">{UNSIGNED_WARNING}</p>
+	{/if}
+
+	{#if preview.repositoryChanged}
+		<p class="notice" role="note">
+			{REPOSITORY_CHANGED_WARNING}
+			{#if preview.installedRepository}
+				Installed from {preview.installedRepository}.
+			{/if}
+		</p>
 	{/if}
 
 	<p class="label">{hint}</p>

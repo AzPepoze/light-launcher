@@ -3,7 +3,8 @@ import {
 	toLogLine,
 	toPluginInfo,
 	toPluginPreview,
-	toPluginSettings
+	toPluginSettings,
+	toPluginUpdatesStatus
 } from "./pluginsMap";
 import { rpc } from "./rpc";
 import type {
@@ -13,12 +14,14 @@ import type {
 	PluginMethod,
 	PluginPreview,
 	PluginSettingsResponse,
-	PluginUpdatePreview
+	PluginUpdatePreview,
+	PluginUpdatesStatus
 } from "./types";
 import type {
 	WirePluginInfo,
 	WirePluginLogLine,
 	WirePluginPreview,
+	WirePluginUpdatesStatus,
 	WireSettingsView
 } from "./wire";
 
@@ -31,8 +34,11 @@ export const pluginsApi = {
 		return (plugins ?? []).map(toPluginInfo);
 	},
 
-	previewPermissions: async (source: string): Promise<PluginPreview> =>
-		toPluginPreview(source, await rpc<WirePluginPreview>("PluginPermissionsPreview", { source })),
+	previewPermissions: async (source: string, sha256 = ""): Promise<PluginPreview> =>
+		toPluginPreview(
+			source,
+			await rpc<WirePluginPreview>("PluginPermissionsPreview", { source, sha256 })
+		),
 
 	/**
 	 * Pass the consent list the user saw in the preview. The server rejects any other list.
@@ -51,21 +57,42 @@ export const pluginsApi = {
 			})
 		),
 
-	/** Previews the newest version at the plugin's install source, with the permissions it adds. */
-	previewUpdate: async (plugin: PluginInfo): Promise<PluginUpdatePreview> => {
-		if (!plugin.source) throw new Error("This plugin has no install source. Install it again.");
-		const preview = await pluginsApi.previewPermissions(plugin.source);
-		return { preview, newPermissions: newPermissionLines(plugin.consent, preview.consent) };
+	/**
+	 * Previews a newer version, with the permissions it adds. The release source and checksum come from
+	 * the last update check; without them the plugin's recorded install source is used.
+	 */
+	previewUpdate: async (
+		plugin: PluginInfo,
+		source = "",
+		sha256 = ""
+	): Promise<PluginUpdatePreview> => {
+		const target = source || plugin.source;
+		if (!target) throw new Error("This plugin has no install source. Install it again.");
+		const preview = await pluginsApi.previewPermissions(target, sha256);
+		return {
+			preview,
+			newPermissions: newPermissionLines(plugin.consent, preview.consent),
+			source: target,
+			sha256: sha256 || null
+		};
 	},
 
 	/** Pass the consent list from previewUpdate, so a version with new permissions is accepted. */
 	update: async (
 		id: string,
 		allowUnsigned: boolean,
-		acceptedPermissions: string[]
+		acceptedPermissions: string[],
+		source = "",
+		sha256 = ""
 	): Promise<PluginInfo> =>
 		toPluginInfo(
-			await rpc<WirePluginInfo>("PluginUpdate", { id, allowUnsigned, acceptedPermissions })
+			await rpc<WirePluginInfo>("PluginUpdate", {
+				id,
+				allowUnsigned,
+				acceptedPermissions,
+				source,
+				sha256
+			})
 		),
 
 	/** Removal keeps the plugin's data folder. */
@@ -99,5 +126,15 @@ export const pluginsApi = {
 			lines: LOG_LINE_LIMIT
 		});
 		return (lines ?? []).map(toLogLine);
-	}
+	},
+
+	/** Asks GitHub for newer releases. With no id, checks every plugin that has a repository. */
+	checkUpdates: async (id?: string): Promise<PluginUpdatesStatus> =>
+		toPluginUpdatesStatus(
+			await rpc<WirePluginUpdatesStatus>("PluginUpdatesCheck", id ? { id } : {})
+		),
+
+	/** The cached results of the last check. */
+	updatesStatus: async (): Promise<PluginUpdatesStatus> =>
+		toPluginUpdatesStatus(await rpc<WirePluginUpdatesStatus>("PluginUpdatesStatus"))
 };

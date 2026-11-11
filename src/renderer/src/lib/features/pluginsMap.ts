@@ -1,9 +1,18 @@
-import type { PluginInfo, PluginLogLine, PluginPreview, PluginSettingsResponse } from "./types";
+import type {
+	PluginInfo,
+	PluginLogLine,
+	PluginPreview,
+	PluginSettingsResponse,
+	PluginUpdateStatus,
+	PluginUpdatesStatus
+} from "./types";
 import type {
 	WirePermissions,
 	WirePluginInfo,
 	WirePluginLogLine,
 	WirePluginPreview,
+	WirePluginUpdateStatus,
+	WirePluginUpdatesStatus,
 	WireRemovedPlugin,
 	WireSettingsView
 } from "./wire";
@@ -56,6 +65,7 @@ export function toPluginInfo(wire: WirePluginInfo): PluginInfo {
 		author: wire.author,
 		description: wire.description,
 		homepage: wire.homepage,
+		repository: wire.repository || null,
 		hasSettings: wire.hasSettings,
 		sources: (wire.sources ?? []).map((source) => source.sourceId),
 		source: wire.source || null,
@@ -73,7 +83,35 @@ export function toPluginPreview(source: string, wire: WirePluginPreview): Plugin
 		version: manifest.version,
 		signed: !wire.unsigned,
 		permissions: consent.map(consentLabel),
-		consent
+		consent,
+		repositoryChanged: wire.repositoryChanged ?? false,
+		installedRepository: wire.installedRepository || null
+	};
+}
+
+function optionalText(value: string | null | undefined): string | null {
+	return value || null;
+}
+
+export function toPluginUpdateStatus(wire: WirePluginUpdateStatus): PluginUpdateStatus {
+	return {
+		id: wire.id,
+		installedVersion: wire.installedVersion,
+		available: wire.available,
+		version: optionalText(wire.version),
+		assetUrl: optionalText(wire.assetUrl),
+		sha256Url: optionalText(wire.sha256Url),
+		sha256: optionalText(wire.sha256),
+		notes: optionalText(wire.notes),
+		publishedAt: optionalText(wire.publishedAt),
+		error: optionalText(wire.error)
+	};
+}
+
+export function toPluginUpdatesStatus(wire: WirePluginUpdatesStatus | null): PluginUpdatesStatus {
+	return {
+		checkedAt: optionalText(wire?.checkedAt),
+		plugins: (wire?.plugins ?? []).map(toPluginUpdateStatus)
 	};
 }
 

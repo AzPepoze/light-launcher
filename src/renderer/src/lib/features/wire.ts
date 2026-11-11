@@ -317,6 +317,7 @@ export interface WirePluginInfo {
 	author: string;
 	description: string;
 	homepage: string;
+	repository?: string;
 	hasSettings: boolean;
 }
 
@@ -334,6 +335,26 @@ export interface WirePluginPreview {
 	};
 	unsigned: boolean;
 	consent: string[] | null;
+	repositoryChanged?: boolean;
+	installedRepository?: string;
+}
+
+export interface WirePluginUpdateStatus {
+	id: string;
+	installedVersion: string;
+	available: boolean;
+	version?: string;
+	assetUrl?: string;
+	sha256Url?: string;
+	sha256?: string;
+	notes?: string;
+	publishedAt?: string;
+	error?: string;
+}
+
+export interface WirePluginUpdatesStatus {
+	checkedAt?: string;
+	plugins: WirePluginUpdateStatus[] | null;
 }
 
 export interface WirePluginNotify {
