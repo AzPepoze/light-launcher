@@ -6,17 +6,24 @@
 	let {
 		game,
 		shape,
-		sourceLabel,
 		revealIndex,
 		onOpen
 	}: {
 		game: Game;
 		shape: TileShape;
-		sourceLabel: string;
 		/** Position in the first reveal, or undefined when the tile does not animate in. */
 		revealIndex?: number;
 		onOpen: (game: Game) => void;
 	} = $props();
+
+	const statusLine = $derived(
+		[
+			game.version ? `Version ${game.version}` : null,
+			game.installed ? "Installed" : "Not installed"
+		]
+			.filter(Boolean)
+			.join(" · ")
+	);
 </script>
 
 <button
@@ -27,7 +34,7 @@
 	onclick={() => onOpen(game)}
 	aria-label="Open {game.title}"
 >
-	<span class="cover" style:aspect-ratio={shape.aspect}>
+	<span class="cover" style:aspect-ratio={shape.ratio}>
 		{#if game.cover || game.coverLocal}
 			<CoverImage {game} framed />
 		{:else}
@@ -43,7 +50,7 @@
 		</span>
 	</span>
 	<span class="title">{game.title}</span>
-	<span class="meta">{sourceLabel}{game.installed ? " · Installed" : ""}</span>
+	<span class="meta">{statusLine}</span>
 </button>
 
 <style lang="scss">

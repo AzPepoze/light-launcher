@@ -1,169 +1,74 @@
 import { describe, expect, it } from "vitest";
-import type { Game } from "../../lib/features/types";
 import {
 	DEFAULT_FILTERS,
-	filterGames,
 	hasActiveFilters,
-	sortGames,
-	sourceFilterLabel,
-	visibleGames
+	libraryQuery,
+	sortOf,
+	type LibraryFilters
 } from "./libraryFilters";
-import { parseSavedFilters } from "./savedFilters";
-
-function makeGame(overrides: Partial<Game>): Game {
-	return {
-		id: 1,
-		source: "itch",
-		url: "https://example.test/1",
-		title: "Untitled",
-		version: null,
-		developer: null,
-		engine: null,
-		tags: [],
-		cover: null,
-		coverLocal: null,
-		screenshots: [],
-		screenshotLocals: [],
-		description: null,
-		running: false,
-		favorite: false,
-		notes: null,
-		installed: false,
-		installedVersion: null,
-		installDir: null,
-		installSize: null,
-		exePath: null,
-		exeArgs: null,
-		playtimeS: 0,
-		lastPlayedAt: null,
-		addedAt: "2026-01-01T00:00:00Z",
-		updateAvailable: false,
-		...overrides
-	};
-}
-
-const games = [
-	makeGame({
-		id: 1,
-		title: "Dust Runner",
-		developer: "Acme",
-		tags: ["platformer", "pixel"],
-		installed: true,
-		addedAt: "2026-01-02T00:00:00Z",
-		lastPlayedAt: "2026-03-01T00:00:00Z"
-	}),
-	makeGame({
-		id: 2,
-		title: "Aurora",
-		source: "steam",
-		tags: ["puzzle"],
-		favorite: true,
-		updateAvailable: true,
-		addedAt: "2026-01-05T00:00:00Z"
-	}),
-	makeGame({
-		id: 3,
-		title: "Bramble",
-		developer: "Pixel Co",
-		tags: ["platformer"],
-		installed: true,
-		updateAvailable: true,
-		addedAt: "2026-01-03T00:00:00Z",
-		lastPlayedAt: "2026-02-01T00:00:00Z"
-	})
-];
-
-describe("filterGames", () => {
-	it("returns every game with default filters", () => {
-		expect(filterGames(games, DEFAULT_FILTERS)).toHaveLength(3);
-	});
-
-	it("matches every search word against title, developer and tags", () => {
-		const result = filterGames(games, { ...DEFAULT_FILTERS, search: "  PIXEL  platformer " });
-		expect(result.map((g) => g.id)).toEqual([1, 3]);
-	});
-
-	it("filters by source", () => {
-		const result = filterGames(games, { ...DEFAULT_FILTERS, source: "steam" });
-		expect(result.map((g) => g.id)).toEqual([2]);
-	});
-
-	it("requires all selected tags", () => {
-		const result = filterGames(games, { ...DEFAULT_FILTERS, tags: ["platformer", "pixel"] });
-		expect(result.map((g) => g.id)).toEqual([1]);
-	});
-
-	it("applies the installed, updates and favorite toggles", () => {
-		expect(filterGames(games, { ...DEFAULT_FILTERS, installed: true }).map((g) => g.id)).toEqual([
-			1, 3
-		]);
-		expect(filterGames(games, { ...DEFAULT_FILTERS, updates: true }).map((g) => g.id)).toEqual([
-			2, 3
-		]);
-		expect(filterGames(games, { ...DEFAULT_FILTERS, favorite: true }).map((g) => g.id)).toEqual([
-			2
-		]);
-	});
-});
-
-describe("sourceFilterLabel", () => {
-	it("shows the source label and count instead of the raw id", () => {
-		expect(sourceFilterLabel({ source: "f95", label: "F95 Zone", count: 3 })).toBe("F95 Zone (3)");
-	});
-
-	it("falls back to the id when the API sends no label", () => {
-		expect(sourceFilterLabel({ source: "f95", label: "", count: 0 })).toBe("f95 (0)");
-	});
-});
-
-describe("sortGames", () => {
-	it("sorts by title without changing the input", () => {
-		const sorted = sortGames(games, "title");
-		expect(sorted.map((g) => g.title)).toEqual(["Aurora", "Bramble", "Dust Runner"]);
-		expect(games[0].title).toBe("Dust Runner");
-	});
-
-	it("sorts by newest added first", () => {
-		expect(sortGames(games, "added").map((g) => g.id)).toEqual([2, 3, 1]);
-	});
-
-	it("sorts by last played and puts never-played games last", () => {
-		expect(sortGames(games, "played").map((g) => g.id)).toEqual([1, 3, 2]);
-	});
-});
-
-describe("visibleGames", () => {
-	it("filters then sorts", () => {
-		const result = visibleGames(games, { ...DEFAULT_FILTERS, sort: "title", installed: true });
-		expect(result.map((g) => g.title)).toEqual(["Bramble", "Dust Runner"]);
-	});
-});
 
 describe("hasActiveFilters", () => {
-	it("ignores the sort order", () => {
-		expect(hasActiveFilters({ ...DEFAULT_FILTERS, sort: "title" })).toBe(false);
+	it("is false for the defaults", () => {
+		expect(hasActiveFilters(DEFAULT_FILTERS)).toBe(false);
 	});
 
-	it("is true when any filter narrows the list", () => {
-		expect(hasActiveFilters({ ...DEFAULT_FILTERS, search: "  " })).toBe(false);
-		expect(hasActiveFilters({ ...DEFAULT_FILTERS, tags: ["puzzle"] })).toBe(true);
+	it("ignores a search that is only spaces", () => {
+		expect(hasActiveFilters({ ...DEFAULT_FILTERS, search: "" })).toBe(false);
+	});
+
+	it.each<Partial<LibraryFilters>>([
+		{ search: "dark" },
+		{ tags: ["rpg"] },
+		{ installed: true },
+		{ updates: true },
+		{ favorite: true }
+	])("is true when %o is set", (change) => {
+		expect(hasActiveFilters({ ...DEFAULT_FILTERS, ...change })).toBe(true);
+	});
+
+	it("ignores the sort, which does not narrow the list", () => {
+		expect(hasActiveFilters({ ...DEFAULT_FILTERS, sort: "title" })).toBe(false);
 	});
 });
 
-describe("parseSavedFilters", () => {
-	it("returns an empty list for missing or broken data", () => {
-		expect(parseSavedFilters(null)).toEqual([]);
-		expect(parseSavedFilters("{not json")).toEqual([]);
-		expect(parseSavedFilters('{"id":"x"}')).toEqual([]);
+describe("libraryQuery", () => {
+	it("uses the source the section gives, and the filters", () => {
+		const query = libraryQuery("f95", { ...DEFAULT_FILTERS, favorite: true, updates: true });
+		expect(query).toEqual({
+			source: "f95",
+			search: "",
+			tags: [],
+			favorite: true,
+			installed: false,
+			updates: true,
+			sort: "added"
+		});
 	});
 
-	it("keeps valid entries and fills missing filter fields", () => {
-		const raw = JSON.stringify([
-			{ id: "a", name: "Installed", filters: { installed: true } },
-			{ id: 5, name: "Bad id" }
-		]);
-		const parsed = parseSavedFilters(raw);
-		expect(parsed).toHaveLength(1);
-		expect(parsed[0].filters).toEqual({ ...DEFAULT_FILTERS, installed: true });
+	it("trims the search text", () => {
+		expect(libraryQuery("manual", { ...DEFAULT_FILTERS, search: "  dark  " }).search).toBe("dark");
+	});
+
+	it("copies the tags so a later change does not reach the query", () => {
+		const filters = { ...DEFAULT_FILTERS, tags: ["rpg"] };
+		const query = libraryQuery("manual", filters);
+		filters.tags.push("visual novel");
+		expect(query.tags).toEqual(["rpg"]);
+	});
+
+	it("uses an empty source for every source", () => {
+		expect(libraryQuery("", DEFAULT_FILTERS).source).toBe("");
+	});
+});
+
+describe("sortOf", () => {
+	it("keeps a known sort name", () => {
+		expect(sortOf("lastPlayed")).toBe("lastPlayed");
+	});
+
+	it("falls back to recently added for an unknown or missing name", () => {
+		expect(sortOf("played")).toBe("added");
+		expect(sortOf(undefined)).toBe("added");
+		expect(sortOf("constructor")).toBe("added");
 	});
 });

@@ -3,11 +3,13 @@ import {
 	toGameDetail,
 	toGameUpdate,
 	toIncomingList,
-	toLibraryListing,
+	toLibraryListPage,
+	toLibraryOverview,
 	toPreview,
 	toSearchResponse,
 	toUpdateHistory,
-	toUpdatesSummary
+	toUpdatesSummary,
+	toWireListRequest
 } from "./libraryMap";
 import { rpc } from "./rpc";
 import type {
@@ -16,7 +18,10 @@ import type {
 	IncomingListResponse,
 	LibraryEditableFields,
 	LibraryGetResponse,
-	LibraryListResponse,
+	LibraryListPage,
+	LibraryOverview,
+	LibraryPageRequest,
+	LibraryQuery,
 	SearchResponse,
 	UpdatesResponse
 } from "./types";
@@ -25,7 +30,8 @@ import type {
 	WireGame,
 	WireGameDetail,
 	WireIncomingReport,
-	WireLibraryPage,
+	WireLibraryList,
+	WireLibraryOverview,
 	WirePreview,
 	WireSearchResult,
 	WireUpdateCheckRequest,
@@ -33,30 +39,55 @@ import type {
 	WireUpdatesSummary
 } from "./wire";
 
-/** The Go side returns at most this many games per LibraryList call. */
-const PAGE_SIZE = 1000;
+/** Games per update page. The server caps one list at 1000. */
+const UPDATES_PAGE_SIZE = 200;
 
-/** Loads every game. Each page also carries the library counts, which are the same on every page. */
-async function fetchLibrary(): Promise<{ games: Game[]; counts: WireLibraryPage }> {
+/** Every game, with the updates filter on. */
+const UPDATES_QUERY: LibraryQuery = {
+	source: "",
+	search: "",
+	tags: [],
+	favorite: false,
+	installed: false,
+	updates: true,
+	sort: "added"
+};
+
+async function listPage(query: LibraryQuery, page: LibraryPageRequest): Promise<LibraryListPage> {
+	const wire = await rpc<WireLibraryList>("LibraryList", toWireListRequest(query, page));
+	return toLibraryListPage(wire);
+}
+
+/** Reads every game with a newer version, one page at a time. */
+async function fetchUpdateGames(): Promise<Game[]> {
 	const games: Game[] = [];
-	for (let offset = 0; ; offset += PAGE_SIZE) {
-		const page = await rpc<WireLibraryPage>("LibraryList", { limit: PAGE_SIZE, offset });
-		const items = (page.items ?? []).map(toGame);
-		games.push(...items);
-		if (items.length === 0 || games.length >= page.total) return { games, counts: page };
+	for (let offset = 0; ; offset += UPDATES_PAGE_SIZE) {
+		const page = await listPage(UPDATES_QUERY, {
+			offset,
+			limit: UPDATES_PAGE_SIZE,
+			wantTotal: false
+		});
+		games.push(...page.items);
+		if (page.items.length < UPDATES_PAGE_SIZE) return games;
 	}
 }
 
 async function fetchUpdates(): Promise<UpdatesResponse> {
 	const summary = await rpc<WireUpdatesSummary>("LibraryUpdatesSummary");
-	const { games } = await fetchLibrary();
-	return toUpdatesSummary(summary, games);
+	return toUpdatesSummary(summary, await fetchUpdateGames());
 }
 
 export const libraryApi = {
-	list: async (): Promise<LibraryListResponse> => {
-		const { games, counts } = await fetchLibrary();
-		return toLibraryListing(games, counts);
+	/** One page of games for a source, search and filters. Ask for the total on the first page. */
+	list: listPage,
+
+	/** Counts, tags and stats for the whole library. Not sent per page. */
+	overview: async (): Promise<LibraryOverview> =>
+		toLibraryOverview(await rpc<WireLibraryOverview>("LibraryOverview")),
+
+	/** Starts an import from a plugin source. Progress arrives as library.sync events. */
+	syncSource: async (source: string): Promise<void> => {
+		await rpc<{ started: boolean }>("LibrarySyncSource", { source });
 	},
 
 	get: async (id: number): Promise<LibraryGetResponse> =>

@@ -1,4 +1,4 @@
-import { DEFAULT_FILTERS, type LibraryFilters } from "./libraryFilters";
+import { DEFAULT_FILTERS, sortOf, type LibraryFilters } from "./libraryFilters";
 
 export interface SavedFilter {
 	id: string;
@@ -16,7 +16,7 @@ export function parseSavedFilters(raw: string | null): SavedFilter[] {
 		return parsed.filter(isSavedFilter).map((entry) => ({
 			id: entry.id,
 			name: entry.name,
-			filters: { ...DEFAULT_FILTERS, ...entry.filters }
+			filters: { ...DEFAULT_FILTERS, ...entry.filters, sort: sortOf(entry.filters.sort) }
 		}));
 	} catch {
 		return [];

@@ -5,60 +5,75 @@
 	import AddGameDialog from "./AddGameDialog.svelte";
 	import FilterBar from "./FilterBar.svelte";
 	import GameDetail from "./GameDetail.svelte";
-	import GameGroup from "./GameGroup.svelte";
 	import IncomingPanel from "./IncomingPanel.svelte";
+	import LibraryGrid from "./LibraryGrid.svelte";
+	import SectionHeader from "./SectionHeader.svelte";
+	import SectionList from "./SectionList.svelte";
 	import { LibraryState } from "./libraryState.svelte";
-	import { revealDoneMs, revealOrder } from "./libraryMotion";
+	import { REVEAL_MAX_TILES, revealDoneMs } from "./libraryMotion";
+	import { LOCAL_SOURCE, sourceLabel } from "./librarySections";
+	import { tileShapeFor } from "./sourceTileShape";
 
 	type Tab = "games" | "incoming";
 
 	const library = new LibraryState();
 	let tab = $state<Tab>("games");
-	let selectedId = $state<number | null>(null);
+	let selected = $state<Game | null>(null);
 	let addOpen = $state(false);
 	let revealed = $state(false);
 
-	const selected = $derived(selectedId === null ? undefined : library.gameById(selectedId));
+	const current = $derived(library.sections.find((item) => item.source === library.section));
+	const isPlugin = $derived(library.section !== LOCAL_SOURCE);
 	const subtitle = $derived(
-		`${library.stats.total} games · ${library.stats.installed} installed` +
-			(library.stats.updates ? ` · ${library.stats.updates} updates` : ""),
+		`${library.overview.stats.total} games · ${library.overview.stats.installed} installed` +
+			(library.overview.stats.updates ? ` · ${library.overview.stats.updates} updates` : "")
 	);
-	const revealPlan = $derived(revealOrder(library.groups));
-	const hasTiles = $derived(library.visible.length > 0);
-	const tileReveal = $derived(revealed ? new Map<number, number>() : revealPlan);
+	const hasTiles = $derived((library.total ?? 0) > 0);
+	const revealCount = $derived(Math.min(library.total ?? 0, REVEAL_MAX_TILES));
 
 	onMount(() => {
-		library.load();
+		void library.start();
 		return library.subscribe();
 	});
 
 	// Ends the first reveal once its last tile has finished, so later renders never replay it.
 	$effect(() => {
 		if (!hasTiles || revealed) return;
-		const timer = setTimeout(() => (revealed = true), revealDoneMs(revealPlan.size));
+		const timer = setTimeout(() => (revealed = true), revealDoneMs(revealCount));
 		return () => clearTimeout(timer);
 	});
 
 	function openGame(game: Game) {
-		selectedId = game.id;
+		selected = game;
 	}
 
 	async function closeGame() {
-		const id = selectedId;
-		selectedId = null;
+		const id = selected?.id;
+		selected = null;
 		await tick();
-		document.querySelector<HTMLElement>(`[data-game-id="${id}"]`)?.focus();
+		if (id !== undefined) {
+			document.querySelector<HTMLElement>(`[data-game-id="${id}"]`)?.focus();
+		}
+	}
+
+	function gameChanged(game: Game) {
+		selected = game;
+		library.replaceGame(game);
+	}
+
+	function gameRemoved() {
+		selected = null;
+		library.scheduleRefresh();
 	}
 
 	function addedGame(game: Game) {
-		library.addGame(game);
 		addOpen = false;
-		selectedId = game.id;
+		selected = game;
+		library.scheduleRefresh();
 	}
 
-	function gameRemoved(id: number) {
-		library.removeGame(id);
-		selectedId = null;
+	function syncNow() {
+		void library.startSync(library.section);
 	}
 </script>
 
@@ -90,34 +105,68 @@
 	</PageHeader>
 
 	{#if tab === "incoming"}
-		<IncomingPanel onChanged={() => library.load()} />
+		<IncomingPanel onChanged={() => library.refresh()} />
 	{:else if selected}
-		<GameDetail game={selected} {library} onBack={closeGame} onRemoved={gameRemoved} />
-	{:else if library.loading}
+		<GameDetail
+			game={selected}
+			sourceName={sourceLabel(library.overview.sources, selected.source)}
+			onBack={closeGame}
+			onRemoved={gameRemoved}
+			onChanged={gameChanged}
+		/>
+	{:else if !library.overviewLoaded}
 		<p class="status">Loading library...</p>
-	{:else if library.error}
+	{:else if library.overviewError}
 		<div class="status">
-			<p>{library.error}</p>
-			<button class="btn sm" onclick={() => library.load()}>Retry</button>
+			<p>{library.overviewError}</p>
+			<button class="btn sm" onclick={() => library.refresh()}>Retry</button>
 		</div>
-	{:else if library.stats.total === 0}
-		<div class="status">
-			<p>No games yet. Add a link or scan your folders.</p>
-			<button class="btn sm primary" onclick={() => (addOpen = true)}>Add game</button>
-		</div>
-	{:else}
-		<FilterBar {library} />
+	{:else if current}
+		<div class="layout">
+			<SectionList
+				sections={library.sections}
+				selected={library.section}
+				onSelect={(source) => library.selectSection(source)}
+			/>
 
-		{#if library.visible.length === 0}
-			<div class="status">
-				<p>No games match these filters.</p>
-				<button class="btn sm" onclick={() => library.resetFilters()}>Clear filters</button>
+			<div class="main">
+				<SectionHeader
+					label={current.label}
+					count={current.count}
+					{isPlugin}
+					syncing={library.isSyncing(library.section)}
+					progress={library.syncs[library.section]}
+					onSync={syncNow}
+				/>
+
+				<FilterBar {library} />
+
+				{#if library.error}
+					<div class="status">
+						<p>{library.error}</p>
+						<button class="btn sm" onclick={() => library.refresh()}>Retry</button>
+					</div>
+				{:else if library.total === 0 && library.filtersActive}
+					<div class="status">
+						<p>No games match these filters.</p>
+						<button class="btn sm" onclick={() => library.resetFilters()}>Clear filters</button>
+					</div>
+				{:else if library.total === 0 && isPlugin}
+					<div class="status">
+						<p>No games yet. Install the plugin, sign in, then press Sync now.</p>
+					</div>
+				{:else if library.total === 0}
+					<div class="status">
+						<p>No games yet. Add a link or scan your folders.</p>
+						<button class="btn sm primary" onclick={() => (addOpen = true)}>Add game</button>
+					</div>
+				{:else}
+					{#key library.section}
+						<LibraryGrid {library} shape={tileShapeFor(current.tile)} {revealed} onOpen={openGame} />
+					{/key}
+				{/if}
 			</div>
-		{:else}
-			{#each library.groups as group (group.source)}
-				<GameGroup {group} reveal={tileReveal} onOpen={openGame} />
-			{/each}
-		{/if}
+		</div>
 	{/if}
 
 	{#if addOpen}
@@ -146,6 +195,17 @@
 		gap: 6px;
 	}
 
+	.layout {
+		display: grid;
+		grid-template-columns: 220px minmax(0, 1fr);
+		align-items: start;
+		gap: 32px;
+	}
+
+	.main {
+		min-width: 0;
+	}
+
 	.status {
 		display: flex;
 		flex-direction: column;
@@ -157,6 +217,12 @@
 
 		p {
 			margin: 0;
+		}
+	}
+
+	@media (max-width: 760px) {
+		.layout {
+			grid-template-columns: minmax(0, 1fr);
 		}
 	}
 </style>

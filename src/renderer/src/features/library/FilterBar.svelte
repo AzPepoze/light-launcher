@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { LibraryState } from "./libraryState.svelte";
-	import { SORT_LABELS, sourceFilterLabel, type LibrarySort } from "./libraryFilters";
+	import { SORT_LABELS } from "./libraryFilters";
+	import type { LibrarySort } from "../../lib/features/types";
 
 	let { library }: { library: LibraryState } = $props();
 
@@ -9,11 +10,13 @@
 
 	const sortOptions = Object.entries(SORT_LABELS) as [LibrarySort, string][];
 
-	function toggleTag(tag: string) {
-		const selected = library.filters.tags.includes(tag);
-		library.filters.tags = selected
-			? library.filters.tags.filter((item) => item !== tag)
-			: [...library.filters.tags, tag];
+	function sortChanged(event: Event) {
+		const value = (event.currentTarget as HTMLSelectElement).value as LibrarySort;
+		library.patchFilters({ sort: value });
+	}
+
+	function searchChanged(event: Event) {
+		library.setSearchText((event.currentTarget as HTMLInputElement).value);
 	}
 
 	function confirmSave() {
@@ -32,25 +35,20 @@
 				class="input"
 				type="search"
 				placeholder="Search title, developer or tag"
-				bind:value={library.filters.search}
+				value={library.searchText}
+					oninput={searchChanged}
 			/>
 		</label>
 
 		<label class="sort">
 			<span class="sr-only">Sort by</span>
-			<select class="input" bind:value={library.filters.sort}>
+			<select class="input" value={library.filters.sort} onchange={sortChanged}>
 				{#each sortOptions as [value, label] (value)}
 					<option {value}>{label}</option>
 				{/each}
 			</select>
 		</label>
 
-		<select class="input" aria-label="Source" bind:value={library.filters.source}>
-			<option value="">All sources</option>
-			{#each library.sources as item (item.source)}
-				<option value={item.source}>{sourceFilterLabel(item)}</option>
-			{/each}
-		</select>
 	</div>
 
 	<div class="row chips" role="group" aria-label="Quick filters">
@@ -58,7 +56,7 @@
 			class="btn sm"
 			class:primary={library.filters.installed}
 			aria-pressed={library.filters.installed}
-			onclick={() => (library.filters.installed = !library.filters.installed)}
+			onclick={() => library.patchFilters({ installed: !library.filters.installed })}
 		>
 			Installed
 		</button>
@@ -66,7 +64,7 @@
 			class="btn sm"
 			class:primary={library.filters.updates}
 			aria-pressed={library.filters.updates}
-			onclick={() => (library.filters.updates = !library.filters.updates)}
+			onclick={() => library.patchFilters({ updates: !library.filters.updates })}
 		>
 			Updates
 		</button>
@@ -74,16 +72,16 @@
 			class="btn sm"
 			class:primary={library.filters.favorite}
 			aria-pressed={library.filters.favorite}
-			onclick={() => (library.filters.favorite = !library.filters.favorite)}
+			onclick={() => library.patchFilters({ favorite: !library.filters.favorite })}
 		>
 			Favorites
 		</button>
-		{#each library.tags.slice(0, 12) as item (item.tag)}
+		{#each library.overview.tags.slice(0, 12) as item (item.tag)}
 			<button
 				class="btn sm"
 				class:primary={library.filters.tags.includes(item.tag)}
 				aria-pressed={library.filters.tags.includes(item.tag)}
-				onclick={() => toggleTag(item.tag)}
+				onclick={() => library.toggleTag(item.tag)}
 			>
 				{item.tag}
 			</button>

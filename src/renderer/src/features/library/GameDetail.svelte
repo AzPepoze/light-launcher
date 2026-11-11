@@ -8,19 +8,19 @@
 	import { ago, playtime } from "../../lib/features/format";
 	import GameFiles from "./GameFiles.svelte";
 	import GameInstall from "./GameInstall.svelte";
-	import { groupGames } from "./libraryGroups";
-	import type { LibraryState } from "./libraryState.svelte";
 
 	let {
 		game,
-		library,
+		sourceName,
 		onBack,
 		onRemoved,
+		onChanged,
 	}: {
 		game: Game;
-		library: LibraryState;
+		sourceName: string;
 		onBack: () => void;
 		onRemoved: (id: number) => void;
+		onChanged: (game: Game) => void;
 	} = $props();
 
 	let files = $state<GameFile[]>([]);
@@ -32,7 +32,6 @@
 	let closing = $state(false);
 	let titleEl = $state<HTMLElement>();
 
-	const sourceName = $derived(groupGames([game], library.sources)[0]?.label ?? game.source);
 	const versionLine = $derived(
 		[sourceName, game.version ? `Version ${game.version}` : null].filter(Boolean).join(" · "),
 	);
@@ -67,7 +66,7 @@
 
 	function toggleFavorite() {
 		run(async () => {
-			library.replaceGame(await libraryApi.setFavorite(game.id, !game.favorite));
+			onChanged(await libraryApi.setFavorite(game.id, !game.favorite));
 		});
 	}
 
@@ -78,7 +77,7 @@
 	function saveNotes() {
 		if (notes === (game.notes ?? "")) return;
 		run(async () => {
-			library.replaceGame(await libraryApi.update(game.id, { notes }));
+			onChanged(await libraryApi.update(game.id, { notes }));
 		});
 	}
 
@@ -173,7 +172,7 @@
 		<p class="muted">Played {playtime(game.playtimeS)} · Last played {ago(game.lastPlayedAt)}</p>
 	</section>
 
-	<GameInstall {game} {library} />
+	<GameInstall {game} {onChanged} />
 
 	<GameFiles gameId={game.id} {files} />
 

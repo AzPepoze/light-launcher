@@ -4,6 +4,7 @@ export const LIBRARY_GAME_EVENT = "library.game";
 export const LIBRARY_REMOVED_EVENT = "library.removed";
 export const LIBRARY_CHANGED_EVENT = "library.changed";
 export const LIBRARY_INCOMING_EVENT = "library.incoming";
+export const LIBRARY_SYNC_EVENT = "library.sync";
 
 export const DOWNLOAD_PROGRESS_EVENT = "download-progress";
 export const INSTALL_PROGRESS_EVENT = "install-progress";

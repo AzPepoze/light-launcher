@@ -8,10 +8,15 @@ import type {
 	IncomingSuggestion,
 	LibraryEditableFields,
 	LibraryGetResponse,
-	LibraryListResponse,
+	LibraryListPage,
+	LibraryOverview,
+	LibraryPageRequest,
+	LibraryQuery,
+	LibrarySort,
 	LibraryStats,
 	PreviewFile,
 	SearchResponse,
+	SourceTile,
 	UpdateHistoryEntry,
 	UpdatesResponse
 } from "./types";
@@ -25,7 +30,9 @@ import type {
 	WireGameUpdate,
 	WireIncomingItem,
 	WireIncomingReport,
-	WireLibraryPage,
+	WireLibraryList,
+	WireLibraryListRequest,
+	WireLibraryOverview,
 	WireLibraryStats,
 	WirePreview,
 	WireSearchResult,
@@ -105,18 +112,58 @@ function toStats(wire: WireLibraryStats): LibraryStats {
 	};
 }
 
-/** Builds the list view from the games of one or more pages. Counts come from the API, not from the games. */
-export function toLibraryListing(games: Game[], counts: WireLibraryPage): LibraryListResponse {
+const SOURCE_TILES: SourceTile[] = ["poster", "wide", "square"];
+
+/** Unknown or missing tile names fall back to the portrait poster. */
+export function toSourceTile(value: string | undefined): SourceTile {
+	return SOURCE_TILES.find((tile) => tile === value) ?? "poster";
+}
+
+export function toLibraryOverview(wire: WireLibraryOverview): LibraryOverview {
 	return {
-		items: games,
-		stats: toStats(counts.stats),
-		sources: (counts.sources ?? []).map((source) => ({
+		sources: (wire.sources ?? []).map((source) => ({
 			source: source.id,
 			label: source.label,
-			count: source.count
+			count: source.count,
+			tile: toSourceTile(source.tile)
 		})),
-		tags: (counts.tags ?? []).map((tag) => ({ tag: tag.tag, count: tag.count }))
+		tags: (wire.tags ?? []).map((tag) => ({ tag: tag.tag, count: tag.count })),
+		stats: toStats(wire.stats)
 	};
+}
+
+export function toLibraryListPage(wire: WireLibraryList): LibraryListPage {
+	const page: LibraryListPage = { items: (wire.items ?? []).map(toGame) };
+	if (typeof wire.total === "number") page.total = wire.total;
+	return page;
+}
+
+/** The server names for each sort. Titles read A to Z; dates and play times read newest first. */
+const SORT_REQUESTS: Record<LibrarySort, { sort: string; order: "asc" | "desc" }> = {
+	title: { sort: "title", order: "asc" },
+	added: { sort: "added", order: "desc" },
+	lastPlayed: { sort: "lastPlayed", order: "desc" }
+};
+
+export function toWireListRequest(
+	query: LibraryQuery,
+	page: LibraryPageRequest
+): WireLibraryListRequest {
+	const request: WireLibraryListRequest = {
+		search: query.search,
+		source: query.source,
+		tags: query.tags,
+		favorite: query.favorite,
+		updates: query.updates,
+		sort: SORT_REQUESTS[query.sort].sort,
+		order: SORT_REQUESTS[query.sort].order,
+		offset: page.offset,
+		limit: page.limit,
+		wantTotal: page.wantTotal
+	};
+	// The server treats installed as a yes or no filter, so it is only sent when it is on.
+	if (query.installed) request.installed = true;
+	return request;
 }
 
 function toGameFile(wire: WireGameFile): GameFile {

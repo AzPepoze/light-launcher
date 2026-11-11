@@ -6,14 +6,17 @@ import {
 	toGameDetail,
 	toGameUpdate,
 	toIncomingList,
-	toLibraryListing,
+	toLibraryListPage,
+	toLibraryOverview,
 	toPreview,
 	toSearchResponse,
+	toSourceTile,
 	toUpdateHistory,
-	toUpdatesSummary
+	toUpdatesSummary,
+	toWireListRequest
 } from "./libraryMap";
-import type { Game } from "./types";
-import type { WireGame, WireGameDetail, WireLibraryPage } from "./wire";
+import type { Game, LibraryQuery } from "./types";
+import type { WireGame, WireGameDetail, WireLibraryList, WireLibraryOverview } from "./wire";
 
 function makeWire(overrides: Partial<WireGame> = {}): WireGame {
 	return {
@@ -162,47 +165,127 @@ describe("toGame", () => {
 	});
 });
 
-function makePage(overrides: Partial<WireLibraryPage> = {}): WireLibraryPage {
-	return {
-		items: [],
-		total: 0,
-		sources: [],
-		tags: [],
-		stats: { total: 0, installed: 0, updates: 0, bytes: 0, playtime: 0 },
-		...overrides
-	};
+const EMPTY_STATS = { total: 0, installed: 0, updates: 0, bytes: 0, playtime: 0 };
+
+function makeOverview(overrides: Partial<WireLibraryOverview> = {}): WireLibraryOverview {
+	return { sources: [], tags: [], stats: EMPTY_STATS, ...overrides };
 }
 
-describe("toLibraryListing", () => {
-	it("uses the counts the API sent for the whole library", () => {
-		const games = [makeGame({ id: 1 })];
-		const listing = toLibraryListing(
-			games,
-			makePage({
+describe("toLibraryOverview", () => {
+	it("maps the sources with their tile shape, and the tags and stats", () => {
+		const overview = toLibraryOverview(
+			makeOverview({
 				stats: { total: 3, installed: 1, updates: 1, bytes: 150, playtime: 15 },
 				sources: [
-					{ id: "gog", label: "GOG", count: 2 },
-					{ id: "itch", label: "itch.io", count: 1 }
+					{ id: "manual", label: "Local games", count: 1, tile: "square" },
+					{ id: "f95", label: "F95 Zone", count: 2, tile: "wide" }
 				],
 				tags: [{ tag: "a", count: 2 }]
 			})
 		);
-		expect(listing.items).toBe(games);
-		expect(listing.stats).toEqual({ total: 3, installed: 1, updates: 1, bytes: 150, playtime: 15 });
-		expect(listing.sources).toEqual([
-			{ source: "gog", label: "GOG", count: 2 },
-			{ source: "itch", label: "itch.io", count: 1 }
+		expect(overview.sources).toEqual([
+			{ source: "manual", label: "Local games", count: 1, tile: "square" },
+			{ source: "f95", label: "F95 Zone", count: 2, tile: "wide" }
 		]);
-		expect(listing.tags).toEqual([{ tag: "a", count: 2 }]);
+		expect(overview.tags).toEqual([{ tag: "a", count: 2 }]);
+		expect(overview.stats).toEqual({
+			total: 3,
+			installed: 1,
+			updates: 1,
+			bytes: 150,
+			playtime: 15
+		});
 	});
 
 	it("returns empty lists when the API sends none", () => {
-		expect(toLibraryListing([], makePage({ sources: null, tags: null }))).toEqual({
-			items: [],
-			stats: { total: 0, installed: 0, updates: 0, bytes: 0, playtime: 0 },
+		expect(toLibraryOverview(makeOverview({ sources: null, tags: null }))).toEqual({
 			sources: [],
-			tags: []
+			tags: [],
+			stats: EMPTY_STATS
 		});
+	});
+});
+
+describe("toSourceTile", () => {
+	it("keeps the three known shapes", () => {
+		expect(toSourceTile("poster")).toBe("poster");
+		expect(toSourceTile("wide")).toBe("wide");
+		expect(toSourceTile("square")).toBe("square");
+	});
+
+	it("falls back to the poster shape for an unknown or missing value", () => {
+		expect(toSourceTile("round")).toBe("poster");
+		expect(toSourceTile(undefined)).toBe("poster");
+	});
+});
+
+describe("toLibraryListPage", () => {
+	it("maps the games and keeps the total when the API sends it", () => {
+		const page = toLibraryListPage({ items: [makeWire({ id: 4 })], total: 90 });
+		expect(page.items.map((game) => game.id)).toEqual([4]);
+		expect(page.total).toBe(90);
+	});
+
+	it("leaves the total out when the API omits it", () => {
+		const page = toLibraryListPage({ items: [] } as WireLibraryList);
+		expect(page).toEqual({ items: [] });
+	});
+
+	it("treats null items as an empty page", () => {
+		expect(toLibraryListPage({ items: null } as WireLibraryList).items).toEqual([]);
+	});
+});
+
+const QUERY: LibraryQuery = {
+	source: "f95",
+	search: "dark",
+	tags: ["rpg"],
+	favorite: true,
+	installed: false,
+	updates: false,
+	sort: "added"
+};
+
+describe("toWireListRequest", () => {
+	it("sends the flat filter fields, the page and the total flag", () => {
+		expect(toWireListRequest(QUERY, { offset: 120, limit: 60, wantTotal: true })).toEqual({
+			search: "dark",
+			source: "f95",
+			tags: ["rpg"],
+			favorite: true,
+			updates: false,
+			sort: "added",
+			order: "desc",
+			offset: 120,
+			limit: 60,
+			wantTotal: true
+		});
+	});
+
+	it("leaves installed out unless the installed filter is on", () => {
+		const request = toWireListRequest(QUERY, { offset: 0, limit: 60, wantTotal: false });
+		expect(request).not.toHaveProperty("installed");
+	});
+
+	it("sends installed as true when the filter is on", () => {
+		const request = toWireListRequest(
+			{ ...QUERY, installed: true },
+			{ offset: 0, limit: 60, wantTotal: false }
+		);
+		expect(request.installed).toBe(true);
+	});
+
+	it.each([
+		["title", "title", "asc"],
+		["added", "added", "desc"],
+		["lastPlayed", "lastPlayed", "desc"]
+	] as const)("maps the %s sort to the server sort %s, %s", (sort, serverSort, order) => {
+		const request = toWireListRequest(
+			{ ...QUERY, sort },
+			{ offset: 0, limit: 60, wantTotal: false }
+		);
+		expect(request.sort).toBe(serverSort);
+		expect(request.order).toBe(order);
 	});
 });
 

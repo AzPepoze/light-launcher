@@ -78,10 +78,14 @@ export interface WireLibraryStats {
 	playtime: number;
 }
 
-export interface WireLibraryPage {
+/** One page of LibraryList. total is omitted unless the page is the first or wantTotal was set. */
+export interface WireLibraryList {
 	items: WireGame[] | null;
-	total: number;
-	sources: { id: string; label: string; count: number }[] | null;
+	total?: number;
+}
+
+export interface WireLibraryOverview {
+	sources: { id: string; label: string; count: number; tile?: string }[] | null;
 	tags: { tag: string; count: number }[] | null;
 	stats: WireLibraryStats;
 }
@@ -99,6 +103,10 @@ export interface WireLibraryFilter {
 	order?: string;
 	limit?: number;
 	offset?: number;
+}
+
+export interface WireLibraryListRequest extends WireLibraryFilter {
+	wantTotal?: boolean;
 }
 
 export interface WireGameUpdate {

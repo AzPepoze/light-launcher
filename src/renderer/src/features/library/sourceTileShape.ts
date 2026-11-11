@@ -1,15 +1,19 @@
+import type { SourceTile } from "../../lib/features/types";
+
 export interface TileShape {
-	/** CSS aspect-ratio of the cover. */
-	aspect: string;
+	/** Width divided by height of the cover. Used as CSS aspect-ratio. */
+	ratio: number;
 	/** Smallest width of one grid column, in pixels. */
 	minColumnPx: number;
 }
 
-const PORTRAIT: TileShape = { aspect: "3 / 4", minColumnPx: 140 };
-const LANDSCAPE: TileShape = { aspect: "16 / 9", minColumnPx: 240 };
+const SHAPES: Record<SourceTile, TileShape> = {
+	poster: { ratio: 3 / 4, minColumnPx: 140 },
+	wide: { ratio: 16 / 9, minColumnPx: 240 },
+	square: { ratio: 1, minColumnPx: 140 }
+};
 
-const SOURCE_SHAPES = new Map<string, TileShape>([["f95", LANDSCAPE]]);
-
-export function tileShapeFor(source: string): TileShape {
-	return SOURCE_SHAPES.get(source) ?? PORTRAIT;
+/** The cover shape a source declares in its plugin manifest. */
+export function tileShapeFor(tile: SourceTile): TileShape {
+	return SHAPES[tile];
 }

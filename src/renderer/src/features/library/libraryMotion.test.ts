@@ -1,41 +1,24 @@
 import { describe, expect, it } from "vitest";
-import type { Game } from "../../lib/features/types";
-import type { GameGroup } from "./libraryGroups";
-import { REVEAL_MAX_TILES, REVEAL_STEP_MS, REVEAL_TILE_MS, revealDoneMs, revealOrder } from "./libraryMotion";
-import { tileShapeFor } from "./sourceTileShape";
+import {
+	REVEAL_MAX_TILES,
+	REVEAL_STEP_MS,
+	REVEAL_TILE_MS,
+	revealDoneMs,
+	revealIndex
+} from "./libraryMotion";
 
-function gameWithId(id: number): Game {
-	return { id } as Game;
-}
-
-function groupOf(source: string, ids: number[]): GameGroup {
-	return {
-		source,
-		label: source,
-		shape: tileShapeFor(source),
-		games: ids.map(gameWithId)
-	};
-}
-
-describe("revealOrder", () => {
-	it("numbers tiles in display order across groups", () => {
-		const order = revealOrder([groupOf("manual", [4, 2]), groupOf("f95", [9])]);
-		expect([...order.entries()]).toEqual([
-			[4, 0],
-			[2, 1],
-			[9, 2]
-		]);
+describe("revealIndex", () => {
+	it("gives the first tiles their position in the reveal", () => {
+		expect(revealIndex(0, false)).toBe(0);
+		expect(revealIndex(5, false)).toBe(5);
 	});
 
-	it("stops at the reveal limit", () => {
-		const ids = Array.from({ length: REVEAL_MAX_TILES + 5 }, (_, index) => index + 1);
-		const order = revealOrder([groupOf("manual", ids)]);
-		expect(order.size).toBe(REVEAL_MAX_TILES);
-		expect(order.has(REVEAL_MAX_TILES + 1)).toBe(false);
+	it("does not animate tiles past the reveal limit", () => {
+		expect(revealIndex(REVEAL_MAX_TILES, false)).toBeUndefined();
 	});
 
-	it("is empty when there are no groups", () => {
-		expect(revealOrder([]).size).toBe(0);
+	it("does not animate again once the first reveal has run", () => {
+		expect(revealIndex(0, true)).toBeUndefined();
 	});
 });
 

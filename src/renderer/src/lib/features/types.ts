@@ -43,11 +43,58 @@ export interface LibraryStats {
 	playtime: number;
 }
 
-export interface LibraryListResponse {
-	items: Game[];
-	stats: LibraryStats;
-	sources: { source: string; label: string; count: number }[];
+/** The sort names the library list accepts. The server names are in libraryMap.ts. */
+export type LibrarySort = "title" | "added" | "lastPlayed";
+
+/** The shape of a source's covers: 3:4, 16:9 or 1:1. */
+export type SourceTile = "poster" | "wide" | "square";
+
+export interface LibrarySource {
+	source: string;
+	label: string;
+	count: number;
+	tile: SourceTile;
+}
+
+/** Counts and the tag list for the whole library. Loaded once, not per page. */
+export interface LibraryOverview {
+	sources: LibrarySource[];
 	tags: { tag: string; count: number }[];
+	stats: LibraryStats;
+}
+
+/** What one list shows. An empty source means every source. */
+export interface LibraryQuery {
+	source: string;
+	search: string;
+	tags: string[];
+	favorite: boolean;
+	installed: boolean;
+	updates: boolean;
+	sort: LibrarySort;
+}
+
+export interface LibraryPageRequest {
+	offset: number;
+	limit: number;
+	wantTotal: boolean;
+}
+
+export interface LibraryListPage {
+	items: Game[];
+	/** Sent for the first page or when asked for. Undefined otherwise. */
+	total?: number;
+}
+
+export type LibrarySyncPhase = "running" | "done" | "error";
+
+export interface LibrarySyncProgress {
+	source: string;
+	phase: LibrarySyncPhase;
+	imported: number;
+	skipped: number;
+	failed: number;
+	message?: string;
 }
 
 export interface GameFile {

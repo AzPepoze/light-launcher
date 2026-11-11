@@ -2,9 +2,8 @@
 	import { errorMessage } from "../../lib/features/rpc";
 	import { libraryApi } from "../../lib/features/libraryApi";
 	import type { Game } from "../../lib/features/types";
-	import type { LibraryState } from "./libraryState.svelte";
 
-	let { game, library }: { game: Game; library: LibraryState } = $props();
+	let { game, onChanged }: { game: Game; onChanged: (game: Game) => void } = $props();
 
 	let sourceUrl = $state("");
 	let message = $state("");
@@ -25,7 +24,7 @@
 		folderError = "";
 		folderMessage = "";
 		try {
-			library.replaceGame(await libraryApi.linkFolder(game.id, folder));
+			onChanged(await libraryApi.linkFolder(game.id, folder));
 			folderMessage = "Linked folder.";
 			folderPath = "";
 			showFolderField = false;
@@ -58,7 +57,7 @@
 		linking = true;
 		message = "";
 		try {
-			library.replaceGame(await libraryApi.linkSource(game.id, url));
+			onChanged(await libraryApi.linkSource(game.id, url));
 			message = "Linked to the source page.";
 			sourceUrl = "";
 		} catch (err) {
