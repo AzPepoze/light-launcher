@@ -29,6 +29,7 @@ Read [Architecture](docs/architecture.md) for how the parts connect.
 | :------------------------------- | :---------------------------- | :---------------------------------------- |
 | Go                               | Everything                    | Version from `go.mod` (currently 1.25.6). |
 | Bun                              | UI, scripts, checks           | All `bun run` commands need it.           |
+| Bash                             | Local build scripts           | Git Bash or WSL on Windows.               |
 | GTK4 and WebKitGTK 6.0 dev files | Linux window program          | See [Building](docs/building.md).         |
 | umu-launcher                     | Running Proton games on Linux | Not needed for tests.                     |
 | NSIS, zip                        | Windows release files         | Only for `scripts/build-windows.sh`.      |
@@ -41,51 +42,68 @@ cd light-launcher
 bun install
 ```
 
-### Build the launcher and serve the UI
+### Run the UI in development
 
 ```sh
-make build
+bun run dev
+```
+
+Open `http://localhost:9245/#t=dev`. Vite serves the page with live reload and proxies API calls to the launcher on port 9246.
+
+### Build locally
+
+```sh
+bun run build
 ./bin/light-launcher
 ```
 
-`make build` builds the launcher with the UI embedded, the game runner and the GTK shell. To run the UI from a different folder, pass `--ui` to the launcher. See [Usage](docs/usage.md#light-launcher).
+`bun run build` builds the launcher with the UI embedded and the game runner. On Linux, `bun run build:linux` also builds the GTK window. To run the UI from a different folder, pass `--ui` to the launcher. See [Usage](docs/usage.md#light-launcher).
 
-For a Vite dev server with live reload, run `make dev` and open the URL that Vite prints. It proxies API calls to the launcher on port 9246.
+> [!NOTE]
+> The local build scripts use Bash. On Windows, run them from Git Bash or WSL, or use `bun run dev` for development.
 
 ## Scripts
 
-| Command                  | What it does                                                   |
-| :----------------------- | :------------------------------------------------------------- |
-| `bun run build`          | Builds the Go programs, then the UI.                           |
-| `bun run build:go`       | Builds `bin/light-launcher` and `bin/light-launcher-instance`. |
-| `bun run build:renderer` | Builds the UI into `src/renderer/dist`.                        |
-| `bun run dev:renderer`   | Starts the Vite dev server for the UI.                         |
-| `bun run dev:go`         | Builds the launcher for development.                           |
-| `bun run test`           | Runs the Vitest tests in `src/`.                               |
-| `bun run typecheck`      | Runs `tsc` and `svelte-check`.                                 |
-| `bun run lint`           | Runs `oxlint`.                                                 |
-| `bun run format`         | Formats the code with `oxfmt`.                                 |
-| `bun run format:check`   | Checks formatting without changing files.                      |
-| `make build`             | Builds all programs; the launcher embeds the UI.               |
-| `make clean`             | Removes `bin`, `dist` and the UI build folder.                 |
+| Command                  | What it does                                                  |
+| :----------------------- | :------------------------------------------------------------ |
+| `bun run build`          | Builds the launcher with the embedded UI and the game runner. |
+| `bun run build:instance` | Builds the game runner.                                       |
+| `bun run build:launcher` | Builds the launcher with the embedded UI.                     |
+| `bun run build:linux`    | Builds the local Linux app, including the GTK window.         |
+| `bun run build:renderer` | Builds the UI into `src/renderer/dist`.                       |
+| `bun run build:shell`    | Builds the GTK window (Linux).                                |
+| `bun run clean`          | Removes `bin`, `dist` and the UI build folder.                |
+| `bun run dev`            | Starts the launcher API and the Vite UI.                      |
+| `bun run dev:renderer`   | Starts only the Vite UI.                                      |
+| `bun run dev:server`     | Starts only the launcher API.                                 |
+| `bun run e2e`            | Runs the launcher API end-to-end test.                        |
+| `bun run format`         | Formats the code with `oxfmt`.                                |
+| `bun run format:check`   | Checks formatting without changing files.                     |
+| `bun run lint`           | Runs `oxlint` and `go vet`.                                   |
+| `bun run lint:fix`       | Fixes lint findings with `oxlint`.                            |
+| `bun run lint:go`        | Runs `go vet` on the Go code.                                 |
+| `bun run lint:ui`        | Runs `oxlint`.                                                |
+| `bun run test`           | Runs the UI and Go tests.                                     |
+| `bun run test:coverage`  | Runs the UI tests with coverage.                              |
+| `bun run test:go`        | Runs the Go tests.                                            |
+| `bun run test:ui`        | Runs the Vitest tests.                                        |
+| `bun run test:watch`     | Runs the Vitest tests in watch mode.                          |
+| `bun run typecheck`      | Runs `tsc` and `svelte-check`.                                |
 
 ## Tests and checks
 
 CI runs these checks. Run them before you open a pull request.
 
 ```sh
-# Go
-go vet ./...
-go test ./...
-(cd shell/logx && go test ./...)
-
-# UI and TypeScript
+# Go and UI
 bun run lint
 bun run format:check
 bun run typecheck
 bun run test
+bun run e2e
 
 # Window programs
+(cd shell/logx && go test ./...)
 (cd shell/gtk && go vet ./... && go test ./... && go build -o ../../bin/light-launcher-shell .)
 (cd shell/webview2 && GOOS=windows GOARCH=amd64 go vet ./...)
 ```

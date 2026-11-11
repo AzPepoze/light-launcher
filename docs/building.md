@@ -36,15 +36,18 @@ This page explains how to build the Linux and Windows files from source.
    ```
 
 > [!NOTE]
-> The launcher is built from `core/cmd/launcher` with the `embedui` tag. The UI is copied there while the build runs, and the copy is removed at the end. `make build` uses the same script as the release builds, so the UI is embedded in `bin/light-launcher` too.
+> The launcher is built from `core/cmd/launcher` with the `embedui` tag. The UI is copied there while the build runs, and the copy is removed at the end. `bun run build:launcher` uses the same script as the release builds, so the UI is embedded in `bin/light-launcher` too.
 
 ## Development build
 
 ```sh
-make build
+bun run build
 ```
 
-This writes `bin/light-launcher`, `bin/light-launcher-instance` and `bin/light-launcher-shell`. The launcher has the UI built in, so it runs without `--ui`. `make dev` starts the Vite dev server and the launcher API instead.
+This writes `bin/light-launcher` and `bin/light-launcher-instance`. The launcher has the UI built in, so it runs without `--ui`. On Linux, `bun run build:linux` also builds the GTK window. `bun run dev` starts the Vite dev server and the launcher API instead.
+
+> [!NOTE]
+> The local build scripts use Bash. On Windows, run them from Git Bash or WSL, or use `bun run dev`.
 
 ## Output
 

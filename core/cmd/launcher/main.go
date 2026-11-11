@@ -24,6 +24,8 @@ const (
 
 	// defaultDevPort is the port the Vite dev proxy expects when --dev-token is given.
 	defaultDevPort = 9246
+	// defaultVitePort is the port the Vite dev server uses. Keep it in sync with src/renderer/vite.config.ts.
+	defaultVitePort = 9245
 )
 
 // version is the launcher version. The release build sets it with -ldflags "-X main.version=...".
@@ -82,6 +84,7 @@ func launch(args []string) int {
 		LockPath: lockPath,
 		Port:     port,
 		Token:    token,
+		DevUI:    devUIURL(opts.devToken),
 	})
 	if err != nil {
 		logger.Error("main", "%v", err)
@@ -100,6 +103,14 @@ func apiEndpoint(opts options) (int, string) {
 		return defaultDevPort, opts.devToken
 	}
 	return opts.port, opts.devToken
+}
+
+// devUIURL returns the Vite page URL, or "" when no dev token is given.
+func devUIURL(token string) string {
+	if token == "" {
+		return ""
+	}
+	return fmt.Sprintf("http://localhost:%d/#t=%s", defaultVitePort, token)
 }
 
 func parseOptions(args []string) (options, error) {

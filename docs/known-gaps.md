@@ -96,7 +96,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [x] | Cached screenshots are served through the media route and shown in the detail panel. |
 | [ ] | Covers behind a login (F95) may fail because media fetches send no cookies. |
 | [x] | Remove the old `/api/cover/{id}` route (the media route replaced it). |
-| [x] | `make build` embeds the UI, so the launcher starts without `--ui`. |
+| [x] | `bun run build:launcher` embeds the UI, so the launcher starts without `--ui`. |
 | [ ] | The NativeWayland setting is saved but has no effect; GTK picks the display system. |
 | [ ] | The GTK shell does not remember the window position or size between runs. |
 | [x] | Cover and screenshot images are evicted from memory least-recently-used first (200 entries). |

@@ -32,6 +32,7 @@ type runConfig struct {
 	LockPath string
 	Port     int
 	Token    string
+	DevUI    string // Vite page URL in development; empty serves the UI from the launcher.
 }
 
 // run serves the UI API on a loopback port, opens the window and blocks until the window closes or
@@ -86,12 +87,16 @@ func run(ctx context.Context, cfg runConfig) error {
 	// The token rides in the URL fragment, so it never reaches the server in a request line.
 	// The shell gets the URL through LL_URL, not argv.
 	url := fmt.Sprintf("http://127.0.0.1:%d/#t=%s", port, token)
+	pageURL := url
+	if cfg.DevUI != "" {
+		pageURL = cfg.DevUI
+	}
 	if cfg.NoShell {
-		logger.Info("main", "open %s", url)
+		logger.Info("main", "open %s", pageURL)
 		<-ctx.Done()
 		return nil
 	}
-	return openWindow(ctx, cfg.Shell, url)
+	return openWindow(ctx, cfg.Shell, pageURL)
 }
 
 // openGame tells the UI that a second launch sent a game. The first game is read with GetInitialGamePath.

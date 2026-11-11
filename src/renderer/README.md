@@ -22,11 +22,10 @@ From the repository root:
 bun run dev
 ```
 
-| Step   | What happens                                                              |
-| ------ | ------------------------------------------------------------------------- |
-| Build  | Builds the Go launcher into `bin/light-launcher`                          |
-| Server | Starts it with `--no-shell --port 9246 --dev-token dev --ui src/renderer` |
-| UI     | Starts the Vite dev server on port 9245                                   |
+| Step   | What happens                                                                      |
+| ------ | --------------------------------------------------------------------------------- |
+| Server | Runs the launcher with `--no-shell --port 9246 --dev-token dev --ui src/renderer` |
+| UI     | Starts the Vite dev server on port 9245                                           |
 
 Open `http://localhost:9245/#t=dev` in a browser. Vite forwards `/api` to the Go server.
 
@@ -34,12 +33,12 @@ The launcher serves the API and reads its UI from `src/renderer`; Vite serves th
 
 ## Scripts
 
-| Script                   | What it does                                            |
-| ------------------------ | ------------------------------------------------------- |
-| `bun run dev`            | Build the Go launcher, then start the UI and the server |
-| `bun run build`          | Build the Go binaries and the UI                        |
-| `bun run build:renderer` | Build only the UI into `src/renderer/dist`              |
-| `bun run typecheck`      | Check TypeScript and Svelte types                       |
-| `bun run lint`           | Run oxlint                                              |
-| `bun run format:check`   | Check formatting with oxfmt                             |
-| `bun run test`           | Run the unit tests with vitest                          |
+| Script                   | What it does                               |
+| ------------------------ | ------------------------------------------ |
+| `bun run build:renderer` | Build only the UI into `src/renderer/dist` |
+| `bun run dev`            | Start the launcher API and the Vite UI     |
+| `bun run format:check`   | Check formatting with oxfmt                |
+| `bun run lint:ui`        | Run oxlint                                 |
+| `bun run test`           | Run the UI and Go tests                    |
+| `bun run test:ui`        | Run the unit tests with vitest             |
+| `bun run typecheck`      | Check TypeScript and Svelte types          |

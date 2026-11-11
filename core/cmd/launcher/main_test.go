@@ -62,3 +62,13 @@ func TestAPIEndpointUsesFixedValuesOnlyWithDevToken(t *testing.T) {
 		t.Fatalf("explicit port ignored: %d", port)
 	}
 }
+
+func TestDevUIURLPointsAtViteOnlyWithADevToken(t *testing.T) {
+	if got := devUIURL(""); got != "" {
+		t.Fatalf("devUIURL with no token = %q, want empty", got)
+	}
+	want := "http://localhost:9245/#t=dev"
+	if got := devUIURL("dev"); got != want {
+		t.Fatalf("devUIURL = %q, want %q", got, want)
+	}
+}
