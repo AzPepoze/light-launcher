@@ -18,7 +18,6 @@ import type {
 	LibraryGetResponse,
 	LibraryListResponse,
 	SearchResponse,
-	UpdateHistoryEntry,
 	UpdatesResponse
 } from "./types";
 import type {
