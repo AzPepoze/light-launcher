@@ -104,7 +104,8 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 
 | Status | Item |
 |---|---|
-| [ ] | Auto-update for the launcher and for plugins, with rollback. |
+| [ ] | Update the launcher itself from its GitHub Releases (separate install step on each OS). Not now. |
+| [ ] | Optional auto-update for plugins when permissions do not change. Not wanted for now: updates are always manual. |
 | [ ] | Deep links (`lightlauncher://`). |
 | [ ] | Thai and English text, and accessibility checks. |
 | [ ] | macOS support (out of scope for now). |
