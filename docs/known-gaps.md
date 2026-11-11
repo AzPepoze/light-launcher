@@ -47,6 +47,8 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | Browser assist (Chrome or Edge over CDP) is not implemented in the host (in progress). |
 | [ ] | Embedded browser assist: open the page in a Qt WebEngine window or WebView2 window of the shell and catch the download there. Needs a launcher-to-shell control channel; external browser stays as the fallback. |
 | [ ] | Plugin secrets saved before the cleanup change are not removed when the plugin is removed. |
+| [x] | Stop plugins that stay idle for 5 minutes, with `pluginIdleTimeoutMinutes` to change or disable it. |
+| [ ] | Check the "Sleeping" plugin badge by eye in the real window (only typecheck, tests and build so far). |
 | [ ] | OS-level sandbox for plugins (permissions only cover host services today). |
 | [ ] | Resource limits for plugins (CPU, memory). |
 

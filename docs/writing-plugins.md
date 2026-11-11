@@ -74,7 +74,11 @@ Plugins use JSON-RPC 2.0. Each message is one line of JSON. The launcher writes 
 | Health check | Every 15 seconds the launcher pings the plugin. A plugin that does not answer is stopped.              |
 | Crash        | The launcher restarts the plugin after a short wait. The wait doubles each time, up to 30 seconds.     |
 | Crash limit  | Three crashes within 5 minutes turn the plugin off.                                                    |
+| Sleep        | After 5 minutes without a call, the launcher stops the plugin. The next call starts it again.           |
 | Stop         | The launcher sends `shutdown`. The plugin has a short time to finish, then it is stopped.              |
+
+> [!IMPORTANT]
+> A plugin may be stopped when idle, so do not keep important state only in memory. Save it through `storage.set` or your settings, and read it again on start or per call. Do not assume the same process stays alive between calls.
 
 ## What a plugin can ask the host for
 

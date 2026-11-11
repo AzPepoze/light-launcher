@@ -125,6 +125,24 @@ To sign in, open the plugin's accounts section, then paste the value. The plugin
 
 Plugin settings are a form the plugin defines. Your values are saved in `plugin-data/<id>/settings.json` in the base folder. See [File locations](usage.md#file-locations).
 
+## Sleeping plugins
+
+A plugin that nobody has called for 5 minutes is stopped to free its memory. The plugin shows "Sleeping" in the plugin list. The next request starts it again, and the result is the same as if it had stayed open.
+
+Change the wait in `settings.json` in the base folder. Add `pluginIdleTimeoutMinutes` to the settings object:
+
+```json
+{ "pluginIdleTimeoutMinutes": 15 }
+```
+
+| Value   | Effect                                           |
+| :------ | :----------------------------------------------- |
+| `0`     | Never stop a plugin for being idle.              |
+| `1`-`1440` | Minutes without a call before the plugin sleeps. |
+| Missing | Use the default of 5 minutes.                    |
+
+A plugin with a call in progress, an open browser step, or a running progress job keeps running.
+
 ## Known plugins
 
 These two plugins are built as separate projects. They are not in the launcher.
