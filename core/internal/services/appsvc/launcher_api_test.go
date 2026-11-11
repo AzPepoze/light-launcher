@@ -110,8 +110,8 @@ func TestRememberedLauncherThatIsDeletedFallsBackToRules(t *testing.T) {
 func TestGetAutoScannedGamesOneCardPerGameFolder(t *testing.T) {
 	svc := newTestService(t)
 	root := config.CleanPath(t.TempDir())
-	const folders = 1000
-	writeGameTree(t, root, folders)
+	const categories, gamesPerCategory = 20, 50
+	writeGameTree(t, root, categories, gamesPerCategory)
 	if err := svc.addScanFolder(root); err != nil {
 		t.Fatalf("addScanFolder: %v", err)
 	}
@@ -121,8 +121,8 @@ func TestGetAutoScannedGamesOneCardPerGameFolder(t *testing.T) {
 		t.Fatalf("getAutoScannedGames: %v", err)
 	}
 	games := groups[0].Games
-	if len(games) != folders {
-		t.Fatalf("got %d cards for %d game folders", len(games), folders)
+	if want := categories * gamesPerCategory; len(games) != want {
+		t.Fatalf("got %d cards for %d game folders", len(games), want)
 	}
 	for _, game := range games {
 		if game.LauncherCount != 2 || filepath.Base(game.Path) != filepath.Base(game.Folder)+".exe" {

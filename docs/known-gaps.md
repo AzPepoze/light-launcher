@@ -104,6 +104,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | Home card per game folder: the backend is done, but the "Choose launcher" menu on the card is not in the UI yet. |
 | [ ] | Helper programs are found by name only. A helper with another name still shows as a launcher. |
 | [ ] | A forced scan of 2,000 executables takes about 80 ms. Most of it is reading the config files, not grouping. |
+| [ ] | No manual setting for how deep the game folders are. The automatic rule can misjudge a game folder that has three or more sub-apps and no exe of its own. |
 
 ## Migration
 

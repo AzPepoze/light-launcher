@@ -32,12 +32,16 @@ func newTestService(t testing.TB) *service {
 	)
 }
 
-// writeGameTree makes folders game folders under root. Each holds Game<i>.exe and a 32-bit Game<i>32.exe.
-func writeGameTree(t testing.TB, root string, folders int) {
+// writeGameTree makes categories category folders under root, each with gamesPerCategory game
+// folders. Each game folder holds a launcher and a 32-bit copy of it.
+func writeGameTree(t testing.TB, root string, categories, gamesPerCategory int) {
 	t.Helper()
-	for i := range folders {
-		name := fmt.Sprintf("Game%04d", i)
-		mustWrite(t, filepath.Join(root, name, name+".exe"))
-		mustWrite(t, filepath.Join(root, name, name+"32.exe"))
+	for c := range categories {
+		for g := range gamesPerCategory {
+			name := fmt.Sprintf("Game%02d-%03d", c, g)
+			dir := filepath.Join(root, fmt.Sprintf("Category%02d", c), name)
+			mustWrite(t, filepath.Join(dir, name+".exe"))
+			mustWrite(t, filepath.Join(dir, name+"32.exe"))
+		}
 	}
 }

@@ -9,13 +9,13 @@ LightLauncher looks in the folders you watch and finds games there. Each game fo
 | Step   | What happens                                                                                    |
 | :----- | :---------------------------------------------------------------------------------------------- |
 | Find   | Every `.exe` file under a watched folder, down to the depth you set.                            |
-| Group  | Files in the same game folder make one card.                                                    |
+| Group  | Files in the same game folder make one card. See [Categories](#categories).                     |
 | Drop   | Helper programs are removed. See [Helper programs](#helper-programs).                           |
 | Pick   | One file is the main launcher. The card starts that file. See [Main launcher](#main-launcher). |
 
 ```text
 Games/                       <- watched folder
-├── MyGame/                <- one card: MyGame
+├── MyGame/                  <- one card: MyGame
 │   ├── MyGame.exe
 │   └── Binaries/Win64/MyGame-Win64-Shipping.exe
 └── Solo.exe                 <- one card: Solo
@@ -23,6 +23,35 @@ Games/                       <- watched folder
 
 > [!NOTE]
 > An `.exe` file directly inside a watched folder is its own game. It makes one card.
+
+## Categories
+
+A folder that holds several game folders is a category, not a game. The games inside it get their own cards.
+
+| Folder                                          | Rule                                                  | Card          |
+| :---------------------------------------------- | :---------------------------------------------------- | :------------ |
+| No `.exe` of its own, 3 or more game folders    | Category                                              | None          |
+| Has an `.exe` of its own                        | Game                                                  | One card      |
+| Has fewer than 3 sub-folders with `.exe` files  | Game, even if it has several `.exe` files inside      | One card      |
+
+```text
+Games/                       <- watched folder
+├── Action/                  <- category: no exe, 3 game folders
+│   ├── Alpha/               <- one card: Alpha
+│   │   └── Alpha.exe
+│   ├── Beta/                <- one card: Beta
+│   │   └── Beta.exe
+│   └── Gamma/               <- one card: Gamma
+│       └── Gamma.exe
+└── Puzzle/                  <- category
+    ├── Delta/               <- one card: Delta
+    │   └── Delta.exe
+    └── Epsilon/             <- one card: Epsilon
+        └── Epsilon.exe
+```
+
+> [!WARNING]
+> A game folder with no `.exe` of its own and 3 or more sub-folders with `.exe` files looks like a category. Put a launcher `.exe` directly in that folder to keep it as one game.
 
 ## Main launcher
 
