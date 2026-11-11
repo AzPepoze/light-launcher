@@ -28,6 +28,31 @@ The install dialog shows the plugin's permissions. The command line prints them 
 > [!NOTE]
 > The launcher has no built-in plugin catalog. Install plugins from sources you trust.
 
+### Install several plugins at once
+
+On the Plugins page, drop several items together, or use **Choose files** and pick several `.llplugin` or `.zip` files.
+
+| You drop                                     | Result                                       |
+| :------------------------------------------- | :------------------------------------------- |
+| A `.llplugin` or `.zip` file                 | One plugin.                                  |
+| A folder with `plugin.json` directly inside  | One plugin. Only that folder's files are used. |
+| A loose file, such as `notes.txt`            | Skipped. The page shows its name.            |
+| A folder without `plugin.json`               | Skipped. The page shows its name.            |
+| A folder that holds plugin folders inside it | Skipped. Drop each plugin folder on its own. |
+
+Each plugin then opens its own consent screen, one after another, labelled "Plugin 2 of 3".
+
+| Button | Effect                                                    |
+| :----- | :-------------------------------------------------------- |
+| Install plugin | Installs this plugin and moves on to the next one.  |
+| Cancel | Skips this plugin only. The next one opens.               |
+| Close (X) | Same as Cancel.                                        |
+
+Every plugin needs its own tick in the consent box. A single tick does not cover several plugins. When the queue ends, the page shows a line such as "Installed 2 of 3 plugins".
+
+> [!TIP]
+> If one plugin fails to upload, the page shows its error. Press **Dismiss** and the next plugin opens.
+
 ## Update, turn off, or remove
 
 | Task                         | Command                                           |
@@ -100,7 +125,7 @@ Each plugin lists what it may use in its `plugin.json`. The launcher shows this 
 
 | Permission | What it lets the plugin do through the launcher                                                         |
 | :--------- | :------------------------------------------------------------------------------------------------------ |
-| `network`  | Make web requests to the listed sites only.                                                             |
+| `network`  | Make web requests to the listed sites only. The consent screen groups `*.example.com` and `example.com` into one line. |
 | `fs`       | Read and write files in named folders, such as `$GAMES` or `$DOWNLOADS`.                                |
 | `secrets`  | Save and read secrets, such as sign-in cookies, in a secure store. See [Security](security.md#secrets). |
 | `browser`  | Open a built-in browser window for a manual step and catch the download link.                          |
