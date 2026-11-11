@@ -13,11 +13,10 @@ func newAssistSession(opts assistOptions, events *eventWriter) *assistSession {
 	profile := newAssistProfile(opts.profile)
 	jar := newCookieJar()
 	store := profile.CookieStore()
+	// Removals are ignored on purpose: setting a cookie to the same value reports only a removal, and a
+	// changed value reports a removal then an add. Keeping the last added value is right for both.
 	store.OnCookieAdded(func(cookie *network.QNetworkCookie) {
 		jar.add(cookieFromQt(cookie))
-	})
-	store.OnCookieRemoved(func(cookie *network.QNetworkCookie) {
-		jar.remove(cookieFromQt(cookie))
 	})
 	store.LoadAllCookies()
 

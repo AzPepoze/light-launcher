@@ -46,18 +46,13 @@ func TestCookieHeaderMatchesDomainPathAndSecure(t *testing.T) {
 	}
 }
 
-func TestCookieJarUpdatesAndRemovesByIdentifier(t *testing.T) {
+func TestCookieJarUpdatesByIdentifier(t *testing.T) {
 	jar := newCookieJar()
 	jar.add(cookie{Name: "sid", Value: "old", Domain: "example.com", Path: "/"})
 	jar.add(cookie{Name: "sid", Value: "new", Domain: ".example.com", Path: ""})
 
 	if got, want := jar.header("https://example.com/"), "sid=new"; got != want {
 		t.Fatalf("header after update = %q, want %q", got, want)
-	}
-
-	jar.remove(cookie{Name: "sid", Domain: ".EXAMPLE.com", Path: "/"})
-	if got := jar.header("https://example.com/"); got != "" {
-		t.Fatalf("header after removal = %q, want empty", got)
 	}
 }
 

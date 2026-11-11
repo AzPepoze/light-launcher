@@ -41,17 +41,6 @@ func (j *cookieJar) add(c cookie) {
 	j.cookies = append(j.cookies, c)
 }
 
-func (j *cookieJar) remove(c cookie) {
-	j.mu.Lock()
-	defer j.mu.Unlock()
-	for i := range j.cookies {
-		if j.cookies[i].sameIdentifier(c) {
-			j.cookies = append(j.cookies[:i], j.cookies[i+1:]...)
-			return
-		}
-	}
-}
-
 // header returns the Cookie request header for a download URL. Longer paths go first, as browsers do.
 func (j *cookieJar) header(rawURL string) string {
 	target, err := url.Parse(rawURL)
