@@ -92,7 +92,7 @@ func readJSONFile(path string, target any) error {
 	return json.Unmarshal(data, target)
 }
 
-// writeJSONFile replaces a JSON file through a temp file, so a crash never leaves half a file.
+// writeJSONFile replaces a JSON file atomically, so a crash never leaves half a file.
 func writeJSONFile(path string, value any) error {
 	data, err := json.MarshalIndent(value, "", "  ")
 	if err != nil {
@@ -101,9 +101,33 @@ func writeJSONFile(path string, value any) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
 	}
-	tmp := path + ".tmp"
-	if err := os.WriteFile(tmp, append(data, '\n'), 0o644); err != nil {
+	return writeFileAtomic(path, append(data, '\n'))
+}
+
+// writeFileAtomic writes data to a unique temp file next to path, syncs it and renames it over path.
+// Each call has its own temp file, so two writers never share one.
+func writeFileAtomic(path string, data []byte) (err error) {
+	tmp, err := os.CreateTemp(filepath.Dir(path), filepath.Base(path)+".*.tmp")
+	if err != nil {
 		return err
 	}
-	return os.Rename(tmp, path)
+	defer func() {
+		if err != nil {
+			_ = tmp.Close()
+			_ = os.Remove(tmp.Name())
+		}
+	}()
+	if _, err = tmp.Write(data); err != nil {
+		return err
+	}
+	if err = tmp.Sync(); err != nil {
+		return err
+	}
+	if err = tmp.Close(); err != nil {
+		return err
+	}
+	if err = os.Chmod(tmp.Name(), 0o644); err != nil {
+		return err
+	}
+	return os.Rename(tmp.Name(), path)
 }

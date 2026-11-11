@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"os"
 	"path/filepath"
 	"reflect"
+	"sync"
 	"testing"
 
 	"light-launcher/core/internal/api"
@@ -202,6 +204,50 @@ func TestSettingsGetServiceAppliesDefaults(t *testing.T) {
 	want := map[string]any{"region": "us", "retries": 2.0, "verbose": true}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("settings.get = %v, want %v", got, want)
+	}
+}
+
+func TestWriteJSONFileReplacesAndLeavesNoTempFiles(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, settingsFileName)
+	if err := writeJSONFile(path, map[string]any{"a": 1.0}); err != nil {
+		t.Fatal(err)
+	}
+	if err := writeJSONFile(path, map[string]any{"b": 2.0}); err != nil {
+		t.Fatal(err)
+	}
+	got := map[string]any{}
+	if err := readJSONFile(path, &got); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(got, map[string]any{"b": 2.0}) {
+		t.Fatalf("file = %v, want the second write", got)
+	}
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 1 {
+		t.Fatalf("folder has %d entries, want only the settings file", len(entries))
+	}
+}
+
+func TestWriteJSONFileConcurrentWritersStayValid(t *testing.T) {
+	path := filepath.Join(t.TempDir(), settingsFileName)
+	var wg sync.WaitGroup
+	for i := range 20 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if err := writeJSONFile(path, map[string]any{"n": float64(i)}); err != nil {
+				t.Errorf("writeJSONFile: %v", err)
+			}
+		}()
+	}
+	wg.Wait()
+	got := map[string]any{}
+	if err := readJSONFile(path, &got); err != nil {
+		t.Fatalf("file is not valid JSON after concurrent writes: %v", err)
 	}
 }
 
