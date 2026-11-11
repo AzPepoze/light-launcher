@@ -14,7 +14,7 @@ type secretParams struct {
 	Value *string `json:"value"`
 }
 
-// serviceSecretsGet returns one secret of this plugin, or null when it is not set.
+// serviceSecretsGet returns {"value": secret} for this plugin, with a null value when it is not set.
 func serviceSecretsGet(ctx context.Context, env *pluginEnv, params json.RawMessage) (any, error) {
 	req, err := decodeParams[secretParams](params)
 	if err != nil {
@@ -32,9 +32,14 @@ func serviceSecretsGet(ctx context.Context, env *pluginEnv, params json.RawMessa
 		return nil, internalError(err.Error())
 	}
 	if !found {
-		return nil, nil
+		return valueReply{Value: nil}, nil
 	}
-	return value, nil
+	return valueReply{Value: value}, nil
+}
+
+// valueReply is the protocol shape of secrets.get and storage.get results.
+type valueReply struct {
+	Value any `json:"value"`
 }
 
 func serviceSecretsSet(ctx context.Context, env *pluginEnv, params json.RawMessage) (any, error) {

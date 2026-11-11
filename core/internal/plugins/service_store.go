@@ -33,7 +33,11 @@ func serviceStorageGet(_ context.Context, env *pluginEnv, params json.RawMessage
 	if err != nil {
 		return nil, internalError(err.Error())
 	}
-	return book[req.Key], nil
+	raw, found := book[req.Key]
+	if !found {
+		return valueReply{Value: nil}, nil
+	}
+	return valueReply{Value: raw}, nil
 }
 
 // serviceStorageSet writes one value to the plugin's key/value file.
@@ -61,13 +65,13 @@ func serviceStorageSet(_ context.Context, env *pluginEnv, params json.RawMessage
 	return nil, nil
 }
 
-// serviceSettingsGet returns the settings the user saved for this plugin.
+// serviceSettingsGet returns {"settings": saved} for this plugin.
 func serviceSettingsGet(_ context.Context, env *pluginEnv, _ json.RawMessage) (any, error) {
 	settings := map[string]any{}
 	if err := readJSONFile(filepath.Join(env.dataDir, settingsFileName), &settings); err != nil {
 		return nil, internalError(err.Error())
 	}
-	return settings, nil
+	return map[string]any{"settings": settings}, nil
 }
 
 func (env *pluginEnv) readStorage() (map[string]json.RawMessage, error) {

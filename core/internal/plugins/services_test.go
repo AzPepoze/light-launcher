@@ -237,9 +237,34 @@ func TestStorageRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("storage.get: %v", err)
 	}
+	if got := wireJSON(t, value); got != `{"value":{"page":3}}` {
+		t.Fatalf("storage.get reply = %s", got)
+	}
+	missing, err := callService(t, env, "storage.get", map[string]string{"key": "none"})
+	if err != nil || wireJSON(t, missing) != `{"value":null}` {
+		t.Fatalf("missing storage.get reply = %s, %v", wireJSON(t, missing), err)
+	}
+}
+
+// wireJSON returns the compact JSON a service result has on the wire.
+func wireJSON(t *testing.T, value any) string {
+	t.Helper()
+	data, err := json.Marshal(value)
+	if err != nil {
+		t.Fatal(err)
+	}
 	var compact bytes.Buffer
-	if err := json.Compact(&compact, value.(json.RawMessage)); err != nil || compact.String() != `{"page":3}` {
-		t.Fatalf("value = %s, %v", value, err)
+	if err := json.Compact(&compact, data); err != nil {
+		t.Fatal(err)
+	}
+	return compact.String()
+}
+
+func TestSettingsGetWrapsSavedSettings(t *testing.T) {
+	env := testEnv(t, Permissions{}, nil)
+	value, err := callService(t, env, "settings.get", nil)
+	if err != nil || wireJSON(t, value) != `{"settings":{}}` {
+		t.Fatalf("settings.get reply = %s, %v", wireJSON(t, value), err)
 	}
 }
 
@@ -249,14 +274,14 @@ func TestSecretsRoundTripThroughService(t *testing.T) {
 		t.Fatalf("secrets.set: %v", err)
 	}
 	value, err := callService(t, env, "secrets.get", map[string]string{"key": "token"})
-	if err != nil || value != "abc" {
-		t.Fatalf("secrets.get = %v, %v", value, err)
+	if err != nil || wireJSON(t, value) != `{"value":"abc"}` {
+		t.Fatalf("secrets.get reply = %s, %v", wireJSON(t, value), err)
 	}
 	if _, err := callService(t, env, "secrets.delete", map[string]string{"key": "token"}); err != nil {
 		t.Fatalf("secrets.delete: %v", err)
 	}
-	if value, _ := callService(t, env, "secrets.get", map[string]string{"key": "token"}); value != nil {
-		t.Fatalf("deleted secret is still set: %v", value)
+	if value, _ := callService(t, env, "secrets.get", map[string]string{"key": "token"}); wireJSON(t, value) != `{"value":null}` {
+		t.Fatalf("deleted secret is still set: %s", wireJSON(t, value))
 	}
 }
 
