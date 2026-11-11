@@ -10,33 +10,40 @@ See [Architecture](../docs/architecture.md) for the full picture.
 
 | Shell | Binary | Platform | Web engine | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| Qt | `light-launcher-shell` | Linux | Qt6 WebEngine (Chromium) | Builds. Window opens on Hyprland. |
+| Qt | `light-launcher-shell` | Linux | Qt6 WebEngine (Chromium) | Builds. Normal and assist windows open on Hyprland. |
 | WebView2 | `light-launcher-shell.exe` | Windows | Microsoft Edge WebView2 | Cross-compiled only. Not run on Windows yet. |
 
 ## Command line
 
-Normal mode shows the launcher UI:
+The shell has a normal mode, which shows the launcher UI, and an assist mode.
 
 ```text
 light-launcher-shell [--transparent] <url>
+light-launcher-shell --assist <url> --profile <dir> [--title <text>] [--message <text>]
 ```
 
 | Part | Meaning |
 | :--- | :--- |
 | `<url>` | A `http://` or `https://` address with a host. Required. |
 | `--transparent` | Transparent page background. Qt only. WebView2 logs a warning and ignores it. |
+| `--assist <url>` | Assist mode. Show this page for a person and report the download it starts. |
+| `--profile <dir>` | Persistent browser profile folder. Created if missing. Put it under the user config folder, never inside the repository. Cookies and logins survive between runs. |
+| `--title <text>` | Window title in assist mode. Defaults to `LightLauncher`. |
+| `--message <text>` | Short banner above the page in assist mode. |
+
+Assist mode takes the page only from `--assist` and ignores `LL_URL`.
 
 Exit codes:
 
 | Code | Meaning |
 | :--- | :--- |
-| `0` | The window closed normally, or assist mode captured a download. |
-| `1` | The shell could not start. On Windows this includes a missing WebView2 runtime. |
+| `0` | Normal end: the window closed, or assist mode captured a download. |
+| `1` | The shell could not start, or assist mode could not create its profile folder. On Windows this includes a missing WebView2 runtime. |
 | `2` | Bad arguments. |
 
 ## Assist mode
 
-WebView2 has an assist mode. It opens a page for a human to use, then reports the download the page starts. The launcher downloads the file itself.
+Both shells have an assist mode. It opens a page for a human to use, then reports the download the page starts. The launcher downloads the file itself.
 
 ```text
 light-launcher-shell --assist <url> --profile <dir> [--title <text>] [--message <text>]
@@ -92,6 +99,7 @@ In normal mode the shell adds `window.llShell` to every page it loads. Assist mo
 | :--- | :--- |
 | Qt bridge | Pages talk to the shell through console messages. Only the launcher's own address can use it. |
 | Qt page origin | The launcher origin is the scheme and host of the address you pass in. Other origins get no answers. |
+| Qt restored cookies | Qt 6.11 does not announce cookies restored from disk through `loadAllCookies()`, so the assist `Cookie` header can miss them until the page sets a cookie in that run. The page itself still receives the cookies. |
 | WebView2 | Not run on a real Windows machine yet. See the build page. |
 | WebView2 assist output | Cross-compiled and unit-tested only. Not run on real Windows or Wine yet. |
 | WebView2 download capture | The `go-webview2` package has no download event or cookie manager, so the shell adds a small COM wrapper for `ICoreWebView2_4`, the cookie manager and the user agent setting. |
