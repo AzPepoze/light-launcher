@@ -1,6 +1,8 @@
 // Payloads and replies of the Go API, as they arrive on the wire.
 // Field names match the json tags in core/internal. Mappers turn these into the UI types in types.ts.
 
+import type { JsonSchema } from "./types";
+
 // Library
 
 export interface WireGame {
@@ -15,11 +17,14 @@ export interface WireGame {
 	tags: string[] | null;
 	coverPath: string | null;
 	coverUrl: string | null;
+	coverLocal: string | null;
 	screenshots: string[] | null;
 	description: string | null;
+	descriptionText: string | null;
 	changelog: string | null;
 	rating: number | null;
 	status: string;
+	running: boolean;
 	favorite: number;
 	hidden: number;
 	notes: string | null;
@@ -34,9 +39,50 @@ export interface WireGame {
 	updatedAt: string;
 }
 
+export interface WireGameFile {
+	id: number;
+	gameId: number;
+	label: string;
+	url: string;
+	filename: string | null;
+	size: number | null;
+	host: string | null;
+	kind: string;
+	platform: string;
+	rangeHint: number | null;
+	requiresAuth: number;
+}
+
+export interface WireCheck {
+	id: number;
+	gameId: number;
+	checkedAt: string;
+	oldVersion: string | null;
+	newVersion: string | null;
+	changelog: string | null;
+	seen: number;
+	applied: number;
+}
+
+export interface WireGameDetail extends WireGame {
+	files: WireGameFile[] | null;
+	changes: WireCheck[] | null;
+}
+
+export interface WireLibraryStats {
+	total: number;
+	installed: number;
+	updates: number;
+	bytes: number;
+	playtime: number;
+}
+
 export interface WireLibraryPage {
 	items: WireGame[] | null;
 	total: number;
+	sources: { id: string; label: string; count: number }[] | null;
+	tags: { tag: string; count: number }[] | null;
+	stats: WireLibraryStats;
 }
 
 export interface WireLibraryFilter {
@@ -63,6 +109,17 @@ export interface WireGameUpdate {
 	favorite?: boolean;
 	exePath?: string;
 	exeArgs?: string;
+	installDir?: string;
+}
+
+export interface WireUpdateCheckRequest {
+	ids?: number[];
+	force?: boolean;
+}
+
+export interface WireUpdatesSummary {
+	unseen: number;
+	last: { checkedAt: string; results: WireCheckResult[] | null } | null;
 }
 
 export interface WireGameDTO {
@@ -82,16 +139,34 @@ export interface WireGameDTO {
 	updatedAt?: string;
 }
 
+export interface WireSearchGame extends WireGameDTO {
+	score: number;
+}
+
 export interface WireSearchResult {
 	plugin: string;
 	source: string;
-	games: WireGameDTO[] | null;
+	games: WireSearchGame[] | null;
 	error?: string;
+}
+
+export interface WireFileCandidate {
+	id: string;
+	label: string;
+	url: string;
+	filename?: string;
+	size?: number;
+	host?: string;
+	kind: string;
+	platform?: string;
+	requiresAuth?: boolean;
 }
 
 export interface WirePreview {
 	game: WireGameDTO;
 	existing: { id: number; title: string; installed: boolean } | null;
+	files: WireFileCandidate[] | null;
+	sourceLabel: string;
 }
 
 export interface WireCheckResult {
@@ -145,8 +220,15 @@ export interface WireDownloadView {
 	speed: number;
 	connections: number;
 	install: boolean;
+	rateLimited: boolean;
 	createdAt: string;
 	finishedAt?: string;
+}
+
+export interface WireDownloadsStatus {
+	installs: WireInstallProgress[] | null;
+	sevenZip: boolean;
+	speedLimitKBps: number;
 }
 
 export interface WireDownloadSettings {
@@ -170,12 +252,14 @@ export interface WireDownloadProgress {
 export interface WireInstallProgress {
 	downloadId: number;
 	gameId: number;
+	title?: string;
 	state: string;
 	phase: string;
 	done: number;
 	total: number;
 	progress: number | null;
 	speed: number;
+	eta: number | null;
 	engine?: string;
 	installDir?: string;
 	exePath?: string;
@@ -218,6 +302,10 @@ export interface WirePluginInfo {
 	unsigned: boolean;
 	permissions: WirePermissions;
 	sources: WireSource[] | null;
+	author: string;
+	description: string;
+	homepage: string;
+	hasSettings: boolean;
 }
 
 export interface WireRemovedPlugin {
@@ -233,10 +321,22 @@ export interface WirePluginPreview {
 		permissions: WirePermissions;
 	};
 	unsigned: boolean;
+	consent: string[] | null;
 }
 
 export interface WirePluginNotify {
 	plugin: string;
 	level: string;
 	message: string;
+}
+
+export interface WireSettingsView {
+	schema: JsonSchema | null;
+	values: Record<string, unknown> | null;
+}
+
+export interface WirePluginLogLine {
+	time: string;
+	level?: string;
+	text: string;
 }

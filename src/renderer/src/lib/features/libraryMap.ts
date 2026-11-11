@@ -1,24 +1,35 @@
 import type {
 	Game,
+	GameChange,
+	GameFile,
 	GamePreview,
 	IncomingItem,
 	IncomingListResponse,
 	IncomingSuggestion,
 	LibraryEditableFields,
+	LibraryGetResponse,
 	LibraryListResponse,
+	LibraryStats,
+	PreviewFile,
 	SearchResponse,
 	UpdatesResponse
 } from "./types";
 import type {
-	WireCheckResult,
+	WireCheck,
+	WireFileCandidate,
 	WireGame,
+	WireGameDetail,
 	WireGameDTO,
+	WireGameFile,
 	WireGameUpdate,
 	WireIncomingItem,
 	WireIncomingReport,
+	WireLibraryPage,
+	WireLibraryStats,
 	WirePreview,
 	WireSearchResult,
-	WireSuggestion
+	WireSuggestion,
+	WireUpdatesSummary
 } from "./wire";
 
 const HTML_ENTITIES: Record<string, string> = {
@@ -62,8 +73,10 @@ export function toGame(wire: WireGame): Game {
 		engine: wire.engine,
 		tags: wire.tags ?? [],
 		cover: wire.coverUrl,
+		coverLocal: wire.coverLocal,
 		screenshots: wire.screenshots ?? [],
-		description: htmlToText(wire.description),
+		description: wire.descriptionText,
+		running: wire.running,
 		favorite: wire.favorite === 1,
 		notes: wire.notes,
 		installed: Boolean(wire.installDir),
@@ -79,37 +92,61 @@ export function toGame(wire: WireGame): Game {
 	};
 }
 
-function countBy<T>(items: T[], keyOf: (item: T) => string): Map<string, number> {
-	const counts = new Map<string, number>();
-	for (const item of items) {
-		const key = keyOf(item);
-		counts.set(key, (counts.get(key) ?? 0) + 1);
-	}
-	return counts;
+function toStats(wire: WireLibraryStats): LibraryStats {
+	return {
+		total: wire.total,
+		installed: wire.installed,
+		updates: wire.updates,
+		bytes: wire.bytes,
+		playtime: wire.playtime
+	};
 }
 
-/** Builds the header stats, source filter and tag filter from the full game list. */
-export function buildLibrarySnapshot(games: Game[]): LibraryListResponse {
-	const sourceCounts = countBy(games, (game) => game.source);
-	const tagCounts = countBy(
-		games.flatMap((game) => game.tags),
-		(tag) => tag
-	);
+/** Builds the list view from the games of one or more pages. Counts come from the API, not from the games. */
+export function toLibraryListing(games: Game[], counts: WireLibraryPage): LibraryListResponse {
 	return {
 		items: games,
-		stats: {
-			total: games.length,
-			installed: games.filter((game) => game.installed).length,
-			updates: games.filter((game) => game.updateAvailable).length,
-			bytes: games.reduce((sum, game) => sum + (game.installSize ?? 0), 0),
-			playtime: games.reduce((sum, game) => sum + game.playtimeS, 0)
-		},
-		sources: [...sourceCounts]
-			.map(([source, count]) => ({ source, count }))
-			.sort((a, b) => a.source.localeCompare(b.source)),
-		tags: [...tagCounts]
-			.map(([tag, count]) => ({ tag, count }))
-			.sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag))
+		stats: toStats(counts.stats),
+		sources: (counts.sources ?? []).map((source) => ({
+			source: source.id,
+			label: source.label,
+			count: source.count
+		})),
+		tags: (counts.tags ?? []).map((tag) => ({ tag: tag.tag, count: tag.count }))
+	};
+}
+
+function toGameFile(wire: WireGameFile): GameFile {
+	return {
+		id: wire.id,
+		label: wire.label,
+		url: wire.url,
+		filename: wire.filename,
+		size: wire.size,
+		host: wire.host,
+		kind: wire.kind,
+		platform: wire.platform,
+		requiresAuth: wire.requiresAuth === 1
+	};
+}
+
+function toGameChange(wire: WireCheck): GameChange {
+	return {
+		id: wire.id,
+		checkedAt: wire.checkedAt,
+		from: wire.oldVersion,
+		to: wire.newVersion,
+		changelog: wire.changelog,
+		seen: wire.seen === 1,
+		applied: wire.applied === 1
+	};
+}
+
+export function toGameDetail(wire: WireGameDetail): LibraryGetResponse {
+	return {
+		game: toGame(wire),
+		files: (wire.files ?? []).map(toGameFile),
+		changes: (wire.changes ?? []).map(toGameChange)
 	};
 }
 
@@ -128,10 +165,25 @@ export function toSearchResponse(results: WireSearchResult[]): SearchResponse {
 		(result.games ?? []).map((game) => ({
 			url: game.url,
 			title: game.title,
-			source: result.source
+			source: result.source,
+			score: game.score
 		}))
 	);
 	return { hits, errors: toSearchErrors(results) };
+}
+
+function toPreviewFile(wire: WireFileCandidate): PreviewFile {
+	return {
+		id: wire.id,
+		label: wire.label,
+		url: wire.url,
+		filename: orNull(wire.filename),
+		size: wire.size || null,
+		host: orNull(wire.host),
+		kind: wire.kind,
+		platform: wire.platform || "unknown",
+		requiresAuth: wire.requiresAuth ?? false
+	};
 }
 
 export function toPreview(wire: WirePreview): GamePreview {
@@ -146,19 +198,24 @@ export function toPreview(wire: WirePreview): GamePreview {
 		description: htmlToText(game.descriptionHtml),
 		cover: orNull(game.coverUrl),
 		url: game.url,
-		existing: wire.existing
+		existing: wire.existing,
+		files: (wire.files ?? []).map(toPreviewFile),
+		sourceLabel: wire.sourceLabel
 	};
 }
 
-export function toUpdatesResponse(results: WireCheckResult[], games: Game[]): UpdatesResponse {
+/** Turns the updates summary into the updates view. Games with a newer version come from the given list. */
+export function toUpdatesSummary(summary: WireUpdatesSummary, games: Game[]): UpdatesResponse {
 	const updatable = games.filter((game) => game.updateAvailable);
+	const last = summary.last;
 	return {
-		count: updatable.length,
+		count: summary.unseen,
 		games: updatable,
 		history: [],
-		errors: results
+		errors: (last?.results ?? [])
 			.filter((result) => result.error)
-			.map((result) => `${result.title}: ${result.error}`)
+			.map((result) => `${result.title}: ${result.error}`),
+		lastCheckedAt: last?.checkedAt ?? null
 	};
 }
 

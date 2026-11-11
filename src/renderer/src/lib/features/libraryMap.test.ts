@@ -1,17 +1,18 @@
 import { describe, expect, it } from "vitest";
 import {
-	buildLibrarySnapshot,
 	hasNewVersion,
 	htmlToText,
 	toGame,
+	toGameDetail,
 	toGameUpdate,
 	toIncomingList,
+	toLibraryListing,
 	toPreview,
 	toSearchResponse,
-	toUpdatesResponse
+	toUpdatesSummary
 } from "./libraryMap";
 import type { Game } from "./types";
-import type { WireGame } from "./wire";
+import type { WireGame, WireGameDetail, WireLibraryPage } from "./wire";
 
 function makeWire(overrides: Partial<WireGame> = {}): WireGame {
 	return {
@@ -26,11 +27,14 @@ function makeWire(overrides: Partial<WireGame> = {}): WireGame {
 		tags: ["platformer"],
 		coverPath: "/data/covers/7.jpg",
 		coverUrl: "https://example.test/7.jpg",
+		coverLocal: "covers/7.jpg",
 		screenshots: null,
 		description: "<p>First line</p><p>Second &amp; last</p>",
+		descriptionText: "First line\n\nSecond & last",
 		changelog: null,
 		rating: null,
 		status: "installed",
+		running: false,
 		favorite: 1,
 		hidden: 0,
 		notes: "note",
@@ -58,8 +62,10 @@ function makeGame(overrides: Partial<Game>): Game {
 		engine: null,
 		tags: [],
 		cover: null,
+		coverLocal: null,
 		screenshots: [],
 		description: null,
+		running: false,
 		favorite: false,
 		notes: null,
 		installed: false,
@@ -102,12 +108,23 @@ describe("toGame", () => {
 		expect(game).toMatchObject({
 			id: 7,
 			cover: "https://example.test/7.jpg",
+			coverLocal: "covers/7.jpg",
 			description: "First line\n\nSecond & last",
+			running: false,
 			favorite: true,
 			installed: true,
 			installDir: "/games/dust",
 			updateAvailable: false
 		});
+	});
+
+	it("takes the description text from the API, not from the HTML", () => {
+		const game = toGame(makeWire({ descriptionText: "Plain only", description: "<b>ignored</b>" }));
+		expect(game.description).toBe("Plain only");
+	});
+
+	it("reports a running game", () => {
+		expect(toGame(makeWire({ running: true })).running).toBe(true);
 	});
 
 	it("uses empty lists for null tags and screenshots", () => {
@@ -131,46 +148,114 @@ describe("toGame", () => {
 	});
 });
 
-describe("buildLibrarySnapshot", () => {
-	it("derives stats, sources and tags from the games", () => {
-		const games = [
-			makeGame({
-				id: 1,
-				source: "itch",
-				installed: true,
-				installSize: 100,
-				playtimeS: 10,
-				tags: ["a", "b"]
-			}),
-			makeGame({ id: 2, source: "gog", updateAvailable: true, tags: ["a"] }),
-			makeGame({ id: 3, source: "gog", installSize: 50, playtimeS: 5, tags: ["b"] })
-		];
-		const snapshot = buildLibrarySnapshot(games);
-		expect(snapshot.stats).toEqual({
-			total: 3,
-			installed: 1,
-			updates: 1,
-			bytes: 150,
-			playtime: 15
-		});
-		expect(snapshot.sources).toEqual([
-			{ source: "gog", count: 2 },
-			{ source: "itch", count: 1 }
+function makePage(overrides: Partial<WireLibraryPage> = {}): WireLibraryPage {
+	return {
+		items: [],
+		total: 0,
+		sources: [],
+		tags: [],
+		stats: { total: 0, installed: 0, updates: 0, bytes: 0, playtime: 0 },
+		...overrides
+	};
+}
+
+describe("toLibraryListing", () => {
+	it("uses the counts the API sent for the whole library", () => {
+		const games = [makeGame({ id: 1 })];
+		const listing = toLibraryListing(
+			games,
+			makePage({
+				stats: { total: 3, installed: 1, updates: 1, bytes: 150, playtime: 15 },
+				sources: [
+					{ id: "gog", label: "GOG", count: 2 },
+					{ id: "itch", label: "itch.io", count: 1 }
+				],
+				tags: [{ tag: "a", count: 2 }]
+			})
+		);
+		expect(listing.items).toBe(games);
+		expect(listing.stats).toEqual({ total: 3, installed: 1, updates: 1, bytes: 150, playtime: 15 });
+		expect(listing.sources).toEqual([
+			{ source: "gog", label: "GOG", count: 2 },
+			{ source: "itch", label: "itch.io", count: 1 }
 		]);
-		expect(snapshot.tags).toEqual([
-			{ tag: "a", count: 2 },
-			{ tag: "b", count: 2 }
-		]);
-		expect(snapshot.items).toBe(games);
+		expect(listing.tags).toEqual([{ tag: "a", count: 2 }]);
 	});
 
-	it("returns empty lists for no games", () => {
-		expect(buildLibrarySnapshot([])).toEqual({
+	it("returns empty lists when the API sends none", () => {
+		expect(toLibraryListing([], makePage({ sources: null, tags: null }))).toEqual({
 			items: [],
 			stats: { total: 0, installed: 0, updates: 0, bytes: 0, playtime: 0 },
 			sources: [],
 			tags: []
 		});
+	});
+});
+
+describe("toGameDetail", () => {
+	it("maps the game with its files and version changes", () => {
+		const wire: WireGameDetail = {
+			...makeWire(),
+			files: [
+				{
+					id: 4,
+					gameId: 7,
+					label: "Windows build",
+					url: "https://example.test/win.zip",
+					filename: "win.zip",
+					size: 1024,
+					host: null,
+					kind: "direct",
+					platform: "windows",
+					rangeHint: null,
+					requiresAuth: 1
+				}
+			],
+			changes: [
+				{
+					id: 9,
+					gameId: 7,
+					checkedAt: "2026-02-01T00:00:00Z",
+					oldVersion: "1.1",
+					newVersion: "1.2",
+					changelog: "fixes",
+					seen: 1,
+					applied: 0
+				}
+			]
+		};
+		const detail = toGameDetail(wire);
+		expect(detail.game.title).toBe("Dust Runner");
+		expect(detail.files).toEqual([
+			{
+				id: 4,
+				label: "Windows build",
+				url: "https://example.test/win.zip",
+				filename: "win.zip",
+				size: 1024,
+				host: null,
+				kind: "direct",
+				platform: "windows",
+				requiresAuth: true
+			}
+		]);
+		expect(detail.changes).toEqual([
+			{
+				id: 9,
+				checkedAt: "2026-02-01T00:00:00Z",
+				from: "1.1",
+				to: "1.2",
+				changelog: "fixes",
+				seen: true,
+				applied: false
+			}
+		]);
+	});
+
+	it("uses empty lists for null files and changes", () => {
+		const detail = toGameDetail({ ...makeWire(), files: null, changes: null });
+		expect(detail.files).toEqual([]);
+		expect(detail.changes).toEqual([]);
 	});
 });
 
@@ -190,19 +275,19 @@ describe("toSearchResponse", () => {
 			{
 				plugin: "p1",
 				source: "itch",
-				games: [{ source: "itch", sourceId: "1", url: "u1", title: "One" }]
+				games: [{ source: "itch", sourceId: "1", url: "u1", title: "One", score: 2.5 }]
 			},
 			{ plugin: "p2", source: "gog", games: null, error: "offline" }
 		]);
 		expect(response).toEqual({
-			hits: [{ url: "u1", title: "One", source: "itch" }],
+			hits: [{ url: "u1", title: "One", source: "itch", score: 2.5 }],
 			errors: ["gog: offline"]
 		});
 	});
 });
 
 describe("toPreview", () => {
-	it("maps the source game and drops the HTML description", () => {
+	it("maps the source game, its files and the source label, and drops the HTML description", () => {
 		const preview = toPreview({
 			game: {
 				source: "itch",
@@ -212,7 +297,17 @@ describe("toPreview", () => {
 				descriptionHtml: "<p>Hello</p>",
 				coverUrl: "https://example.test/1.jpg"
 			},
-			existing: null
+			existing: null,
+			files: [
+				{
+					id: "dl",
+					label: "Windows",
+					url: "https://example.test/dl.zip",
+					kind: "direct",
+					platform: "windows"
+				}
+			],
+			sourceLabel: "itch.io"
 		});
 		expect(preview).toMatchObject({
 			source: "itch",
@@ -222,28 +317,64 @@ describe("toPreview", () => {
 			description: "Hello",
 			cover: "https://example.test/1.jpg",
 			url: "https://example.test/1",
-			existing: null
+			existing: null,
+			sourceLabel: "itch.io"
 		});
+		expect(preview.files).toEqual([
+			{
+				id: "dl",
+				label: "Windows",
+				url: "https://example.test/dl.zip",
+				filename: null,
+				size: null,
+				host: null,
+				kind: "direct",
+				platform: "windows",
+				requiresAuth: false
+			}
+		]);
+	});
+
+	it("uses empty files when the source cannot list them", () => {
+		const preview = toPreview({
+			game: { source: "itch", sourceId: "1", url: "u", title: "One" },
+			existing: null,
+			files: null,
+			sourceLabel: "itch.io"
+		});
+		expect(preview.files).toEqual([]);
 	});
 });
 
-describe("toUpdatesResponse", () => {
-	it("keeps only games with a newer version and lists failed checks", () => {
+describe("toUpdatesSummary", () => {
+	it("keeps only games with a newer version, the unseen count and the failed checks of the last run", () => {
 		const games = [
 			makeGame({ id: 1, title: "A", updateAvailable: true }),
 			makeGame({ id: 2, title: "B", updateAvailable: false })
 		];
-		const response = toUpdatesResponse(
-			[
-				{ id: 1, title: "A", from: "1", to: "2", hasUpdate: true },
-				{ id: 3, title: "C", from: null, to: null, hasUpdate: false, error: "timeout" }
-			],
+		const response = toUpdatesSummary(
+			{
+				unseen: 4,
+				last: {
+					checkedAt: "2026-03-01T10:00:00Z",
+					results: [
+						{ id: 1, title: "A", from: "1", to: "2", hasUpdate: true },
+						{ id: 3, title: "C", from: null, to: null, hasUpdate: false, error: "timeout" }
+					]
+				}
+			},
 			games
 		);
-		expect(response.count).toBe(1);
+		expect(response.count).toBe(4);
 		expect(response.games.map((game) => game.id)).toEqual([1]);
 		expect(response.history).toEqual([]);
 		expect(response.errors).toEqual(["C: timeout"]);
+		expect(response.lastCheckedAt).toBe("2026-03-01T10:00:00Z");
+	});
+
+	it("has no last check before the first run", () => {
+		const response = toUpdatesSummary({ unseen: 0, last: null }, []);
+		expect(response).toEqual({ count: 0, games: [], history: [], errors: [], lastCheckedAt: null });
 	});
 });
 

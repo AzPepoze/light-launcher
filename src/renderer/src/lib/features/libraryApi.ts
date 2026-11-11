@@ -1,11 +1,12 @@
 import {
-	buildLibrarySnapshot,
 	toGame,
+	toGameDetail,
 	toGameUpdate,
 	toIncomingList,
+	toLibraryListing,
 	toPreview,
 	toSearchResponse,
-	toUpdatesResponse
+	toUpdatesSummary
 } from "./libraryMap";
 import { rpc } from "./rpc";
 import type {
@@ -21,35 +22,43 @@ import type {
 import type {
 	WireCheckResult,
 	WireGame,
+	WireGameDetail,
 	WireIncomingReport,
 	WireLibraryPage,
 	WirePreview,
-	WireSearchResult
+	WireSearchResult,
+	WireUpdateCheckRequest,
+	WireUpdatesSummary
 } from "./wire";
 
 /** The Go side returns at most this many games per LibraryList call. */
 const PAGE_SIZE = 1000;
 
-async function fetchAllGames(): Promise<Game[]> {
+/** Loads every game. Each page also carries the library counts, which are the same on every page. */
+async function fetchLibrary(): Promise<{ games: Game[]; counts: WireLibraryPage }> {
 	const games: Game[] = [];
 	for (let offset = 0; ; offset += PAGE_SIZE) {
 		const page = await rpc<WireLibraryPage>("LibraryList", { limit: PAGE_SIZE, offset });
 		const items = (page.items ?? []).map(toGame);
 		games.push(...items);
-		if (items.length === 0 || games.length >= page.total) return games;
+		if (items.length === 0 || games.length >= page.total) return { games, counts: page };
 	}
 }
 
-export const libraryApi = {
-	/** Loads every game, then derives stats, sources and tags from them. */
-	list: async (): Promise<LibraryListResponse> => buildLibrarySnapshot(await fetchAllGames()),
+async function fetchUpdates(): Promise<UpdatesResponse> {
+	const summary = await rpc<WireUpdatesSummary>("LibraryUpdatesSummary");
+	const { games } = await fetchLibrary();
+	return toUpdatesSummary(summary, games);
+}
 
-	/** Files and changes have no API yet, so they come back empty. */
-	get: async (id: number): Promise<LibraryGetResponse> => ({
-		game: toGame(await rpc<WireGame>("LibraryGet", { id })),
-		files: [],
-		changes: []
-	}),
+export const libraryApi = {
+	list: async (): Promise<LibraryListResponse> => {
+		const { games, counts } = await fetchLibrary();
+		return toLibraryListing(games, counts);
+	},
+
+	get: async (id: number): Promise<LibraryGetResponse> =>
+		toGameDetail(await rpc<WireGameDetail>("LibraryGet", { id })),
 
 	update: async (id: number, fields: LibraryEditableFields): Promise<Game> =>
 		toGame(await rpc<WireGame>("LibraryUpdate", toGameUpdate(id, fields))),
@@ -70,11 +79,15 @@ export const libraryApi = {
 	linkSource: async (id: number, url: string): Promise<Game> =>
 		toGame(await rpc<WireGame>("LibraryLinkLocal", { id, url })),
 
-	/** Checks every game for a newer version, then returns the games that have one. */
+	/** Checks every game for a newer version, ignoring the recheck interval, then returns the updates. */
 	checkUpdates: async (): Promise<UpdatesResponse> => {
-		const results = await rpc<WireCheckResult[]>("LibraryCheckUpdates", {});
-		return toUpdatesResponse(results, await fetchAllGames());
+		const request: WireUpdateCheckRequest = { force: true };
+		await rpc<WireCheckResult[]>("LibraryCheckUpdates", request);
+		return fetchUpdates();
 	},
+
+	/** The unseen update count, the games with a newer version, and the last check. */
+	updates: fetchUpdates,
 
 	setFavorite: async (id: number, favorite: boolean): Promise<Game> =>
 		toGame(await rpc<WireGame>("LibrarySetFavorite", { id, favorite })),
