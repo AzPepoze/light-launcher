@@ -16,6 +16,7 @@
 	export let isSelected: boolean = false;
 	export let onLaunch: (game: any) => void = () => {};
 	export let onConfigure: (game: any) => void = () => {};
+	export let onChooseLauncher: (launcherPath: string | null) => void = () => {};
 	export let onSelect: (game: any, shiftKey: boolean, ctrlKey?: boolean) => void = () => {};
 	export let loadIcon: (path: string, customIconPath?: string | null) => void = () => {};
 
@@ -52,6 +53,7 @@
 					{isSelected}
 					{onLaunch}
 					{onConfigure}
+					{onChooseLauncher}
 					{onSelect}
 				/>
 			{:else if view === "list-grid"}
@@ -63,6 +65,7 @@
 					{isSelected}
 					{onLaunch}
 					{onConfigure}
+					{onChooseLauncher}
 					{onSelect}
 				/>
 			{:else}
@@ -73,6 +76,7 @@
 					{active}
 					{onLaunch}
 					{onConfigure}
+					{onChooseLauncher}
 				/>
 			{/if}
 		</div>

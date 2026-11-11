@@ -2,6 +2,7 @@
 	import CardRunningIndicator from "./shared/CardRunningIndicator.svelte";
 	import CardSelectionCheckbox from "./shared/CardSelectionCheckbox.svelte";
 	import { getGamePath } from "@lib/gameUtils";
+	import LauncherMenu from "@components/home/shared/LauncherMenu.svelte";
 	import { iconFade } from "@lib/iconReveal";
 
 	export let game: any;
@@ -11,6 +12,7 @@
 	export let isSelected: boolean = false;
 	export let onLaunch: (game: any) => void = () => {};
 	export let onConfigure: (game: any) => void = () => {};
+	export let onChooseLauncher: (launcherPath: string | null) => void = () => {};
 	export let onSelect: (game: any, shiftKey: boolean, ctrlKey?: boolean) => void = () => {};
 
 	function handleLaunch(event?: MouseEvent) {
@@ -72,6 +74,7 @@
 		</div>
 
 		<div class="actions">
+			<LauncherMenu {game} onChoose={onChooseLauncher} />
 			<button
 				class="action-btn play"
 				title="Play Now"

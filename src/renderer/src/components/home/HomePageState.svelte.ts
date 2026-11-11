@@ -1,4 +1,10 @@
-import { GetAutoScannedGames, GetRunningSessions, onEvent } from "@lib/api";
+import {
+	ClearPreferredLauncher,
+	GetAutoScannedGames,
+	GetRunningSessions,
+	SetPreferredLauncher,
+	onEvent
+} from "@lib/api";
 import * as service from "@lib/homeService";
 import { createLogger } from "@lib/logger";
 import { navigationCommand } from "@stores/navigationStore";
@@ -190,6 +196,21 @@ export class HomePageState {
 			options: game.config
 		}));
 		navigationCommand.set({ page: "run" });
+	}
+
+	/** Remembers the picked launcher of a game folder, or clears it when launcherPath is null. */
+	async chooseLauncher(game: any, launcherPath: string | null) {
+		try {
+			if (launcherPath) {
+				await SetPreferredLauncher(game.folder, launcherPath);
+			} else {
+				await ClearPreferredLauncher(game.folder);
+			}
+			this.refreshData();
+		} catch (error) {
+			log.error("Failed to choose launcher", error);
+			notifications.add(`Failed to choose launcher: ${error}`, "error");
+		}
 	}
 
 	isGameRunning(game: any, sessionsList: any[]) {

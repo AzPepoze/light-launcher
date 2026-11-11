@@ -77,6 +77,7 @@
 				isGameRunning={state.isGameRunning}
 				handleQuickLaunch={(game, showLogs) => state.handleQuickLaunch(game, showLogs)}
 				handleConfigure={(game) => state.handleConfigure(game)}
+				handleChooseLauncher={(game, launcherPath) => state.chooseLauncher(game, launcherPath)}
 				toggleGameSelection={(game, shiftKey, ctrlKey) => state.selection.toggleGameSelection(game, shiftKey, ctrlKey)}
 				onRefresh={() => state.refreshData(true)}
 				loadIcon={(path, customIconPath) => state.icons.enqueueIconLoad(path, customIconPath)}

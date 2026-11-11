@@ -1,4 +1,5 @@
 <script lang="ts">
+	import LauncherMenu from "@components/home/shared/LauncherMenu.svelte";
 	import { iconFade } from "@lib/iconReveal";
 
 	export let game: any;
@@ -7,6 +8,7 @@
 	export let active: boolean = false;
 	export let onLaunch: (game: any) => void = () => {};
 	export let onConfigure: (game: any) => void = () => {};
+	export let onChooseLauncher: (launcherPath: string | null) => void = () => {};
 
 	function handleLaunch() {
 		onLaunch(game);
@@ -47,6 +49,7 @@
 		<div class="info-overlay">
 			<div class="name-row">
 				<span class="name">{game.name}</span>
+				<LauncherMenu {game} onChoose={onChooseLauncher} />
 				<button
 					class="config-btn-small"
 					title="Configure"

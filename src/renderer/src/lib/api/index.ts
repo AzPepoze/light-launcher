@@ -65,6 +65,10 @@ export const GetAutoScannedGames = (force = false) =>
 export const AddScanFolder = (folderPath: string) => invoke<void>("AddScanFolder", { folderPath });
 export const RemoveScanFolder = (folderPath: string) =>
 	invoke<void>("RemoveScanFolder", { folderPath });
+export const SetPreferredLauncher = (folder: string, path: string) =>
+	invoke<GameInfo>("SetPreferredLauncher", { folder, path });
+export const ClearPreferredLauncher = (folder: string) =>
+	invoke<GameInfo>("ClearPreferredLauncher", { folder });
 export const UpdateScanFolderConfig = (folderPath: string, depth: number, excludeNames: string[]) =>
 	invoke<void>("UpdateScanFolderConfig", { folderPath, depth, excludeNames });
 export const RenameScanFolder = (

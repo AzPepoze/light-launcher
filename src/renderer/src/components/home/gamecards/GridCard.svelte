@@ -2,6 +2,7 @@
 	import CardRunningIndicator from "./shared/CardRunningIndicator.svelte";
 	import CardSelectionCheckbox from "./shared/CardSelectionCheckbox.svelte";
 	import AnimatedPlayIcon from "./shared/AnimatedPlayIcon.svelte";
+	import LauncherMenu from "@components/home/shared/LauncherMenu.svelte";
 	import { getDominantColor } from "@lib/dominantColor";
 	import { iconFade } from "@lib/iconReveal";
 
@@ -12,6 +13,7 @@
 	export let isSelected: boolean = false;
 	export let onLaunch: (game: any) => void = () => {};
 	export let onConfigure: (game: any) => void = () => {};
+	export let onChooseLauncher: (launcherPath: string | null) => void = () => {};
 	export let onSelect: (game: any, shiftKey: boolean, ctrlKey?: boolean) => void = () => {};
 
 	let cardElement: HTMLElement;
@@ -144,6 +146,7 @@
 
 	<div class="game-footer">
 		<span class="game-name" title={game.name}>{game.name}</span>
+		<LauncherMenu {game} onChoose={onChooseLauncher} />
 		<button
 			class="config-btn"
 			title="Configure"

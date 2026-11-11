@@ -14,6 +14,7 @@
 	export let handleRightClick: (event: MouseEvent, game: GameInfo) => void = () => {};
 	export let handleQuickLaunch: (game: GameInfo, showLogs?: boolean) => Promise<void> = async () => {};
 	export let handleConfigure: (game: GameInfo) => void = () => {};
+	export let handleChooseLauncher: (game: GameInfo, launcherPath: string | null) => void = () => {};
 	export let toggleGameSelection: (game: GameInfo, shiftKey: boolean, ctrlKey?: boolean) => void = () => {};
 	export let loadIcon: (path: string, customIconPath?: string | null) => void = () => {};
 
@@ -49,6 +50,7 @@
 				view={cardView}
 				onLaunch={() => handleQuickLaunch(game)}
 				onConfigure={() => handleConfigure(game)}
+				onChooseLauncher={(launcherPath) => handleChooseLauncher(game, launcherPath)}
 				onSelect={toggleGameSelection}
 				{loadIcon}
 			/>

@@ -1,5 +1,15 @@
 import type { LaunchOptions } from "./config.types";
 
+export type LauncherKind = "main" | "unreal-stub" | "x86" | "other";
+
+/** One executable that starts a game folder. */
+export interface Launcher {
+	name: string;
+	path: string;
+	kind: LauncherKind;
+	primary: boolean;
+}
+
 export interface GameInfo {
 	name: string;
 	path: string;
@@ -7,6 +17,9 @@ export interface GameInfo {
 	config: LaunchOptions;
 	isRecent: boolean;
 	isAutoScanned: boolean;
+	folder: string;
+	launchers: Launcher[];
+	launcherCount: number;
 }
 
 export interface ScannedFolderGroup {
