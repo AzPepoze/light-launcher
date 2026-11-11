@@ -71,6 +71,7 @@ func main() {
 
 	logPath := logger.GetLogPath()
 	logger.SetNotificationIcon(getIconPath())
+	logger.SetNotifier(logger.NotifySend)
 	logger.Info("Instance", "Starting LightLauncher Go instance [PID=%d] [Game=%s]", os.Getpid(), exeName)
 
 	_ = logger.TrimCurrentLogFile(500)
