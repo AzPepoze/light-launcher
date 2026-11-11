@@ -17,6 +17,7 @@ import (
 	"light-launcher/core/internal/services/pluginsvc"
 	"light-launcher/core/internal/services/runtimesvc"
 	"light-launcher/core/internal/services/systemsvc"
+	"light-launcher/core/internal/uploads"
 )
 
 // services owns the long-lived parts of one launcher run: databases, download manager, plugins and jobs.
@@ -26,6 +27,7 @@ type services struct {
 	downloadsDB *sql.DB
 	host        *plugins.Host
 	installer   *downloads.FolderInstaller
+	uploads     *uploads.Store
 	stop        context.CancelFunc
 	jobs        sync.WaitGroup
 }
@@ -48,6 +50,11 @@ func wireServices(ctx context.Context, router *api.Router, hub *api.Hub) (*servi
 // open creates the services in dependency order. The library and the plugin host refer to each other,
 // so the plugin source list is filled in after both exist.
 func (s *services) open(ctx context.Context, router *api.Router, hub *api.Hub, dirs folders) error {
+	uploadStore, err := uploads.Open(dirs.Uploads)
+	if err != nil {
+		return err
+	}
+	s.uploads = uploadStore
 	s.installer = &downloads.FolderInstaller{Root: dirs.Games, Events: hub, Titles: s.gameTitle}
 	if err := s.openDownloads(ctx, dirs, hub); err != nil {
 		return err
