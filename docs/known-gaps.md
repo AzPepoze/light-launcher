@@ -62,7 +62,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | Check the "Sleeping" plugin badge by eye in the real window (only typecheck, tests and build so far). |
 | [ ] | OS-level sandbox for plugins (permissions only cover host services today). |
 | [ ] | Resource limits for plugins (CPU, memory). |
-| [ ] | The idle-stop tests (`TestIdleStopsPluginAfterTimeout`, `TestActivityResetsIdleTimer`) time out when many copies run in parallel under load, but pass alone. The cause is not found yet (a test timing race with the fake clock, or a real wake-up race). |
+| [x] | The idle-stop tests timed out under load: the watcher armed its timer for "wait N seconds" a moment after it computed N, so a clock step in between moved the deadline. It now arms the timer for an absolute deadline (240 stress runs, no failures). |
 
 ## F95 plugin
 
