@@ -149,6 +149,19 @@ describe("createMediaCache", () => {
 		expect(await fresh).toBe("blob:2");
 	});
 
+	it("evicts and revokes the least recently used image over the limit", async () => {
+		const loader = fakeLoader();
+		const cache = createMediaCache(loader, 2);
+
+		await cache.load("a", coverKey(local(1)), coverRoute(1));
+		await cache.load("b", coverKey(local(2)), coverRoute(2));
+		await cache.load("a", coverKey(local(1)), coverRoute(1));
+		await cache.load("c", coverKey(local(3)), coverRoute(3));
+
+		expect(loader.revokeUrl).toHaveBeenCalledWith("blob:2");
+		expect(loader.revokeUrl).not.toHaveBeenCalledWith("blob:1");
+	});
+
 	it("revokes every URL on dispose", async () => {
 		const loader = fakeLoader();
 		const cache = createMediaCache(loader);

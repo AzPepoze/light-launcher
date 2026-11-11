@@ -17,7 +17,8 @@ export interface BlobLoader {
 }
 
 /**
- * Keeps blob URLs for cached images. A URL is revoked as soon as no mounted scope wants it.
+ * Keeps blob URLs for cached images. Entries are evicted least-recently-used first,
+ * and a URL is revoked as soon as no mounted scope wants it.
  */
 export interface MediaCache {
 	/** Takes a reference for scope and resolves to a blob URL, or null when there is none or it fails. */
@@ -27,6 +28,8 @@ export interface MediaCache {
 	/** Revokes every URL. */
 	dispose(): void;
 }
+
+export const MEDIA_CACHE_LIMIT = 200;
 
 /** The server route that serves the cached cover of a game. */
 export function coverRoute(id: number): string {
@@ -48,18 +51,44 @@ export function screenshotKey(gameId: number, index: number, local: string | nul
 	return local ? `screenshot:${gameId}:${index}:${local}` : null;
 }
 
-export function createMediaCache(loader: BlobLoader): MediaCache {
-	const shown = new Map<string, string>();
+interface ShownImage {
+	url: string;
+	lastUsed: number;
+}
+
+export function createMediaCache(loader: BlobLoader, limit = MEDIA_CACHE_LIMIT): MediaCache {
+	const shown = new Map<string, ShownImage>();
 	/** The file each mounted scope shows. */
 	const wanted = new Map<string, string>();
 	const wantedCount = new Map<string, number>();
 	const downloads = new Map<string, Promise<string | null>>();
+	let clock = 0;
+
+	function touch(key: string, image: ShownImage): void {
+		image.lastUsed = ++clock;
+		shown.set(key, image);
+	}
 
 	function drop(key: string): void {
-		const url = shown.get(key);
-		if (url === undefined) return;
-		loader.revokeUrl(url);
+		const image = shown.get(key);
+		if (!image) return;
+		loader.revokeUrl(image.url);
 		shown.delete(key);
+	}
+
+	function evict(): void {
+		while (shown.size > limit) {
+			let oldestKey: string | null = null;
+			let oldest = Infinity;
+			for (const [key, image] of shown) {
+				if (image.lastUsed < oldest) {
+					oldest = image.lastUsed;
+					oldestKey = key;
+				}
+			}
+			if (oldestKey === null) return;
+			drop(oldestKey);
+		}
 	}
 
 	function releaseKey(key: string): void {
@@ -97,11 +126,13 @@ export function createMediaCache(loader: BlobLoader): MediaCache {
 					return null;
 				}
 				const current = shown.get(key);
-				if (current !== undefined) {
+				if (current) {
 					loader.revokeUrl(url);
-					return current;
+					touch(key, current);
+					return current.url;
 				}
-				shown.set(key, url);
+				shown.set(key, { url, lastUsed: ++clock });
+				evict();
 				return url;
 			})
 			.catch((error: unknown) => {
@@ -117,7 +148,10 @@ export function createMediaCache(loader: BlobLoader): MediaCache {
 		setWanted(scope, key);
 		if (key === null) return null;
 		const current = shown.get(key);
-		if (current !== undefined) return current;
+		if (current) {
+			touch(key, current);
+			return current.url;
+		}
 		return download(key, route);
 	}
 
@@ -129,8 +163,8 @@ export function createMediaCache(loader: BlobLoader): MediaCache {
 	}
 
 	function dispose(): void {
-		for (const url of shown.values()) {
-			loader.revokeUrl(url);
+		for (const image of shown.values()) {
+			loader.revokeUrl(image.url);
 		}
 		shown.clear();
 		wanted.clear();
