@@ -18,7 +18,7 @@ var legacyPrefixesPattern = regexp.MustCompile(`^.*/LightLauncher/prefixes/`)
 // Old installs stored links under a LightLauncher folder that no longer exists.
 func repairPrefixSymlinks() {
 	baseDir := config.GetPrefixBaseDirectory()
-	if !pathExists(baseDir) {
+	if !config.PathExists(baseDir) {
 		return
 	}
 	entries, err := os.ReadDir(baseDir)

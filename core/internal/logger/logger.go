@@ -9,8 +9,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"light-launcher/core/internal/config"
 )
 
 type Level int
@@ -78,11 +76,10 @@ func SetNotifier(fn func(msg string)) {
 	notifier = fn
 }
 
-func Init(fileName string, keepCount int) error {
+func Init(logDir string, fileName string, keepCount int) error {
 	mu.Lock()
 	defer mu.Unlock()
 
-	logDir := config.GetLogsDirectory()
 	if err := os.MkdirAll(logDir, 0755); err != nil {
 		return fmt.Errorf("failed to create log directory: %w", err)
 	}

@@ -1,9 +1,9 @@
 package appsvc
 
 import (
-	"strings"
 	"sync"
 
+	"light-launcher/core/internal/config"
 	"light-launcher/core/internal/types"
 )
 
@@ -22,20 +22,20 @@ func resetScanCache() {
 }
 
 // getAutoScannedGames scans every watched folder. Executables without a config get one created.
-func getAutoScannedGames(force bool) ([]types.ScannedFolderGroup, error) {
+func (s *service) getAutoScannedGames(force bool) ([]types.ScannedFolderGroup, error) {
 	if !force {
 		if groups, ok := cachedScanGroups(); ok {
 			return groups, nil
 		}
 	}
 
-	settings := loadAppSettings()
-	index := newScanIndex(settings.ScanFolders, listGameConfigs())
+	settings := s.settings.Load()
+	index := newScanIndex(settings.ScanFolders, s.games.List())
 	blacklist := blacklistSet(settings.Blacklist)
 
 	groups := []types.ScannedFolderGroup{}
 	for _, folderCfg := range settings.ScanFolderConfigs {
-		group, err := scanFolderGroup(folderCfg, index, blacklist)
+		group, err := s.scanFolderGroup(folderCfg, index, blacklist)
 		if err != nil {
 			return nil, err
 		}
@@ -72,15 +72,15 @@ func newScanIndex(scanFolders []string, configs []types.LaunchOptions) scanIndex
 		configsByPath: map[string]types.LaunchOptions{},
 	}
 	for _, cfg := range configs {
-		p := cleanPath(firstNonEmpty(cfg.LauncherPath, cfg.GamePath))
+		p := config.CleanPath(config.FirstNonEmpty(cfg.LauncherPath, cfg.GamePath))
 		if p != "" && !isInAnyFolder(scanFolders, p) {
-			index.manualPaths[strings.ToLower(p)] = true
+			index.manualPaths[config.PathKey(p)] = true
 		}
 		if cfg.GamePath != "" {
-			index.configsByPath[strings.ToLower(cleanPath(cfg.GamePath))] = cfg
+			index.configsByPath[config.PathKey(cfg.GamePath)] = cfg
 		}
 		if cfg.LauncherPath != "" {
-			index.configsByPath[strings.ToLower(cleanPath(cfg.LauncherPath))] = cfg
+			index.configsByPath[config.PathKey(cfg.LauncherPath)] = cfg
 		}
 	}
 	return index
@@ -89,25 +89,25 @@ func newScanIndex(scanFolders []string, configs []types.LaunchOptions) scanIndex
 func blacklistSet(blacklist []string) map[string]bool {
 	set := map[string]bool{}
 	for _, p := range blacklist {
-		set[strings.ToLower(cleanPath(p))] = true
+		set[config.PathKey(p)] = true
 	}
 	return set
 }
 
-func scanFolderGroup(folderCfg types.ScanFolderConfig, index scanIndex, blacklist map[string]bool) (types.ScannedFolderGroup, error) {
-	folder := cleanPath(folderCfg.Path)
+func (s *service) scanFolderGroup(folderCfg types.ScanFolderConfig, index scanIndex, blacklist map[string]bool) (types.ScannedFolderGroup, error) {
+	folder := config.CleanPath(folderCfg.Path)
 	excludeNames := folderCfg.ExcludeNames
 	if excludeNames == nil {
-		excludeNames = defaultScanExcludeNames()
+		excludeNames = config.DefaultScanExcludeNames()
 	}
 
 	games := []types.GameInfo{}
 	for _, exePath := range searchExecutables(folder, folderCfg.Depth, excludeNames) {
-		normalized := strings.ToLower(cleanPath(exePath))
+		normalized := config.PathKey(exePath)
 		if blacklist[normalized] || index.manualPaths[normalized] {
 			continue
 		}
-		game, err := scannedGame(exePath, normalized, index)
+		game, err := s.scannedGame(exePath, normalized, index)
 		if err != nil {
 			return types.ScannedFolderGroup{}, err
 		}
@@ -116,18 +116,18 @@ func scanFolderGroup(folderCfg types.ScanFolderConfig, index scanIndex, blacklis
 
 	return types.ScannedFolderGroup{
 		FolderPath: folder,
-		FolderName: baseName(folder),
+		FolderName: config.BaseName(folder),
 		Games:      games,
 	}, nil
 }
 
 // scannedGame returns the game for one executable, saving a default config the first time it is seen.
-func scannedGame(exePath, normalized string, index scanIndex) (types.GameInfo, error) {
-	name := fileNameWithoutExt(exePath)
+func (s *service) scannedGame(exePath, normalized string, index scanIndex) (types.GameInfo, error) {
+	name := config.NameWithoutExt(exePath)
 	cfg, known := index.configsByPath[normalized]
 	if !known {
 		cfg = newDefaultGameConfig(name, exePath)
-		if err := saveGameConfig(&cfg); err != nil {
+		if err := s.games.Save(&cfg); err != nil {
 			return types.GameInfo{}, err
 		}
 		index.configsByPath[normalized] = cfg

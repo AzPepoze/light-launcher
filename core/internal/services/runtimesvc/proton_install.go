@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"light-launcher/core/internal/config"
 )
 
 // installProtonVersion downloads a Proton archive and extracts it into the Steam compatibility tools folder.
@@ -40,7 +42,7 @@ func installProtonVersion(url string, versionTag string, onProgress func(percent
 
 // protonTargetFolder prefers ~/.steam when it exists, else the Steam share folder.
 func protonTargetFolder(home string) string {
-	if pathExists(filepath.Join(home, ".steam/root")) {
+	if config.PathExists(filepath.Join(home, ".steam/root")) {
 		return filepath.Join(home, ".steam/root/compatibilitytools.d")
 	}
 	return filepath.Join(home, ".local/share/Steam/compatibilitytools.d")

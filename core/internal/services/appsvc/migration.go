@@ -60,7 +60,7 @@ func migrateLegacySettings(legacySettings string) error {
 	if _, err := os.Stat(legacySettings); err != nil {
 		return nil
 	}
-	target := settingsFilePath()
+	target := config.SettingsFilePath()
 	if _, err := os.Stat(target); err != nil {
 		return moveOrCopy(legacySettings, target)
 	}

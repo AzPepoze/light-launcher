@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"light-launcher/core/internal/config"
 	"light-launcher/core/internal/logger"
 	"light-launcher/core/internal/platform"
 	"light-launcher/core/internal/types"
@@ -23,7 +24,7 @@ var (
 
 // runGame starts a game through the light-launcher-instance binary.
 // On Linux it resolves the prefix and Proton first. On Windows it starts the game directly.
-func runGame(options types.LaunchOptions, showLogs bool) error {
+func (s *service) runGame(options types.LaunchOptions, showLogs bool) error {
 	features := platform.Current()
 	launch := options
 	if !launch.UseGamePath && launch.LauncherPath != "" {
@@ -31,11 +32,11 @@ func runGame(options types.LaunchOptions, showLogs bool) error {
 	}
 
 	if features.Prefix {
-		if err := resolvePrefixPath(&launch); err != nil {
+		if err := s.resolvePrefixPath(&launch); err != nil {
 			return err
 		}
 	}
-	if !pathExists(launch.GamePath) {
+	if !config.PathExists(launch.GamePath) {
 		logger.Error("Runner", "Game executable not found at: %s", launch.GamePath)
 		return fmt.Errorf("Game executable not found at: %s", launch.GamePath)
 	}
@@ -46,14 +47,14 @@ func runGame(options types.LaunchOptions, showLogs bool) error {
 	}
 
 	logger.Info("Runner", "Launching \"%s\" (game: %s, prefix: %s, proton: %s)",
-		firstNonEmpty(launch.Name, nameWithoutExt(filepath.Base(launch.GamePath))),
+		config.FirstNonEmpty(launch.Name, config.NameWithoutExt(launch.GamePath)),
 		launch.GamePath, launch.PrefixPath, stringOrDefault(launch.ProtonPath, "default"))
 
-	if err := saveGameConfig(&launch); err != nil {
+	if err := s.games.Save(&launch); err != nil {
 		return err
 	}
 	if features.Lsfg {
-		if err := syncLsfgProfile(launch); err != nil {
+		if err := s.syncLsfgProfile(launch); err != nil {
 			return err
 		}
 	}
@@ -67,12 +68,12 @@ func runGame(options types.LaunchOptions, showLogs bool) error {
 	if err != nil {
 		return err
 	}
-	command, args := setsidCommand(instancePath, buildInstanceArgs(launch, showLogs, features, loadAppSettings()))
+	command, args := setsidCommand(instancePath, buildInstanceArgs(launch, showLogs, features, s.settings.Load()))
 	logger.Info("Runner", "Executing: %s %s", command, strings.Join(args, " "))
 	if err := startDetached(command, args, nil); err != nil {
 		return err
 	}
-	return recordLaunch(launch)
+	return s.activity.RecordLaunch(launch)
 }
 
 // findInstanceBinary looks next to the running executable first, then in PATH.
@@ -83,7 +84,7 @@ func findInstanceBinary() (string, error) {
 	}
 	if executable, err := os.Executable(); err == nil {
 		candidate := filepath.Join(filepath.Dir(executable), name)
-		if pathExists(candidate) {
+		if config.PathExists(candidate) {
 			return candidate, nil
 		}
 	}

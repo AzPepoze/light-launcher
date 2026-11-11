@@ -14,19 +14,20 @@ import (
 // Prefix, Proton and LSFG methods return an error (or an empty list) where the platform lacks them.
 func Register(r *api.Router, ev api.Events) {
 	features := platform.Current()
+	svc := newDefaultService()
 	r.Handle("RunGame", typed(func(in runGameInput) (any, error) {
-		return nil, runGame(in.Options, in.ShowLogs)
+		return nil, svc.runGame(in.Options, in.ShowLogs)
 	}))
 	r.Handle("GetRunningSessions", plain(func() (any, error) {
-		return getRunningSessions()
+		return svc.getRunningSessions()
 	}))
 	r.Handle("KillSession", typed(func(in pidInput) (any, error) {
 		return nil, killSession(in.Pid)
 	}))
 
-	registerPrefix(r, features.Prefix)
+	registerPrefix(r, features.Prefix, svc)
 	registerProton(r, features.Proton, ev)
-	registerLsfg(r, features.Lsfg, ev)
+	registerLsfg(r, features.Lsfg, ev, svc)
 }
 
 // typed decodes the payload into In before calling fn.

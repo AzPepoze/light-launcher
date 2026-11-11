@@ -8,14 +8,15 @@ import (
 	"slices"
 	"strings"
 
+	"light-launcher/core/internal/config"
 	"light-launcher/core/internal/types"
 )
 
 // addScanFolder watches a folder with the default depth and excludes.
-func addScanFolder(folderPath string) error {
+func (s *service) addScanFolder(folderPath string) error {
 	resetScanCache()
-	return updateAppSettings(func(settings *types.AppSettings) error {
-		cleaned := cleanPath(folderPath)
+	return s.settings.Update(func(settings *types.AppSettings) error {
+		cleaned := config.CleanPath(folderPath)
 		if !slices.Contains(settings.ScanFolders, cleaned) {
 			settings.ScanFolders = append(settings.ScanFolders, cleaned)
 		}
@@ -23,7 +24,7 @@ func addScanFolder(folderPath string) error {
 			settings.ScanFolderConfigs = append(settings.ScanFolderConfigs, types.ScanFolderConfig{
 				Path:         cleaned,
 				Depth:        2,
-				ExcludeNames: defaultScanExcludeNames(),
+				ExcludeNames: config.DefaultScanExcludeNames(),
 			})
 		}
 		return nil
@@ -31,10 +32,10 @@ func addScanFolder(folderPath string) error {
 }
 
 // renameScanFolder moves a watched folder to a new path and returns the cleaned new path.
-func renameScanFolder(oldPath, newPath string, depth int, excludeNames []string) (string, error) {
+func (s *service) renameScanFolder(oldPath, newPath string, depth int, excludeNames []string) (string, error) {
 	resetScanCache()
-	cleanedOld := cleanPath(oldPath)
-	cleanedNew := cleanPath(newPath)
+	cleanedOld := config.CleanPath(oldPath)
+	cleanedNew := config.CleanPath(newPath)
 	if cleanedNew == "" {
 		return "", errors.New("Folder path cannot be empty")
 	}
@@ -42,7 +43,7 @@ func renameScanFolder(oldPath, newPath string, depth int, excludeNames []string)
 		return "", fmt.Errorf("Folder not found: %s", cleanedNew)
 	}
 
-	err := updateAppSettings(func(settings *types.AppSettings) error {
+	err := s.settings.Update(func(settings *types.AppSettings) error {
 		return renameInSettings(settings, cleanedOld, cleanedNew, depth, excludeNames)
 	})
 	if err != nil {
@@ -75,7 +76,7 @@ func renameInSettings(settings *types.AppSettings, oldPath, newPath string, dept
 func renameScanFolderEntries(folders []string, oldPath, newPath string) []string {
 	renamed := make([]string, 0, len(folders))
 	for _, folder := range folders {
-		if cleanPath(folder) == oldPath {
+		if config.CleanPath(folder) == oldPath {
 			renamed = append(renamed, newPath)
 		} else {
 			renamed = append(renamed, folder)
@@ -94,11 +95,11 @@ func remapBlacklist(blacklist []string, oldPath, newPath string) []string {
 }
 
 func remapBlacklistEntry(entry, oldPath, newPath string) string {
-	cleaned := cleanPath(entry)
+	cleaned := config.CleanPath(entry)
 	if strings.ToLower(cleaned) == strings.ToLower(oldPath) {
 		return newPath
 	}
-	rel := relativePath(oldPath, cleaned)
+	rel := config.RelativePath(oldPath, cleaned)
 	if rel != "" && !strings.HasPrefix(rel, "..") && !filepath.IsAbs(rel) {
 		return filepath.Join(newPath, rel)
 	}
@@ -106,25 +107,25 @@ func remapBlacklistEntry(entry, oldPath, newPath string) string {
 }
 
 // removeScanFolder stops watching a folder.
-func removeScanFolder(folderPath string) error {
+func (s *service) removeScanFolder(folderPath string) error {
 	resetScanCache()
-	cleaned := cleanPath(folderPath)
-	return updateAppSettings(func(settings *types.AppSettings) error {
+	cleaned := config.CleanPath(folderPath)
+	return s.settings.Update(func(settings *types.AppSettings) error {
 		settings.ScanFolders = slices.DeleteFunc(settings.ScanFolders, func(folder string) bool {
-			return cleanPath(folder) == cleaned
+			return config.CleanPath(folder) == cleaned
 		})
 		settings.ScanFolderConfigs = slices.DeleteFunc(settings.ScanFolderConfigs, func(cfg types.ScanFolderConfig) bool {
-			return cleanPath(cfg.Path) == cleaned
+			return config.CleanPath(cfg.Path) == cleaned
 		})
 		return nil
 	})
 }
 
 // updateScanFolderConfig changes depth and excludes. An unknown folder is added to the watch list.
-func updateScanFolderConfig(folderPath string, depth int, excludeNames []string) error {
+func (s *service) updateScanFolderConfig(folderPath string, depth int, excludeNames []string) error {
 	resetScanCache()
-	cleaned := cleanPath(folderPath)
-	return updateAppSettings(func(settings *types.AppSettings) error {
+	cleaned := config.CleanPath(folderPath)
+	return s.settings.Update(func(settings *types.AppSettings) error {
 		index := findScanFolderIndex(settings.ScanFolderConfigs, cleaned)
 		if index >= 0 {
 			settings.ScanFolderConfigs[index].Depth = depth
@@ -144,24 +145,24 @@ func updateScanFolderConfig(folderPath string, depth int, excludeNames []string)
 }
 
 // getScanFolderConfig returns the saved config for a folder, or the defaults when it is not watched.
-func getScanFolderConfig(folderPath string) types.ScanFolderConfig {
-	cleaned := cleanPath(folderPath)
-	settings := loadAppSettings()
+func (s *service) getScanFolderConfig(folderPath string) types.ScanFolderConfig {
+	cleaned := config.CleanPath(folderPath)
+	settings := s.settings.Load()
 	if index := findScanFolderIndex(settings.ScanFolderConfigs, cleaned); index >= 0 {
 		return settings.ScanFolderConfigs[index]
 	}
 	return types.ScanFolderConfig{
 		Path:         cleaned,
 		Depth:        2,
-		ExcludeNames: defaultScanExcludeNames(),
+		ExcludeNames: config.DefaultScanExcludeNames(),
 	}
 }
 
 // blacklistGame hides an executable from auto scans.
-func blacklistGame(executablePath string) error {
+func (s *service) blacklistGame(executablePath string) error {
 	resetScanCache()
-	cleaned := cleanPath(executablePath)
-	return updateAppSettings(func(settings *types.AppSettings) error {
+	cleaned := config.CleanPath(executablePath)
+	return s.settings.Update(func(settings *types.AppSettings) error {
 		if !containsCleanPath(settings.Blacklist, cleaned) {
 			settings.Blacklist = append(settings.Blacklist, cleaned)
 		}
@@ -170,12 +171,12 @@ func blacklistGame(executablePath string) error {
 }
 
 // unblacklistGame shows an executable in auto scans again.
-func unblacklistGame(executablePath string) error {
+func (s *service) unblacklistGame(executablePath string) error {
 	resetScanCache()
-	cleaned := cleanPath(executablePath)
-	return updateAppSettings(func(settings *types.AppSettings) error {
+	cleaned := config.CleanPath(executablePath)
+	return s.settings.Update(func(settings *types.AppSettings) error {
 		settings.Blacklist = slices.DeleteFunc(settings.Blacklist, func(entry string) bool {
-			return cleanPath(entry) == cleaned
+			return config.CleanPath(entry) == cleaned
 		})
 		return nil
 	})
@@ -183,7 +184,7 @@ func unblacklistGame(executablePath string) error {
 
 func findScanFolderIndex(configs []types.ScanFolderConfig, cleaned string) int {
 	for i, cfg := range configs {
-		if cleanPath(cfg.Path) == cleaned {
+		if config.CleanPath(cfg.Path) == cleaned {
 			return i
 		}
 	}
@@ -192,7 +193,7 @@ func findScanFolderIndex(configs []types.ScanFolderConfig, cleaned string) int {
 
 func hasCaseInsensitiveScanFolder(configs []types.ScanFolderConfig, cleaned string) bool {
 	for _, cfg := range configs {
-		if strings.ToLower(cleanPath(cfg.Path)) == strings.ToLower(cleaned) {
+		if strings.ToLower(config.CleanPath(cfg.Path)) == strings.ToLower(cleaned) {
 			return true
 		}
 	}
@@ -201,7 +202,7 @@ func hasCaseInsensitiveScanFolder(configs []types.ScanFolderConfig, cleaned stri
 
 func containsCleanPath(list []string, cleaned string) bool {
 	for _, entry := range list {
-		if cleanPath(entry) == cleaned {
+		if config.CleanPath(entry) == cleaned {
 			return true
 		}
 	}

@@ -2,9 +2,9 @@ package runtimesvc
 
 import (
 	"os"
-	"path/filepath"
 	"strings"
 
+	"light-launcher/core/internal/config"
 	"light-launcher/core/internal/platform"
 	"light-launcher/core/internal/types"
 )
@@ -13,17 +13,17 @@ import (
 func buildInstanceArgs(launch types.LaunchOptions, showLogs bool, features platform.Features, settings types.AppSettings) []string {
 	args := []string{
 		"--game", launch.GamePath,
-		"--launcher", firstNonEmpty(launch.LauncherPath, launch.GamePath),
+		"--launcher", config.FirstNonEmpty(launch.LauncherPath, launch.GamePath),
 	}
 	if features.Proton {
 		args = append(args,
 			"--prefix", launch.PrefixPath,
-			"--proton-pattern", nodeBasename(launch.ProtonPath),
-			"--proton-path", expandPath(launch.ProtonPath),
+			"--proton-pattern", config.BaseName(launch.ProtonPath),
+			"--proton-path", config.ExpandPath(launch.ProtonPath),
 		)
 	}
 	args = append(args,
-		"--game-name", firstNonEmpty(launch.Name, nameWithoutExt(filepath.Base(launch.GamePath))),
+		"--game-name", config.FirstNonEmpty(launch.Name, config.NameWithoutExt(launch.GamePath)),
 	)
 	args = append(args, discordArgs(settings)...)
 	if !showLogs {
@@ -37,7 +37,7 @@ func discordArgs(settings types.AppSettings) []string {
 	if settings.DiscordRichPresence != nil && !*settings.DiscordRichPresence {
 		return nil
 	}
-	clientID := strings.TrimSpace(firstNonEmpty(settings.DiscordClientId, os.Getenv("LIGHT_LAUNCHER_DISCORD_CLIENT_ID")))
+	clientID := strings.TrimSpace(config.FirstNonEmpty(settings.DiscordClientId, os.Getenv("LIGHT_LAUNCHER_DISCORD_CLIENT_ID")))
 	if clientID == "" {
 		return nil
 	}

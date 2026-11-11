@@ -9,6 +9,8 @@ import (
 	"sort"
 	"strings"
 	"sync"
+
+	"light-launcher/core/internal/config"
 )
 
 const drmFolder = "/sys/class/drm"
@@ -100,7 +102,7 @@ func drmDevices() []gpuDevice {
 			continue
 		}
 		devicePath := filepath.Join(drmFolder, entry.Name(), "device")
-		if !pathExists(devicePath) {
+		if !config.PathExists(devicePath) {
 			continue
 		}
 		name := drmProductName(devicePath)

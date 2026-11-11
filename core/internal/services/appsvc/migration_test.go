@@ -45,7 +45,7 @@ func TestMigrateIfNeededMovesSettingsAndRepairsPrefixPath(t *testing.T) {
 	if err != nil || !migrated {
 		t.Fatalf("migrateIfNeeded = %v, %v; want true and no error", migrated, err)
 	}
-	if _, err := os.Stat(settingsFilePath()); err != nil {
+	if _, err := os.Stat(config.SettingsFilePath()); err != nil {
 		t.Fatalf("settings were not moved: %v", err)
 	}
 	if _, err := os.Stat(legacy); !os.IsNotExist(err) {

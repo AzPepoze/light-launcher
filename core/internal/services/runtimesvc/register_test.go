@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"light-launcher/core/internal/api"
+	"light-launcher/core/internal/config"
 	"light-launcher/core/internal/platform"
 )
 
@@ -88,7 +89,7 @@ func TestDispatchCreatesPrefixFromPayload(t *testing.T) {
 	if _, err := router.Dispatch(context.Background(), "CreatePrefix", payload); err != nil {
 		t.Fatalf("CreatePrefix: %v", err)
 	}
-	if !pathExists(filepath.Join(base, "Game One")) {
+	if !config.PathExists(filepath.Join(base, "Game One")) {
 		t.Error("CreatePrefix did not create the prefix named in the payload")
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"testing"
 
+	"light-launcher/core/internal/config"
 	"light-launcher/core/internal/platform"
 	"light-launcher/core/internal/types"
 )
@@ -126,25 +127,27 @@ func TestResolveProtonPathWithoutInstallsFails(t *testing.T) {
 
 func TestResolvePrefixPathMovesLegacyPrefix(t *testing.T) {
 	base := isolateConfigHome(t)
+	svc := newTestService(t)
 	launch := types.LaunchOptions{PrefixPath: "/old/home/LightLauncher/prefixes/Game"}
 
-	if err := resolvePrefixPath(&launch); err != nil {
+	if err := svc.resolvePrefixPath(&launch); err != nil {
 		t.Fatalf("resolvePrefixPath: %v", err)
 	}
 	want := filepath.Join(base, "Game")
 	if launch.PrefixPath != want {
 		t.Errorf("PrefixPath = %q, want %q", launch.PrefixPath, want)
 	}
-	if !pathExists(want) {
+	if !config.PathExists(want) {
 		t.Error("prefix folder was not created")
 	}
 }
 
 func TestRunGameReportsMissingExecutable(t *testing.T) {
 	isolateConfigHome(t)
+	svc := newTestService(t)
 	missing := filepath.Join(t.TempDir(), "missing.exe")
 
-	err := runGame(types.LaunchOptions{GamePath: missing}, true)
+	err := svc.runGame(types.LaunchOptions{GamePath: missing}, true)
 	if err == nil || err.Error() != "Game executable not found at: "+missing {
 		t.Errorf("error = %v, want missing executable error", err)
 	}

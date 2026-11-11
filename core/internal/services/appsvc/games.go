@@ -5,20 +5,19 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"light-launcher/core/internal/config"
 	"light-launcher/core/internal/types"
 )
 
 // getAllGames lists the saved game configs. A game is flagged auto-scanned when it lives under a scan folder.
-func getAllGames() []types.GameInfo {
-	configs := listGameConfigs()
-	scanFolders := loadAppSettings().ScanFolders
+func (s *service) getAllGames() []types.GameInfo {
+	configs := s.games.List()
+	scanFolders := s.settings.Load().ScanFolders
 
 	games := []types.GameInfo{}
 	for _, gameConfig := range configs {
-		cleaned := cleanPath(firstNonEmpty(gameConfig.LauncherPath, gameConfig.GamePath))
+		cleaned := config.CleanPath(config.FirstNonEmpty(gameConfig.LauncherPath, gameConfig.GamePath))
 		if cleaned == "" {
 			continue
 		}
@@ -38,12 +37,12 @@ func gameConfigName(cfg types.LaunchOptions) string {
 	if cfg.Name != "" {
 		return cfg.Name
 	}
-	return fileNameWithoutExt(firstNonEmpty(cfg.GamePath, cfg.LauncherPath))
+	return config.NameWithoutExt(config.FirstNonEmpty(cfg.GamePath, cfg.LauncherPath))
 }
 
 func isInAnyFolder(folders []string, target string) bool {
 	for _, folder := range folders {
-		if isSubPath(folder, target) {
+		if config.IsSubPath(folder, target) {
 			return true
 		}
 	}
@@ -51,30 +50,20 @@ func isInAnyFolder(folders []string, target string) bool {
 }
 
 // removeGame deletes the config folder of the game at executablePath.
-func removeGame(executablePath string) error {
+func (s *service) removeGame(executablePath string) error {
 	resetScanCache()
 	if executablePath == "" {
 		return errors.New("Executable path cannot be empty")
 	}
-	if cfg := loadGameConfig(executablePath); cfg != nil {
-		return removeConfigFolder(cfg.Name, cfg.ID)
+	cfg := s.games.Find(executablePath)
+	if cfg == nil {
+		return fmt.Errorf("Could not find game config to remove for path: %s", executablePath)
 	}
-
-	target := strings.ToLower(cleanPath(executablePath))
-	for _, cfg := range listGameConfigs() {
-		if matchesCleanPath(cfg.GamePath, target) || matchesCleanPath(cfg.LauncherPath, target) {
-			return removeConfigFolder(cfg.Name, cfg.ID)
-		}
-	}
-	return fmt.Errorf("Could not find game config to remove for path: %s", executablePath)
+	return s.removeConfigFolder(cfg.Name, cfg.ID)
 }
 
-func matchesCleanPath(p, target string) bool {
-	return p != "" && strings.ToLower(cleanPath(p)) == target
-}
-
-func removeConfigFolder(name, id string) error {
-	folder := config.GetExecutableConfigPath(name, id)
+func (s *service) removeConfigFolder(name, id string) error {
+	folder := s.games.Path(name, id)
 	if _, err := os.Stat(folder); err != nil {
 		return nil
 	}
@@ -93,11 +82,11 @@ func searchExecutables(folderPath string, maxDepth int, excludeNames []string) [
 // newDefaultGameConfig builds the config for an executable found by a folder scan.
 func newDefaultGameConfig(name, executablePath string) types.LaunchOptions {
 	return types.LaunchOptions{
-		ID:           generateID(),
+		ID:           config.NewID(),
 		Name:         name,
 		LauncherPath: executablePath,
 		GamePath:     executablePath,
 		PrefixPath:   filepath.Join(config.GetPrefixBaseDirectory(), "Default"),
-		Extras:       defaultExtras(),
+		Extras:       config.DefaultExtras(),
 	}
 }

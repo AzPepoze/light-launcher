@@ -3,6 +3,8 @@ package appsvc
 import (
 	"os"
 	"sync"
+
+	"light-launcher/core/internal/config"
 )
 
 // initialArgs holds the paths and flag the app was started with.
@@ -25,13 +27,13 @@ func SetInitialArgs(launcher, game string, editLsfg bool) {
 func initialLauncherPath() string {
 	initialArgs.mu.Lock()
 	defer initialArgs.mu.Unlock()
-	return firstNonEmpty(initialArgs.launcher, os.Getenv("LIGHT_LAUNCHER_LAUNCHER_PATH"))
+	return config.FirstNonEmpty(initialArgs.launcher, os.Getenv("LIGHT_LAUNCHER_LAUNCHER_PATH"))
 }
 
 func initialGamePath() string {
 	initialArgs.mu.Lock()
 	defer initialArgs.mu.Unlock()
-	return firstNonEmpty(initialArgs.game, os.Getenv("LIGHT_LAUNCHER_GAME_PATH"))
+	return config.FirstNonEmpty(initialArgs.game, os.Getenv("LIGHT_LAUNCHER_GAME_PATH"))
 }
 
 func shouldEditLsfg() bool {

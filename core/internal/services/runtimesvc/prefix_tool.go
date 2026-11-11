@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
+
+	"light-launcher/core/internal/config"
 )
 
 // runPrefixTool starts a Windows tool, such as an installer or config app, inside a prefix through umu-run.
@@ -12,8 +14,8 @@ func runPrefixTool(prefixPath string, toolName string, protonPath string) error 
 		return errors.New("Tool name cannot be empty")
 	}
 
-	resolvedPrefix := expandPath(prefixPath)
-	if !pathExists(resolvedPrefix) {
+	resolvedPrefix := config.ExpandPath(prefixPath)
+	if !config.PathExists(resolvedPrefix) {
 		if err := os.MkdirAll(resolvedPrefix, 0755); err != nil {
 			return err
 		}
@@ -21,10 +23,10 @@ func runPrefixTool(prefixPath string, toolName string, protonPath string) error 
 
 	environment := append(os.Environ(), "WINEPREFIX="+resolvedPrefix)
 	if protonPath != "" {
-		expandedProton := expandPath(protonPath)
+		expandedProton := config.ExpandPath(protonPath)
 		environment = append(environment,
 			"PROTONPATH="+expandedProton,
-			"UMU_PROTON_PATTERN="+nodeBasename(expandedProton),
+			"UMU_PROTON_PATTERN="+config.BaseName(expandedProton),
 		)
 	}
 

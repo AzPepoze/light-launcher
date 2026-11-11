@@ -25,8 +25,8 @@ type SaveLsfgProfileInput struct {
 
 // saveLsfgProfile writes the game's profile and the global lsfg-vk file (DLL path and FP16 flag).
 // An empty GPU uses the first detected GPU.
-func saveLsfgProfile(input SaveLsfgProfileInput) error {
-	profilePath := config.GetGameLsfgConfigPath(input.ProfileName, lsfgIdentity(input.GamePath))
+func (s *service) saveLsfgProfile(input SaveLsfgProfileInput) error {
+	profilePath := s.lsfgConfigPath(input.ProfileName, s.lsfgIdentity(input.GamePath))
 
 	gpu := input.GPU
 	if gpu == "" {
@@ -74,9 +74,9 @@ func writeGlobalLsfgSettings(dllPath string, allowFp16 bool) error {
 }
 
 // disableLsfgProfile adds "disable = true" to the game's profile file, once.
-func disableLsfgProfile(profileName string, gamePath string) error {
-	profilePath := config.GetGameLsfgConfigPath(profileName, lsfgIdentity(gamePath))
-	if !pathExists(profilePath) {
+func (s *service) disableLsfgProfile(profileName string, gamePath string) error {
+	profilePath := s.lsfgConfigPath(profileName, s.lsfgIdentity(gamePath))
+	if !config.PathExists(profilePath) {
 		return nil
 	}
 	content, err := os.ReadFile(profilePath)
@@ -91,16 +91,30 @@ func disableLsfgProfile(profileName string, gamePath string) error {
 }
 
 // removeProfile deletes the game's profile file. It does nothing when the game has no config.
-func removeProfile(mainExecutablePath string) error {
-	cfg := loadGameConfig(mainExecutablePath)
+func (s *service) removeProfile(mainExecutablePath string) error {
+	cfg := s.games.Find(mainExecutablePath)
 	if cfg == nil {
 		return nil
 	}
-	profilePath := config.GetGameLsfgConfigPath(cfg.Name, cfg.ID)
-	if !pathExists(profilePath) {
+	profilePath := s.lsfgConfigPath(cfg.Name, cfg.ID)
+	if !config.PathExists(profilePath) {
 		return nil
 	}
 	return os.Remove(profilePath)
+}
+
+// lsfgConfigPath is the per-game toc file inside the game's config folder.
+func (s *service) lsfgConfigPath(name, id string) string {
+	return filepath.Join(s.games.Path(name, id), "lsfg_vk.toml")
+}
+
+// lsfgIdentity returns the config ID used to find a game's LSFG profile folder.
+func (s *service) lsfgIdentity(gamePath string) string {
+	cfg := s.games.Find(gamePath)
+	if cfg == nil {
+		return ""
+	}
+	return cfg.ID
 }
 
 func boolToml(value bool) string {

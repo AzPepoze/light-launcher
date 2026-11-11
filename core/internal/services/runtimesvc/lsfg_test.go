@@ -84,6 +84,7 @@ func TestFindLsfgAssetPicksFirstCompatiblePackage(t *testing.T) {
 
 func TestSaveLsfgProfileRoundTrip(t *testing.T) {
 	home := isolateHome(t)
+	svc := newTestService(t)
 	gamePath := filepath.Join(home, "games", "Game.exe")
 
 	input := SaveLsfgProfileInput{
@@ -97,11 +98,11 @@ func TestSaveLsfgProfileRoundTrip(t *testing.T) {
 		Pacing:          "hard",
 		AllowFp16:       true,
 	}
-	if err := saveLsfgProfile(input); err != nil {
+	if err := svc.saveLsfgProfile(input); err != nil {
 		t.Fatalf("saveLsfgProfile: %v", err)
 	}
 
-	profile := getLsfgProfileForGame("Game", gamePath)
+	profile := svc.getLsfgProfileForGame("Game", gamePath)
 	if profile == nil {
 		t.Fatal("getLsfgProfileForGame returned nil after save")
 	}
@@ -115,18 +116,19 @@ func TestSaveLsfgProfileRoundTrip(t *testing.T) {
 
 func TestDisableLsfgProfileAppendsOnce(t *testing.T) {
 	isolateHome(t)
+	svc := newTestService(t)
 	input := SaveLsfgProfileInput{ProfileName: "Game", GamePath: "/games/Game.exe", GPU: "GPU0", FlowScale: "1"}
-	if err := saveLsfgProfile(input); err != nil {
+	if err := svc.saveLsfgProfile(input); err != nil {
 		t.Fatalf("saveLsfgProfile: %v", err)
 	}
 
 	for i := 0; i < 2; i++ {
-		if err := disableLsfgProfile("Game", "/games/Game.exe"); err != nil {
+		if err := svc.disableLsfgProfile("Game", "/games/Game.exe"); err != nil {
 			t.Fatalf("disableLsfgProfile: %v", err)
 		}
 	}
 
-	content, err := os.ReadFile(config.GetGameLsfgConfigPath("Game", ""))
+	content, err := os.ReadFile(svc.lsfgConfigPath("Game", ""))
 	if err != nil {
 		t.Fatalf("read profile: %v", err)
 	}
@@ -137,11 +139,12 @@ func TestDisableLsfgProfileAppendsOnce(t *testing.T) {
 
 func TestRemoveProfileDeletesGameProfileFile(t *testing.T) {
 	isolateHome(t)
+	svc := newTestService(t)
 	cfg := types.LaunchOptions{Name: "Game", GamePath: "/games/Game.exe"}
-	if err := saveGameConfig(&cfg); err != nil {
+	if err := svc.games.Save(&cfg); err != nil {
 		t.Fatalf("saveGameConfig: %v", err)
 	}
-	profilePath := config.GetGameLsfgConfigPath("Game", cfg.ID)
+	profilePath := svc.lsfgConfigPath("Game", cfg.ID)
 	if err := os.MkdirAll(filepath.Dir(profilePath), 0755); err != nil {
 		t.Fatal(err)
 	}
@@ -149,10 +152,10 @@ func TestRemoveProfileDeletesGameProfileFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := removeProfile("/games/Game.exe"); err != nil {
+	if err := svc.removeProfile("/games/Game.exe"); err != nil {
 		t.Fatalf("removeProfile: %v", err)
 	}
-	if pathExists(profilePath) {
+	if config.PathExists(profilePath) {
 		t.Error("profile file still exists after removeProfile")
 	}
 }

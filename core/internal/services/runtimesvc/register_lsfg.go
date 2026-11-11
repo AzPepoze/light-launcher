@@ -2,21 +2,21 @@ package runtimesvc
 
 import "light-launcher/core/internal/api"
 
-func registerLsfg(r *api.Router, enabled bool, ev api.Events) {
+func registerLsfg(r *api.Router, enabled bool, ev api.Events, svc *service) {
 	r.Handle("GetLsfgProfileForGame", gated(enabled, "lsfg", typed(func(in lsfgProfileInput) (any, error) {
-		return getLsfgProfileForGame(in.Name, in.GamePath), nil
+		return svc.getLsfgProfileForGame(in.Name, in.GamePath), nil
 	})))
 	r.Handle("DetectLosslessDll", gated(enabled, "lsfg", plain(func() (any, error) {
 		return detectLosslessDll(), nil
 	})))
 	r.Handle("SaveLsfgProfile", gated(enabled, "lsfg", typed(func(in SaveLsfgProfileInput) (any, error) {
-		return nil, saveLsfgProfile(in)
+		return nil, svc.saveLsfgProfile(in)
 	})))
 	r.Handle("DisableLsfgProfile", gated(enabled, "lsfg", typed(func(in disableLsfgInput) (any, error) {
-		return nil, disableLsfgProfile(in.ProfileName, in.GamePath)
+		return nil, svc.disableLsfgProfile(in.ProfileName, in.GamePath)
 	})))
 	r.Handle("RemoveProfile", gated(enabled, "lsfg", typed(func(in removeProfileInput) (any, error) {
-		return nil, removeProfile(in.MainExecutablePath)
+		return nil, svc.removeProfile(in.MainExecutablePath)
 	})))
 	r.Handle("InstallLsfg", gated(enabled, "lsfg", plain(func() (any, error) {
 		return nil, installLsfg(progressEmitter(ev, "lsfg-install-progress"))

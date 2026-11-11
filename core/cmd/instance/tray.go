@@ -109,7 +109,8 @@ func onReady(logPath string) {
 	}
 
 	gameStartedAt := time.Now()
-	shouldTrackPlaytime := trackPlaytime && activityStore.TrackingEnabled()
+	playtime := activityStore.New(config.ActivityFilePath(), config.NewSettingsStore(config.SettingsFilePath()))
+	shouldTrackPlaytime := trackPlaytime && playtime.Enabled()
 	logger.Info("Runner", "Game started successfully (PID: %d). Running: %s", gameCmd.Process.Pid, exeNameClean)
 	sendNotification("LightLauncher Running", fmt.Sprintf("%s is now running (PID: %d)", exeNameClean, gameCmd.Process.Pid))
 
@@ -189,7 +190,7 @@ func onReady(logPath string) {
 			_ = discordClient.Close()
 		}
 		if shouldTrackPlaytime {
-			if err := activityStore.Finalize(opts.GamePath, exeNameClean, gameStartedAt, endedAt); err != nil {
+			if err := playtime.Finalize(opts.GamePath, exeNameClean, gameStartedAt, endedAt); err != nil {
 				logger.Info("Activity", "Failed to finalize playtime: %v", err)
 			}
 		}

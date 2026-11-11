@@ -36,8 +36,8 @@ func lsfgGlobalConfigPath() string {
 // detectLosslessDll returns the first Lossless.dll found in a Steam library, or "".
 func detectLosslessDll() string {
 	for _, candidate := range losslessDllCandidates {
-		expanded := expandPath(candidate)
-		if pathExists(expanded) {
+		expanded := config.ExpandPath(candidate)
+		if config.PathExists(expanded) {
 			return expanded
 		}
 	}
@@ -45,8 +45,8 @@ func detectLosslessDll() string {
 }
 
 // getLsfgProfileForGame reads the game's LSFG profile. It returns nil when there is no profile file.
-func getLsfgProfileForGame(name string, gamePath string) *types.LsfgProfileData {
-	profilePath := config.GetGameLsfgConfigPath(name, lsfgIdentity(gamePath))
+func (s *service) getLsfgProfileForGame(name string, gamePath string) *types.LsfgProfileData {
+	profilePath := s.lsfgConfigPath(name, s.lsfgIdentity(gamePath))
 	dllPath, allowFp16 := readGlobalLsfgSettings()
 
 	content, err := os.ReadFile(profilePath)
@@ -56,7 +56,7 @@ func getLsfgProfileForGame(name string, gamePath string) *types.LsfgProfileData 
 	profile := parseLsfgProfile(string(content))
 	profile.Name = name
 	if profile.Name == "" {
-		profile.Name = nameWithoutExt(filepath.Base(gamePath))
+		profile.Name = config.NameWithoutExt(gamePath)
 	}
 	profile.DllPath = dllPath
 	profile.AllowFp16 = allowFp16

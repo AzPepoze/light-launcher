@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"light-launcher/core/internal/config"
 )
 
 // unlimitedDepth scans every subfolder.
@@ -19,7 +21,7 @@ type scanOptions struct {
 
 // scanDirectoryFiles lists files under dir that match the options. Unreadable folders are skipped.
 func scanDirectoryFiles(dir string, options scanOptions) []string {
-	root := cleanPath(dir)
+	root := config.CleanPath(dir)
 	if root == "" {
 		return []string{}
 	}

@@ -65,7 +65,7 @@ func main() {
 	exeName := filepath.Base(gamePath)
 	logFileName := fmt.Sprintf("%s-%s.log", exeName, timestamp)
 
-	if err := logger.Init(logFileName, 10); err != nil {
+	if err := logger.Init(config.GetLogsDirectory(), logFileName, 10); err != nil {
 		log.Printf("Warning: failed to initialize logger: %v\n", err)
 	}
 

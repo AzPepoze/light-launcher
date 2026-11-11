@@ -10,11 +10,12 @@ import (
 // ev receives "window-close" and "restart-app" and must not be nil.
 // RunGame, prefix, Proton, LSFG, session and system methods are registered elsewhere.
 func Register(r *api.Router, ev api.Events) {
+	svc := newDefaultService()
 	registerAppMethods(r, ev)
 	registerPickerMethods(r)
-	registerSettingsMethods(r)
-	registerGameMethods(r)
-	registerActivityMethods(r)
+	registerSettingsMethods(r, svc)
+	registerGameMethods(r, svc)
+	registerActivityMethods(r, svc)
 }
 
 func registerAppMethods(r *api.Router, ev api.Events) {

@@ -1,33 +1,21 @@
 package runtimesvc
 
 import (
-	"path/filepath"
-
-	"light-launcher/core/internal/config"
-	"light-launcher/core/internal/logger"
 	"light-launcher/core/internal/types"
 )
 
-func savePrefixConfig(prefixName string, options types.LaunchOptions) error {
-	return saveJSON(prefixConfigPath(prefixName, loadAppSettings().CustomPrefixDir), options)
+func (s *service) savePrefixConfig(prefixName string, options types.LaunchOptions) error {
+	return s.prefixes.Save(prefixName, options)
 }
 
 // loadPrefixConfig returns the saved prefix config, or defaults when it is missing or unreadable.
-func loadPrefixConfig(prefixName string) types.LaunchOptions {
-	configPath := prefixConfigPath(prefixName, loadAppSettings().CustomPrefixDir)
-	if pathExists(configPath) {
-		cfg, err := loadJSON[types.LaunchOptions](configPath)
-		if err == nil {
-			return cfg
-		}
-		logger.Error("Config", "Failed to parse %s: %v", configPath, err)
-	}
-	return defaultPrefixConfig(prefixName)
+func (s *service) loadPrefixConfig(prefixName string) types.LaunchOptions {
+	return s.prefixes.Load(prefixName)
 }
 
 // loadPrefixConfigWithProton adds the matching installed Proton tool to the prefix config.
-func loadPrefixConfigWithProton(prefixName string) types.PrefixConfigWithProton {
-	cfg := loadPrefixConfig(prefixName)
+func (s *service) loadPrefixConfigWithProton(prefixName string) types.PrefixConfigWithProton {
+	cfg := s.loadPrefixConfig(prefixName)
 	result := types.PrefixConfigWithProton{
 		Config:     cfg,
 		ProtonPath: cfg.ProtonPath,
@@ -46,31 +34,4 @@ func loadPrefixConfigWithProton(prefixName string) types.PrefixConfigWithProton 
 	result.ProtonPath = match.Path
 	result.ProtonIsSteam = match.IsSteam
 	return result
-}
-
-// defaultPrefixConfig matches the Electron app. Its prefix path ignores the custom prefix folder setting.
-func defaultPrefixConfig(prefixName string) types.LaunchOptions {
-	return types.LaunchOptions{
-		Name:       prefixName,
-		PrefixPath: filepath.Join(config.GetPrefixBaseDirectory(), prefixName),
-		Extras: types.ExtrasConfig{
-			Lsfg: types.LsfgConfig{
-				Multiplier: config.DefaultMultiplier,
-				FlowScale:  "1.0",
-				Pacing:     "smooth",
-			},
-			Gamescope: types.GamescopeConfig{
-				Width:       config.DefaultWidth,
-				Height:      config.DefaultHeight,
-				RefreshRate: config.DefaultRefreshRate,
-				WindowMode:  "borderless",
-				Scaler:      "auto",
-				Filter:      "linear",
-				Sharpness:   "0",
-			},
-			Memory: types.MemoryConfig{
-				Value: config.DefaultMemoryValue,
-			},
-		},
-	}
 }

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"light-launcher/core/internal/config"
 )
 
 // isDirectory reports whether the path exists and is a folder.
@@ -22,7 +24,7 @@ func imageDataURL(imagePath string) string {
 	if err != nil || len(data) == 0 {
 		return ""
 	}
-	return dataURL(imageMimeType(extName(imagePath)), data)
+	return dataURL(imageMimeType(config.ExtName(imagePath)), data)
 }
 
 func imageMimeType(ext string) string {

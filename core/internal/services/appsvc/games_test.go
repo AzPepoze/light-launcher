@@ -3,63 +3,65 @@ package appsvc
 import (
 	"path/filepath"
 	"testing"
+
+	"light-launcher/core/internal/config"
 )
 
 func TestAddScanFolderSavesDefaultConfig(t *testing.T) {
-	isolateConfigHome(t)
-	folder := cleanPath(t.TempDir())
-	if err := addScanFolder(folder); err != nil {
+	svc := newTestService(t)
+	folder := config.CleanPath(t.TempDir())
+	if err := svc.addScanFolder(folder); err != nil {
 		t.Fatalf("addScanFolder: %v", err)
 	}
-	settings := loadAppSettings()
+	settings := svc.settings.Load()
 	if !containsCleanPath(settings.ScanFolders, folder) {
 		t.Fatalf("ScanFolders = %v, want %s", settings.ScanFolders, folder)
 	}
-	cfg := getScanFolderConfig(folder)
-	if cfg.Depth != 2 || len(cfg.ExcludeNames) != len(defaultExcludeNames) {
+	cfg := svc.getScanFolderConfig(folder)
+	if cfg.Depth != 2 || len(cfg.ExcludeNames) != len(config.DefaultScanExcludeNames()) {
 		t.Fatalf("default scan config = %+v", cfg)
 	}
 }
 
 func TestRenameScanFolderRemapsBlacklist(t *testing.T) {
-	isolateConfigHome(t)
-	oldFolder := cleanPath(t.TempDir())
-	newFolder := cleanPath(t.TempDir())
-	if err := addScanFolder(oldFolder); err != nil {
+	svc := newTestService(t)
+	oldFolder := config.CleanPath(t.TempDir())
+	newFolder := config.CleanPath(t.TempDir())
+	if err := svc.addScanFolder(oldFolder); err != nil {
 		t.Fatalf("addScanFolder: %v", err)
 	}
 	blacklisted := filepath.Join(oldFolder, "sub", "game.exe")
-	if err := blacklistGame(blacklisted); err != nil {
+	if err := svc.blacklistGame(blacklisted); err != nil {
 		t.Fatalf("blacklistGame: %v", err)
 	}
 
-	renamed, err := renameScanFolder(oldFolder, newFolder, 3, []string{"Steam.exe"})
+	renamed, err := svc.renameScanFolder(oldFolder, newFolder, 3, []string{"Steam.exe"})
 	if err != nil {
 		t.Fatalf("renameScanFolder: %v", err)
 	}
 	if renamed != newFolder {
 		t.Fatalf("renamed = %q, want %q", renamed, newFolder)
 	}
-	settings := loadAppSettings()
+	settings := svc.settings.Load()
 	want := filepath.Join(newFolder, "sub", "game.exe")
 	if len(settings.Blacklist) != 1 || settings.Blacklist[0] != want {
 		t.Fatalf("Blacklist = %v, want [%s]", settings.Blacklist, want)
 	}
-	if got := getScanFolderConfig(newFolder); got.Depth != 3 || len(got.ExcludeNames) != 1 {
+	if got := svc.getScanFolderConfig(newFolder); got.Depth != 3 || len(got.ExcludeNames) != 1 {
 		t.Fatalf("renamed folder config = %+v", got)
 	}
 }
 
 func TestGetAutoScannedGamesCreatesConfigForNewExecutable(t *testing.T) {
-	isolateConfigHome(t)
-	folder := cleanPath(t.TempDir())
+	svc := newTestService(t)
+	folder := config.CleanPath(t.TempDir())
 	mustWrite(t, filepath.Join(folder, "game.exe"))
 	mustWrite(t, filepath.Join(folder, "Steam.exe"))
-	if err := addScanFolder(folder); err != nil {
+	if err := svc.addScanFolder(folder); err != nil {
 		t.Fatalf("addScanFolder: %v", err)
 	}
 
-	groups, err := getAutoScannedGames(true)
+	groups, err := svc.getAutoScannedGames(true)
 	if err != nil {
 		t.Fatalf("getAutoScannedGames: %v", err)
 	}
@@ -70,7 +72,7 @@ func TestGetAutoScannedGamesCreatesConfigForNewExecutable(t *testing.T) {
 	if game.Name != "game" || !game.IsAutoScanned {
 		t.Fatalf("game = %+v", game)
 	}
-	if len(listGameConfigs()) != 1 {
+	if len(svc.games.List()) != 1 {
 		t.Fatal("expected a saved config for the scanned executable")
 	}
 }

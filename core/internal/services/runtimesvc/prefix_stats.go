@@ -4,6 +4,8 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+
+	"light-launcher/core/internal/config"
 )
 
 // PrefixStats is the size and creation time of one prefix. Unknown values are null.
@@ -13,10 +15,10 @@ type PrefixStats struct {
 	SizeBytes *int64   `json:"sizeBytes"`
 }
 
-func getPrefixStats(name string) PrefixStats {
+func (s *service) getPrefixStats(name string) PrefixStats {
 	stats := PrefixStats{Name: name}
-	prefixPath := filepath.Join(prefixBaseFolder(), name)
-	if !pathExists(prefixPath) {
+	prefixPath := filepath.Join(s.prefixes.BaseDir(), name)
+	if !config.PathExists(prefixPath) {
 		return stats
 	}
 	stats.CreatedAt = prefixCreatedAt(prefixPath)

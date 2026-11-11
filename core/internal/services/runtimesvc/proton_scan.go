@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"light-launcher/core/internal/config"
 	"light-launcher/core/internal/types"
 )
 
@@ -35,7 +36,7 @@ func scanProtonVersions() []types.ProtonTool {
 
 func appendProtonTools(tools []types.ProtonTool, seen map[string]bool, basePaths []string, isSteam bool, displayPrefix string) []types.ProtonTool {
 	for _, basePath := range basePaths {
-		if !pathExists(basePath) {
+		if !config.PathExists(basePath) {
 			continue
 		}
 		entries, err := os.ReadDir(basePath)
@@ -55,7 +56,7 @@ func appendProtonTools(tools []types.ProtonTool, seen map[string]bool, basePaths
 			if seen[realPath] {
 				continue
 			}
-			if !pathExists(filepath.Join(protonPath, "proton")) {
+			if !config.PathExists(filepath.Join(protonPath, "proton")) {
 				continue
 			}
 

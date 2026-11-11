@@ -5,30 +5,32 @@ import (
 	"path/filepath"
 	"strings"
 
+	"light-launcher/core/internal/config"
 	"light-launcher/core/internal/logger"
+	"light-launcher/core/internal/store"
 	"light-launcher/core/internal/types"
 )
 
 const defaultLaunchPrefix = "Default"
 
 // resolvePrefixPath moves the prefix into the current prefix folder and creates it when missing.
-func resolvePrefixPath(launch *types.LaunchOptions) error {
-	basePrefixDir := prefixBaseFolder()
+func (s *service) resolvePrefixPath(launch *types.LaunchOptions) error {
+	basePrefixDir := s.prefixes.BaseDir()
 	if launch.PrefixPath == "" || strings.Contains(launch.PrefixPath, legacyPrefixesMarker) {
 		prefixName := defaultLaunchPrefix
 		if launch.PrefixPath != "" {
-			prefixName = nodeBasename(launch.PrefixPath)
+			prefixName = config.BaseName(launch.PrefixPath)
 		}
 		launch.PrefixPath = filepath.Join(basePrefixDir, prefixName)
-	} else if !pathExists(launch.PrefixPath) {
-		candidate := filepath.Join(basePrefixDir, nodeBasename(launch.PrefixPath))
-		if pathExists(candidate) {
+	} else if !config.PathExists(launch.PrefixPath) {
+		candidate := filepath.Join(basePrefixDir, config.BaseName(launch.PrefixPath))
+		if config.PathExists(candidate) {
 			launch.PrefixPath = candidate
 		}
 	}
 
-	launch.PrefixPath = expandPath(launch.PrefixPath)
-	if !pathExists(launch.PrefixPath) {
+	launch.PrefixPath = config.ExpandPath(launch.PrefixPath)
+	if !config.PathExists(launch.PrefixPath) {
 		if err := os.MkdirAll(launch.PrefixPath, 0755); err != nil {
 			return err
 		}
@@ -56,7 +58,7 @@ func resolveProtonPath(launch *types.LaunchOptions) error {
 		launch.ProtonPath = match.Path
 		return nil
 	}
-	if pathExists(expandPath(launch.ProtonPath)) {
+	if config.PathExists(config.ExpandPath(launch.ProtonPath)) {
 		return nil
 	}
 	if len(tools) == 0 {
@@ -70,22 +72,23 @@ func resolveProtonPath(launch *types.LaunchOptions) error {
 // prefixDefaultProton returns the Proton path saved in the prefix's light-launcher.json, or "".
 func prefixDefaultProton(prefixPath string) string {
 	prefixConfigFile := filepath.Join(prefixPath, "light-launcher.json")
-	if !pathExists(prefixConfigFile) {
-		return ""
-	}
-	prefixConfig, err := loadJSON[types.LaunchOptions](prefixConfigFile)
+	var prefixConfig types.LaunchOptions
+	found, err := store.NewFile(prefixConfigFile, config.DataVersion).Load(&prefixConfig)
 	if err != nil {
 		logger.Warn("Runner", "Failed to read prefix runtime defaults: %v", err)
+		return ""
+	}
+	if !found {
 		return ""
 	}
 	return prefixConfig.ProtonPath
 }
 
 // syncLsfgProfile writes the LSFG profile when LSFG is on for this game, or disables it when off.
-func syncLsfgProfile(launch types.LaunchOptions) error {
+func (s *service) syncLsfgProfile(launch types.LaunchOptions) error {
 	lsfg := launch.Extras.Lsfg
 	if !lsfg.Enabled {
-		return disableLsfgProfile(launch.Name, launch.GamePath)
+		return s.disableLsfgProfile(launch.Name, launch.GamePath)
 	}
 
 	gpu := lsfg.Gpu
@@ -94,7 +97,7 @@ func syncLsfgProfile(launch types.LaunchOptions) error {
 			gpu = gpus[0]
 		}
 	}
-	return saveLsfgProfile(SaveLsfgProfileInput{
+	return s.saveLsfgProfile(SaveLsfgProfileInput{
 		ProfileName:     launch.Name,
 		GamePath:        launch.GamePath,
 		Multiplier:      parseLaunchMultiplier(lsfg.Multiplier),

@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"light-launcher/core/internal/config"
 	"light-launcher/core/internal/types"
 )
 
@@ -78,7 +79,7 @@ func findProtonMatch(savedPath string, tools []types.ProtonTool) *types.ProtonTo
 		}
 	}
 
-	dirName := nodeBasename(filepath.Clean(savedPath))
+	dirName := config.BaseName(filepath.Clean(savedPath))
 	isSteam := strings.Contains(savedPath, "steamapps/common")
 	for i := range tools {
 		if tools[i].Name == dirName && tools[i].IsSteam == isSteam {

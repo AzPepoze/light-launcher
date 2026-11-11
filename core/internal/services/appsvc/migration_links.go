@@ -9,6 +9,7 @@ import (
 
 	"light-launcher/core/internal/config"
 	"light-launcher/core/internal/logger"
+	"light-launcher/core/internal/store"
 )
 
 // legacyPrefixMarker is the part of an old prefix path that points into the legacy folder.
@@ -53,8 +54,8 @@ func repairLaunchConfig(configPath, basePrefixDir string) error {
 	if !ok || prefixPath == "" || !strings.Contains(prefixPath, legacyPrefixMarker) {
 		return nil
 	}
-	cfg["PrefixPath"] = filepath.Join(basePrefixDir, baseName(prefixPath))
-	data, err := marshalJSON(cfg)
+	cfg["PrefixPath"] = filepath.Join(basePrefixDir, config.BaseName(prefixPath))
+	data, err := store.Marshal(cfg)
 	if err != nil {
 		return err
 	}

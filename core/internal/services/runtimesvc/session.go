@@ -2,12 +2,12 @@ package runtimesvc
 
 import (
 	"errors"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"light-launcher/core/internal/config"
 	"light-launcher/core/internal/logger"
 	"light-launcher/core/internal/types"
 )
@@ -16,13 +16,16 @@ import (
 type sessionTracker struct {
 	mu        sync.Mutex
 	firstSeen map[int]int64
+	activity  activityStore
 }
 
-var runningSessions = &sessionTracker{firstSeen: map[int]int64{}}
+func newSessionTracker(activity activityStore) *sessionTracker {
+	return &sessionTracker{firstSeen: map[int]int64{}, activity: activity}
+}
 
 // getRunningSessions lists running game instances and syncs them into the activity store.
-func getRunningSessions() ([]types.RunningSession, error) {
-	return runningSessions.refresh(runningInstancePids(), readProcessCmdline, time.Now().UnixMilli())
+func (s *service) getRunningSessions() ([]types.RunningSession, error) {
+	return s.sessions.refresh(runningInstancePids(), readProcessCmdline, time.Now().UnixMilli())
 }
 
 // refresh builds the session list from the running instance PIDs. readCmdline returns a process's NUL-separated arguments.
@@ -32,7 +35,8 @@ func (t *sessionTracker) refresh(pids []int, readCmdline func(pid int) (string, 
 
 	if len(pids) == 0 {
 		clear(t.firstSeen)
-		return []types.RunningSession{}, syncActivitySessions(nil)
+		_, err := t.activity.Sync(nil)
+		return []types.RunningSession{}, err
 	}
 	t.forgetExcept(pids)
 
@@ -46,9 +50,9 @@ func (t *sessionTracker) refresh(pids []int, readCmdline func(pid int) (string, 
 		if gamePath == "" {
 			continue
 		}
-		cleanPath := filepath.Clean(gamePath)
+		cleanPath := config.CleanPath(gamePath)
 		if gameName == "" {
-			gameName = nameWithoutExt(filepath.Base(cleanPath))
+			gameName = config.NameWithoutExt(cleanPath)
 		}
 		if _, seen := t.firstSeen[pid]; !seen {
 			t.firstSeen[pid] = now
@@ -60,7 +64,8 @@ func (t *sessionTracker) refresh(pids []int, readCmdline func(pid int) (string, 
 			StartedAt: t.firstSeen[pid],
 		})
 	}
-	return sessions, syncActivitySessions(sessions)
+	_, err := t.activity.Sync(sessions)
+	return sessions, err
 }
 
 // forgetExcept drops start times for processes that are no longer running.

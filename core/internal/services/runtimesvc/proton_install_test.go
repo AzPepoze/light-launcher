@@ -8,6 +8,8 @@ import (
 	"net/http/httptest"
 	"path/filepath"
 	"testing"
+
+	"light-launcher/core/internal/config"
 )
 
 // buildProtonArchive returns a .tar.gz holding Proton-Test/proton, like a real Proton build.
@@ -55,7 +57,7 @@ func TestInstallProtonVersionExtractsArchive(t *testing.T) {
 	}
 
 	installed := filepath.Join(protonTargetFolder(home), "Proton-Test", "proton")
-	if !pathExists(installed) {
+	if !config.PathExists(installed) {
 		t.Errorf("extracted proton not found at %s", installed)
 	}
 	if lastPercent != 100 || messages[len(messages)-1] != "Installation Complete!" {
