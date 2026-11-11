@@ -64,7 +64,6 @@
 
 <div
 	class="drop-zone"
-	class:dragging
 	ondragenter={onDragEnter}
 	ondragover={onDragOver}
 	ondragleave={onDragLeave}
@@ -103,6 +102,7 @@
 
 	{#if dragging}
 		<div class="overlay" aria-hidden="true">
+			<span class="material-icons lift">file_download</span>
 			<p>{DROP_OVERLAY_TEXT}</p>
 		</div>
 	{/if}
@@ -126,7 +126,7 @@
 		flex: 1;
 		min-width: 0;
 		margin: 0;
-		font-size: 0.85rem;
+		font-size: 0.9375rem;
 		color: var(--text-muted);
 	}
 
@@ -144,17 +144,40 @@
 		inset: 0;
 		z-index: 50;
 		display: flex;
+		flex-direction: column;
 		align-items: center;
 		justify-content: center;
+		gap: 12px;
 		background: color-mix(in srgb, var(--bg-main) 70%, transparent);
-		border: 2px dashed var(--glass-border-bright);
+		border: 2px dashed var(--accent-primary);
 		pointer-events: none;
+		animation: overlay-in var(--motion-quick) var(--ease-out) both;
 
 		p {
 			margin: 0;
 			font-size: 1.1rem;
-			font-weight: 700;
+			font-weight: 600;
 			color: var(--text-main);
+		}
+	}
+
+	.lift {
+		font-size: 2.5rem;
+		color: var(--accent-primary);
+		animation: lift-in var(--motion-base) var(--ease-out) both;
+	}
+
+	@keyframes overlay-in {
+		from {
+			opacity: 0;
+			border-color: transparent;
+		}
+	}
+
+	@keyframes lift-in {
+		from {
+			opacity: 0;
+			transform: translateY(12px);
 		}
 	}
 </style>

@@ -5,22 +5,23 @@
 	import { pluginsApi } from "../../lib/features/pluginsApi";
 	import type { PluginInfo, PluginPreview } from "../../lib/features/types";
 	import PluginConsent from "./PluginConsent.svelte";
-	import { PERMISSION_HINT } from "./pluginCopy";
+	import QueueProgress from "./QueueProgress.svelte";
+	import { PERMISSION_HINT, pluginProgress } from "./pluginCopy";
 
 	let {
 		initialSource = "",
-		progress = "",
+		queue = null,
 		onInstalled,
 		onClose,
 	}: {
 		initialSource?: string;
-		/** "Plugin 2 of 3" when the plugin is one of several queued. */
-		progress?: string;
+		/** Set when the plugin is one of several queued. */
+		queue?: { position: number; total: number } | null;
 		onInstalled: (plugin: PluginInfo) => void;
 		onClose: () => void;
 	} = $props();
 
-	const title = $derived(progress || "Install plugin");
+	const title = $derived(queue ? pluginProgress(queue.position, queue.total) : "Install plugin");
 	let source = $state("");
 
 	onMount(() => {
@@ -50,7 +51,7 @@
 
 	/** In a queue, Cancel skips this plugin. Alone, it goes back to the link form. */
 	function cancelReview() {
-		if (progress) onClose();
+		if (queue) onClose();
 		else preview = null;
 	}
 
@@ -68,6 +69,10 @@
 </script>
 
 <Modal show={true} {title} showDone={false} {onClose}>
+	{#if queue}
+		<QueueProgress position={queue.position} total={queue.total} />
+	{/if}
+
 	<form
 		class="row"
 		onsubmit={(event) => {
@@ -114,7 +119,7 @@
 			display: flex;
 			flex-direction: column;
 			gap: 6px;
-			font-size: 0.85rem;
+			font-size: 0.9375rem;
 			color: var(--text-muted);
 		}
 
@@ -125,7 +130,7 @@
 
 	.error {
 		margin: 12px 0 0;
-		font-size: 0.85rem;
+		font-size: 0.9375rem;
 		color: var(--danger);
 	}
 </style>

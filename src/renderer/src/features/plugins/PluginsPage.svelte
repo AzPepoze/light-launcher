@@ -31,6 +31,8 @@
 	import PluginDetail from "./PluginDetail.svelte";
 	import PluginDropZone from "./PluginDropZone.svelte";
 	import PluginInstallDialog from "./PluginInstallDialog.svelte";
+	import PluginRow from "./PluginRow.svelte";
+	import SuccessCheck from "./SuccessCheck.svelte";
 	import {
 		CHECKING_UPDATES_LABEL,
 		CHECK_UPDATES_LABEL,
@@ -38,10 +40,9 @@
 		DISMISS_LABEL,
 		NOTHING_TO_INSTALL_COPY,
 		QUEUE_BUSY_COPY,
-		SLEEPING_BADGE,
+		SKIPPED_HEADING,
 		UPLOADING_TEXT,
 		installedSummary,
-		pluginProgress,
 		skippedText
 	} from "./pluginCopy";
 
@@ -224,15 +225,21 @@
 	{/if}
 
 	{#if batch.phase === "done" && queued}
-		<p class="notice" role="status">{installedSummary(batch.installed, batch.total)}</p>
+		<p class="done" role="status">
+			<SuccessCheck />
+			{installedSummary(batch.installed, batch.total)}
+		</p>
 	{/if}
 
 	{#if skipped.length}
-		<ul class="skipped" aria-label="Skipped items">
-			{#each skipped as item (item.name)}
-				<li>{skippedText(item)}</li>
-			{/each}
-		</ul>
+		<div class="skipped">
+			<p role="alert">{SKIPPED_HEADING}</p>
+			<ul aria-label="Skipped items">
+				{#each skipped as item (item.name)}
+					<li>{skippedText(item)}</li>
+				{/each}
+			</ul>
+		</div>
 	{/if}
 
 	{#if uploadError}
@@ -272,19 +279,7 @@
 		<ul class="list" aria-label="Installed plugins">
 			{#each plugins as plugin (plugin.id)}
 				<li>
-					<button class="row" onclick={() => (selectedId = plugin.id)}>
-						<span class="name">{plugin.name}</span>
-						<span class="muted">v{plugin.version}</span>
-						<span class="badges">
-							<span class="badge">{plugin.enabled ? "Enabled" : "Disabled"}</span>
-							{#if plugin.idle}<span class="badge">{SLEEPING_BADGE}</span>{/if}
-							{#if !plugin.signed}<span class="badge warn">Unsigned</span>{/if}
-							{#if plugin.status === "error"}<span class="badge warn">Error</span>{/if}
-							{#if updateFor(plugin.id)?.available}
-								<span class="badge update">Update available ({updateFor(plugin.id)?.version})</span>
-							{/if}
-						</span>
-					</button>
+					<PluginRow {plugin} update={updateFor(plugin.id)} onOpen={() => (selectedId = plugin.id)} />
 				</li>
 			{/each}
 		</ul>
@@ -295,7 +290,7 @@
 	{#key batch.position}
 		<PluginInstallDialog
 			initialSource={batch.source}
-			progress={queued ? pluginProgress(batch.position, batch.total) : ""}
+			queue={queued ? { position: batch.position, total: batch.total } : null}
 			onInstalled={installedFromQueue}
 			onClose={() => queue.skip()}
 		/>
@@ -314,44 +309,9 @@
 		gap: 8px;
 	}
 
-	.row {
-		width: 100%;
-		display: flex;
-		align-items: center;
-		gap: 12px;
-		padding: 12px 14px;
-		border: 1px solid transparent;
-		border-radius: var(--radius-md);
-		background: var(--bg-surface);
-		color: var(--text-main);
-		text-align: left;
-		cursor: pointer;
-		font: inherit;
-
-		&:hover,
-		&:focus-visible {
-			border-color: var(--glass-border-bright);
-			outline: none;
-		}
-	}
-
-	.name {
-		font-weight: 700;
-		flex: 1;
-		min-width: 0;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-
-	.muted {
-		font-size: 0.8rem;
-		color: var(--text-muted);
-	}
-
 	.upload-error {
 		margin: 0 0 12px;
-		font-size: 0.85rem;
+		font-size: 0.9375rem;
 		color: var(--danger);
 	}
 
@@ -366,37 +326,32 @@
 		}
 	}
 
+	.done {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		margin: 0 0 12px;
+		font-size: 1rem;
+	}
+
 	.skipped {
 		margin: 0 0 12px;
-		padding-left: 18px;
-		font-size: 0.85rem;
+		font-size: 0.9375rem;
 		color: var(--text-muted);
-	}
 
-	.badges {
-		display: flex;
-		gap: 6px;
-	}
-
-	.badge {
-		font-size: 0.7rem;
-		padding: 2px 8px;
-		border-radius: var(--radius-pill);
-		border: 1px solid var(--glass-border-bright);
-
-		&.warn {
-			border-color: var(--danger);
+		p {
+			margin: 0 0 6px;
 			color: var(--danger);
 		}
 
-		&.update {
-			border-color: var(--accent-primary);
-			color: var(--accent-primary);
+		ul {
+			margin: 0;
+			padding-left: 18px;
 		}
 	}
 
 	.checked {
-		font-size: 0.8rem;
+		font-size: 0.875rem;
 		color: var(--text-muted);
 	}
 
@@ -414,13 +369,13 @@
 		}
 
 		.title {
-			font-size: 1rem;
-			font-weight: 700;
+			font-size: 1.05rem;
+			font-weight: 600;
 			color: var(--text-main);
 		}
 
 		.community {
-			font-size: 0.85rem;
+			font-size: 0.875rem;
 			text-decoration: underline;
 		}
 	}
