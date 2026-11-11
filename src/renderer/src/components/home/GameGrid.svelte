@@ -3,7 +3,6 @@
 	import ContextMenu from "@components/shared/ContextMenu.svelte";
 	import SidebarPanel from "@components/home/SidebarPanel.svelte";
 	import FolderGroup from "@components/home/FolderGroup.svelte";
-	import FolderSettingsModal from "@components/home/FolderSettingsModal.svelte";
 	import SidebarProfilesSection from "@components/home/SidebarProfilesSection.svelte";
 	import GameCardGrid from "@components/home/shared/GameCardGrid.svelte";
 	import {
@@ -73,15 +72,6 @@
 		notifications.add("Rescanning watched folders...", "info");
 		activeFolderMenu = null;
 		onRefresh();
-	}
-
-	let showFolderSettings = false;
-	let folderSettingsPath = "";
-
-	function handleConfigureFolder(folderPath: string) {
-		folderSettingsPath = folderPath;
-		showFolderSettings = true;
-		activeFolderMenu = null;
 	}
 
 	function handleRightClick(event: MouseEvent, game: any) {
@@ -590,7 +580,6 @@
 				{toggleFolderMenu}
 				{handleRescan}
 				{handleRemoveFolder}
-				{handleConfigureFolder}
 				{handleRightClick}
 				{handleQuickLaunch}
 				{handleConfigure}
@@ -643,12 +632,6 @@
 	/>
 {/if}
 
-<FolderSettingsModal
-	show={showFolderSettings}
-	folderPath={folderSettingsPath}
-	onClose={() => { showFolderSettings = false; }}
-	onSave={onRefresh}
-/>
 
 <style lang="scss">
 	@keyframes games-mount {

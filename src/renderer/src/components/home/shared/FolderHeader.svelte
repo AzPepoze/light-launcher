@@ -1,6 +1,8 @@
 <script lang="ts">
 	import AppMenu from "@components/shared/AppMenu.svelte";
 	import MenuTrigger from "@components/shared/MenuTrigger.svelte";
+	import { GAME_FOLDERS_SECTION } from "@lib/features/settingsSection";
+	import { navigateToSettingsSection } from "@stores/navigationStore";
 
 	export let icon: string = "folder";
 	export let name: string = "";
@@ -11,7 +13,6 @@
 	export let onToggleMenu: (event: MouseEvent) => void = () => {};
 	export let onCloseMenu: () => void = () => {};
 	export let onRescan: () => void = () => {};
-	export let onConfigureFolder: () => void = () => {};
 	export let onRemoveFolder: () => void = () => {};
 	export let stuckBleed = 0;
 	export let isStuck: boolean = false;
@@ -48,9 +49,9 @@
 					<span class="material-icons">refresh</span>
 					<span>Rescan Folder</span>
 				</button>
-				<button class="menu-item" on:click={onConfigureFolder}>
-					<span class="material-icons">settings</span>
-					<span>Folder Settings</span>
+				<button class="menu-item" on:click={() => navigateToSettingsSection(GAME_FOLDERS_SECTION)}>
+					<span class="material-icons">folder_managed</span>
+					<span>Game folders</span>
 				</button>
 				<button class="menu-item danger" on:click={onRemoveFolder}>
 					<span class="material-icons">delete_outline</span>

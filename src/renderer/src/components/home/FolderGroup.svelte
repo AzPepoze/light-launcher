@@ -15,7 +15,6 @@
 	export let toggleFolderMenu: (event: MouseEvent, folderPath: string) => void;
 	export let handleRescan: () => void;
 	export let handleRemoveFolder: (folderPath: string) => void;
-	export let handleConfigureFolder: (folderPath: string) => void;
 	export let handleRightClick: (event: MouseEvent, game: any) => void;
 	export let handleQuickLaunch: (game: any, showLogs?: boolean) => Promise<void>;
 	export let handleConfigure: (game: any) => void;
@@ -39,7 +38,6 @@
 		onToggleMenu={(e) => toggleFolderMenu(e, group.folderPath)}
 		onCloseMenu={() => activeFolderMenu = null}
 		onRescan={handleRescan}
-		onConfigureFolder={() => handleConfigureFolder(group.folderPath)}
 		onRemoveFolder={() => handleRemoveFolder(group.folderPath)}
 	/>
 
