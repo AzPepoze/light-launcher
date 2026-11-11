@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
 	consentLabel,
+	consentLines,
 	isRemovedPlugin,
 	newPermissionLines,
 	permissionSummary,
@@ -41,9 +42,30 @@ function makeWire(overrides: Partial<WirePluginInfo> = {}): WirePluginInfo {
 		...overrides
 	};
 }
+describe("consentLines", () => {
+	it("groups the network entries into site lines and keeps the other lines", () => {
+		expect(
+			consentLines([
+				"exec",
+				"fs:$GAMES",
+				"network:*.mixdrop.co",
+				"network:mixdrop.co",
+				"network:api.example.test",
+				"secrets"
+			])
+		).toEqual({
+			sites: ["api.example.test", "mixdrop.co and its subdomains"],
+			other: ["Run programs on this computer", "Access files: $GAMES", "Store sign-in details"]
+		});
+	});
+
+	it("has no lines for no entries", () => {
+		expect(consentLines([])).toEqual({ sites: [], other: [] });
+	});
+});
+
 describe("consentLabel", () => {
 	it("writes a plain line for each kind of entry", () => {
-		expect(consentLabel("network:api.example.test")).toBe("Connect to api.example.test");
 		expect(consentLabel("fs:$GAMES")).toBe("Access files: $GAMES");
 		expect(consentLabel("secrets")).toBe("Store sign-in details");
 		expect(consentLabel("browser")).toBe("Open a browser window");
@@ -88,12 +110,14 @@ describe("newPermissionLines", () => {
 				["network:a.example.test"],
 				["network:a.example.test", "network:b.example.test", "exec"]
 			)
-		).toEqual(["Connect to b.example.test", "Run programs on this computer"]);
+		).toEqual({ sites: ["b.example.test"], other: ["Run programs on this computer"] });
 	});
 
 	it("returns nothing when the new version asks for nothing more", () => {
-		expect(newPermissionLines(["exec"], ["exec"])).toEqual([]);
-		expect(newPermissionLines(["exec", "browser"], ["browser"])).toEqual([]);
+		const empty = { sites: [], other: [] };
+
+		expect(newPermissionLines(["exec"], ["exec"])).toEqual(empty);
+		expect(newPermissionLines(["exec", "browser"], ["browser"])).toEqual(empty);
 	});
 });
 
@@ -181,7 +205,7 @@ describe("toPluginPreview", () => {
 			name: "Example Store",
 			version: "1.0.0",
 			signed: false,
-			permissions: ["Connect to api.example.test"],
+			permissions: { sites: ["api.example.test"], other: [] },
 			consent: ["network:api.example.test"],
 			repositoryChanged: false,
 			installedRepository: null

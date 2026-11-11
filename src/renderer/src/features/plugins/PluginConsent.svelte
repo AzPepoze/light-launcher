@@ -1,6 +1,11 @@
 <script lang="ts">
-	import type { PluginPreview } from "../../lib/features/types";
-	import { LEGAL_NOTICE, REPOSITORY_CHANGED_WARNING, UNSIGNED_WARNING } from "./pluginCopy";
+	import type { PermissionLines, PluginPreview } from "../../lib/features/types";
+	import {
+		LEGAL_NOTICE,
+		REPOSITORY_CHANGED_WARNING,
+		SITES_HEADING,
+		UNSIGNED_WARNING
+	} from "./pluginCopy";
 
 	let {
 		preview,
@@ -15,7 +20,7 @@
 		preview: PluginPreview;
 		/** Sentence above the permission lines. */
 		hint: string;
-		lines: string[];
+		lines: PermissionLines;
 		/** Shown when there are no lines. */
 		emptyText: string;
 		confirmLabel: string;
@@ -25,6 +30,7 @@
 	} = $props();
 
 	let accepted = $state(false);
+	const isEmpty = $derived(lines.sites.length === 0 && lines.other.length === 0);
 </script>
 
 <article class="consent" aria-label="Plugin details">
@@ -44,14 +50,24 @@
 	{/if}
 
 	<p class="label">{hint}</p>
-	{#if lines.length}
-		<ul class="permissions">
-			{#each lines as line (line)}
-				<li>{line}</li>
-			{/each}
-		</ul>
-	{:else}
+	{#if isEmpty}
 		<p class="muted">{emptyText}</p>
+	{:else}
+		{#if lines.sites.length}
+			<p class="sites-heading">{SITES_HEADING}</p>
+			<ul class="sites">
+				{#each lines.sites as site (site)}
+					<li>{site}</li>
+				{/each}
+			</ul>
+		{/if}
+		{#if lines.other.length}
+			<ul class="permissions">
+				{#each lines.other as line (line)}
+					<li>{line}</li>
+				{/each}
+			</ul>
+		{/if}
 	{/if}
 
 	<p class="legal">{LEGAL_NOTICE}</p>
@@ -105,6 +121,19 @@
 		display: flex;
 		flex-direction: column;
 		gap: 4px;
+	}
+
+	.sites-heading {
+		font-size: 0.85rem;
+		font-weight: 700;
+	}
+
+	.sites {
+		margin: 0;
+		padding-left: 18px;
+		font-size: 0.85rem;
+		columns: 2;
+		column-gap: 24px;
 	}
 
 	.notice {

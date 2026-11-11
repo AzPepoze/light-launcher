@@ -257,6 +257,13 @@ export interface PluginInfo {
 	consent: string[];
 }
 
+/** Permission lines for the consent screen. The sites are grouped, the rest are one line each. */
+export interface PermissionLines {
+	/** One line per site, such as "example.com and its subdomains". Sorted. */
+	sites: string[];
+	other: string[];
+}
+
 export interface PluginPreview {
 	source: string;
 	id: string;
@@ -264,7 +271,7 @@ export interface PluginPreview {
 	version: string;
 	signed: boolean;
 	/** Plain-language permission lines for the user. */
-	permissions: string[];
+	permissions: PermissionLines;
 	/** The entries to send back as accepted permissions when the user agrees. */
 	consent: string[];
 	/** True when the new version names a different repository than the installed one. */
@@ -276,7 +283,7 @@ export interface PluginUpdatePreview {
 	/** The newest version at the plugin's install source. */
 	preview: PluginPreview;
 	/** Plain-language lines for the permissions the new version adds. */
-	newPermissions: string[];
+	newPermissions: PermissionLines;
 	/** Where the update package is downloaded from. */
 	source: string;
 	/** Release checksum, when the release publishes SHA256SUMS. */

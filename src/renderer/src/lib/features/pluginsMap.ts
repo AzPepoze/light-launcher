@@ -1,4 +1,6 @@
+import { siteLines } from "./consentSites";
 import type {
+	PermissionLines,
 	PluginInfo,
 	PluginLogLine,
 	PluginPreview,
@@ -28,11 +30,23 @@ const FLAG_LABELS = new Map([
 	["exec", "Run programs on this computer"]
 ]);
 
-/** The plain line shown for one consent entry, such as "network:example.com". */
+function isNetworkEntry(entry: string): boolean {
+	return entry.startsWith(NETWORK_PREFIX);
+}
+
+/** The plain line shown for one non-network consent entry, such as "fs:data" or "exec". */
 export function consentLabel(entry: string): string {
-	if (entry.startsWith(NETWORK_PREFIX)) return `Connect to ${entry.slice(NETWORK_PREFIX.length)}`;
 	if (entry.startsWith(FS_PREFIX)) return `Access files: ${entry.slice(FS_PREFIX.length)}`;
 	return FLAG_LABELS.get(entry) ?? entry;
+}
+
+/** Splits consent entries into grouped site lines and one line for each other entry. */
+export function consentLines(entries: string[]): PermissionLines {
+	const hosts = entries
+		.filter(isNetworkEntry)
+		.map((entry) => entry.slice(NETWORK_PREFIX.length));
+	const other = entries.filter((entry) => !isNetworkEntry(entry)).map(consentLabel);
+	return { sites: siteLines(hosts), other };
 }
 
 /** The sorted consent entries for a manifest's permissions, same as the server's PermissionSummary. */
@@ -47,9 +61,9 @@ export function permissionSummary(permissions: WirePermissions): string[] {
 	return entries.sort();
 }
 
-/** Labels for the entries in next that the installed consent does not have. */
-export function newPermissionLines(installed: string[], next: string[]): string[] {
-	return next.filter((entry) => !installed.includes(entry)).map(consentLabel);
+/** Consent lines for the entries in next that the installed consent does not have. */
+export function newPermissionLines(installed: string[], next: string[]): PermissionLines {
+	return consentLines(next.filter((entry) => !installed.includes(entry)));
 }
 
 export function toPluginInfo(wire: WirePluginInfo): PluginInfo {
@@ -84,7 +98,7 @@ export function toPluginPreview(source: string, wire: WirePluginPreview): Plugin
 		name: manifest.name,
 		version: manifest.version,
 		signed: !wire.unsigned,
-		permissions: consent.map(consentLabel),
+		permissions: consentLines(consent),
 		consent,
 		repositoryChanged: wire.repositoryChanged ?? false,
 		installedRepository: wire.installedRepository || null
