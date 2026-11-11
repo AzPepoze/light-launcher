@@ -55,6 +55,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [x] | Embedded browser assist on Linux (Qt): the host starts the shell in assist mode and reads its download event. Run in a real window against a local test page. |
 | [ ] | No plugin calls the host `browser.assist` service yet (F95 still uses its own Chrome code), so a real plugin download through the embedded window is untested. |
 | [ ] | Embedded browser assist on Windows (WebView2) is untested on Windows. |
+| [ ] | If the request that started a browser step ends first, the browser window stays open until its own time limit. The host does not pass that cancel on to `browser.assist` yet. |
 | [x] | Qt assist mode reads cookies restored from disk on Qt 6.11 from the profile cookie database, where QtWebEngine stores the values in plain text. Encrypted values would be skipped. |
 | [ ] | Plugin secrets saved before the cleanup change are not removed when the plugin is removed. |
 | [x] | Stop plugins that stay idle for 5 minutes, with `pluginIdleTimeoutMinutes` to change or disable it. |
