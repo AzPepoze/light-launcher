@@ -7,12 +7,14 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"strings"
 	"testing"
 	"testing/fstest"
 
 	"light-launcher/core/internal/api"
 	"light-launcher/core/internal/platform"
+	"light-launcher/core/internal/uploads"
 )
 
 const (
@@ -31,27 +33,34 @@ func (c fakeCovers) CoverFile(id int64) (string, bool) {
 
 // fixture is a server with an in-memory UI and a record of opened game paths.
 type fixture struct {
-	handler http.Handler
-	router  *api.Router
-	hub     *api.Hub
-	covers  fakeCovers
-	opened  []string
+	handler   http.Handler
+	router    *api.Router
+	hub       *api.Hub
+	covers    fakeCovers
+	uploadDir string
+	opened    []string
 }
 
 func newFixture(t *testing.T, port int) *fixture {
 	t.Helper()
 	fx := &fixture{router: api.NewRouter(), hub: api.NewHub(), covers: fakeCovers{}}
+	fx.uploadDir = filepath.Join(t.TempDir(), "uploads")
+	uploadStore, err := uploads.Open(fx.uploadDir)
+	if err != nil {
+		t.Fatal(err)
+	}
 	ui := fstest.MapFS{
 		"index.html": {Data: []byte("<!doctype html><title>ui</title>")},
 		"app.js":     {Data: []byte("console.log('app')")},
 	}
 	fx.handler = New(Config{
-		UI:     ui,
-		Router: fx.router,
-		Hub:    fx.hub,
-		Covers: fx.covers,
-		Token:  testToken,
-		Port:   port,
+		UI:      ui,
+		Router:  fx.router,
+		Hub:     fx.hub,
+		Covers:  fx.covers,
+		Uploads: uploadStore,
+		Token:   testToken,
+		Port:    port,
 		OnOpen: func(gamePath string) error {
 			fx.opened = append(fx.opened, gamePath)
 			return nil

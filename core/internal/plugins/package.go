@@ -71,15 +71,24 @@ func (in *installer) preparePackage(ctx context.Context, source string) (prepare
 	return prepared, nil
 }
 
-// archiveFor returns a local path to the .llplugin file, downloading it when source is a URL.
+// archiveFor returns a local path to the package file. It downloads URLs, and packs a folder
+// into a zip in the work folder.
 func (in *installer) archiveFor(ctx context.Context, source, work string) (string, error) {
 	if isURL(source) {
 		return fetchPackage(ctx, in.client, source, work)
 	}
-	if _, err := os.Stat(source); err != nil {
+	info, err := os.Stat(source)
+	if err != nil {
 		return "", fmt.Errorf("package not found: %w", err)
 	}
-	return source, nil
+	if !info.IsDir() {
+		return source, nil
+	}
+	archive := filepath.Join(work, "folder.zip")
+	if err := packFolder(source, archive); err != nil {
+		return "", err
+	}
+	return archive, nil
 }
 
 // verifyPackage reads plugin.json and checks every file against SHA256SUMS.

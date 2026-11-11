@@ -16,6 +16,7 @@ type folders struct {
 	Incoming   string // watch folder for files the user drops in
 	Media      string // cached covers and screenshots
 	PluginData string // data kept by plugins
+	Uploads    string // plugin files sent by the UI, cleared on start and after install
 }
 
 func prepareFolders() (folders, error) {
@@ -27,6 +28,7 @@ func prepareFolders() (folders, error) {
 		Incoming:   filepath.Join(base, "incoming"),
 		Media:      filepath.Join(base, "media"),
 		PluginData: plugins.DefaultLayout().Data,
+		Uploads:    filepath.Join(base, "temp", "uploads"),
 	}
 	for _, dir := range []string{dirs.Config, dirs.Games, dirs.Downloads, dirs.Incoming, dirs.Media} {
 		if err := os.MkdirAll(dir, 0o755); err != nil {

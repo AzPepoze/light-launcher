@@ -61,12 +61,13 @@ func run(ctx context.Context, cfg runConfig) error {
 	defer svc.Close()
 
 	handler := server.New(server.Config{
-		UI:     cfg.UI,
-		Router: router,
-		Hub:    hub,
-		Covers: svc.library,
-		Token:  token,
-		Port:   port,
+		UI:      cfg.UI,
+		Router:  router,
+		Hub:     hub,
+		Covers:  svc.library,
+		Uploads: svc.uploads,
+		Token:   token,
+		Port:    port,
 		OnOpen: func(gamePath string) error {
 			openGame(hub, gamePath)
 			return nil
