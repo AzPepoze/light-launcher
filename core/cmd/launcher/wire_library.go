@@ -21,6 +21,7 @@ func libraryOptions(dirs folders, hub *api.Hub, sources contract.Sources, update
 		DBPath:        filepath.Join(dirs.Config, "library.db"),
 		MediaDir:      dirs.Media,
 		DownloadsDir:  dirs.Downloads,
+		GamesDir:      func() string { return dirs.Games },
 		WatchFolder:   func() string { return dirs.Incoming },
 		Sources:       sources,
 		Launcher:      launcher,
