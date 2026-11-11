@@ -59,8 +59,6 @@ func New(cfg Config) http.Handler {
 	mux.HandleFunc("POST /api/open", s.handleOpen)
 	mux.HandleFunc("GET /api/media/cover/{id}", s.handleCover)
 	mux.HandleFunc("GET /api/media/screenshot/{id}/{index}", s.handleScreenshot)
-	// The cover route predates the media route and stays for older UI builds.
-	mux.HandleFunc("GET /api/cover/{id}", s.handleCover)
 	mux.HandleFunc("POST /api/plugin-upload", s.handleUpload)
 	// Unknown API paths must not fall through to the UI's index.html.
 	mux.Handle("/api/", http.NotFoundHandler())

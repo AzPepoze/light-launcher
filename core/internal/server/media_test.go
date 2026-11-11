@@ -21,14 +21,12 @@ func TestMediaServesCachedCover(t *testing.T) {
 	coverPath := writeTestImage(t, "cover.jpg")
 	fx.media.covers[7] = coverPath
 
-	for _, target := range []string{"/api/media/cover/7", "/api/cover/7"} {
-		rec := fx.serve(fx.request(http.MethodGet, target, ""))
-		if rec.Code != http.StatusOK {
-			t.Fatalf("GET %s: status = %d, body %q", target, rec.Code, rec.Body.String())
-		}
-		if body := rec.Body.String(); body != "cover.jpg-bytes" {
-			t.Errorf("GET %s: body = %q, want the cover file", target, body)
-		}
+	rec := fx.serve(fx.request(http.MethodGet, "/api/media/cover/7", ""))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, body %q", rec.Code, rec.Body.String())
+	}
+	if body := rec.Body.String(); body != "cover.jpg-bytes" {
+		t.Errorf("body = %q, want the cover file", body)
 	}
 }
 
@@ -49,7 +47,6 @@ func TestMediaIsNotFoundWithoutFile(t *testing.T) {
 	fx := newFixture(t, testPort)
 	for _, target := range []string{
 		"/api/media/cover/7",
-		"/api/cover/7",
 		"/api/media/cover/not-a-number",
 		"/api/media/screenshot/7/0",
 		"/api/media/screenshot/7/not-a-number",
