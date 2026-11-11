@@ -11,32 +11,58 @@ import (
 // artworkSlots is how many games download artwork at the same time.
 const artworkSlots = 4
 
-// artworkQueue runs artwork jobs in the background, a few at a time, until it is stopped.
+// artworkQueue runs artwork jobs in the background, at most artworkSlots at a time, until it is stopped.
+// Waiting jobs sit in a list instead of each holding a goroutine, so a large import stays cheap.
 type artworkQueue struct {
-	ctx    context.Context
-	cancel context.CancelFunc
-	slots  chan struct{}
-	wg     sync.WaitGroup
+	ctx     context.Context
+	cancel  context.CancelFunc
+	mu      sync.Mutex
+	pending []func(ctx context.Context)
+	workers int
+	wg      sync.WaitGroup
 }
 
 func newArtworkQueue() *artworkQueue {
 	ctx, cancel := context.WithCancel(context.Background())
-	return &artworkQueue{ctx: ctx, cancel: cancel, slots: make(chan struct{}, artworkSlots)}
+	return &artworkQueue{ctx: ctx, cancel: cancel}
 }
 
-// start runs job in its own goroutine once a slot is free. Jobs still waiting when the queue stops are dropped.
+// start queues job. Jobs still waiting when the queue stops are dropped.
 func (q *artworkQueue) start(job func(ctx context.Context)) {
-	q.wg.Add(1)
-	go func() {
-		defer q.wg.Done()
-		select {
-		case q.slots <- struct{}{}:
-		case <-q.ctx.Done():
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	q.pending = append(q.pending, job)
+	if q.workers < artworkSlots {
+		q.workers++
+		q.wg.Add(1)
+		go q.work()
+	}
+}
+
+// work runs queued jobs until none are left or the queue stops.
+func (q *artworkQueue) work() {
+	defer q.wg.Done()
+	for {
+		job, ok := q.next()
+		if !ok {
 			return
 		}
-		defer func() { <-q.slots }()
 		job(q.ctx)
-	}()
+	}
+}
+
+// next takes the next queued job. It reports false when the worker should exit.
+func (q *artworkQueue) next() (func(ctx context.Context), bool) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	if len(q.pending) == 0 || q.ctx.Err() != nil {
+		q.workers--
+		return nil, false
+	}
+	job := q.pending[0]
+	q.pending[0] = nil
+	q.pending = q.pending[1:]
+	return job, true
 }
 
 // stop cancels running downloads and waits until they end.
@@ -53,6 +79,24 @@ func (l *Library) Upsert(ctx context.Context, dto contract.GameDTO) (int64, erro
 	}
 	l.startArtwork(id)
 	return id, nil
+}
+
+// UpsertMany saves a batch of plugin games in one transaction and caches the covers that changed.
+// It implements contract.Library.
+func (l *Library) UpsertMany(ctx context.Context, games []contract.GameDTO) ([]int64, error) {
+	batch, err := l.saveBatch(ctx, games)
+	if err != nil {
+		return nil, err
+	}
+	l.startArtworkFor(batch.CoverIDs)
+	return batch.IDs, nil
+}
+
+// startArtworkFor queues the artwork of each saved game.
+func (l *Library) startArtworkFor(ids []int64) {
+	for _, id := range ids {
+		l.startArtwork(id)
+	}
 }
 
 // startArtwork caches the cover and screenshots of a saved game in the background.

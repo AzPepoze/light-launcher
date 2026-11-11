@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
+	"sync/atomic"
 
 	"light-launcher/core/internal/contract"
 )
@@ -12,6 +12,8 @@ import (
 // Store is typed CRUD over the games table.
 type Store struct {
 	db *sql.DB
+	// writes counts the writes to the games table, so cached summaries know when they are stale.
+	writes atomic.Uint64
 }
 
 func NewStore(db *sql.DB) *Store {
@@ -39,16 +41,12 @@ func (s *Store) All(ctx context.Context) ([]Game, error) {
 }
 
 // Upsert saves a plugin game, creating or refreshing the row for its source id.
-// It implements contract.Library.
 func (s *Store) Upsert(ctx context.Context, dto contract.GameDTO) (int64, error) {
-	existing, err := s.BySource(ctx, dto.Source, dto.SourceID)
-	if errors.Is(err, ErrNotFound) {
-		return s.insert(ctx, dto)
-	}
+	batch, err := s.saveBatch(ctx, []contract.GameDTO{dto})
 	if err != nil {
 		return 0, err
 	}
-	return existing.ID, s.update(ctx, existing, dto)
+	return batch.IDs[0], nil
 }
 
 // Relink moves a row onto a real source identity and keeps its install data.
@@ -64,55 +62,30 @@ func (s *Store) Relink(ctx context.Context, id int64, dto contract.GameDTO) erro
 		nullIfEmpty(dto.Engine), tags, nullIfEmpty(dto.CoverURL), screenshots, nullIfEmpty(dto.DescriptionHTML),
 		nullIfEmpty(dto.Changelog), dto.Rating, statusOr(dto.Status, "completed"), nullIfEmpty(dto.UpdatedAt), extra,
 		nowStamp(), id)
-	return err
+	if err != nil {
+		return err
+	}
+	s.markWritten()
+	return nil
 }
 
 // Remove deletes a row. Files and checks go with it through foreign keys.
 func (s *Store) Remove(ctx context.Context, id int64) error {
-	_, err := s.db.ExecContext(ctx, `delete from games where id = ?`, id)
-	return err
-}
-
-func (s *Store) insert(ctx context.Context, dto contract.GameDTO) (int64, error) {
-	tags, screenshots, extra, err := encodeGameLists(dto)
-	if err != nil {
-		return 0, err
-	}
-	now := nowStamp()
-	result, err := s.db.ExecContext(ctx, `insert into games (source, source_id, url, title, version, developer, engine,
-		tags, cover_url, screenshots, description, changelog, rating, status, source_updated_at, extra, added_at, updated_at)
-		values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-		dto.Source, dto.SourceID, dto.URL, dto.Title, nullIfEmpty(dto.Version), nullIfEmpty(dto.Developer),
-		nullIfEmpty(dto.Engine), tags, nullIfEmpty(dto.CoverURL), screenshots, nullIfEmpty(dto.DescriptionHTML),
-		nullIfEmpty(dto.Changelog), dto.Rating, statusOr(dto.Status, "unknown"), nullIfEmpty(dto.UpdatedAt), extra, now, now)
-	if err != nil {
-		return 0, fmt.Errorf("insert game: %w", err)
-	}
-	return result.LastInsertId()
-}
-
-// update merges a refreshed plugin game into the row. Empty fields keep the stored value.
-func (s *Store) update(ctx context.Context, existing Game, dto contract.GameDTO) error {
-	coverChanged := dto.CoverURL != "" && (existing.CoverURL == nil || *existing.CoverURL != dto.CoverURL)
-	coverPath := any(nil)
-	if !coverChanged {
-		coverPath = nullablePtr(existing.CoverPath)
-	}
-	tags, screenshots, extra, err := mergeGameLists(dto, existing)
-	if err != nil {
+	if _, err := s.db.ExecContext(ctx, `delete from games where id = ?`, id); err != nil {
 		return err
 	}
-	_, err = s.db.ExecContext(ctx, `update games set url=?, title=?, version=?, developer=?, engine=?, tags=?,
-		cover_url=?, cover_path=?, screenshots=?, description=?, changelog=?, rating=?, status=?, source_updated_at=?,
-		extra=?, updated_at=? where id=?`,
-		dto.URL, firstNonEmpty(dto.Title, existing.Title), pickString(dto.Version, existing.Version),
-		pickString(dto.Developer, existing.Developer), pickString(dto.Engine, existing.Engine), tags,
-		pickString(dto.CoverURL, existing.CoverURL), coverPath, screenshots,
-		pickString(dto.DescriptionHTML, existing.Description), pickString(dto.Changelog, existing.Changelog),
-		pickRating(dto.Rating, existing.Rating),
-		firstNonEmpty(dto.Status, existing.Status), pickString(dto.UpdatedAt, existing.SourceUpdatedAt),
-		extra, nowStamp(), existing.ID)
-	return err
+	s.markWritten()
+	return nil
+}
+
+// markWritten records a change to the games table.
+func (s *Store) markWritten() {
+	s.writes.Add(1)
+}
+
+// writeCount returns how many writes to the games table this store has made.
+func (s *Store) writeCount() uint64 {
+	return s.writes.Load()
 }
 
 func (s *Store) queryOne(ctx context.Context, query string, args ...any) (Game, error) {

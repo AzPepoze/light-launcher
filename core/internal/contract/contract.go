@@ -87,6 +87,8 @@ type Downloads interface {
 // Library is implemented by the host game library.
 type Library interface {
 	Upsert(ctx context.Context, game GameDTO) (gameID int64, err error)
+	// UpsertMany saves games in one transaction and returns the game ids in the same order.
+	UpsertMany(ctx context.Context, games []GameDTO) (gameIDs []int64, err error)
 }
 
 // Secrets is implemented by the host secret store (OS keyring with an encrypted-file fallback).
@@ -102,7 +104,8 @@ type SourceInfo struct {
 	SourceID     string   `json:"sourceId"`
 	Label        string   `json:"label"`
 	Capabilities []string `json:"capabilities"`
-	Tile         string   `json:"tile,omitempty"`
+	// Tile is the card shape the source declares: poster, wide or square.
+	Tile string `json:"tile,omitempty"`
 }
 
 // PrepareDownloadTimeout is the longest source.prepareDownload may take. A person can finish a browser

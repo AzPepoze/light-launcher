@@ -110,5 +110,6 @@ func (s *Store) Patch(ctx context.Context, id int64, p Patch) (Game, error) {
 	if _, err := s.db.ExecContext(ctx, query, c.args...); err != nil {
 		return Game{}, err
 	}
+	s.markWritten()
 	return s.Get(ctx, id)
 }
