@@ -5,7 +5,7 @@
 	import AddGameDialog from "./AddGameDialog.svelte";
 	import FilterBar from "./FilterBar.svelte";
 	import GameDetail from "./GameDetail.svelte";
-	import GameTile from "./GameTile.svelte";
+	import GameGroup from "./GameGroup.svelte";
 	import IncomingPanel from "./IncomingPanel.svelte";
 	import { LibraryState } from "./libraryState.svelte";
 
@@ -94,13 +94,9 @@
 			<button class="btn sm" onclick={() => library.resetFilters()}>Clear filters</button>
 		</div>
 	{:else}
-		<ul class="grid" aria-label="Games">
-			{#each library.visible as game (game.id)}
-				<li>
-					<GameTile {game} onOpen={openGame} />
-				</li>
-			{/each}
-		</ul>
+		{#each library.groups as group (group.source)}
+			<GameGroup {group} onOpen={openGame} />
+		{/each}
 	{/if}
 {/if}
 
@@ -112,15 +108,6 @@
 	.tabs {
 		display: flex;
 		gap: 6px;
-	}
-
-	.grid {
-		list-style: none;
-		margin: 0;
-		padding: 0 0 24px;
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-		gap: 18px 14px;
 	}
 
 	.status {

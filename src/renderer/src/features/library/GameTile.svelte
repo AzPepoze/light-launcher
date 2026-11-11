@@ -1,12 +1,17 @@
 <script lang="ts">
 	import CoverImage from "@components/shared/CoverImage.svelte";
 	import type { Game } from "../../lib/features/types";
+	import type { TileShape } from "./sourceTileShape";
 
-	let { game, onOpen }: { game: Game; onOpen: (game: Game) => void } = $props();
+	let {
+		game,
+		shape,
+		onOpen
+	}: { game: Game; shape: TileShape; onOpen: (game: Game) => void } = $props();
 </script>
 
 <button class="tile" onclick={() => onOpen(game)} aria-label="Open {game.title}">
-	<div class="cover">
+	<div class="cover" style:aspect-ratio={shape.aspect}>
 		{#if game.cover || game.coverLocal}
 			<CoverImage {game} />
 		{:else}
@@ -54,7 +59,6 @@
 	.cover {
 		position: relative;
 		width: 100%;
-		aspect-ratio: 3 / 4;
 		border-radius: var(--radius-md);
 		overflow: hidden;
 		background: var(--bg-elevated);

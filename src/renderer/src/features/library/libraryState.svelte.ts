@@ -7,6 +7,7 @@ import {
 import { errorMessage, listen } from "../../lib/features/rpc";
 import { libraryApi } from "../../lib/features/libraryApi";
 import type { Game, LibraryStats } from "../../lib/features/types";
+import { groupGames } from "./libraryGroups";
 import {
 	DEFAULT_FILTERS,
 	hasActiveFilters,
@@ -21,7 +22,7 @@ const log = createLogger("Library");
 export class LibraryState {
 	games = $state<Game[]>([]);
 	stats = $state<LibraryStats>(EMPTY_STATS);
-	sources = $state<{ source: string; count: number }[]>([]);
+	sources = $state<{ source: string; label: string; count: number }[]>([]);
 	tags = $state<{ tag: string; count: number }[]>([]);
 	loading = $state(true);
 	error = $state("");
@@ -29,6 +30,7 @@ export class LibraryState {
 	savedFilters = $state<SavedFilter[]>(loadSavedFilters());
 
 	visible = $derived(visibleGames(this.games, this.filters));
+	groups = $derived(groupGames(this.visible, this.sources));
 	filtersActive = $derived(hasActiveFilters(this.filters));
 
 	async load() {
