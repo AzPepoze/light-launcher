@@ -25,7 +25,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | First release needs `Release-As: 2.0.0` (the manifest still says 1.0.0). |
 | [ ] | Publish the plugin SDK. The plugins use a local `file:` link, so a fresh clone cannot install. |
 | [ ] | Run `actionlint` and `shellcheck` on the workflows and scripts (not installed yet). |
-| [ ] | Make the plugin SDK and plugin repos public and push them. |
+| [x] | Make the plugin SDK and plugin repos public and push them. |
 | [ ] | Plugin registry index (`plugins.json`) for community installs. |
 | [ ] | Sign plugin packages and publish the public key. |
 
@@ -62,7 +62,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 |---|---|
 | [ ] | The file-host resolvers (Pixeldrain, Mega, MediaFire and others) are not called by `prepareDownload`, so only direct links work. Decide whether to connect them. |
 | [ ] | Ask F95 Zone staff for written permission. Until then the README says it is not approved. |
-| [ ] | Add a contact line to the README that works while the repo is private (an issue only works on a public repo). |
+| [x] | Contact line in the README (an issue on the now public repo). |
 | [ ] | Cannot set: patch-over-full, skip extras, include pre-releases (the parser does not keep that information). |
 | [ ] | Delete the F95 plugin's own CDP code once the host browser assist service is used. |
 
