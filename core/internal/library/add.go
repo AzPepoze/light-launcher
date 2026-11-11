@@ -73,7 +73,6 @@ func (l *Library) AddFromURL(ctx context.Context, url string) (Game, error) {
 	if err := l.refreshFiles(ctx, game); err != nil {
 		logger.Warn(logCategory, "could not resolve files for %s: %v", game.Title, err)
 	}
-	go l.cacheArtwork(game)
 	return game, nil
 }
 
@@ -102,7 +101,7 @@ func (l *Library) LinkLocal(ctx context.Context, id int64, url string) (Game, er
 	if err := l.refreshFiles(ctx, target); err != nil {
 		logger.Warn(logCategory, "file refresh failed after link: %v", err)
 	}
-	go l.cacheArtwork(target)
+	l.startArtwork(target.ID)
 	return target, nil
 }
 
@@ -162,14 +161,4 @@ func mergePatch(local, target Game) Patch {
 		patch.Status = &installed
 	}
 	return patch
-}
-
-// cacheArtwork downloads the cover and screenshots in the background and tells the UI when done.
-func (l *Library) cacheArtwork(game Game) {
-	ctx := context.Background()
-	if _, err := l.AttachCover(ctx, game); err != nil {
-		logger.Debug(logCategory, "cover for %s: %v", game.Title, err)
-	}
-	l.CacheScreenshots(ctx, game)
-	l.notify("library.game", map[string]any{"id": game.ID})
 }

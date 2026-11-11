@@ -14,8 +14,6 @@ import (
 	"regexp"
 	"strings"
 	"time"
-
-	"light-launcher/core/internal/logger"
 )
 
 // Cover and screenshot cache. Images are stored as downloaded, without re-encoding.
@@ -201,7 +199,7 @@ func (l *Library) CacheScreenshots(ctx context.Context, game Game) {
 	}
 	for _, shot := range shots {
 		if _, err := l.media.cacheImage(ctx, shot, "screenshots"); err != nil {
-			logger.Debug(logCategory, "screenshot %s: %v", shot, err)
+			warnUnlessStopped(ctx, "screenshot %s: %v", shot, err)
 		}
 	}
 }
