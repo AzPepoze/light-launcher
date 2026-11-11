@@ -80,6 +80,7 @@ Assist mode writes NDJSON to `stdout`, one object per line, and flushes every li
 | GPU | On. The shell adds `--ignore-gpu-blocklist` and `--enable-gpu-rasterization` to `QTWEBENGINE_CHROMIUM_FLAGS` before Qt starts, so a driver blocklist cannot silently drop the page to software rendering. Flags you set yourself stay. |
 | Turn the GPU off | Set `LL_DISABLE_GPU=1`. Use it only if a driver crashes or draws garbage. |
 | Smooth scrolling | On. Qt WebEngine leaves animated scrolling off by default, so the shell turns it on for both window modes. |
+| Middle-click scrolling | On. Click the middle button, then move the mouse to scroll, like Chrome on Windows. The shell adds the Blink feature `MiddleClickAutoscroll`, which Chromium leaves off on Linux. Blink features you set yourself stay. |
 
 ## Native functions in the page
 
