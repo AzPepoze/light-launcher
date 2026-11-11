@@ -30,6 +30,8 @@ func Register(r *api.Router, ev api.Events, lib *library.Library, sources contra
 	r.Handle("LibraryUpdate", api.Typed(s.update))
 	r.Handle("LibraryRemove", api.Typed(s.remove))
 	r.Handle("LibrarySearch", api.Typed(s.search))
+	r.Handle("LibraryBrowse", api.Typed(s.browse))
+	r.Handle("LibraryFilters", api.Typed(s.filters))
 	r.Handle("LibraryPreview", api.Typed(s.preview))
 	r.Handle("LibraryAddFromUrl", api.Typed(s.addFromURL))
 	r.Handle("LibraryLinkLocal", api.Typed(s.linkLocal))

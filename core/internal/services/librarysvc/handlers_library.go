@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 
+	"light-launcher/core/internal/contract"
 	"light-launcher/core/internal/library"
 )
 
@@ -139,6 +140,16 @@ func (s *service) remove(ctx context.Context, in removePayload) (removeResult, e
 
 func (s *service) search(ctx context.Context, in searchPayload) ([]library.SearchResult, error) {
 	return library.SearchSources(ctx, s.sources, in.Query), nil
+}
+
+// browse returns one filtered page of a source's games. Nothing is saved.
+func (s *service) browse(ctx context.Context, in contract.BrowseRequest) (contract.BrowsePage, error) {
+	return s.lib.Browse(ctx, in)
+}
+
+// filters returns the values of one dynamic sidebar group, such as a tag list.
+func (s *service) filters(ctx context.Context, in contract.FiltersRequest) (contract.FiltersPage, error) {
+	return s.lib.ListFilters(ctx, in)
 }
 
 func (s *service) preview(ctx context.Context, in urlPayload) (library.Preview, error) {

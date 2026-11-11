@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"testing"
 
@@ -83,7 +84,7 @@ func call(t *testing.T, router *api.Router, method string, payload string) any {
 func TestRegisterAddsEveryLibraryMethod(t *testing.T) {
 	router, _ := setup(t)
 	want := []string{
-		"LibraryList", "LibraryGet", "LibraryUpdate", "LibraryRemove", "LibrarySearch", "LibraryPreview",
+		"LibraryList", "LibraryGet", "LibraryUpdate", "LibraryRemove", "LibrarySearch", "LibraryBrowse", "LibraryFilters", "LibraryPreview",
 		"LibraryAddFromUrl", "LibraryLinkLocal", "LibraryCheckUpdates", "LibrarySetFavorite",
 		"LibraryOverview", "LibrarySyncSource",
 		"LibraryScanFolder", "LibraryLaunch", "LibraryLinkFolder", "LibraryUpdatesSummary",
@@ -129,6 +130,29 @@ func TestLibrarySearchAggregatesBrowsableSources(t *testing.T) {
 	results := call(t, router, "LibrarySearch", `{"query":"found"}`).([]library.SearchResult)
 	if len(results) != 1 || len(results[0].Games) != 1 || results[0].Games[0].Title != "Found Game" {
 		t.Errorf("results = %+v", results)
+	}
+}
+
+func TestLibraryBrowseAndFiltersRefuseBadSources(t *testing.T) {
+	cases := []struct {
+		name    string
+		method  string
+		payload string
+		wantErr string
+	}{
+		{"browse unknown source", "LibraryBrowse", `{"source":"nope","limit":10}`, "unknown source"},
+		{"browse without browse:filters", "LibraryBrowse", `{"source":"f95","limit":10}`, "does not offer browse filters"},
+		{"filters unknown source", "LibraryFilters", `{"source":"nope","group":"tags","limit":10}`, "unknown source"},
+		{"filters without browse:filters", "LibraryFilters", `{"source":"f95","group":"tags","limit":10}`, "does not offer browse filters"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			router, _ := setup(t)
+			_, err := router.Dispatch(context.Background(), tc.method, json.RawMessage(tc.payload))
+			if err == nil || !strings.Contains(err.Error(), tc.wantErr) {
+				t.Fatalf("err = %v, want it to mention %q", err, tc.wantErr)
+			}
+		})
 	}
 }
 
