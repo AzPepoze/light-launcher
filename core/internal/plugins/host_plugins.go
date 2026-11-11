@@ -272,6 +272,7 @@ func sourceInfos(id string, manifest Manifest) []contract.SourceInfo {
 			Label:        source.Label,
 			Capabilities: source.Capabilities,
 			Tile:         tileOrDefault(source.Tile),
+			Sidebar:      source.Sidebar,
 		})
 	}
 	return sources

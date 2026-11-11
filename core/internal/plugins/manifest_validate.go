@@ -23,7 +23,7 @@ var (
 
 var validCapabilities = map[string]bool{
 	"browse": true, "auth": true, "updateCheck": true, "resolveFiles": true,
-	"sync:games": true, "sync:index": true, "listGames": true,
+	"sync:games": true, "sync:index": true, "listGames": true, capabilityBrowseFilters: true,
 }
 
 var validTiles = map[string]bool{
@@ -149,6 +149,9 @@ func validateSources(sources []SourceContribution) error {
 			return err
 		}
 		if err := validateTile(field, source.Tile); err != nil {
+			return err
+		}
+		if err := validateSidebar(field, source.Sidebar, source.Capabilities); err != nil {
 			return err
 		}
 	}

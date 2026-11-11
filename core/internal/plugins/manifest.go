@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"runtime"
+
+	"light-launcher/core/internal/contract"
 )
 
 // SupportedAPIVersion is the protocol major version this host speaks.
@@ -55,6 +57,8 @@ type SourceContribution struct {
 	Capabilities []string `json:"capabilities"`
 	// Tile is the Library card shape: poster (the default), wide or square.
 	Tile string `json:"tile,omitempty"`
+	// Sidebar is the filter groups the Library shows for this source. It needs the browse:filters capability.
+	Sidebar []contract.SidebarGroup `json:"sidebar,omitempty"`
 }
 
 // SettingsRef points at the JSON Schema file that builds the settings form.

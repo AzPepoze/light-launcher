@@ -106,6 +106,8 @@ type SourceInfo struct {
 	Capabilities []string `json:"capabilities"`
 	// Tile is the card shape the source declares: poster, wide or square.
 	Tile string `json:"tile,omitempty"`
+	// Sidebar is the filter groups the source declares. Empty when it declares none.
+	Sidebar []SidebarGroup `json:"sidebar,omitempty"`
 }
 
 // PrepareDownloadTimeout is the longest source.prepareDownload may take. A person can finish a browser
