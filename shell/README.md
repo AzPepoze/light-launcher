@@ -73,6 +73,14 @@ Assist mode writes NDJSON to `stdout`, one object per line, and flushes every li
 
 `size` is `-1` when the server did not send a length. `headers` holds only the values the shell knows: `Cookie` for the download address, `Referer` from the current page and `User-Agent` from the browser settings.
 
+## Rendering (Qt)
+
+| Item | Behaviour |
+| :--- | :--- |
+| GPU | On. The shell adds `--ignore-gpu-blocklist` and `--enable-gpu-rasterization` to `QTWEBENGINE_CHROMIUM_FLAGS` before Qt starts, so a driver blocklist cannot silently drop the page to software rendering. Flags you set yourself stay. |
+| Turn the GPU off | Set `LL_DISABLE_GPU=1`. Use it only if a driver crashes or draws garbage. |
+| Smooth scrolling | On. Qt WebEngine leaves animated scrolling off by default, so the shell turns it on for both window modes. |
+
 ## Native functions in the page
 
 In normal mode the shell adds `window.llShell` to every page it loads. Assist mode does not add it.
