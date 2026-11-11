@@ -6,20 +6,19 @@ This page explains how a new version of LightLauncher is made and published.
 
 ## How a release works
 
-Commit messages decide the next version number. The project uses [Conventional Commits](https://www.conventionalcommits.org/).
+Release versions are picked by hand. The project uses [Conventional Commits](https://www.conventionalcommits.org/) to record changes.
 
-| Step | Who              | What happens                                                                              |
-| :--- | :--------------- | :---------------------------------------------------------------------------------------- |
-| 1    | You              | Merge commits to `main` using Conventional Commit messages.                               |
-| 2    | release-please   | Opens or updates a release pull request with the new version and `CHANGELOG.md`.          |
-| 3    | You              | Merge the release pull request.                                                           |
-| 4    | release-please   | Creates the version tag and a GitHub Release.                                             |
-| 5    | Release workflow | Builds the Linux and Windows files, makes `SHA256SUMS`, and attaches them to the release. |
+| Step | Who              | What happens                                                                                    |
+| :--- | :--------------- | :---------------------------------------------------------------------------------------------- |
+| 1    | You              | Merge commits to `main` using Conventional Commit messages.                                     |
+| 2    | You              | Pick the new version and push a tag, for example `git tag v1.1.0` then `git push origin v1.1.0`. |
+| 3    | Release workflow | Builds the Linux and Windows files, makes `SHA256SUMS`, and publishes them in a GitHub Release.  |
 
-> [!NOTE]
-> Step 5 starts only when the tag is pushed by a token that can trigger workflows. See [Secrets](#secrets).
+GitHub generates the release notes from the commits and pull requests in the release.
 
 ## Version bumps
+
+Pick the version bump from the commits since the last tag.
 
 | Commit type                             | Version change                        |
 | :-------------------------------------- | :------------------------------------ |
@@ -27,15 +26,14 @@ Commit messages decide the next version number. The project uses [Conventional C
 | `feat:`                                 | Minor, for example `1.0.0` to `1.1.0` |
 | `feat!:` or a `BREAKING CHANGE:` footer | Major, for example `1.0.0` to `2.0.0` |
 
-Other types, such as `docs:` and `chore:`, do not bump the version on their own.
+Other types, such as `docs:` and `chore:`, do not need a release on their own.
 
 ## Workflows
 
-| File                                   | Runs on                   | Purpose                                                                                                |
-| :------------------------------------- | :------------------------ | :----------------------------------------------------------------------------------------------------- |
-| `.github/workflows/ci.yml`             | Push and pull request     | Go vet and tests on Linux and Windows, UI checks, GTK shell build, WebView2 cross build, workflow lint. |
-| `.github/workflows/release-please.yml` | Push to `main`            | Opens the release pull request and creates the tag.                                                    |
-| `.github/workflows/release.yml`        | Tag `v*`, or a manual run | Runs `scripts/build-linux.sh` and `scripts/build-windows.sh`, then publishes the release files.        |
+| File                            | Runs on                   | Purpose                                                                                                |
+| :------------------------------ | :------------------------ | :----------------------------------------------------------------------------------------------------- |
+| `.github/workflows/ci.yml`      | Push and pull request     | Go vet and tests on Linux and Windows, UI checks, GTK shell build, WebView2 cross build, workflow lint. |
+| `.github/workflows/release.yml` | Tag `v*`, or a manual run | Runs `scripts/build-linux.sh` and `scripts/build-windows.sh`, then publishes the release files.        |
 
 ## Release files
 
@@ -76,21 +74,8 @@ Use this to test the build without a release.
 
 To publish by hand, uncheck **dry-run** and pick a tag in the branch list.
 
-## Secrets
-
-Add secrets in **Settings > Secrets and variables > Actions**.
-
-| Secret                 | Required     | Used by              | What it is                                                                                                                           |
-| :--------------------- | :----------- | :------------------- | :----------------------------------------------------------------------------------------------------------------------------------- |
-| `RELEASE_PLEASE_TOKEN` | Optional     | `release-please.yml` | A personal access token or GitHub App token. Lets a release tag start `release.yml`. Without it, start the Release workflow by hand. |
-
-`GITHUB_TOKEN` is created by GitHub for each run. You do not add it.
-
-> [!WARNING]
-> Never print a secret in a workflow log or commit it to the repository.
-
 ## Notes
 
 - The Windows files are not signed yet. Windows shows a warning when you first run them.
-- Release notes come from release-please. The Release workflow also asks for generated notes. Check the release body after the first run.
+- The Release workflow asks GitHub for generated release notes. Check the release body after the first run.
 - The Release workflow runs on Ubuntu. It cross-builds the Windows files there.

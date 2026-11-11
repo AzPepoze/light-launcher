@@ -130,7 +130,7 @@ Rules:
 - Make one commit per logical change.
 - Do not add `Co-Authored-By` or other attribution lines.
 
-Release versions come from these commit types. See [Releasing](docs/releasing.md#version-bumps).
+Release versions follow these commit types. See [Releasing](docs/releasing.md#version-bumps).
 
 ## Pull requests
 
