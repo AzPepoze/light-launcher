@@ -45,7 +45,7 @@ The install dialog shows the plugin's permissions. The command line prints them 
 > [!WARNING]
 > `remove --delete-data` deletes the plugin's data folder, with its settings and stored data. This cannot be undone.
 >
-> Removing a plugin does not delete its saved sign-in values. Sign out first.
+> Removing a plugin also deletes its saved secrets, such as sign-in cookies and API keys.
 
 ## Trust levels
 
