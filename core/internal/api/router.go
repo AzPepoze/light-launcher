@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sync"
+	"time"
 )
 
 // Handler serves one UI method. The payload is the raw JSON object sent by the UI.
@@ -20,10 +21,11 @@ type Events interface {
 type Router struct {
 	mu       sync.RWMutex
 	handlers map[string]Handler
+	timeouts map[string]time.Duration
 }
 
 func NewRouter() *Router {
-	return &Router{handlers: map[string]Handler{}}
+	return &Router{handlers: map[string]Handler{}, timeouts: map[string]time.Duration{}}
 }
 
 // Handle registers a handler. Registering the same method twice is a programming error.
@@ -34,6 +36,21 @@ func (r *Router) Handle(method string, handler Handler) {
 		panic("api: duplicate method " + method)
 	}
 	r.handlers[method] = handler
+}
+
+// HandleWithTimeout registers a handler that may run longer than the default invoke timeout.
+func (r *Router) HandleWithTimeout(method string, timeout time.Duration, handler Handler) {
+	r.Handle(method, handler)
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.timeouts[method] = timeout
+}
+
+// TimeoutOf returns the limit set by HandleWithTimeout, or zero when the method has none.
+func (r *Router) TimeoutOf(method string) time.Duration {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	return r.timeouts[method]
 }
 
 func (r *Router) Dispatch(ctx context.Context, method string, payload json.RawMessage) (any, error) {

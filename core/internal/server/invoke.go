@@ -20,6 +20,14 @@ type invokeRequest struct {
 	Payload json.RawMessage `json:"payload"`
 }
 
+// timeoutFor returns the limit for one UI method: its own, when it registered one, else the default.
+func (s *server) timeoutFor(method string) time.Duration {
+	if timeout := s.cfg.Router.TimeoutOf(method); timeout > 0 {
+		return timeout
+	}
+	return invokeTimeout
+}
+
 // handleInvoke runs one UI method. Handler errors travel in the envelope with HTTP 200;
 // the HTTP status is only for malformed requests.
 func (s *server) handleInvoke(w http.ResponseWriter, r *http.Request) {
@@ -27,7 +35,7 @@ func (s *server) handleInvoke(w http.ResponseWriter, r *http.Request) {
 	if !decodeBody(w, r, maxInvokeBody, &req) {
 		return
 	}
-	ctx, cancel := context.WithTimeout(r.Context(), invokeTimeout)
+	ctx, cancel := context.WithTimeout(r.Context(), s.timeoutFor(req.Method))
 	defer cancel()
 
 	data, err := s.cfg.Router.Dispatch(ctx, req.Method, req.Payload)

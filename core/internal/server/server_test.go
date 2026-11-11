@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 	"testing/fstest"
+	"time"
 
 	"light-launcher/core/internal/api"
 	"light-launcher/core/internal/platform"
@@ -159,6 +160,30 @@ func TestInvokeSuccessAndHandlerError(t *testing.T) {
 	env = decodeEnvelope(t, fx.serve(fx.request(http.MethodPost, "/api/invoke", `{"method":"Fail"}`)))
 	if env.Success || env.Error != "disk full" {
 		t.Fatalf("fail: envelope %+v", env)
+	}
+}
+
+func TestInvokeUsesTheMethodTimeout(t *testing.T) {
+	fx := newFixture(t, testPort)
+	var plain, long time.Duration
+	fx.router.Handle("Plain", api.NoInput(func(ctx context.Context) (string, error) {
+		deadline, _ := ctx.Deadline()
+		plain = time.Until(deadline)
+		return "", nil
+	}))
+	fx.router.HandleWithTimeout("Long", 11*time.Minute, api.NoInput(func(ctx context.Context) (string, error) {
+		deadline, _ := ctx.Deadline()
+		long = time.Until(deadline)
+		return "", nil
+	}))
+
+	fx.serve(fx.request(http.MethodPost, "/api/invoke", `{"method":"Plain"}`))
+	fx.serve(fx.request(http.MethodPost, "/api/invoke", `{"method":"Long"}`))
+	if plain > invokeTimeout || plain < invokeTimeout-time.Minute {
+		t.Errorf("plain method deadline in %v, want about %v", plain, invokeTimeout)
+	}
+	if long < 10*time.Minute {
+		t.Errorf("long method deadline in %v, want about 11m", long)
 	}
 }
 
