@@ -9,13 +9,13 @@ LightLauncher is a Go program with a web-based window. On Linux it starts Window
 
 ## Screenshots
 
-|             Home             |            Add games             |
-| :--------------------------: | :------------------------------: |
-|    ![home](docs/home.png)    | ![add games](docs/add_games.png) |
-|             Run              |              Prefix              |
-|     ![run](docs/run.png)     |    ![prefix](docs/prefix.png)    |
-|           Version            |              Utils               |
-| ![version](docs/version.png) |     ![utils](docs/utils.png)     |
+|               Home                |               Add games               |
+| :-------------------------------: | :-----------------------------------: |
+|    ![home](docs/imgs/home.png)    | ![add games](docs/imgs/add_games.png) |
+|                Run                |                Prefix                 |
+|     ![run](docs/imgs/run.png)     |    ![prefix](docs/imgs/prefix.png)    |
+|              Version              |                 Utils                 |
+| ![version](docs/imgs/version.png) |     ![utils](docs/imgs/utils.png)     |
 
 ## Quick start
 
