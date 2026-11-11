@@ -62,6 +62,14 @@ async function readEnvelope<T>(response: Response, method: string): Promise<IpcR
 	return body;
 }
 
+async function unwrapEnvelope<T>(response: Response, label: string): Promise<T> {
+	const body = await readEnvelope<T>(response, label);
+	if (!body.success) {
+		throw new Error(body.error || `IPC error calling ${label}`);
+	}
+	return body.data as T;
+}
+
 /** Calls a Go method through POST /api/invoke. Throws with the server error text on failure. */
 export async function invoke<T>(method: string, payload: unknown = {}): Promise<T> {
 	const response = await fetch(INVOKE_PATH, {
@@ -69,11 +77,17 @@ export async function invoke<T>(method: string, payload: unknown = {}): Promise<
 		headers: authHeaders({ "Content-Type": "application/json" }),
 		body: JSON.stringify({ method, payload })
 	});
-	const body = await readEnvelope<T>(response, method);
-	if (!body.success) {
-		throw new Error(body.error || `IPC error calling ${method}`);
-	}
-	return body.data as T;
+	return unwrapEnvelope<T>(response, method);
+}
+
+/** Posts multipart form data to a server route. Throws with the server error text on failure. */
+export async function postForm<T>(path: string, form: FormData): Promise<T> {
+	const response = await fetch(path, {
+		method: "POST",
+		headers: authHeaders(),
+		body: form
+	});
+	return unwrapEnvelope<T>(response, path);
 }
 
 /** Uses the native picker from window.llShell when the desktop shell provides one. */
