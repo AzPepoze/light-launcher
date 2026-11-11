@@ -30,7 +30,6 @@ func Register(r *api.Router, ev api.Events, lib *library.Library, sources contra
 	r.Handle("LibraryUpdatesSummary", api.NoInput(s.updatesSummary))
 	r.Handle("LibraryUpdateHistory", api.Typed(s.updateHistory))
 	r.Handle("LibrarySetFavorite", api.Typed(s.setFavorite))
-	r.Handle("LibraryImportLegacy", api.Typed(s.importLegacy))
 	r.Handle("LibraryScanFolder", api.Typed(s.scanFolder))
 	r.Handle("LibraryLaunch", api.Typed(s.launch))
 

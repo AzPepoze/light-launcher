@@ -28,7 +28,7 @@ export async function loadAppSettings(): Promise<any> {
 	}
 }
 
-/** Save settings that apply immediately without restarting Electron. */
+/** Save settings that apply immediately without restarting the app. */
 export async function saveAppSettings(
 	settings: AppSettings,
 	successMessage = "Settings saved"

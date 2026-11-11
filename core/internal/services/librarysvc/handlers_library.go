@@ -168,15 +168,6 @@ func (s *service) setFavorite(ctx context.Context, in favoritePayload) (library.
 	return game, nil
 }
 
-func (s *service) importLegacy(ctx context.Context, in pathPayload) (library.ImportReport, error) {
-	report, err := s.lib.ImportLegacy(ctx, in.Path)
-	if err != nil {
-		return library.ImportReport{}, err
-	}
-	s.events.Emit("library.changed", map[string]any{})
-	return report, nil
-}
-
 func (s *service) scanFolder(ctx context.Context, in pathPayload) (library.ScanReport, error) {
 	return s.lib.ScanFolder(ctx, in.Path)
 }

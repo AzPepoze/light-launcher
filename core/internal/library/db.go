@@ -11,7 +11,7 @@ import (
 )
 
 // openDB opens the library database in WAL mode and runs the migrations.
-// One connection keeps writes serial and makes ATTACH (legacy import) safe.
+// One connection keeps writes serial.
 func openDB(ctx context.Context, path string) (*sql.DB, error) {
 	dsn := fmt.Sprintf(
 		"file:%s?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)&_pragma=foreign_keys(1)",

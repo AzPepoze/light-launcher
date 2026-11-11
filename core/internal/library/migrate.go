@@ -12,8 +12,7 @@ type migration struct {
 	statements []string
 }
 
-// The first migration matches the column names of the old interesting-launcher
-// library.db, so the legacy importer and older tools can read the same data.
+// The first migration creates the v1 schema. Later steps are appended.
 var migrations = []migration{
 	{
 		version: 1,

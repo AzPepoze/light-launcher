@@ -177,7 +177,7 @@
 				<div class="settings-section">
 					<h3>Ozone Platform (Wayland / X11)</h3>
 					<p class="desc">
-						Configure whether LightLauncher runs natively on Wayland or via X11/Xwayland. You can also override this via <code>--wayland</code>, <code>--x11</code>, or <code>~/.config/light-launcher-flags.conf</code>.
+						Configure whether LightLauncher runs natively on Wayland or via X11/Xwayland.
 					</p>
 					<div>
 						<button class="btn {appSettings.NativeWayland ? 'primary' : 'secondary'}" on:click={toggleNativeWayland}>

@@ -72,7 +72,7 @@ func TestRegisterAddsEveryLibraryMethod(t *testing.T) {
 	want := []string{
 		"LibraryList", "LibraryGet", "LibraryUpdate", "LibraryRemove", "LibrarySearch", "LibraryPreview",
 		"LibraryAddFromUrl", "LibraryLinkLocal", "LibraryCheckUpdates", "LibrarySetFavorite",
-		"LibraryImportLegacy", "LibraryScanFolder", "LibraryLaunch", "LibraryLinkFolder", "LibraryUpdatesSummary",
+		"LibraryScanFolder", "LibraryLaunch", "LibraryLinkFolder", "LibraryUpdatesSummary",
 		"LibraryUpdateHistory",
 		"IncomingList", "IncomingLink", "IncomingIgnore", "IncomingCreateLocal",
 	}
