@@ -97,7 +97,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 
 | Status | Item |
 |---|---|
-| [ ] | Duplicate config and activity code in `appsvc` and `runtimesvc`. |
+| [x] | Duplicate config and activity code in `appsvc` and `runtimesvc`. |
 | [ ] | `llp validate` does not check that the settings file exists (pack fails instead). |
 | [ ] | The `parseRef` parameter check differs between itch (no validation) and f95 (strict). |
 | [ ] | Update flow downloads a package twice (once to preview, once to install). |
