@@ -75,15 +75,34 @@ func (in *installer) Install(ctx context.Context, source string, allowUnsigned b
 // Update installs the version found at the source the plugin was installed from.
 // When the new version asks for permissions the user has not accepted, accepted must list all of them.
 func (in *installer) Update(ctx context.Context, id string, allowUnsigned bool, accepted []string) error {
-	source := in.state.get(id).Source
-	if source == "" {
-		return ErrNoSource
-	}
-	prepared, err := in.preparePackage(ctx, source)
+	prepared, source, err := in.prepareUpdate(ctx, id, allowUnsigned, accepted)
 	if err != nil {
 		return err
 	}
 	defer prepared.discard()
+	return in.commitUpdate(prepared, source)
+}
+
+// prepareUpdate unpacks the newest version and runs every check before anything is changed.
+// The caller must discard the returned package.
+func (in *installer) prepareUpdate(ctx context.Context, id string, allowUnsigned bool, accepted []string) (preparedPackage, string, error) {
+	source := in.state.get(id).Source
+	if source == "" {
+		return preparedPackage{}, "", ErrNoSource
+	}
+	prepared, err := in.preparePackage(ctx, source)
+	if err != nil {
+		return preparedPackage{}, "", err
+	}
+	if err := in.checkUpdate(id, prepared, allowUnsigned, accepted); err != nil {
+		prepared.discard()
+		return preparedPackage{}, "", err
+	}
+	return prepared, source, nil
+}
+
+// checkUpdate returns an error when the prepared package must not replace the installed version.
+func (in *installer) checkUpdate(id string, prepared preparedPackage, allowUnsigned bool, accepted []string) error {
 	if prepared.Manifest.ID != id {
 		return fmt.Errorf("package is for %q, not %q", prepared.Manifest.ID, id)
 	}
@@ -105,7 +124,12 @@ func (in *installer) Update(ctx context.Context, id string, allowUnsigned bool, 
 	if added := newPermissions(baseline, summary); len(added) > 0 && checkConsent(summary, accepted) != nil {
 		return fmt.Errorf("%w: %s", ErrNewPermissions, strings.Join(added, ", "))
 	}
-	return in.commit(prepared, source, summary)
+	return nil
+}
+
+// commitUpdate installs a package from prepareUpdate and makes it the current version.
+func (in *installer) commitUpdate(prepared preparedPackage, source string) error {
+	return in.commit(prepared, source, PermissionSummary(prepared.Manifest.Permissions))
 }
 
 // acceptedBaseline returns the permissions the user accepted for a plugin. Plugins installed before

@@ -70,7 +70,7 @@ A package can also have a `SIGNATURE` file. It is an ed25519 signature of the `S
 
 ## Secrets
 
-Sign-in values, such as cookies and API keys, are kept in a secure store.
+Sign-in values, such as cookies and API keys, are kept in a secure store. Removing a plugin deletes them.
 
 | System                               | Where the secret goes                                                            |
 | :----------------------------------- | :------------------------------------------------------------------------------- |

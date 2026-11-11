@@ -55,7 +55,7 @@ func NewHost(opts HostOptions) (*Host, error) {
 		secrets = newPlatformSecrets(opts.Layout.Root)
 	}
 	deps := &serviceDeps{
-		secrets:   secrets,
+		secrets:   trackedSecrets{inner: secrets, state: in.state},
 		downloads: opts.Downloads,
 		library:   opts.Library,
 		browser:   opts.Browser,

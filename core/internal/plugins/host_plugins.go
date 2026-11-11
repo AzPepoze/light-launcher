@@ -2,6 +2,8 @@ package plugins
 
 import (
 	"context"
+	"fmt"
+	"slices"
 	"sort"
 
 	"light-launcher/core/internal/contract"
@@ -71,8 +73,14 @@ func (h *Host) Update(ctx context.Context, id string, allowUnsigned bool, accept
 	if err := requireID(id); err != nil {
 		return PluginInfo{}, err
 	}
+	// Checks run first, so a refused update leaves the running plugin alone.
+	prepared, source, err := h.install.prepareUpdate(ctx, id, allowUnsigned, accepted)
+	if err != nil {
+		return PluginInfo{}, err
+	}
+	defer prepared.discard()
 	h.stopPlugin(id)
-	if err := h.install.Update(ctx, id, allowUnsigned, accepted); err != nil {
+	if err := h.install.commitUpdate(prepared, source); err != nil {
 		return PluginInfo{}, err
 	}
 	h.emitState(id)
@@ -92,16 +100,31 @@ func (h *Host) Rollback(id string) (PluginInfo, error) {
 	return h.info(id), nil
 }
 
-// Remove uninstalls a plugin. Its data folder is kept unless deleteData is set.
+// Remove uninstalls a plugin and deletes its secrets. Its data folder is kept unless deleteData is set.
 func (h *Host) Remove(id string, deleteData bool) error {
 	if err := requireID(id); err != nil {
 		return err
 	}
 	h.stopPlugin(id)
+	if err := h.deleteSecrets(id); err != nil {
+		return err
+	}
 	if err := h.install.Remove(id, deleteData); err != nil {
 		return err
 	}
 	h.emitRemoved(id)
+	return nil
+}
+
+// deleteSecrets removes every secret the plugin stored. It runs before the state is dropped.
+func (h *Host) deleteSecrets(id string) error {
+	ctx := context.Background()
+	keys := slices.Clone(h.install.state.get(id).SecretKeys)
+	for _, key := range keys {
+		if err := h.deps.secrets.Delete(ctx, id, key); err != nil {
+			return fmt.Errorf("delete secret %q: %w", key, err)
+		}
+	}
 	return nil
 }
 

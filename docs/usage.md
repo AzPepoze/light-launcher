@@ -10,7 +10,7 @@ This page lists the commands, their flags, and where LightLauncher keeps its fil
 | :------------------------ | :-------------------------------------------------------------------------- |
 | `light-launcher`          | Opens the launcher window.                                                  |
 | `light-launcher-instance` | Runs one game. The launcher uses it for you.                                |
-| `light-launcher plugin`   | Installs and manages plugins. Not wired yet. See [Known gaps](#known-gaps). |
+| `light-launcher plugin`   | Installs and manages plugins. See [Plugin commands](#plugin-commands).     |
 | `light-launcher-shell`    | The window program. The launcher starts it. You do not need to run it.      |
 
 ## light-launcher
@@ -25,7 +25,7 @@ light-launcher [flags] [GAME_PATH]
 | `--shell <name>`                                 | `auto`      | The window type. See [Shell values](#shell-values).                          |
 | `--no-shell`                                     | off         | Runs the UI with no window. The launcher logs the address to open.           |
 | `--ui <dir>`                                     | built-in UI | Serves the UI from this folder. The folder must contain `index.html`.        |
-| `--edit-lsfg`                                    | off         | Accepted, but not wired yet. It is ignored.                                  |
+| `--edit-lsfg`                                    | off         | Opens the Lossless Scaling (LSFG) editor on start. Linux only.               |
 | `--wayland`, `--x11`, `--ozone-platform=<value>` | none        | Accepted for old scripts and ignored. Qt picks the display system by itself. |
 
 ### Shell values
@@ -187,9 +187,6 @@ light-launcher plugin rollback <id>
 
 `--allow-unsigned` installs a plugin that has no signature. See [Plugins](plugins.md#trust-levels).
 
-> [!WARNING]
-> This version prints `plugin commands are not wired yet` and exits with code `2`. The commands above describe the planned behavior.
-
 ## Shell program
 
 ```text
@@ -227,15 +224,14 @@ On Linux, the window size and position are saved in `~/.config/light-launcher/wi
 
 ## Known gaps
 
-These parts are not working in this version.
+These parts are not finished in this version.
 
-| Part                    | State                                                                                       |
-| :---------------------- | :------------------------------------------------------------------------------------------ |
-| API methods             | The launcher registers no API methods yet, so the window cannot read or change the library. |
-| `light-launcher plugin` | Not wired. Prints a message and exits with code `2`.                                        |
-| `--edit-lsfg`           | Ignored.                                                                                    |
-| Old data                | Not moved on start. See [Migration](migration.md).                                          |
-| Old Electron flags      | `light-launcher-flags.conf` is not read.                                                    |
+| Part               | State                                                                                             |
+| :----------------- | :------------------------------------------------------------------------------------------------ |
+| Old data           | Not moved on start. See [Migration](migration.md).                                                |
+| Old game paths     | Game settings that point at `~/LightLauncher/prefixes` are not rewritten. Check each prefix path. |
+| Library import     | The import from interesting-launcher has no button. See [Migration](migration.md).                |
+| Old Electron flags | `light-launcher-flags.conf` is not read.                                                          |
 
 ## More
 

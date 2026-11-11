@@ -11,7 +11,10 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"sync"
+
+	"light-launcher/core/internal/contract"
 )
 
 const (
@@ -22,6 +25,38 @@ const (
 
 // secretBook maps plugin id to its key/value secrets.
 type secretBook map[string]map[string]string
+
+// trackedSecrets writes through to the secret store and records each key name in the plugin's state.
+type trackedSecrets struct {
+	inner contract.Secrets
+	state *stateStore
+}
+
+func (s trackedSecrets) Get(ctx context.Context, plugin, key string) (string, bool, error) {
+	return s.inner.Get(ctx, plugin, key)
+}
+
+func (s trackedSecrets) Set(ctx context.Context, plugin, key, value string) error {
+	if err := s.inner.Set(ctx, plugin, key, value); err != nil {
+		return err
+	}
+	return s.state.update(plugin, func(state *PluginState) {
+		if !slices.Contains(state.SecretKeys, key) {
+			state.SecretKeys = append(state.SecretKeys, key)
+		}
+	})
+}
+
+func (s trackedSecrets) Delete(ctx context.Context, plugin, key string) error {
+	if err := s.inner.Delete(ctx, plugin, key); err != nil {
+		return err
+	}
+	return s.state.update(plugin, func(state *PluginState) {
+		state.SecretKeys = slices.DeleteFunc(state.SecretKeys, func(stored string) bool {
+			return stored == key
+		})
+	})
+}
 
 // fileSecrets keeps secrets in an AES-256-GCM encrypted file. The key sits in a 0600 file beside it.
 // It is the fallback when no OS keyring is available.

@@ -64,6 +64,7 @@ func run(ctx context.Context, cfg runConfig) error {
 		UI:     cfg.UI,
 		Router: router,
 		Hub:    hub,
+		Covers: svc.library,
 		Token:  token,
 		Port:   port,
 		OnOpen: func(gamePath string) error {

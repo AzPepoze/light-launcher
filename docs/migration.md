@@ -47,7 +47,7 @@ On Linux, the base folder is `~/.config/light-launcher`.
 4. Start LightLauncher and check each game.
 
 > [!WARNING]
-> Old game settings can still point at `~/LightLauncher/prefixes`. The code that fixes these paths is not wired yet. Check the prefix path of each game. Prefix symlinks may also need fixing.
+> Old game settings can still point at `~/LightLauncher/prefixes`. The launcher does not rewrite these paths. Check the prefix path of each game. Prefix symlinks are fixed when a game starts.
 
 ### Old Electron flags
 

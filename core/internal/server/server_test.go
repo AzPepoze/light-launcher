@@ -21,17 +21,26 @@ const (
 	testHost  = "127.0.0.1:4321"
 )
 
+// fakeCovers maps game ids to cover files.
+type fakeCovers map[int64]string
+
+func (c fakeCovers) CoverFile(id int64) (string, bool) {
+	path, ok := c[id]
+	return path, ok
+}
+
 // fixture is a server with an in-memory UI and a record of opened game paths.
 type fixture struct {
 	handler http.Handler
 	router  *api.Router
 	hub     *api.Hub
+	covers  fakeCovers
 	opened  []string
 }
 
 func newFixture(t *testing.T, port int) *fixture {
 	t.Helper()
-	fx := &fixture{router: api.NewRouter(), hub: api.NewHub()}
+	fx := &fixture{router: api.NewRouter(), hub: api.NewHub(), covers: fakeCovers{}}
 	ui := fstest.MapFS{
 		"index.html": {Data: []byte("<!doctype html><title>ui</title>")},
 		"app.js":     {Data: []byte("console.log('app')")},
@@ -40,6 +49,7 @@ func newFixture(t *testing.T, port int) *fixture {
 		UI:     ui,
 		Router: fx.router,
 		Hub:    fx.hub,
+		Covers: fx.covers,
 		Token:  testToken,
 		Port:   port,
 		OnOpen: func(gamePath string) error {

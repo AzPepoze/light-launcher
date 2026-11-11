@@ -75,9 +75,6 @@ For web requests, secrets, files and downloads, a plugin asks the launcher. The 
 - Check your plugin with the SDK's `llp validate`, `llp test` and `llp pack` commands.
 - Install the package with `light-launcher plugin install`. See [Usage](usage.md#plugin-commands).
 
-> [!NOTE]
-> The plugin command in the launcher is not wired in this version. See [Known gaps](usage.md#known-gaps).
-
 ## More
 
 | Topic                     | Page                    |
