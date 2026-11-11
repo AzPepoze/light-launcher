@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"sync"
 	"testing"
+	"time"
 
 	"light-launcher/core/internal/api"
 )
@@ -249,6 +250,40 @@ func TestWriteJSONFileConcurrentWritersStayValid(t *testing.T) {
 	if err := readJSONFile(path, &got); err != nil {
 		t.Fatalf("file is not valid JSON after concurrent writes: %v", err)
 	}
+}
+
+func TestSettingsChangedNotifiesRunningPlugin(t *testing.T) {
+	host := newTestHost(t)
+	received := make(chan map[string]any, 1)
+	hostPeer, _ := pipePeers(nil, nil, func(method string, params json.RawMessage) {
+		if method != settingsChangedMethod {
+			return
+		}
+		var payload map[string]any
+		if err := json.Unmarshal(params, &payload); err == nil {
+			received <- payload
+		}
+	})
+	env := newPluginEnv(Manifest{ID: "fixture"}, t.TempDir(), nil, nil)
+	env.setPeer(hostPeer)
+	host.supervisors["fixture"] = &Supervisor{cfg: supervisorConfig{env: env}}
+
+	host.notifySettingsChanged("fixture", map[string]any{"region": "eu"})
+
+	select {
+	case payload := <-received:
+		want := map[string]any{"settings": map[string]any{"region": "eu"}}
+		if !reflect.DeepEqual(payload, want) {
+			t.Fatalf("notification = %v, want %v", payload, want)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("running plugin did not receive settings.changed")
+	}
+}
+
+func TestSettingsChangedSkipsStoppedPlugin(t *testing.T) {
+	host := newTestHost(t)
+	host.notifySettingsChanged("fixture", map[string]any{"region": "eu"})
 }
 
 func TestSettingsSetNeedsInstalledPlugin(t *testing.T) {

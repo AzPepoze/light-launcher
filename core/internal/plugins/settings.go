@@ -4,6 +4,9 @@ import (
 	"path/filepath"
 )
 
+// settingsChangedMethod is the notification the launcher sends to a running plugin after a save.
+const settingsChangedMethod = "settings.changed"
+
 // SettingsView is what the settings form needs: the schema from plugin.json, null when the plugin has none,
 // and the values the user saved, empty when none were saved.
 type SettingsView struct {
@@ -47,7 +50,23 @@ func (h *Host) SettingsSet(id string, values map[string]any) error {
 	if err := validateSettings(schema, values); err != nil {
 		return err
 	}
-	return writeJSONFile(h.settingsPath(id), values)
+	if err := writeJSONFile(h.settingsPath(id), values); err != nil {
+		return err
+	}
+	h.notifySettingsChanged(id, applySettingsDefaults(schema, values))
+	return nil
+}
+
+// notifySettingsChanged tells a running plugin about new settings. A plugin that is not running
+// reads them on its next start, and a stopped plugin gets nothing.
+func (h *Host) notifySettingsChanged(id string, values map[string]any) {
+	h.mu.Lock()
+	sup := h.supervisors[id]
+	h.mu.Unlock()
+	if sup == nil {
+		return
+	}
+	sup.cfg.env.notifyPlugin(settingsChangedMethod, map[string]any{"settings": values})
 }
 
 func (h *Host) settingsPath(id string) string {
