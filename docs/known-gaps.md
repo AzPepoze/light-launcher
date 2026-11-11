@@ -55,13 +55,11 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | The Download button's busy text ("Finish the step in the browser window") is checked by typecheck and build only. Look at it in the real window. |
 | [x] | The launcher never calls `source.sync` and never schedules update checks. Plugin sync and interval settings have no effect until a scheduler exists. |
 | [x] | A running plugin gets a `settings.changed` notice when settings are saved (no restart; plugins must read settings per call). |
-| [x] | Embedded browser assist on Linux (Qt): the host starts the shell in assist mode and reads its download event. Run in a real window against a local test page. |
 | [x] | Embedded browser assist on Linux (GTK): ready, download (filename, size, Cookie, Referer, User-Agent), closed and persistent profile cookies verified against a local test page in a real window. |
 | [ ] | Check the GTK shell's external-link opening and transparent window by eye. The link rules and flags are unit-tested only. |
 | [ ] | No plugin calls the host `browser.assist` service yet (F95 still uses its own Chrome code), so a real plugin download through the embedded window is untested. |
 | [ ] | Embedded browser assist on Windows (WebView2) is untested on Windows. |
 | [ ] | If the request that started a browser step ends first, the browser window stays open until its own time limit. The host does not pass that cancel on to `browser.assist` yet. |
-| [x] | Qt assist mode reads cookies restored from disk on Qt 6.11 from the profile cookie database, where QtWebEngine stores the values in plain text. Encrypted values would be skipped. |
 | [ ] | Plugin secrets saved before the cleanup change are not removed when the plugin is removed. |
 | [x] | Stop plugins that stay idle for 5 minutes, with `pluginIdleTimeoutMinutes` to change or disable it. |
 | [ ] | Check the "Sleeping" plugin badge by eye in the real window (only typecheck, tests and build so far). |
