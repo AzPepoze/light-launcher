@@ -2,10 +2,16 @@
 package librarysvc
 
 import (
+	"time"
+
 	"light-launcher/core/internal/api"
 	"light-launcher/core/internal/contract"
 	"light-launcher/core/internal/library"
 )
+
+// downloadFileTimeout leaves the plugin its full prepare time plus a minute, so the plugin's own timeout
+// answers first and the UI gets its message.
+const downloadFileTimeout = contract.PrepareDownloadTimeout + time.Minute
 
 type service struct {
 	lib     *library.Library
@@ -32,6 +38,7 @@ func Register(r *api.Router, ev api.Events, lib *library.Library, sources contra
 	r.Handle("LibrarySetFavorite", api.Typed(s.setFavorite))
 	r.Handle("LibraryScanFolder", api.Typed(s.scanFolder))
 	r.Handle("LibraryLaunch", api.Typed(s.launch))
+	r.HandleWithTimeout("LibraryDownloadFile", downloadFileTimeout, api.Typed(s.downloadFile))
 
 	r.Handle("IncomingList", api.NoInput(s.incomingList))
 	r.Handle("IncomingLink", api.Typed(s.incomingLink))

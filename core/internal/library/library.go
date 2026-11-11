@@ -33,8 +33,10 @@ type Options struct {
 	// WatchFolder returns the current watch folder. It is read on every poll, so changes apply without a restart.
 	WatchFolder func() string
 	// GamesDir returns the folder that holds installed games. Only install folders inside it are ever deleted.
-	GamesDir  func() string
-	Sources   contract.Sources
+	GamesDir func() string
+	Sources  contract.Sources
+	// Downloads queues saved links of games whose source cannot prepare them.
+	Downloads contract.Downloads
 	Launcher  Launcher
 	Installer Installer
 	Sink      ArchiveSink

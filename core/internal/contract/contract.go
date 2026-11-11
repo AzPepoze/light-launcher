@@ -4,6 +4,7 @@ package contract
 import (
 	"context"
 	"errors"
+	"time"
 )
 
 type Platform string
@@ -103,9 +104,15 @@ type SourceInfo struct {
 	Capabilities []string `json:"capabilities"`
 }
 
+// PrepareDownloadTimeout is the longest source.prepareDownload may take. A person can finish a browser
+// step in that time; the host browser.assist caps at 10 minutes, so this leaves a minute of margin.
+const PrepareDownloadTimeout = 11 * time.Minute
+
 // Sources is implemented by the plugin host. Call runs a plugin method such as "source.fetchGame"
-// and decodes the JSON result into out.
+// and decodes the JSON result into out. StartDownload asks a plugin to prepare a file
+// (source.prepareDownload) and queues the answer with the downloader.
 type Sources interface {
 	Sources() []SourceInfo
 	Call(ctx context.Context, plugin, method string, params any, out any) error
+	StartDownload(ctx context.Context, plugin string, params any, gameID int64) (downloadID int64, err error)
 }

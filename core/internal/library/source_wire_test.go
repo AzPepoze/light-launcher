@@ -62,6 +62,10 @@ func (f *strictSources) Sources() []contract.SourceInfo {
 	return f.infos
 }
 
+func (f *strictSources) StartDownload(context.Context, string, any, int64) (int64, error) {
+	return 0, errors.New("StartDownload is not faked here")
+}
+
 func (f *strictSources) Call(_ context.Context, _, method string, params, out any) error {
 	raw, err := json.Marshal(params)
 	if err != nil {

@@ -54,6 +54,17 @@ type pathPayload struct {
 	Path string `json:"path"`
 }
 
+// downloadFilePayload names one saved file of a game. The file id comes from the game's file list.
+type downloadFilePayload struct {
+	GameID int64 `json:"gameId"`
+	FileID int64 `json:"fileId"`
+}
+
+// downloadFileResult is the id of the queued download.
+type downloadFileResult struct {
+	ID int64 `json:"id"`
+}
+
 // updateHistoryPayload pages the check history. Before is the id of the last entry already shown.
 type updateHistoryPayload struct {
 	GameID int64 `json:"gameId"`
@@ -145,6 +156,15 @@ func (s *service) linkLocal(ctx context.Context, in linkPayload) (library.Game, 
 	}
 	s.changed(game.ID)
 	return game, nil
+}
+
+// downloadFile queues a saved file of a game through its source plugin when it has one.
+func (s *service) downloadFile(ctx context.Context, in downloadFilePayload) (downloadFileResult, error) {
+	id, err := s.lib.DownloadFile(ctx, in.GameID, in.FileID)
+	if err != nil {
+		return downloadFileResult{}, err
+	}
+	return downloadFileResult{ID: id}, nil
 }
 
 func (s *service) checkUpdates(ctx context.Context, in checkPayload) ([]library.CheckResult, error) {

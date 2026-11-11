@@ -37,6 +37,10 @@ func (f *fakeSources) Call(_ context.Context, _, method string, params, out any)
 	return json.Unmarshal(raw, out)
 }
 
+func (f *fakeSources) StartDownload(context.Context, string, any, int64) (int64, error) {
+	return 0, fmt.Errorf("no fake for StartDownload")
+}
+
 // openTestLibrary opens a library in a temp folder that is closed when the test ends.
 func openTestLibrary(t *testing.T, opts Options) *Library {
 	t.Helper()

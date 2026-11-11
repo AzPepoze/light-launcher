@@ -114,6 +114,13 @@ var migrations = []migration{
 			`alter table checks add column error text`,
 		},
 	},
+	{
+		// plugin_file_id keeps the id the plugin gave the file, which source.prepareDownload needs.
+		version: 3,
+		statements: []string{
+			`alter table game_files add column plugin_file_id text`,
+		},
+	},
 }
 
 func migrate(ctx context.Context, db *sql.DB) error {

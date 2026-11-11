@@ -3,6 +3,7 @@ package librarysvc
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -27,6 +28,10 @@ func (fakeSources) Call(_ context.Context, _, method string, _ any, out any) err
 	}
 	raw, _ := json.Marshal(map[string][]contract.GameDTO{"games": {{Source: "f95", SourceID: "9", URL: "https://f95/9", Title: "Found Game"}}})
 	return json.Unmarshal(raw, out)
+}
+
+func (fakeSources) StartDownload(context.Context, string, any, int64) (int64, error) {
+	return 0, errors.New("downloads are not faked here")
 }
 
 // recordingEvents keeps the events the service emits.
@@ -73,7 +78,7 @@ func TestRegisterAddsEveryLibraryMethod(t *testing.T) {
 		"LibraryList", "LibraryGet", "LibraryUpdate", "LibraryRemove", "LibrarySearch", "LibraryPreview",
 		"LibraryAddFromUrl", "LibraryLinkLocal", "LibraryCheckUpdates", "LibrarySetFavorite",
 		"LibraryScanFolder", "LibraryLaunch", "LibraryLinkFolder", "LibraryUpdatesSummary",
-		"LibraryUpdateHistory",
+		"LibraryUpdateHistory", "LibraryDownloadFile",
 		"IncomingList", "IncomingLink", "IncomingIgnore", "IncomingCreateLocal",
 	}
 	got := router.Methods()

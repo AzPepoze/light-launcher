@@ -61,6 +61,57 @@ func TestReopenKeepsDataAndVersion(t *testing.T) {
 	}
 }
 
+func TestMigrationFromV2KeepsSavedFiles(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "library.db")
+	db, err := sql.Open("sqlite", "file:"+path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	for _, m := range migrations[:2] {
+		for _, statement := range m.statements {
+			if _, err := db.ExecContext(ctx, statement); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	if _, err := db.ExecContext(ctx, `pragma user_version = 2`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.ExecContext(ctx, `insert into games
+		(source, source_id, url, title, tags, screenshots, status, added_at, updated_at)
+		values ('f95', '9', 'https://f95.example/9', 'Old Game', '[]', '[]', 'unknown', '2026-01-01', '2026-01-01')`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.ExecContext(ctx, `insert into game_files (game_id, label, url, kind, platform, headers)
+		values (1, 'Saved', 'https://files.example/a.zip', 'direct', 'unknown', '{"X-Token":"t"}')`); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	lib, err := Open(ctx, Options{DBPath: path})
+	if err != nil {
+		t.Fatalf("upgrade v2 database: %v", err)
+	}
+	defer lib.Close()
+	files, err := lib.ListFiles(ctx, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(files) != 1 || files[0].Label != "Saved" {
+		t.Fatalf("files after upgrade = %+v, want the saved file", files)
+	}
+	saved, err := lib.candidate(ctx, 1, files[0].ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if saved.ID != "" || saved.Headers["X-Token"] != "t" {
+		t.Fatalf("candidate = %+v, want no plugin id and the saved headers", saved)
+	}
+}
+
 func TestMigrationFromV1KeepsChecks(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "library.db")
 	db, err := sql.Open("sqlite", "file:"+path)

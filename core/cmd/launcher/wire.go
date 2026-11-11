@@ -67,7 +67,7 @@ func (s *services) open(ctx context.Context, router *api.Router, hub *api.Hub, d
 	sources := &lateSources{}
 	updates := &updateInstaller{downloads: s.downloads}
 	launcher := gameLauncher{router: router}
-	lib, err := library.Open(ctx, libraryOptions(dirs, hub, sources, updates, archiveSink{installer: s.installer}, launcher))
+	lib, err := library.Open(ctx, libraryOptions(dirs, hub, sources, s.downloads, updates, archiveSink{installer: s.installer}, launcher))
 	if err != nil {
 		return err
 	}
@@ -166,4 +166,8 @@ func (l *lateSources) Sources() []contract.SourceInfo {
 
 func (l *lateSources) Call(ctx context.Context, plugin, method string, params any, out any) error {
 	return l.registry.Call(ctx, plugin, method, params, out)
+}
+
+func (l *lateSources) StartDownload(ctx context.Context, plugin string, params any, gameID int64) (int64, error) {
+	return l.registry.StartDownload(ctx, plugin, params, gameID)
 }

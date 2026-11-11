@@ -96,6 +96,10 @@ func (noSources) Call(context.Context, string, string, any, any) error {
 	return errors.New("no plugin host configured")
 }
 
+func (noSources) StartDownload(context.Context, string, any, int64) (int64, error) {
+	return 0, errors.New("no plugin host configured")
+}
+
 // pluginFor returns the plugin that serves a source id, such as "f95".
 func (l *Library) pluginFor(sourceID string) (contract.SourceInfo, bool) {
 	for _, info := range l.sources.Sources() {

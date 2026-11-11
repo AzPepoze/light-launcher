@@ -16,7 +16,7 @@ const (
 )
 
 // libraryOptions wires the library to its neighbours. Notifications go to the UI event stream.
-func libraryOptions(dirs folders, hub *api.Hub, sources contract.Sources, updates library.Installer, sink library.ArchiveSink, launcher library.Launcher) library.Options {
+func libraryOptions(dirs folders, hub *api.Hub, sources contract.Sources, downloads contract.Downloads, updates library.Installer, sink library.ArchiveSink, launcher library.Launcher) library.Options {
 	return library.Options{
 		DBPath:        filepath.Join(dirs.Config, "library.db"),
 		MediaDir:      dirs.Media,
@@ -24,6 +24,7 @@ func libraryOptions(dirs folders, hub *api.Hub, sources contract.Sources, update
 		GamesDir:      func() string { return dirs.Games },
 		WatchFolder:   func() string { return dirs.Incoming },
 		Sources:       sources,
+		Downloads:     downloads,
 		Launcher:      launcher,
 		Installer:     updates,
 		Sink:          sink,

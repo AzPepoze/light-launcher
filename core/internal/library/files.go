@@ -3,6 +3,9 @@ package library
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
+	"errors"
+	"fmt"
 
 	"light-launcher/core/internal/contract"
 )
@@ -44,6 +47,49 @@ func (s *Store) ReplaceFiles(ctx context.Context, gameID int64, candidates []con
 	return tx.Commit()
 }
 
+// candidate returns one saved file as a plugin sees it. It returns ErrNotFound when the game has no such file.
+func (s *Store) candidate(ctx context.Context, gameID, fileID int64) (contract.FileCandidate, error) {
+	var (
+		file                              contract.FileCandidate
+		pluginID, filename, host, headers sql.NullString
+		size                              sql.NullInt64
+		platform                          string
+		requiresAuth                      int
+	)
+	err := s.db.QueryRowContext(ctx, `select plugin_file_id, label, url, filename, size, host, kind, platform,
+		requires_auth, headers from game_files where game_id = ? and id = ?`, gameID, fileID).Scan(
+		&pluginID, &file.Label, &file.URL, &filename, &size, &host, &file.Kind, &platform, &requiresAuth, &headers)
+	if errors.Is(err, sql.ErrNoRows) {
+		return contract.FileCandidate{}, ErrNotFound
+	}
+	if err != nil {
+		return contract.FileCandidate{}, err
+	}
+	file.ID = pluginID.String
+	file.Filename = filename.String
+	file.Size = size.Int64
+	file.Host = host.String
+	file.Platform = contract.Platform(platform)
+	file.RequiresAuth = requiresAuth == 1
+	file.Headers, err = decodeHeaders(headers)
+	if err != nil {
+		return contract.FileCandidate{}, err
+	}
+	return file, nil
+}
+
+// decodeHeaders reads the headers a file was saved with. Missing headers decode to nil.
+func decodeHeaders(raw sql.NullString) (map[string]string, error) {
+	if !raw.Valid || raw.String == "" {
+		return nil, nil
+	}
+	var headers map[string]string
+	if err := json.Unmarshal([]byte(raw.String), &headers); err != nil {
+		return nil, fmt.Errorf("read file headers: %w", err)
+	}
+	return headers, nil
+}
+
 func insertFile(ctx context.Context, tx *sql.Tx, gameID int64, file contract.FileCandidate) error {
 	headers, err := encodeOptionalMap(file.Headers)
 	if err != nil {
@@ -54,9 +100,9 @@ func insertFile(ctx context.Context, tx *sql.Tx, gameID int64, file contract.Fil
 		platform = "unknown"
 	}
 	_, err = tx.ExecContext(ctx, `insert into game_files (game_id, label, url, filename, size, host, kind, platform,
-		requires_auth, headers) values (?,?,?,?,?,?,?,?,?,?)`,
+		requires_auth, headers, plugin_file_id) values (?,?,?,?,?,?,?,?,?,?,?)`,
 		gameID, file.Label, file.URL, nullIfEmpty(file.Filename), nullableSize(file.Size), nullIfEmpty(file.Host),
-		file.Kind, platform, boolInt(file.RequiresAuth), headers)
+		file.Kind, platform, boolInt(file.RequiresAuth), headers, nullIfEmpty(file.ID))
 	return err
 }
 
