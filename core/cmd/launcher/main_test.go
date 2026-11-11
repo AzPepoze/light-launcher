@@ -21,6 +21,16 @@ func TestParseOptionsRejectsUnknownShell(t *testing.T) {
 	}
 }
 
+func TestParseOptionsAcceptsGTKShell(t *testing.T) {
+	opts, err := parseOptions([]string{"--shell=gtk"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if opts.shell != "gtk" {
+		t.Fatalf("shell = %q, want gtk", opts.shell)
+	}
+}
+
 func TestParseOptionsMakesGamePathAbsolute(t *testing.T) {
 	opts, err := parseOptions([]string{"--no-shell", "game.exe"})
 	if err != nil {

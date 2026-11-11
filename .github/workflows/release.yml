@@ -39,10 +39,10 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
 
-      - name: Install Qt6 WebEngine and NSIS
+      - name: Install GTK4, WebKitGTK 6.0 and NSIS
         run: |
           sudo apt-get update
-          sudo apt-get install -y qt6-base-dev qt6-webengine-dev zip nsis
+          sudo apt-get install -y libgtk-4-dev libwebkitgtk-6.0-dev zip nsis
 
       - name: Install dependencies
         run: bun install --frozen-lockfile

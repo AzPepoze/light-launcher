@@ -10,7 +10,7 @@ See [Architecture](../docs/architecture.md) for the full picture.
 
 | Shell | Binary | Platform | Web engine | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| Qt | `light-launcher-shell` | Linux | Qt6 WebEngine (Chromium) | Builds. Normal and assist windows open on Hyprland. |
+| GTK | `light-launcher-shell` | Linux | WebKitGTK 6.0 (GTK4) | Builds and runs on Hyprland. Normal and assist windows open. |
 | WebView2 | `light-launcher-shell.exe` | Windows | Microsoft Edge WebView2 | Cross-compiled only. Not run on Windows yet. |
 
 ## Command line
@@ -25,7 +25,7 @@ light-launcher-shell --assist <url> --profile <dir> [--title <text>] [--message 
 | Part | Meaning |
 | :--- | :--- |
 | `<url>` | A `http://` or `https://` address with a host. Required. |
-| `--transparent` | Transparent page background. Qt only. WebView2 logs a warning and ignores it. |
+| `--transparent` | Transparent page background. GTK only. WebView2 logs a warning and ignores it. |
 | `--assist <url>` | Assist mode. Show this page for a person and report the download it starts. |
 | `--profile <dir>` | Persistent browser profile folder. Created if missing. Put it under the user config folder, never inside the repository. Cookies and logins survive between runs. |
 | `--title <text>` | Window title in assist mode. Defaults to `LightLauncher`. |
@@ -51,7 +51,7 @@ light-launcher-shell --assist <url> --profile <dir> [--title <text>] [--message 
 
 | Part | Meaning |
 | :--- | :--- |
-| `--assist` | Selects assist mode. Must be the first argument. |
+| `--assist` | Selects assist mode. |
 | `<url>` | A `http://` or `https://` address with a host. Required. |
 | `--profile <dir>` | Browser profile folder. Created if missing. Choose a user data folder, not one inside the repository. Cookies and logins survive between runs. |
 | `--title <text>` | Window title. Defaults to `LightLauncher`. |
@@ -60,7 +60,7 @@ light-launcher-shell --assist <url> --profile <dir> [--title <text>] [--message 
 > [!IMPORTANT]
 > Assist mode is for a human. The window is a normal embedded browser. The user logs in, waits for timers, presses the download button and solves any challenge by hand. The shell does not click, type, fill forms, solve CAPTCHAs, spoof fingerprints or hide that it is an embedded browser. There are no stealth flags.
 
-When the page starts a download, the shell cancels it, prints one `download` line and exits. Nothing is written to disk. `blob:` and `data:` downloads are canceled without a line because there is no address to download. New windows open in the same window, and only `http` and `https` navigation is allowed. Cookies restored from the profile folder are included in the `Cookie` header.
+When the page starts a download, the shell cancels it, prints one `download` line and exits. Nothing is written to disk. `blob:` and `data:` downloads are canceled without a line because there is no address to download. New windows open in the same window, and only `http` and `https` navigation is allowed. Cookies from the profile are included in the `Cookie` header.
 
 Assist mode writes NDJSON to `stdout`, one object per line, and flushes every line. Logs go to `stderr`.
 
@@ -73,45 +73,53 @@ Assist mode writes NDJSON to `stdout`, one object per line, and flushes every li
 
 `size` is `-1` when the server did not send a length. `headers` holds only the values the shell knows: `Cookie` for the download address, `Referer` from the current page and `User-Agent` from the browser settings.
 
-## Rendering (Qt)
+## Rendering (GTK)
 
 | Item | Behaviour |
 | :--- | :--- |
-| GPU | On. The shell adds `--ignore-gpu-blocklist` and `--enable-gpu-rasterization` to `QTWEBENGINE_CHROMIUM_FLAGS` before Qt starts, so a driver blocklist cannot silently drop the page to software rendering. Flags you set yourself stay. |
-| Turn the GPU off | Set `LL_DISABLE_GPU=1`. Use it only if a driver crashes or draws garbage. |
-| Smooth scrolling | On. Qt WebEngine leaves animated scrolling off by default, so the shell turns it on for both window modes. |
-| Middle-click scrolling | On. Click the middle button, then move the mouse to scroll, like Chrome on Windows. The shell adds the Blink feature `MiddleClickAutoscroll`, which Chromium leaves off on Linux. Blink features you set yourself stay. |
+| GPU | Always. WebKitGTK uses hardware acceleration even when a driver is on its blocklist. |
+| Turn the GPU off | Set `LL_DISABLE_GPU=1`. WebKitGTK then uses the `NEVER` acceleration policy. Use it only if a driver crashes or draws garbage. |
+| Smooth scrolling | On. The shell turns on the WebKit smooth scrolling setting for both window modes. |
+| Middle-click scrolling | Handled by the UI in the page. The shell does not add it. |
+| Wayland | Native. GTK picks Wayland when the session offers it; the shell does not force X11. |
+| Developer tools | Off. Set `LL_DEVTOOLS=1` to turn on WebKit developer extras. |
+| Transparent background | `--transparent` clears the page background and the window background. |
 
 ## Native functions in the page
 
 In normal mode the shell adds `window.llShell` to every page it loads. Assist mode does not add it.
+
+The page talks to the shell through the WebKit script message handler `window.webkit.messageHandlers.llshell`.
 
 | Function | Returns |
 | :--- | :--- |
 | `llShell.pickFolder()` | A promise with the folder path, or `null` if the user cancels. |
 | `llShell.pickFile()` | A promise with the file path, or `null` if the user cancels. |
 
+The dialogs are native GTK4 file dialogs.
+
 ## Window behavior
 
-| Item | Qt (Linux) | WebView2 (Windows) |
+| Item | GTK (Linux) | WebView2 (Windows) |
 | :--- | :--- | :--- |
 | Title | LightLauncher | LightLauncher. Assist mode uses `--title`. |
 | Minimum size | 800 x 600 | 800 x 600. Assist mode has none. |
 | Default size | 1100 x 720 | 1100 x 720. Assist mode is 1000 x 720. |
-| Remembers position and size | Yes. Saved in the user config folder. | No. |
+| Remembers position and size | No. | No. |
 | Links to other sites | Open in the default browser. | Open in the default browser. Assist mode keeps them in the window. |
-| Wayland or X11 | Qt picks it automatically. | Not applicable. |
+| Wayland or X11 | GTK picks it automatically. | Not applicable. |
 
 ## Limits
 
 | Item | Detail |
 | :--- | :--- |
-| Qt bridge | Pages talk to the shell through console messages. Only the launcher's own address can use it. |
-| Qt page origin | The launcher origin is the scheme and host of the address you pass in. Other origins get no answers. |
+| GTK bridge | Pages talk to the shell through `window.webkit.messageHandlers.llshell`. Only the launcher's own address can use it. |
+| GTK page origin | The launcher origin is the scheme and host of the address you pass in. Other origins get no answers. |
+| GTK geometry | The window opens at the default size each time. Position and size are not saved. |
 | WebView2 | Not run on a real Windows machine yet. See the build page. |
 | WebView2 assist output | Cross-compiled and unit-tested only. Not run on real Windows or Wine yet. |
 | WebView2 download capture | The `go-webview2` package has no download event or cookie manager, so the shell adds a small COM wrapper for `ICoreWebView2_4`, the cookie manager and the user agent setting. |
-| Assist banner | A small non-interactive overlay in the page document. It does not take clicks. |
+| Assist banner | A native GTK label above the page. It does not take clicks. |
 
 ## More
 

@@ -11,7 +11,7 @@ This page explains how to build the Linux and Windows files from source.
 | Go                               | Everything        | Version from `go.mod`.                                                    |
 | Bun                              | The UI            | Installs the UI packages and builds the UI.                               |
 | Git                              | Version number    | `git describe` reads the tags.                                            |
-| Qt6 base and WebEngine dev files | Linux shell       | Arch: `qt6-base qt6-webengine`. Ubuntu: `qt6-base-dev qt6-webengine-dev`. |
+| GTK4 and WebKitGTK 6.0 dev files | Linux shell       | Arch: `gtk4 webkitgtk-6.0`. Ubuntu: `libgtk-4-dev libwebkitgtk-6.0-dev`.  |
 | zip, tar                         | Packing           | Usually installed already.                                                |
 | NSIS (`makensis`)                | Windows installer | Optional. Without it, the installer is skipped.                           |
 
@@ -69,11 +69,11 @@ The `<version>` comes from `git describe --tags --always`. A leading `v` is remo
 | Part                     | Command                                                                                                                |
 | :----------------------- | :--------------------------------------------------------------------------------------------------------------------- |
 | Launcher with UI         | `bash scripts/build-launcher.sh bin/light-launcher`                                                                    |
-| Qt shell (Linux)         | `cd shell/qt && go build -ldflags="-s -w" -o light-launcher-shell .`                                                   |
+| GTK shell (Linux)        | `cd shell/gtk && go build -ldflags="-s -w" -o light-launcher-shell .`                                                  |
 | WebView2 shell (Windows) | `cd shell/webview2 && GOOS=windows GOARCH=amd64 go build -ldflags="-s -w -H=windowsgui" -o light-launcher-shell.exe .` |
 | Instance                 | `go build -ldflags="-s -w" -o light-launcher-instance ./core/cmd/instance`                                             |
 
-The stripped Qt shell is about 33 MB. The Qt libraries are not in the file. They come from your system packages.
+The stripped GTK shell is about 3 MB. The GTK and WebKit libraries are not in the file. They come from your system packages.
 
 ## Settings
 

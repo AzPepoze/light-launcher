@@ -25,14 +25,13 @@ Some words used below:
 
 - **Proton**: a compatibility layer from Valve. It runs Windows games on Linux.
 - **umu-launcher** (`umu-run`): the tool that starts a Windows game with Proton on Linux.
-- **Qt6 WebEngine**: the Chromium web engine that draws the window on Linux.
+- **WebKitGTK 6.0**: the web engine that draws the window on Linux.
 - **WebView2**: Microsoft's web engine that draws the window on Windows.
 
 | Item                     | Linux      | Windows    | Why                                                |
 | :----------------------- | :--------- | :--------- | :------------------------------------------------- |
 | umu-launcher (`umu-run`) | Required   | Not needed | Starts Windows games with Proton.                  |
-| Qt6 WebEngine            | Required   | Not needed | Draws the launcher window.                         |
-| Qt6 SQLite driver        | Required   | Not needed | Reads cookies restored in the embedded browser.    |
+| WebKitGTK 6.0 (GTK4)     | Required   | Not needed | Draws the launcher window.                         |
 | WebView2 Runtime         | Not needed | Required   | Draws the launcher window. Windows 11 includes it. |
 | 7-Zip                    | Optional   | Optional   | Unpacks `.7z` files. Must be on PATH.              |
 | Steam                    | Optional   | Not used   | Lets you use Proton versions from Steam.           |
@@ -48,7 +47,7 @@ The `PKGBUILD` file downloads the code from GitHub, builds it and installs it.
 1. Install the tools it needs.
 
    ```sh
-   sudo pacman -S --needed umu-launcher qt6-webengine git go bun qt6-base
+   sudo pacman -S --needed umu-launcher webkitgtk-6.0 git go bun gtk4
    ```
 
 2. Build and install the package. `-s` installs missing build tools. `-i` installs the result.

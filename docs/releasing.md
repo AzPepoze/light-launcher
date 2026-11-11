@@ -33,7 +33,7 @@ Other types, such as `docs:` and `chore:`, do not bump the version on their own.
 
 | File                                   | Runs on                   | Purpose                                                                                                |
 | :------------------------------------- | :------------------------ | :----------------------------------------------------------------------------------------------------- |
-| `.github/workflows/ci.yml`             | Push and pull request     | Go vet and tests on Linux and Windows, UI checks, Qt shell build, WebView2 cross build, workflow lint. |
+| `.github/workflows/ci.yml`             | Push and pull request     | Go vet and tests on Linux and Windows, UI checks, GTK shell build, WebView2 cross build, workflow lint. |
 | `.github/workflows/release-please.yml` | Push to `main`            | Opens the release pull request and creates the tag.                                                    |
 | `.github/workflows/release.yml`        | Tag `v*`, or a manual run | Runs `scripts/build-linux.sh` and `scripts/build-windows.sh`, then publishes the release files.        |
 | `.github/workflows/aur.yml`            | Manual run only           | Builds an updated `PKGBUILD` as an artifact. Does not push.                                            |

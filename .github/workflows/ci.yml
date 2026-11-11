@@ -63,8 +63,8 @@ jobs:
       - name: Unit tests
         run: bun run test
 
-  shell-qt:
-    name: qt shell (linux)
+  shell-gtk:
+    name: gtk shell (linux)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -72,23 +72,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Qt6 WebEngine
+      - name: Install GTK4 and WebKitGTK 6.0
         run: |
           sudo apt-get update
-          sudo apt-get install -y qt6-base-dev qt6-webengine-dev xvfb
+          sudo apt-get install -y libgtk-4-dev libwebkitgtk-6.0-dev xvfb
 
-      # setup-go caches the module and build caches for every go.sum listed here.
       - uses: actions/setup-go@v5
         with:
-          go-version-file: shell/qt/go.mod
-          cache-dependency-path: shell/qt/go.sum
+          go-version-file: shell/gtk/go.mod
+          cache-dependency-path: shell/gtk/go.mod
 
       - name: Vet
-        working-directory: shell/qt
+        working-directory: shell/gtk
         run: go vet ./...
 
+      - name: Test
+        working-directory: shell/gtk
+        run: go test ./...
+
       - name: Build
-        working-directory: shell/qt
+        working-directory: shell/gtk
         run: go build -ldflags="-s -w" -o "$RUNNER_TEMP/light-launcher-shell" .
 
   shell-webview2:

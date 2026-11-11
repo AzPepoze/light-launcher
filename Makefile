@@ -5,7 +5,7 @@ LDFLAGS := -s -w -X main.version=$(VERSION)
 
 all: build
 
-# build makes the launcher, the instance binary and the Qt shell in bin/.
+# build makes the launcher, the instance binary and the GTK shell in bin/.
 build: build-go build-shell
 
 build-go:
@@ -15,7 +15,7 @@ build-go:
 
 build-shell:
 	@mkdir -p bin
-	cd shell/qt && go build -ldflags="$(LDFLAGS)" -o ../../bin/light-launcher-shell .
+	cd shell/gtk && go build -ldflags="$(LDFLAGS)" -o ../../bin/light-launcher-shell .
 
 # dev starts the Vite dev server and the launcher API on port 9246.
 dev:

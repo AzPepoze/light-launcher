@@ -53,7 +53,7 @@ On Linux, the base folder is `~/.config/light-launcher`.
 
 These are not supported and are no longer accepted:
 
-- `--wayland`, `--x11`, `--ozone-platform`. Use `QT_QPA_PLATFORM=xcb light-launcher` to force X11.
+- `--wayland`, `--x11`, `--ozone-platform`. Use `GDK_BACKEND=x11 light-launcher` to force X11.
 - `~/.config/light-launcher-flags.conf`. The launcher does not read it.
 
 ## More

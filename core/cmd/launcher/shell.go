@@ -21,7 +21,7 @@ func resolveShell(name string) string {
 	}
 	switch runtime.GOOS {
 	case "linux":
-		return "qt"
+		return "gtk"
 	case "windows":
 		return "webview2"
 	}

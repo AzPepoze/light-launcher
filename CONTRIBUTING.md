@@ -12,7 +12,7 @@ Bug reports, ideas, documentation fixes and pull requests are welcome.
 | `core/cmd/launcher` | The launcher program. It serves the UI and opens the window.          |
 | `core/cmd/instance` | The game runner. It starts one game and shows the tray icon.          |
 | `core/internal`     | Shared Go code: library, downloads, plugins, API, config and logging. |
-| `shell/qt`          | The Linux window program (Qt6 WebEngine).                             |
+| `shell/gtk`         | The Linux window program (WebKitGTK 6.0 and GTK4).                    |
 | `shell/webview2`    | The Windows window program (WebView2).                                |
 | `shell/logx`        | A small logger used by the shells.                                    |
 | `src/renderer`      | The Svelte 5 UI.                                                      |
@@ -29,7 +29,7 @@ Read [Architecture](docs/architecture.md) for how the parts connect.
 | :------------------------------- | :---------------------------- | :---------------------------------------- |
 | Go                               | Everything                    | Version from `go.mod` (currently 1.25.6). |
 | Bun                              | UI, scripts, checks           | All `bun run` commands need it.           |
-| Qt6 base and WebEngine dev files | Linux window program          | See [Building](docs/building.md).         |
+| GTK4 and WebKitGTK 6.0 dev files | Linux window program          | See [Building](docs/building.md).         |
 | umu-launcher                     | Running Proton games on Linux | Not needed for tests.                     |
 | NSIS, zip                        | Windows release files         | Only for `scripts/build-windows.sh`.      |
 
@@ -48,7 +48,7 @@ make build
 ./bin/light-launcher
 ```
 
-`make build` builds the launcher with the UI embedded, the game runner and the Qt shell. To run the UI from a different folder, pass `--ui` to the launcher. See [Usage](docs/usage.md#light-launcher).
+`make build` builds the launcher with the UI embedded, the game runner and the GTK shell. To run the UI from a different folder, pass `--ui` to the launcher. See [Usage](docs/usage.md#light-launcher).
 
 For a Vite dev server with live reload, run `make dev` and open the URL that Vite prints. It proxies API calls to the launcher on port 9246.
 
@@ -86,12 +86,12 @@ bun run typecheck
 bun run test
 
 # Window programs
-(cd shell/qt && go vet ./... && go build -o ../../bin/light-launcher-shell .)
+(cd shell/gtk && go vet ./... && go test ./... && go build -o ../../bin/light-launcher-shell .)
 (cd shell/webview2 && GOOS=windows GOARCH=amd64 go vet ./...)
 ```
 
 > [!NOTE]
-> The Qt build needs the Qt6 dev packages. The WebView2 check only compiles for Windows. It cannot run on Linux.
+> The GTK build needs the GTK4 and WebKitGTK 6.0 dev packages. The WebView2 check only compiles for Windows. It cannot run on Linux.
 
 ## Coding rules
 
