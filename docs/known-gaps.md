@@ -12,6 +12,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | Status | Item |
 |---|---|
 | [ ] | Run the WebView2 window on a real Windows machine. It has only been built, not run. |
+| [ ] | Run the WebView2 `--assist` mode on real Windows or Wine. It is cross-compiled and its pure helpers are tested, but the COM capture path is unproven. |
 | [ ] | Run the NSIS installer on Windows (`makensis` is not installed on the build machine). |
 | [ ] | Code signing for the Windows binaries and installer. |
 | [x] | Windows core and unit tests pass under Wine. |

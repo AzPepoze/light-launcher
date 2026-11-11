@@ -15,6 +15,8 @@ See [Architecture](../docs/architecture.md) for the full picture.
 
 ## Command line
 
+Normal mode shows the launcher UI:
+
 ```text
 light-launcher-shell [--transparent] <url>
 ```
@@ -28,13 +30,45 @@ Exit codes:
 
 | Code | Meaning |
 | :--- | :--- |
-| `0` | The window closed normally. |
+| `0` | The window closed normally, or assist mode captured a download. |
 | `1` | The shell could not start. On Windows this includes a missing WebView2 runtime. |
 | `2` | Bad arguments. |
 
+## Assist mode
+
+WebView2 has an assist mode. It opens a page for a human to use, then reports the download the page starts. The launcher downloads the file itself.
+
+```text
+light-launcher-shell --assist <url> --profile <dir> [--title <text>] [--message <text>]
+```
+
+| Part | Meaning |
+| :--- | :--- |
+| `--assist` | Selects assist mode. Must be the first argument. |
+| `<url>` | A `http://` or `https://` address with a host. Required. |
+| `--profile <dir>` | Browser profile folder. Created if missing. Choose a user data folder, not one inside the repository. Cookies and logins survive between runs. |
+| `--title <text>` | Window title. Defaults to `LightLauncher`. |
+| `--message <text>` | Short banner above the page, such as "Finish the page; the download is captured automatically". |
+
+> [!IMPORTANT]
+> Assist mode is for a human. The window is a normal embedded browser. The user logs in, waits for timers, presses the download button and solves any challenge by hand. The shell does not click, type, fill forms, solve CAPTCHAs, spoof fingerprints or hide that it is an embedded browser. There are no stealth flags.
+
+When the page starts a download, the shell cancels it, prints one `download` line and exits. Nothing is written to disk. `blob:` and `data:` downloads are canceled without a line because there is no address to download. New windows open in the same window, and only `http` and `https` navigation is allowed.
+
+Assist mode writes NDJSON to `stdout`, one object per line, and flushes every line. Logs go to `stderr`.
+
+| Event | Fields | Meaning |
+| :--- | :--- | :--- |
+| `ready` | | The window is shown and the page is loading. |
+| `download` | `url`, `filename`, `size`, `headers` | The page started a download. The shell cancels it and exits `0`. |
+| `closed` | | The user closed the window without a download. Exit `0`. |
+| `error` | `message` | Fatal. Exit `1`. |
+
+`size` is `-1` when the server did not send a length. `headers` holds only the values the shell knows: `Cookie` for the download address, `Referer` from the current page and `User-Agent` from the browser settings.
+
 ## Native functions in the page
 
-The shell adds `window.llShell` to every page it loads.
+In normal mode the shell adds `window.llShell` to every page it loads. Assist mode does not add it.
 
 | Function | Returns |
 | :--- | :--- |
@@ -45,11 +79,11 @@ The shell adds `window.llShell` to every page it loads.
 
 | Item | Qt (Linux) | WebView2 (Windows) |
 | :--- | :--- | :--- |
-| Title | LightLauncher | LightLauncher |
-| Minimum size | 800 x 600 | 800 x 600 |
-| Default size | 1100 x 720 | 1100 x 720 |
+| Title | LightLauncher | LightLauncher. Assist mode uses `--title`. |
+| Minimum size | 800 x 600 | 800 x 600. Assist mode has none. |
+| Default size | 1100 x 720 | 1100 x 720. Assist mode is 1000 x 720. |
 | Remembers position and size | Yes. Saved in the user config folder. | No. |
-| Links to other sites | Open in the default browser. | Open in the default browser. |
+| Links to other sites | Open in the default browser. | Open in the default browser. Assist mode keeps them in the window. |
 | Wayland or X11 | Qt picks it automatically. | Not applicable. |
 
 ## Limits
@@ -59,6 +93,9 @@ The shell adds `window.llShell` to every page it loads.
 | Qt bridge | Pages talk to the shell through console messages. Only the launcher's own address can use it. |
 | Qt page origin | The launcher origin is the scheme and host of the address you pass in. Other origins get no answers. |
 | WebView2 | Not run on a real Windows machine yet. See the build page. |
+| WebView2 assist output | Cross-compiled and unit-tested only. Not run on real Windows or Wine yet. |
+| WebView2 download capture | The `go-webview2` package has no download event or cookie manager, so the shell adds a small COM wrapper for `ICoreWebView2_4`, the cookie manager and the user agent setting. |
+| Assist banner | A small non-interactive overlay in the page document. It does not take clicks. |
 
 ## More
 
