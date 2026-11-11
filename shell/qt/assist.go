@@ -139,6 +139,12 @@ func (s *assistSession) onDownload(download *webengine.QWebEngineDownloadRequest
 		return
 	}
 	s.finished = true
+	restored, err := readProfileCookies(s.opts.profile)
+	if err != nil {
+		log.Warn(assistLogName, "cannot read restored cookies: %v", err)
+	} else {
+		s.jar.mergeRestored(restored)
+	}
 	event := downloadEvent(rawURL, download.SuggestedFileName(), download.TotalBytes(),
 		downloadHeaders(s.jar.header(rawURL), s.pageURL(), s.profile.HttpUserAgent()))
 	download.Cancel()

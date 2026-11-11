@@ -64,6 +64,19 @@ func TestCookieJarIgnoresCookiesWithoutName(t *testing.T) {
 	}
 }
 
+func TestCookieJarMergeRestoredKeepsCookiesFromThisRun(t *testing.T) {
+	jar := newCookieJar()
+	jar.add(cookie{Name: "sid", Value: "new", Domain: "example.com", Path: "/"})
+	jar.mergeRestored([]cookie{
+		{Name: "sid", Value: "old", Domain: ".example.com", Path: "/"},
+		{Name: "fresh", Value: "fromdisk", Domain: "example.com", Path: "/"},
+	})
+
+	if got, want := jar.header("https://example.com/"), "sid=new; fresh=fromdisk"; got != want {
+		t.Fatalf("header = %q, want %q", got, want)
+	}
+}
+
 func TestCookieHeaderRejectsNonWebURL(t *testing.T) {
 	jar := newCookieJar()
 	jar.add(cookie{Name: "sid", Value: "s", Domain: "example.com", Path: "/"})

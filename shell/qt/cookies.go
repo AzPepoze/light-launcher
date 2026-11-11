@@ -32,13 +32,32 @@ func (j *cookieJar) add(c cookie) {
 	}
 	j.mu.Lock()
 	defer j.mu.Unlock()
-	for i := range j.cookies {
-		if j.cookies[i].sameIdentifier(c) {
-			j.cookies[i] = c
-			return
-		}
+	if i := j.index(c); i >= 0 {
+		j.cookies[i] = c
+		return
 	}
 	j.cookies = append(j.cookies, c)
+}
+
+// mergeRestored keeps cookies set in this run ahead of older values from the profile database.
+func (j *cookieJar) mergeRestored(restored []cookie) {
+	j.mu.Lock()
+	defer j.mu.Unlock()
+	for _, c := range restored {
+		if c.Name == "" || j.index(c) >= 0 {
+			continue
+		}
+		j.cookies = append(j.cookies, c)
+	}
+}
+
+func (j *cookieJar) index(c cookie) int {
+	for i := range j.cookies {
+		if j.cookies[i].sameIdentifier(c) {
+			return i
+		}
+	}
+	return -1
 }
 
 // header returns the Cookie request header for a download URL. Longer paths go first, as browsers do.
