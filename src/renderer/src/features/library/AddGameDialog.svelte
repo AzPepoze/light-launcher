@@ -116,7 +116,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: 8px;
-		font-size: 0.85rem;
+		font-size: 0.875rem;
 		color: var(--text-muted);
 	}
 
@@ -132,7 +132,7 @@
 
 	.message {
 		margin: 12px 0 0;
-		font-size: 0.85rem;
+		font-size: 0.875rem;
 		color: var(--text-muted);
 	}
 
@@ -158,10 +158,13 @@
 		cursor: pointer;
 		font: inherit;
 
-		&:hover,
-		&:focus-visible {
+		&:hover {
 			border-color: var(--accent-primary);
-			outline: none;
+		}
+
+		&:focus-visible {
+			outline: 2px solid var(--accent-primary);
+			outline-offset: 2px;
 		}
 	}
 
@@ -174,7 +177,8 @@
 
 		h3 {
 			margin: 0;
-			font-size: 1.1rem;
+			font-size: 1.25rem;
+			font-weight: 600;
 		}
 
 		p {
@@ -184,11 +188,12 @@
 
 	.muted {
 		color: var(--text-muted);
-		font-size: 0.85rem;
+		font-size: 0.875rem;
 	}
 
 	.description {
-		font-size: 0.85rem;
+		max-width: 68ch;
+		font-size: 1rem;
 		line-height: 1.5;
 		display: -webkit-box;
 		line-clamp: 4;

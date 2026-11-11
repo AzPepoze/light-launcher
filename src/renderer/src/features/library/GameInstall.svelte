@@ -118,15 +118,12 @@
 	section {
 		display: flex;
 		flex-direction: column;
-		gap: 8px;
+		gap: 10px;
 
 		h3 {
 			margin: 0;
-			font-size: 0.8rem;
-			font-weight: 800;
-			letter-spacing: 1px;
-			text-transform: uppercase;
-			color: var(--text-muted);
+			font-size: 1.25rem;
+			font-weight: 600;
 		}
 
 		p {
@@ -136,7 +133,7 @@
 
 	.path {
 		font-family: monospace;
-		font-size: 0.85rem;
+		font-size: 0.875rem;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
@@ -144,12 +141,12 @@
 
 	.muted {
 		color: var(--text-muted);
-		font-size: 0.85rem;
+		font-size: 0.875rem;
 	}
 
 	.error {
 		color: var(--danger);
-		font-size: 0.85rem;
+		font-size: 0.875rem;
 	}
 
 	.link {
@@ -165,7 +162,7 @@
 		gap: 4px;
 		flex: 1 1 260px;
 		min-width: 0;
-		font-size: 0.85rem;
+		font-size: 0.875rem;
 		color: var(--text-muted);
 	}
 </style>

@@ -123,14 +123,14 @@
 		border-radius: var(--radius-md);
 		background: var(--bg-surface);
 		border: 1px solid var(--glass-border);
-		font-size: 0.85rem;
+		font-size: 0.875rem;
 	}
 
 	.empty,
 	.muted {
 		margin: 0;
 		color: var(--text-muted);
-		font-size: 0.85rem;
+		font-size: 0.875rem;
 	}
 
 	.list {
@@ -160,7 +160,8 @@
 	}
 
 	.name {
-		font-weight: 700;
+		font-size: 1rem;
+		font-weight: 600;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;

@@ -150,7 +150,7 @@
 			position: absolute;
 			left: 12px;
 			font-size: 18px;
-			color: var(--text-dim);
+			color: var(--text-muted);
 			pointer-events: none;
 		}
 
@@ -167,6 +167,14 @@
 
 	.chips {
 		gap: 6px;
+
+		.btn {
+			transition:
+				transform var(--transition-fast),
+				background var(--motion-quick) var(--ease-out),
+				border-color var(--motion-quick) var(--ease-out),
+				color var(--motion-quick) var(--ease-out);
+		}
 	}
 
 	.saved {
@@ -183,7 +191,7 @@
 		border: none;
 		border-radius: var(--radius-pill);
 		background: transparent;
-		color: var(--text-dim);
+		color: var(--text-muted);
 		cursor: pointer;
 
 		.material-icons {
