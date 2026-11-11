@@ -8,6 +8,7 @@
 	import { ago, playtime } from "../../lib/features/format";
 	import GameFiles from "./GameFiles.svelte";
 	import GameInstall from "./GameInstall.svelte";
+	import { groupGames } from "./libraryGroups";
 	import type { LibraryState } from "./libraryState.svelte";
 
 	let {
@@ -28,6 +29,18 @@
 	let confirmingRemove = $state(false);
 	let message = $state("");
 	let busy = $state(false);
+	let closing = $state(false);
+	let titleEl = $state<HTMLElement>();
+
+	const sourceName = $derived(groupGames([game], library.sources)[0]?.label ?? game.source);
+	const versionLine = $derived(
+		[sourceName, game.version ? `Version ${game.version}` : null].filter(Boolean).join(" · "),
+	);
+	const facts = $derived([game.developer, game.engine].filter(Boolean).join(" · "));
+
+	onMount(() => {
+		titleEl?.focus();
+	});
 
 	onMount(async () => {
 		notes = game.notes ?? "";
@@ -75,10 +88,19 @@
 			onRemoved(game.id);
 		});
 	}
+
+	/** Starts the slide-out. The panel is removed when the slide ends. */
+	function close() {
+		closing = true;
+	}
+
+	function onAnimationEnd(event: AnimationEvent) {
+		if (closing && event.animationName === "detail-out") onBack();
+	}
 </script>
 
-<div class="detail">
-	<button class="btn sm back" onclick={onBack}>
+<div class="detail" class:closing onanimationend={onAnimationEnd}>
+	<button class="btn sm back" onclick={close}>
 		<span class="material-icons" aria-hidden="true">arrow_back</span> Library
 	</button>
 
@@ -91,18 +113,8 @@
 			{/if}
 		</div>
 		<div class="summary">
-			<h2>{game.title}</h2>
-			<p class="muted">
-				{[game.developer, game.version, game.engine].filter(Boolean).join(" · ") || game.source}
-			</p>
-			{#if game.tags.length}
-				<ul class="tags" aria-label="Tags">
-					{#each game.tags as tag (tag)}
-						<li>{tag}</li>
-					{/each}
-				</ul>
-			{/if}
-			<p class="muted">Played {playtime(game.playtimeS)} · Last played {ago(game.lastPlayedAt)}</p>
+			<h2 bind:this={titleEl} tabindex="-1">{game.title}</h2>
+			<p class="meta">{versionLine}</p>
 
 			<div class="actions">
 				{#if game.installed && game.exePath}
@@ -147,6 +159,20 @@
 		</section>
 	{/if}
 
+	<section class="facts-block">
+		{#if facts}
+			<p class="muted">{facts}</p>
+		{/if}
+		{#if game.tags.length}
+			<ul class="tags" aria-label="Tags">
+				{#each game.tags as tag (tag)}
+					<li>{tag}</li>
+				{/each}
+			</ul>
+		{/if}
+		<p class="muted">Played {playtime(game.playtimeS)} · Last played {ago(game.lastPlayedAt)}</p>
+	</section>
+
 	<GameInstall {game} {library} />
 
 	<GameFiles gameId={game.id} {files} />
@@ -179,11 +205,30 @@
 </div>
 
 <style lang="scss">
+	@keyframes detail-in {
+		from {
+			opacity: 0;
+			transform: translateX(24px);
+		}
+	}
+
+	@keyframes detail-out {
+		to {
+			opacity: 0;
+			transform: translateX(24px);
+		}
+	}
+
 	.detail {
 		display: flex;
 		flex-direction: column;
-		gap: 20px;
+		gap: 24px;
 		padding-bottom: 24px;
+		animation: detail-in var(--motion-base) var(--ease-snap) both;
+
+		&.closing {
+			animation: detail-out var(--motion-base) var(--ease-snap) both;
+		}
 	}
 
 	.back {
@@ -192,12 +237,12 @@
 
 	.hero {
 		display: flex;
-		gap: 20px;
+		gap: 24px;
 		flex-wrap: wrap;
 	}
 
 	.cover {
-		width: 160px;
+		width: 180px;
 		aspect-ratio: 3 / 4;
 		flex-shrink: 0;
 		border-radius: var(--radius-md);
@@ -206,30 +251,45 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		color: var(--text-dim);
+		color: var(--text-muted);
 	}
 
 	.summary {
 		display: flex;
 		flex-direction: column;
-		gap: 8px;
+		gap: 10px;
 		min-width: 0;
 		flex: 1 1 260px;
 
 		h2 {
 			margin: 0;
-			font-size: 1.5rem;
-			font-weight: 800;
-		}
+			font-size: 1.75rem;
+			font-weight: 700;
+			line-height: 1.2;
+			overflow-wrap: anywhere;
 
-		p {
-			margin: 0;
+			&:focus {
+				outline: none;
+			}
 		}
 	}
 
-	.muted {
+	.meta {
+		margin: 0;
+		font-size: 1rem;
 		color: var(--text-muted);
-		font-size: 0.85rem;
+	}
+
+	.muted {
+		margin: 0;
+		color: var(--text-muted);
+		font-size: 0.875rem;
+	}
+
+	.facts-block {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
 	}
 
 	.tags {
@@ -241,8 +301,8 @@
 		padding: 0;
 
 		li {
-			font-size: 0.75rem;
-			padding: 3px 9px;
+			font-size: 0.875rem;
+			padding: 3px 10px;
 			border-radius: var(--radius-pill);
 			background: var(--bg-elevated);
 			color: var(--text-muted);
@@ -256,8 +316,9 @@
 	}
 
 	.error {
+		margin: 0;
 		color: var(--danger);
-		font-size: 0.85rem;
+		font-size: 0.875rem;
 	}
 
 	.shots {
@@ -276,28 +337,26 @@
 	section {
 		display: flex;
 		flex-direction: column;
-		gap: 8px;
+		gap: 10px;
 
 		h3 {
 			margin: 0;
-			font-size: 0.8rem;
-			font-weight: 800;
-			letter-spacing: 1px;
-			text-transform: uppercase;
-			color: var(--text-muted);
+			font-size: 1.25rem;
+			font-weight: 600;
 		}
 	}
 
 	.description {
+		max-width: 68ch;
 		white-space: pre-line;
-		font-size: 0.9rem;
+		font-size: 1rem;
 		line-height: 1.5;
 		margin: 0;
 	}
 
 	textarea {
 		resize: vertical;
-		font-size: 0.9rem;
+		font-size: 1rem;
 	}
 
 	.changes {
@@ -307,7 +366,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: 6px;
-		font-size: 0.85rem;
+		font-size: 0.875rem;
 
 		li {
 			display: flex;
