@@ -237,6 +237,7 @@ Inside the base folder:
 | Path                                  | What is in it                                                           |
 | :------------------------------------ | :---------------------------------------------------------------------- |
 | `settings.json`                       | The launcher settings.                                                  |
+| `launcher-preferences.json`           | The launcher you chose for each game folder. See [Game folders](game-folders.md). |
 | `config/executables/<id>/config.json` | The settings of one game.                                               |
 | `prefixes/`                           | Wine prefixes. The default prefix is `prefixes/Default`.                |
 | `prefixes/<name>/light-launcher.json` | The settings of one prefix.                                             |
@@ -287,6 +288,7 @@ These parts are not finished in this version.
 | :------------------------- | :------------------------ |
 | Install                    | [Install](install.md)     |
 | Plugins                    | [Plugins](plugins.md)     |
+| Game folders               | [Game folders](game-folders.md) |
 | Security                   | [Security](security.md)   |
 | Moving from older versions | [Migration](migration.md) |
 | Linux                      | [Linux](linux.md)         |

@@ -101,6 +101,9 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [x] | The game detail can link an existing install folder. |
 | [x] | The Updates page shows the update-check history with paging. |
 | [ ] | Check the new Library page and drop zone by eye in the real window. |
+| [ ] | Home card per game folder: the backend is done, but the "Choose launcher" menu on the card is not in the UI yet. |
+| [ ] | Helper programs are found by name only. A helper with another name still shows as a launcher. |
+| [ ] | A forced scan of 2,000 executables takes about 80 ms. Most of it is reading the config files, not grouping. |
 
 ## Migration
 
