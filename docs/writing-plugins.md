@@ -201,6 +201,105 @@ The `tile` field of the source sets the shape of its cards in the Library:
 
 A value other than these three fails the manifest check.
 
+## Browse with a sidebar
+
+A source can offer a filter sidebar and a browse page. The Library asks the plugin for one page of games at a time. Browse results are for display only: the launcher does not save them.
+
+To offer it, add the `browse:filters` capability and a `sidebar` to the source:
+
+```json
+{
+  "contributes": {
+    "sources": [
+      {
+        "id": "shop",
+        "label": "Shop",
+        "capabilities": ["browse", "browse:filters"],
+        "tile": "wide",
+        "sidebar": [
+          { "type": "search", "id": "text", "placeholder": "Search titles" },
+          { "type": "multi", "id": "tags", "label": "Tags", "dynamic": true, "searchable": true },
+          {
+            "type": "sort",
+            "id": "sort",
+            "orderable": true,
+            "options": [{ "value": "title", "label": "Title" }],
+            "default": { "value": "title", "order": "asc" }
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+A source with a `sidebar` must have the `browse:filters` capability. Without it the manifest fails the check.
+
+### Sidebar groups
+
+| `type`    | What the user sees            | Fields                                                  |
+| :-------- | :---------------------------- | :------------------------------------------------------ |
+| `search`  | A text box.                   | `id`, `placeholder` (optional).                         |
+| `toggles` | On and off rows.              | `id`, `options`.                                        |
+| `select`  | One choice from a list.       | `id`, `label`, and `options` or `dynamic`.              |
+| `multi`   | Several choices from a list.  | `id`, `label`, and `options` or `dynamic`, `searchable`. |
+| `sort`    | A sort choice and direction.  | `id`, `options`, `orderable`, `default` (optional).     |
+
+| Rule                                                             | Why                                              |
+| :--------------------------------------------------------------- | :----------------------------------------------- |
+| Group ids are lowercase letters, digits or dashes, unique per source. | The launcher sends the values under these ids.   |
+| Options have a `value` and a `label`. Values are unique in a group. | Each choice has one value to send back.          |
+| `dynamic` takes the choices from `source.listFilters`. Do not also list `options`. | The list can be large, such as all tags.         |
+| A `default` is only for a `sort` group, and its `value` must be one of its options. | Sets the sort the Library starts with.           |
+| `order` is `asc` or `desc`.                                      | The direction of a sort.                         |
+
+A bad group, option or default fails the manifest check with the field name.
+
+### source.browse
+
+The launcher sends `source.browse` for each page.
+
+| Param     | Type    | Rule                                                                              |
+| :-------- | :------ | :-------------------------------------------------------------------------------- |
+| `source`  | string  | The source id, such as `shop`.                                                    |
+| `query`   | string  | Optional. The search text.                                                        |
+| `filters` | object  | Optional. Keys are group ids. Values are a string, a list of strings or a boolean. |
+| `sort`    | string  | Optional. A sort value from the `sort` group.                                     |
+| `order`   | string  | Optional. `asc` or `desc`.                                                        |
+| `cursor`  | string  | Missing on the first page. Otherwise the `nextCursor` of the last page.          |
+| `limit`   | integer | From 1 to 100.                                                                    |
+
+The result has `games` (in the same shape as `source.search` results), `nextCursor` (left out on the last page) and `total` (optional, the number of games that match).
+
+| Rule                                                                 | Why                                                    |
+| :------------------------------------------------------------------- | :----------------------------------------------------- |
+| Ignore filter keys that are not known groups.                        | The launcher may send a group this plugin does not use. |
+| A cursor works only with the same `query`, `filters`, `sort` and `order` it came from. | Paging with changed filters would skip or repeat games. |
+| Answer a cursor you do not know with an invalid params error (code `-32602`) and `"data": { "code": "invalid_cursor" }`. | The launcher then shows "start again from the first page". |
+| Answer a bad `limit`, `order` or `sort` with an invalid params error (code `-32602`). | Do not clamp it silently.                              |
+
+### source.listFilters
+
+The launcher sends `source.listFilters` to fill a `dynamic` group, such as the tag list. `query` is the text typed in the group's search box.
+
+| Param    | Type    | Rule                                                 |
+| :------- | :------ | :--------------------------------------------------- |
+| `source` | string  | The source id.                                       |
+| `group`  | string  | The id of a `dynamic` group.                         |
+| `query`  | string  | Optional. The text the person typed.                 |
+| `limit`  | integer | From 1 to 200.                                       |
+
+The result is `options`: a list of `{ "value", "label", "count" }`. `count` is optional and counts the whole source, not the current filters.
+
+### Time limits
+
+| Method               | The launcher waits for | After that                              |
+| :------------------- | :--------------------- | :-------------------------------------- |
+| `source.browse`      | 20 seconds.            | It stops waiting and returns an error.  |
+| `source.listFilters` | 10 seconds.            | It stops waiting and returns an error.  |
+
+The launcher does not retry a call by itself.
+
 ## Settings form
 
 The launcher draws a settings form from a JSON Schema file. Point to it in `plugin.json`:
