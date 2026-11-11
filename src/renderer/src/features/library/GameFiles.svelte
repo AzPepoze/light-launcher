@@ -74,12 +74,6 @@
 </section>
 
 <style lang="scss">
-	@keyframes spin {
-		to {
-			transform: rotate(360deg);
-		}
-	}
-
 	@keyframes done-flash {
 		from {
 			background-color: var(--success);
@@ -146,7 +140,7 @@
 		border: 2px solid currentColor;
 		border-right-color: transparent;
 		border-radius: 50%;
-		animation: spin 0.8s linear infinite;
+		animation: ll-spin 0.8s linear infinite;
 	}
 
 	.muted {

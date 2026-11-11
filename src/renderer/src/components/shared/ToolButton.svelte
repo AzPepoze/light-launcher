@@ -104,12 +104,6 @@
 		border: 3px solid var(--glass-border);
 		border-radius: 50%;
 		border-top-color: var(--accent-primary);
-		animation: spin 1s ease-in-out infinite;
-	}
-
-	@keyframes spin {
-		to {
-			transform: rotate(360deg);
-		}
+		animation: ll-spin 1s ease-in-out infinite;
 	}
 </style>

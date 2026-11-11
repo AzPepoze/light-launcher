@@ -1,6 +1,7 @@
 <script lang="ts">
 	import CreatePrefixForm from "./CreatePrefixForm.svelte";
 	import PrefixListItem from "./PrefixListItem.svelte";
+	import { formatBytes } from "@lib/features/format";
 
 	export let availablePrefixes: string[] = [];
 	export let currentPrefixName: string = "";
@@ -10,14 +11,6 @@
 	export let onRemovePrefix: (name: string) => void;
 	export let runningMap: Record<string, string[]> = {};
 	export let prefixStats: Record<string, import("@shared").PrefixStats> = {};
-
-	function formatBytes(bytes: number | null | undefined): string {
-		if (bytes == null) return "--";
-		if (bytes < 1024) return `${bytes} B`;
-		if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-		if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-		return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
-	}
 
 	function getSizeLabel(name: string): string {
 		const stats = prefixStats[name];

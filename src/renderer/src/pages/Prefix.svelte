@@ -7,6 +7,7 @@
 	import ConfigForm from "@components/shared/ConfigForm.svelte";
 	import PageHeader from "@components/shared/PageHeader.svelte";
 	import { createLaunchOptions } from "@lib/formService";
+	import { formatBytes } from "@lib/features/format";
 	import { createLogger } from "@lib/logger";
 	import * as service from "@lib/prefixService";
 	import { onMount, onDestroy } from "svelte";
@@ -42,14 +43,6 @@
 	$: currentPrefixName = prefixPath.startsWith(baseDir)
 		? prefixPath.replace(baseDir + "/", "")
 		: prefixPath.split("/").filter(Boolean).pop() || "Custom";
-
-	function formatBytes(bytes: number | null | undefined): string {
-		if (bytes == null) return "--";
-		if (bytes < 1024) return `${bytes} B`;
-		if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-		if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-		return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
-	}
 
 	function formatCreated(ts: number | null | undefined): string {
 		if (!ts) return "Created --";
@@ -394,16 +387,7 @@
 
 	.btn.primary:disabled .material-icons.spin,
 	.loading-state .spin {
-		animation: spin 1.2s linear infinite;
-	}
-
-	@keyframes spin {
-		from {
-			transform: rotate(0deg);
-		}
-		to {
-			transform: rotate(360deg);
-		}
+		animation: ll-spin 1.2s linear infinite;
 	}
 
 	@keyframes fadeIn {

@@ -12,6 +12,15 @@ export function speed(bytesPerSecond: number): string {
 	return `${bytes(bytesPerSecond)}/s`;
 }
 
+/* Always one decimal for KB and above; a missing value renders as a dash. */
+export function formatBytes(value: number | null | undefined): string {
+	if (value == null) return "--";
+	if (value < 1024) return `${value} B`;
+	if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
+	if (value < 1024 * 1024 * 1024) return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+	return `${(value / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+}
+
 export function percent(done: number, total: number): number {
 	if (total <= 0) return 0;
 	return Math.min(100, Math.max(0, Math.round((done / total) * 100)));

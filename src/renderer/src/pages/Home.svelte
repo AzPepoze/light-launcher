@@ -132,15 +132,6 @@
 		overflow: hidden;
 	}
 
-	@keyframes spin {
-		from {
-			transform: rotate(0deg);
-		}
-		to {
-			transform: rotate(360deg);
-		}
-	}
-
 	.loading-layer {
 		position: absolute;
 		inset: 0;
@@ -156,7 +147,7 @@
 		border-radius: 50%;
 		border: 3px solid rgba(255, 255, 255, 0.08);
 		border-top-color: var(--accent-primary);
-		animation: spin 0.8s linear infinite;
+		animation: ll-spin 0.8s linear infinite;
 	}
 
 	@keyframes empty-pop {
@@ -254,8 +245,6 @@
 			animation: empty-rise 300ms var(--ease-out) 180ms both;
 
 			.btn {
-				display: inline-flex;
-				align-items: center;
 				gap: 8px;
 				padding: 12px 24px;
 			}

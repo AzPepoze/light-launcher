@@ -148,47 +148,6 @@
 		margin-top: 24px;
 	}
 
-	.zone-card {
-		background: var(--bg-surface);
-		border-radius: var(--radius-lg);
-		border: 2px solid rgba(255, 255, 255, 0.05);
-		padding: 32px;
-		display: flex;
-		flex-direction: column;
-		gap: 28px;
-		transition:
-			border-color var(--transition-fast),
-			box-shadow var(--transition-fast);
-
-		&:hover {
-			border-color: rgba(255, 255, 255, 0.08);
-			box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
-		}
-
-		.zone-header {
-			display: flex;
-			align-items: center;
-			gap: 12px;
-			border-bottom: 2px solid rgba(255, 255, 255, 0.05);
-			padding-bottom: 16px;
-			margin-bottom: 4px;
-
-			.material-icons {
-				font-size: 24px;
-				color: var(--accent-primary);
-			}
-
-			h2 {
-				margin: 0;
-				font-size: 1.15rem;
-				font-weight: 800;
-				color: var(--text-main);
-				text-transform: uppercase;
-				letter-spacing: 1px;
-			}
-		}
-	}
-
 	.profile-name-group {
 		display: flex;
 		flex-direction: column;
@@ -284,21 +243,12 @@
 			opacity: 0.5;
 			cursor: not-allowed;
 			.material-icons {
-				animation: spin 2s linear infinite;
+				animation: ll-spin 2s linear infinite;
 			}
 		}
 
 		.material-icons {
 			font-size: 24px;
-		}
-	}
-
-	@keyframes spin {
-		from {
-			transform: rotate(0deg);
-		}
-		to {
-			transform: rotate(360deg);
 		}
 	}
 </style>

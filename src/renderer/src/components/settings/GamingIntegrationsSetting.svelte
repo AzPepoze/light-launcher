@@ -43,7 +43,7 @@
 	}
 </script>
 
-<div class="zone-card">
+<div class="zone-card zone-card--flat">
 	<div class="zone-header">
 		<span class="material-icons">sports_esports</span>
 		<h2>Game Activity & Integrations</h2>
@@ -100,27 +100,6 @@
 </div>
 
 <style lang="scss">
-	.zone-card {
-		background: var(--bg-surface);
-		border-radius: var(--radius-lg);
-		border: 2px solid rgba(255, 255, 255, 0.05);
-		padding: 32px;
-		display: flex;
-		flex-direction: column;
-		gap: 28px;
-	}
-
-	.zone-header {
-		display: flex;
-		align-items: center;
-		gap: 12px;
-		border-bottom: 2px solid rgba(255, 255, 255, 0.05);
-		padding-bottom: 16px;
-
-		.material-icons { color: var(--accent-primary); }
-		h2 { margin: 0; font-size: 1.15rem; text-transform: uppercase; letter-spacing: 1px; }
-	}
-
 	.settings-section { display: flex; flex-direction: column; gap: 10px; }
 	.settings-section h3 { margin: 0; font-size: 1.05rem; text-transform: uppercase; }
 	.desc, .hint { margin: 0 0 8px; color: var(--text-muted); font-size: 0.88rem; line-height: 1.55; }

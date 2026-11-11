@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ago, bytes, eta, percent, playtime, speed } from "./format";
+import { ago, bytes, eta, formatBytes, percent, playtime, speed } from "./format";
 
 describe("bytes", () => {
 	it("formats sizes with the right unit", () => {
@@ -13,6 +13,17 @@ describe("bytes", () => {
 	it("treats invalid numbers as zero", () => {
 		expect(bytes(Number.NaN)).toBe("0 B");
 		expect(bytes(-4)).toBe("0 B");
+	});
+});
+
+describe("formatBytes", () => {
+	it("keeps one decimal for prefix sizes", () => {
+		expect(formatBytes(null)).toBe("--");
+		expect(formatBytes(512)).toBe("512 B");
+		expect(formatBytes(1536)).toBe("1.5 KB");
+		expect(formatBytes(10 * 1024)).toBe("10.0 KB");
+		expect(formatBytes(5 * 1024 ** 2)).toBe("5.0 MB");
+		expect(formatBytes(2 * 1024 ** 3)).toBe("2.0 GB");
 	});
 });
 

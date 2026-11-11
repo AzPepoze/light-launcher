@@ -208,12 +208,6 @@
 		border: 2px solid var(--glass-border);
 		border-top-color: var(--accent-primary);
 		border-radius: 50%;
-		animation: spin 0.8s linear infinite;
-	}
-
-	@keyframes spin {
-		to {
-			transform: rotate(360deg);
-		}
+		animation: ll-spin 0.8s linear infinite;
 	}
 </style>

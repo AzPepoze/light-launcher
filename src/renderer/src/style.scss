@@ -181,6 +181,68 @@ body {
 	border-radius: var(--radius-lg);
 }
 
+/* Content zone shared by the settings and launch pages. */
+.zone-card {
+	background: var(--bg-surface);
+	border-radius: var(--radius-lg);
+	border: 2px solid rgba(255, 255, 255, 0.05);
+	padding: 32px;
+	display: flex;
+	flex-direction: column;
+	gap: 28px;
+	transition:
+		border-color var(--transition-fast),
+		box-shadow var(--transition-fast);
+
+	&:hover {
+		border-color: rgba(255, 255, 255, 0.08);
+		box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+	}
+}
+
+/* Static card variant: the integrations section does not react to hover. */
+.zone-card--flat {
+	transition: none;
+
+	&:hover {
+		border-color: rgba(255, 255, 255, 0.05);
+		box-shadow: none;
+	}
+
+	.zone-header {
+		margin-bottom: 0;
+
+		h2 {
+			font-weight: 700;
+			text-transform: none;
+			letter-spacing: normal;
+		}
+	}
+}
+
+.zone-header {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	border-bottom: 2px solid rgba(255, 255, 255, 0.05);
+	padding-bottom: 16px;
+	margin-bottom: 4px;
+
+	.material-icons {
+		font-size: 24px;
+		color: var(--accent-primary);
+	}
+
+	h2 {
+		margin: 0;
+		font-size: 1.15rem;
+		font-weight: 800;
+		color: var(--text-main);
+		text-transform: uppercase;
+		letter-spacing: 1px;
+	}
+}
+
 .btn {
 	display: inline-flex;
 	align-items: center;
@@ -363,6 +425,12 @@ html {
 @keyframes ll-autoscroll-pulse {
 	50% {
 		transform: scale(1.12);
+	}
+}
+
+@keyframes ll-spin {
+	to {
+		transform: rotate(360deg);
 	}
 }
 
