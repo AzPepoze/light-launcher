@@ -56,6 +56,7 @@ type Library struct {
 	media    *mediaCache
 	launches *launchSet
 	watch    *watchState
+	artwork  *artworkQueue
 }
 
 // Open creates or opens the library database and prepares the background jobs.
@@ -79,11 +80,13 @@ func Open(ctx context.Context, opts Options) (*Library, error) {
 		media:    newMediaCache(opts.MediaDir),
 		launches: newLaunchSet(),
 		watch:    newWatchState(),
+		artwork:  newArtworkQueue(),
 	}, nil
 }
 
-// Close closes the database. Running launches keep running, but their playtime is lost if the app exits first.
+// Close stops artwork downloads, then closes the database. Running launches keep running, but their playtime is lost if the app exits first.
 func (l *Library) Close() error {
+	l.artwork.stop()
 	return l.db.Close()
 }
 

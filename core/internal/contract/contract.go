@@ -26,6 +26,7 @@ type GameDTO struct {
 	Screenshots     []string       `json:"screenshots,omitempty"`
 	DescriptionHTML string         `json:"descriptionHtml,omitempty"`
 	Changelog       string         `json:"changelog,omitempty"`
+	Rating          *float64       `json:"rating,omitempty"`
 	Status          string         `json:"status,omitempty"`
 	UpdatedAt       string         `json:"updatedAt,omitempty"`
 	Extra           map[string]any `json:"extra,omitempty"`

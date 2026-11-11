@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CoverImage from "@components/shared/CoverImage.svelte";
 	import PageHeader from "@components/shared/PageHeader.svelte";
 	import { onMount } from "svelte";
 	import { errorMessage } from "../../lib/features/rpc";
@@ -56,8 +57,8 @@
 		{#each updates.games as game (game.id)}
 			<li class="row">
 				<div class="cover">
-					{#if game.cover}
-						<img src={game.cover} alt="" loading="lazy" />
+					{#if game.cover || game.coverLocal}
+						<CoverImage {game} />
 					{/if}
 				</div>
 				<div class="info">
@@ -116,12 +117,6 @@
 		border-radius: var(--radius-sm);
 		overflow: hidden;
 		background: var(--bg-elevated);
-
-		img {
-			width: 100%;
-			height: 100%;
-			object-fit: cover;
-		}
 	}
 
 	.info {
