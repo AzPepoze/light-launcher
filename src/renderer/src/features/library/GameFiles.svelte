@@ -10,12 +10,19 @@
 
 	let message = $state("");
 	let preparingId = $state<number | null>(null);
+	let flashedId = $state<number | null>(null);
 
 	async function queue(file: GameFile) {
 		message = "";
-		message = await queueGameFile(gameId, file, downloadsApi.enqueueFile, (id) => {
+		message = await queueGameFile(gameId, file, enqueueAndFlash, (id) => {
 			preparingId = id;
 		});
+	}
+
+	async function enqueueAndFlash(targetGameId: number, fileId: number): Promise<number> {
+		const queueId = await downloadsApi.enqueueFile(targetGameId, fileId);
+		flashedId = fileId;
+		return queueId;
 	}
 </script>
 
@@ -43,12 +50,17 @@
 						</p>
 					</div>
 					<button
-						class="btn sm"
+						class="btn sm download"
+						class:flash={flashedId === file.id}
 						disabled={preparingId !== null}
 						aria-busy={preparingId === file.id}
 						aria-label="Download {file.label}"
 						onclick={() => queue(file)}
+						onanimationend={() => (flashedId = null)}
 					>
+						{#if preparingId === file.id}
+							<span class="spinner" aria-hidden="true"></span>
+						{/if}
 						{preparingId === file.id ? PREPARING_TEXT : "Download"}
 					</button>
 				</li>
@@ -62,18 +74,28 @@
 </section>
 
 <style lang="scss">
+	@keyframes spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	@keyframes done-flash {
+		from {
+			background-color: var(--success);
+			border-color: var(--success);
+		}
+	}
+
 	section {
 		display: flex;
 		flex-direction: column;
-		gap: 8px;
+		gap: 10px;
 
 		h3 {
 			margin: 0;
-			font-size: 0.8rem;
-			font-weight: 800;
-			letter-spacing: 1px;
-			text-transform: uppercase;
-			color: var(--text-muted);
+			font-size: 1.25rem;
+			font-weight: 600;
 		}
 
 		p {
@@ -93,7 +115,7 @@
 			display: flex;
 			align-items: center;
 			gap: 12px;
-			padding: 10px 12px;
+			padding: 12px 14px;
 			border-radius: var(--radius-md);
 			background: var(--bg-surface);
 		}
@@ -105,14 +127,30 @@
 	}
 
 	.label {
-		font-weight: 700;
-		font-size: 0.9rem;
-		overflow: hidden;
-		text-overflow: ellipsis;
+		font-weight: 600;
+		font-size: 1rem;
+		overflow-wrap: anywhere;
+	}
+
+	.download {
+		gap: 8px;
+
+		&.flash {
+			animation: done-flash var(--motion-slow) var(--ease-out);
+		}
+	}
+
+	.spinner {
+		width: 12px;
+		height: 12px;
+		border: 2px solid currentColor;
+		border-right-color: transparent;
+		border-radius: 50%;
+		animation: spin 0.8s linear infinite;
 	}
 
 	.muted {
 		color: var(--text-muted);
-		font-size: 0.8rem;
+		font-size: 0.875rem;
 	}
 </style>
