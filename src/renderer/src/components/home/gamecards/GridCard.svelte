@@ -162,31 +162,51 @@
 		display: flex;
 		flex-direction: column;
 		gap: 12px;
-		transition: transform 240ms var(--ease-spring), filter var(--transition-fast);
 		position: relative;
-		width: 100%;
-		max-width: 200px;
+		// 6px margins plus the glow must fit the grid cell, or the paint containment clips them.
+		width: calc(100% - 12px);
+		max-width: 190px;
 		margin: 6px;
+		padding: 8px;
 		--mx: 50%;
 		--my: 50%;
 		--spotlight-rgb: 255, 255, 255;
+		transition: transform var(--motion-base) var(--ease-out);
+
+		// Inside the card box: content-visibility clips paint outside it.
+		&::before {
+			content: "";
+			position: absolute;
+			inset: -6px;
+			border-radius: calc(var(--radius-lg) + 6px);
+			background: radial-gradient(
+				circle closest-side,
+				rgba(var(--spotlight-rgb), 0.32) 86%,
+				rgba(var(--spotlight-rgb), 0.14) 94%,
+				rgba(var(--spotlight-rgb), 0) 100%
+			);
+			opacity: 0.55;
+			transition: opacity var(--motion-base) var(--ease-out);
+			pointer-events: none;
+		}
 
 		&.selected {
 			.game-icon-container {
 				border-color: var(--accent-primary);
-				box-shadow: 0 0 24px var(--accent-glow);
+				box-shadow: 0 0 10px var(--accent-glow);
 			}
 		}
 
 		&:hover,
 		&:focus-within {
-			transform: translateY(-6px) scale(1.03);
+			transform: translateY(-4px) scale(1.015);
+
+			&::before {
+				opacity: 1;
+			}
 
 			.game-icon-container {
-				border-color: rgba(var(--spotlight-rgb), 0.25);
-				box-shadow:
-					0 2px 8px rgba(0, 0, 0, 0.25),
-					0 12px 32px rgba(var(--spotlight-rgb), 0.14);
+				border-color: rgba(var(--spotlight-rgb), 0.32);
 
 				&::before {
 					opacity: 1;
@@ -225,9 +245,12 @@
 		&.selection-mode:focus-within {
 			transform: none;
 
+			&::before {
+				opacity: 0.55;
+			}
+
 			.game-icon-container {
 				border-color: var(--accent-primary);
-				box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 
 				&::before {
 					opacity: 0 !important;
@@ -245,8 +268,8 @@
 
 			&.selected .game-icon-container {
 				box-shadow:
-					0 2px 8px rgba(0, 0, 0, 0.25),
-					0 0 24px var(--accent-glow);
+					0 2px 8px rgba(0, 0, 0, 0.35),
+					0 0 10px var(--accent-glow);
 			}
 
 			:global(.selection-overlay .checkbox) {
@@ -264,8 +287,8 @@
 			.game-icon-container {
 				border-color: var(--success, #44ffaa);
 				box-shadow:
-					0 0 24px rgba(68, 255, 170, 0.35),
-					0 8px 24px rgba(0, 0, 0, 0.3);
+					0 0 10px rgba(68, 255, 170, 0.3),
+					0 2px 8px rgba(0, 0, 0, 0.35);
 
 				&::before {
 					opacity: 0.06;
@@ -288,7 +311,8 @@
 		justify-content: center;
 		position: relative;
 		cursor: pointer;
-		transition: transform 240ms var(--ease-spring), border-color var(--transition-fast), box-shadow var(--transition-fast);
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+		transition: border-color var(--motion-base) var(--ease-out);
 		z-index: 1;
 		overflow: hidden;
 
@@ -434,6 +458,8 @@
 		justify-content: space-between;
 		align-items: center;
 		padding: 0 4px;
+		position: relative;
+		z-index: 2;
 
 		.game-name {
 			font-size: 0.95rem;
