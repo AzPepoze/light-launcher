@@ -1,3 +1,4 @@
+import type { PluginStatusKind } from "../../lib/features/pluginStatus";
 import type { SkipReason, SkippedUpload } from "../../lib/features/pluginUpload";
 
 export const LEGAL_NOTICE = "Use only accounts you own and content you are allowed to get.";
@@ -9,7 +10,10 @@ export const COMMUNITY_PLUGINS_URL = "";
 
 export const PERMISSION_HINT = "The plugin will be able to:";
 
-export const SITES_HEADING = "Connect to these sites:";
+export function sitesTitle(count: number): string {
+	return count === 1 ? "Connects to 1 site" : `Connects to ${count} sites`;
+}
+
 
 export const UPDATE_PERMISSION_HINT = "This update asks for new permissions:";
 
@@ -24,6 +28,14 @@ export const CHECKING_UPDATES_LABEL = "Checking...";
 
 export const SLEEPING_BADGE = "Sleeping";
 
+export const STATUS_COPY: Record<PluginStatusKind, string> = {
+	error: "Error",
+	disabled: "Disabled",
+	sleeping: SLEEPING_BADGE,
+	unsigned: "Unsigned",
+	enabled: "Enabled"
+};
+
 export const DROP_HINT = "Drop plugin zips or folders here";
 
 export const DROP_OVERLAY_TEXT = "Drop to check the plugins";
@@ -35,6 +47,8 @@ export const CHOOSE_FOLDER_LABEL = "Choose folder";
 export const UPLOADING_TEXT = "Uploading plugin...";
 
 export const DISMISS_LABEL = "Dismiss";
+
+export const SKIPPED_HEADING = "These items were skipped:";
 
 export const NOTHING_TO_INSTALL_COPY =
 	"Drop a .llplugin or .zip file, or a folder that has plugin.json.";

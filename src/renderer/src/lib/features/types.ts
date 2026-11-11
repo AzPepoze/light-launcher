@@ -257,11 +257,20 @@ export interface PluginInfo {
 	consent: string[];
 }
 
-/** Permission lines for the consent screen. The sites are grouped, the rest are one line each. */
+export type PermissionKind = "site" | "files" | "sign-in" | "browser" | "program" | "other";
+
+/** One permission on the consent screen: a plain sentence and how it is classed. */
+export interface PermissionRow {
+	text: string;
+	kind: PermissionKind;
+	sensitive: boolean;
+}
+
+/** Permission lines for the consent screen. The sites are grouped, the rest are one row each. */
 export interface PermissionLines {
 	/** One line per site, such as "example.com and its subdomains". Sorted. */
 	sites: string[];
-	other: string[];
+	other: PermissionRow[];
 }
 
 export interface PluginPreview {

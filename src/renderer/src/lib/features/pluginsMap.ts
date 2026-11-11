@@ -1,6 +1,8 @@
 import { siteLines } from "./consentSites";
+import { FILES_PREFIX, NETWORK_PREFIX, permissionTag } from "./permissionTags";
 import type {
 	PermissionLines,
+	PermissionRow,
 	PluginInfo,
 	PluginLogLine,
 	PluginPreview,
@@ -22,30 +24,47 @@ import type {
 const LOG_LEVELS: readonly PluginLogLine["level"][] = ["debug", "info", "warn", "error"];
 
 // Consent entries from the server, as in core/internal/plugins/consent.go.
-const NETWORK_PREFIX = "network:";
-const FS_PREFIX = "fs:";
 const FLAG_LABELS = new Map([
 	["secrets", "Store sign-in details"],
 	["browser", "Open a browser window"],
 	["exec", "Run programs on this computer"]
 ]);
 
+// Folder grants the server knows, as in manifest_validate.go.
+const FOLDER_LABELS = new Map([
+	["$GAMES", "Access your games folder"],
+	["$DOWNLOADS", "Access your downloads folder"],
+	["$DATA", "Access the launcher data folder"]
+]);
+const APP_DATA_PREFIX = "$APPDATA_";
+
 function isNetworkEntry(entry: string): boolean {
 	return entry.startsWith(NETWORK_PREFIX);
 }
 
-/** The plain line shown for one non-network consent entry, such as "fs:data" or "exec". */
+function folderLabel(folder: string): string {
+	if (folder.startsWith(APP_DATA_PREFIX)) {
+		return `Access app data folder (${folder.slice(APP_DATA_PREFIX.length)})`;
+	}
+	return FOLDER_LABELS.get(folder) ?? `Access files: ${folder}`;
+}
+
+/** The plain line shown for one non-network consent entry, such as "fs:$GAMES" or "exec". */
 export function consentLabel(entry: string): string {
-	if (entry.startsWith(FS_PREFIX)) return `Access files: ${entry.slice(FS_PREFIX.length)}`;
+	if (entry.startsWith(FILES_PREFIX)) return folderLabel(entry.slice(FILES_PREFIX.length));
 	return FLAG_LABELS.get(entry) ?? entry;
 }
 
-/** Splits consent entries into grouped site lines and one line for each other entry. */
+function consentRow(entry: string): PermissionRow {
+	return { text: consentLabel(entry), ...permissionTag(entry) };
+}
+
+/** Splits consent entries into grouped site lines and one row for each other entry. */
 export function consentLines(entries: string[]): PermissionLines {
 	const hosts = entries
 		.filter(isNetworkEntry)
 		.map((entry) => entry.slice(NETWORK_PREFIX.length));
-	const other = entries.filter((entry) => !isNetworkEntry(entry)).map(consentLabel);
+	const other = entries.filter((entry) => !isNetworkEntry(entry)).map(consentRow);
 	return { sites: siteLines(hosts), other };
 }
 
@@ -53,7 +72,7 @@ export function consentLines(entries: string[]): PermissionLines {
 export function permissionSummary(permissions: WirePermissions): string[] {
 	const entries = [
 		...(permissions.network ?? []).map((host) => `${NETWORK_PREFIX}${host}`),
-		...(permissions.fs ?? []).map((folder) => `${FS_PREFIX}${folder}`),
+		...(permissions.fs ?? []).map((folder) => `${FILES_PREFIX}${folder}`),
 		...(permissions.secrets ? ["secrets"] : []),
 		...(permissions.browser ? ["browser"] : []),
 		...(permissions.exec ? ["exec"] : [])

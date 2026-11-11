@@ -55,7 +55,11 @@ describe("consentLines", () => {
 			])
 		).toEqual({
 			sites: ["api.example.test", "mixdrop.co and its subdomains"],
-			other: ["Run programs on this computer", "Access files: $GAMES", "Store sign-in details"]
+			other: [
+				{ text: "Run programs on this computer", kind: "program", sensitive: false },
+				{ text: "Access your games folder", kind: "files", sensitive: true },
+				{ text: "Store sign-in details", kind: "sign-in", sensitive: true }
+			]
 		});
 	});
 
@@ -66,7 +70,11 @@ describe("consentLines", () => {
 
 describe("consentLabel", () => {
 	it("writes a plain line for each kind of entry", () => {
-		expect(consentLabel("fs:$GAMES")).toBe("Access files: $GAMES");
+		expect(consentLabel("fs:$GAMES")).toBe("Access your games folder");
+		expect(consentLabel("fs:$DOWNLOADS")).toBe("Access your downloads folder");
+		expect(consentLabel("fs:$DATA")).toBe("Access the launcher data folder");
+		expect(consentLabel("fs:$APPDATA_CACHE")).toBe("Access app data folder (CACHE)");
+		expect(consentLabel("fs:unknown")).toBe("Access files: unknown");
 		expect(consentLabel("secrets")).toBe("Store sign-in details");
 		expect(consentLabel("browser")).toBe("Open a browser window");
 		expect(consentLabel("exec")).toBe("Run programs on this computer");
@@ -110,7 +118,10 @@ describe("newPermissionLines", () => {
 				["network:a.example.test"],
 				["network:a.example.test", "network:b.example.test", "exec"]
 			)
-		).toEqual({ sites: ["b.example.test"], other: ["Run programs on this computer"] });
+		).toEqual({
+			sites: ["b.example.test"],
+			other: [{ text: "Run programs on this computer", kind: "program", sensitive: false }]
+		});
 	});
 
 	it("returns nothing when the new version asks for nothing more", () => {

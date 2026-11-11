@@ -3,8 +3,10 @@
 	import { ago } from "../../lib/features/format";
 	import { pluginsApi } from "../../lib/features/pluginsApi";
 	import type { PluginInfo, PluginUpdatePreview, PluginUpdateStatus } from "../../lib/features/types";
+	import Notice from "./Notice.svelte";
 	import PluginAccounts from "./PluginAccounts.svelte";
 	import PluginConsent from "./PluginConsent.svelte";
+	import PluginIdentity from "./PluginIdentity.svelte";
 	import PluginLogs from "./PluginLogs.svelte";
 	import PluginSettings from "./PluginSettings.svelte";
 	import {
@@ -99,14 +101,17 @@
 	</button>
 
 	<header>
-		<div>
-			<h2>{plugin.name}</h2>
-			<p class="muted">
-				v{plugin.version}
-				{#if plugin.repository}
-					<span>Updates from {plugin.repository}</span>
-				{/if}
-			</p>
+		<div class="title">
+			<PluginIdentity id={plugin.id} name={plugin.name} large />
+			<div>
+				<h2>{plugin.name}</h2>
+				<p class="muted">
+					v{plugin.version}
+					{#if plugin.repository}
+						<span>Updates from {plugin.repository}</span>
+					{/if}
+				</p>
+			</div>
 		</div>
 		<div class="badges">
 			<span class="badge">{plugin.enabled ? "Enabled" : "Disabled"}</span>
@@ -127,7 +132,9 @@
 		<p class="error" role="alert">{plugin.error}</p>
 	{/if}
 	{#if !plugin.signed}
-		<p class="notice">{UNSIGNED_WARNING}</p>
+		<Notice icon="warning">
+			<p>{UNSIGNED_WARNING}</p>
+		</Notice>
 	{/if}
 
 	{#if update?.available}
@@ -210,14 +217,20 @@
 
 		h2 {
 			margin: 0;
-			font-size: 1.4rem;
-			font-weight: 800;
+			font-size: 1.25rem;
+			font-weight: 600;
 		}
+	}
+
+	.title {
+		display: flex;
+		align-items: center;
+		gap: 14px;
 	}
 
 	.muted {
 		margin: 4px 0 0;
-		font-size: 0.85rem;
+		font-size: 0.875rem;
 		color: var(--text-muted);
 	}
 
@@ -228,8 +241,8 @@
 	}
 
 	.badge {
-		font-size: 0.72rem;
-		padding: 3px 9px;
+		font-size: 0.75rem;
+		padding: 3px 10px;
 		border-radius: var(--radius-pill);
 		border: 1px solid var(--glass-border-bright);
 
@@ -249,7 +262,7 @@
 		flex-direction: column;
 		gap: 10px;
 		align-items: flex-start;
-		padding: 12px 14px;
+		padding: 14px 16px;
 		border-radius: var(--radius-md);
 		border: 1px solid var(--glass-border-bright);
 		background: var(--bg-surface);
@@ -264,27 +277,21 @@
 
 	.release-title {
 		margin: 0;
-		font-weight: 700;
+		font-size: 1.05rem;
+		font-weight: 600;
 	}
 
 	.notes {
 		margin: 0;
-		font-size: 0.85rem;
+		font-size: 0.9375rem;
+		line-height: 1.5;
 		color: var(--text-muted);
 		white-space: pre-wrap;
 	}
 
-	.notice {
-		margin: 0;
-		padding: 10px 14px;
-		border-radius: var(--radius-md);
-		border: 1px solid var(--danger);
-		font-size: 0.85rem;
-	}
-
 	.error {
 		margin: 0;
-		font-size: 0.85rem;
+		font-size: 0.9375rem;
 		color: var(--danger);
 	}
 
