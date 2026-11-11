@@ -69,6 +69,7 @@ func shellURL(args []string) (string, error) {
 }
 
 func main() {
+	configureRendering()
 	args := os.Args[1:]
 	if wantsAssist(args) {
 		os.Exit(runAssist(args))

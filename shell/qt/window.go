@@ -28,6 +28,7 @@ func newWindow(opts options) *shellWindow {
 	// miqt only allows overriding page methods on a page the shell creates itself.
 	page := webengine.NewQWebEnginePage()
 	view.SetPage(page)
+	enableSmoothScrolling(page)
 	view.SetWindowTitle(windowTitle)
 	view.SetMinimumSize2(minWidth, minHeight)
 	view.Resize(defaultWidth, defaultHeight)

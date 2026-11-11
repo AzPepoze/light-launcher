@@ -21,6 +21,7 @@ func newAssistSession(opts assistOptions, events *eventWriter) *assistSession {
 	store.LoadAllCookies()
 
 	page := webengine.NewQWebEnginePage2(profile)
+	enableSmoothScrolling(page)
 	view := webengine.NewQWebEngineView6(page, nil)
 	window := qt.NewQWidget2()
 	layout := qt.NewQVBoxLayout(window)
