@@ -14,6 +14,7 @@ type libraryParams struct {
 }
 
 // serviceLibraryUpsert saves games. Each game must come from a source this plugin contributes.
+// It returns the library id of each game, in the same order, so a plugin can pass gameId to downloads.enqueue.
 func serviceLibraryUpsert(ctx context.Context, env *pluginEnv, params json.RawMessage) (any, error) {
 	req, err := decodeParams[libraryParams](params)
 	if err != nil {
@@ -25,12 +26,15 @@ func serviceLibraryUpsert(ctx context.Context, env *pluginEnv, params json.RawMe
 	if env.deps.library == nil {
 		return nil, internalError("library is not available")
 	}
+	ids := make([]int64, 0, len(req.Games))
 	for _, game := range req.Games {
-		if _, err := env.deps.library.Upsert(ctx, game); err != nil {
+		id, err := env.deps.library.Upsert(ctx, game)
+		if err != nil {
 			return nil, internalError(err.Error())
 		}
+		ids = append(ids, id)
 	}
-	return map[string]int{"upserted": len(req.Games)}, nil
+	return map[string]any{"upserted": len(req.Games), "ids": ids}, nil
 }
 
 func checkGameSources(games []contract.GameDTO, sources map[string]bool) error {

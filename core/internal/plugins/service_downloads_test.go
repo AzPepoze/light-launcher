@@ -20,6 +20,32 @@ func (f *fakeDownloads) Enqueue(_ context.Context, req contract.DownloadRequest)
 	return 42, f.err
 }
 
+// fakeLibrary returns ids 7, 8, ... for each upserted game.
+type fakeLibrary struct{ next int64 }
+
+func (f *fakeLibrary) Upsert(_ context.Context, _ contract.GameDTO) (int64, error) {
+	f.next++
+	return 6 + f.next, nil
+}
+
+func TestLibraryUpsertReturnsIdsForDownloads(t *testing.T) {
+	env := testEnv(t, Permissions{}, nil)
+	env.deps.library = &fakeLibrary{}
+	result, err := callService(t, env, "library.upsert", map[string]any{
+		"games": []contract.GameDTO{
+			{Source: "demo", SourceID: "1", URL: "https://x.example/1", Title: "A"},
+			{Source: "demo", SourceID: "2", URL: "https://x.example/2", Title: "B"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("library.upsert: %v", err)
+	}
+	got := wireJSON(t, result)
+	if want := `{"ids":[7,8],"upserted":2}`; got != want {
+		t.Fatalf("result = %s, want %s", got, want)
+	}
+}
+
 // downloadEnv returns a plugin env that may fetch from files.example and, when games is set, use $GAMES.
 func downloadEnv(t *testing.T, fs []string, games string) (*pluginEnv, *fakeDownloads) {
 	t.Helper()
