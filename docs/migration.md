@@ -2,7 +2,7 @@
 
 # Migration
 
-This page explains how to move your data from an older LightLauncher, or from interesting-launcher.
+This page explains how to move your data from an older LightLauncher.
 
 > [!IMPORTANT]
 > This version does not move old data on its own. Follow the steps below. Back up your data first.
@@ -51,43 +51,10 @@ On Linux, the base folder is `~/.config/light-launcher`.
 
 ### Old Electron flags
 
-These no longer do anything:
+These are not supported and are no longer accepted:
 
-- `--wayland`, `--x11`, `--ozone-platform`. They are accepted and ignored.
+- `--wayland`, `--x11`, `--ozone-platform`. Use `QT_QPA_PLATFORM=xcb light-launcher` to force X11.
 - `~/.config/light-launcher-flags.conf`. The launcher does not read it.
-
-## From interesting-launcher
-
-interesting-launcher keeps its library in a database file named `library.db`. It is in the `data/` folder next to the program. See its install guide.
-
-### What is imported
-
-| Imported                                                | Not imported                                                   |
-| :------------------------------------------------------ | :------------------------------------------------------------- |
-| Games: title, source, version, tags, notes, description | Cover image files. The web address of each cover is kept.      |
-| Install folder, executable and arguments                | Saved secrets and sign-in data. Sign in again with the plugin. |
-| Playtime and favorites                                  | `config.json` and profiles                                     |
-| Download choices, only for games that have none yet     | Downloads and logs                                             |
-
-### How games are matched
-
-Games are matched by source and source id.
-
-| Case                | What happens                                                                                                                    |
-| :------------------ | :------------------------------------------------------------------------------------------------------------------------------ |
-| Game is new         | It is added.                                                                                                                    |
-| Game already exists | Its own data is kept. Install data and notes are filled only where they are empty. Playtime and favorite take the higher value. |
-
-The old database is only read. It is never changed.
-
-### Steps
-
-1. Close interesting-launcher, so `library.db` is not being written.
-2. Back up `library.db`.
-3. Run the import with the path to a copy of `library.db`. The import reports how many games were added, how many were updated, and how many download choices were copied.
-
-> [!NOTE]
-> The import is the API method `LibraryImportLegacy`. No button in the window calls it yet. You need a developer tool that can call the local API.
 
 ## More
 

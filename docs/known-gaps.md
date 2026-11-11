@@ -82,7 +82,9 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [x] | Library page groups local games and plugin games. |
 | [x] | Cached screenshots are served through the media route and shown in the detail panel. |
 | [ ] | Covers behind a login (F95) may fail because media fetches send no cookies. |
-| [ ] | Remove the old `/api/cover/{id}` route (the media route replaced it). |
+| [x] | Remove the old `/api/cover/{id}` route (the media route replaced it). |
+| [x] | `make build` embeds the UI, so the launcher starts without `--ui`. |
+| [ ] | The NativeWayland setting is saved but has no effect; Qt picks the display system. |
 | [x] | Cover and screenshot images are evicted from memory least-recently-used first (200 entries). |
 | [x] | Source filter shows labels from the library instead of raw ids. |
 | [x] | The game detail can link an existing install folder. |

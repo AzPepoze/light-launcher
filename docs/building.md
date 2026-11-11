@@ -36,7 +36,15 @@ This page explains how to build the Linux and Windows files from source.
    ```
 
 > [!NOTE]
-> The launcher is built from `core/cmd/launcher` with the `embedui` tag. The UI is copied there while the build runs, and the copy is removed at the end.
+> The launcher is built from `core/cmd/launcher` with the `embedui` tag. The UI is copied there while the build runs, and the copy is removed at the end. `make build` uses the same script as the release builds, so the UI is embedded in `bin/light-launcher` too.
+
+## Development build
+
+```sh
+make build
+```
+
+This writes `bin/light-launcher`, `bin/light-launcher-instance` and `bin/light-launcher-shell`. The launcher has the UI built in, so it runs without `--ui`. `make dev` starts the Vite dev server and the launcher API instead.
 
 ## Output
 
@@ -60,6 +68,7 @@ The `<version>` comes from `git describe --tags --always`. A leading `v` is remo
 
 | Part                     | Command                                                                                                                |
 | :----------------------- | :--------------------------------------------------------------------------------------------------------------------- |
+| Launcher with UI         | `bash scripts/build-launcher.sh bin/light-launcher`                                                                    |
 | Qt shell (Linux)         | `cd shell/qt && go build -ldflags="-s -w" -o light-launcher-shell .`                                                   |
 | WebView2 shell (Windows) | `cd shell/webview2 && GOOS=windows GOARCH=amd64 go build -ldflags="-s -w -H=windowsgui" -o light-launcher-shell.exe .` |
 | Instance                 | `go build -ldflags="-s -w" -o light-launcher-instance ./core/cmd/instance`                                             |

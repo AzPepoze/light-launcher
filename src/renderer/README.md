@@ -22,16 +22,15 @@ From the repository root:
 bun run dev
 ```
 
-| Step   | What happens                                     |
-| ------ | ------------------------------------------------ |
-| Build  | Builds the Go launcher into `bin/light-launcher` |
-| Server | Starts it with `--port 9246 --dev-token dev`     |
-| UI     | Starts the Vite dev server on port 9245          |
+| Step   | What happens                                                              |
+| ------ | ------------------------------------------------------------------------- |
+| Build  | Builds the Go launcher into `bin/light-launcher`                          |
+| Server | Starts it with `--no-shell --port 9246 --dev-token dev --ui src/renderer` |
+| UI     | Starts the Vite dev server on port 9245                                   |
 
 Open `http://localhost:9245/#t=dev` in a browser. Vite forwards `/api` to the Go server.
 
-> [!IMPORTANT]
-> The Go launcher must accept `--port` and `--dev-token`. Until it does, `bun run dev` fails at the server step.
+The launcher serves the API and reads its UI from `src/renderer`; Vite serves the page itself.
 
 ## Scripts
 

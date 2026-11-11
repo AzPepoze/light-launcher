@@ -26,7 +26,6 @@ light-launcher [flags] [GAME_PATH]
 | `--no-shell`                                     | off         | Runs the UI with no window. The launcher logs the address to open.           |
 | `--ui <dir>`                                     | built-in UI | Serves the UI from this folder. The folder must contain `index.html`.        |
 | `--edit-lsfg`                                    | off         | Opens the Lossless Scaling (LSFG) editor on start. Linux only.               |
-| `--wayland`, `--x11`, `--ozone-platform=<value>` | none        | Accepted for old scripts and ignored. Qt picks the display system by itself. |
 
 ### Shell values
 
@@ -242,8 +241,7 @@ These parts are not finished in this version.
 | :----------------- | :------------------------------------------------------------------------------------------------ |
 | Old data           | Not moved on start. See [Migration](migration.md).                                                |
 | Old game paths     | Game settings that point at `~/LightLauncher/prefixes` are not rewritten. Check each prefix path. |
-| Library import     | The import from interesting-launcher has no button. See [Migration](migration.md).                |
-| Old Electron flags | `light-launcher-flags.conf` is not read.                                                          |
+| Old display flags  | `--wayland`, `--x11`, `--ozone-platform` and `light-launcher-flags.conf` are not supported.       |
 
 ## More
 

@@ -63,22 +63,22 @@ LightLauncher is a Go program with a web-based window. On Linux it starts Window
 
 ## More
 
-| Topic                                                 | Page                                       |
-| :---------------------------------------------------- | :----------------------------------------- |
-| Install on Arch, other Linux, and Windows             | [Install](docs/install.md)                 |
-| Flags, game runner, plugin commands, file locations   | [Usage](docs/usage.md)                     |
-| Linux setup and window options                        | [Linux](docs/linux.md)                     |
-| Windows setup and uninstall                           | [Windows](docs/windows.md)                 |
-| Plugins: install, update, trust, permissions          | [Plugins](docs/plugins.md)                 |
-| Write a plugin                                        | [Writing plugins](docs/writing-plugins.md) |
-| What is protected and what is not                     | [Security](docs/security.md)               |
-| Move data from older versions or interesting-launcher | [Migration](docs/migration.md)             |
-| How the parts fit together                            | [Architecture](docs/architecture.md)       |
-| Build from source                                     | [Building](docs/building.md)               |
-| Window programs (Qt and WebView2)                     | [Shells](shell/README.md)                  |
-| Publish a release                                     | [Releasing](docs/releasing.md)             |
-| See what is missing or planned                        | [Known gaps](docs/known-gaps.md)           |
-| Development setup and rules                           | [Contributing](CONTRIBUTING.md)            |
+| Topic                                               | Page                                       |
+| :-------------------------------------------------- | :----------------------------------------- |
+| Install on Arch, other Linux, and Windows           | [Install](docs/install.md)                 |
+| Flags, game runner, plugin commands, file locations | [Usage](docs/usage.md)                     |
+| Linux setup and window options                      | [Linux](docs/linux.md)                     |
+| Windows setup and uninstall                         | [Windows](docs/windows.md)                 |
+| Plugins: install, update, trust, permissions        | [Plugins](docs/plugins.md)                 |
+| Write a plugin                                      | [Writing plugins](docs/writing-plugins.md) |
+| What is protected and what is not                   | [Security](docs/security.md)               |
+| Move data from older versions                       | [Migration](docs/migration.md)             |
+| How the parts fit together                          | [Architecture](docs/architecture.md)       |
+| Build from source                                   | [Building](docs/building.md)               |
+| Window programs (Qt and WebView2)                   | [Shells](shell/README.md)                  |
+| Publish a release                                   | [Releasing](docs/releasing.md)             |
+| See what is missing or planned                      | [Known gaps](docs/known-gaps.md)           |
+| Development setup and rules                         | [Contributing](CONTRIBUTING.md)            |
 
 ## License
 

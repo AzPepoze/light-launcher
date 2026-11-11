@@ -41,17 +41,16 @@ cd light-launcher
 bun install
 ```
 
-### Build the launcher and serve the UI from disk
+### Build the launcher and serve the UI
 
 ```sh
 make build
-./bin/light-launcher --ui src/renderer/dist
+./bin/light-launcher
 ```
 
-`make build` builds the launcher, the game runner and the UI. `--ui` serves the UI from the built folder. See [Usage](docs/usage.md#light-launcher).
+`make build` builds the launcher with the UI embedded, the game runner and the Qt shell. To run the UI from a different folder, pass `--ui` to the launcher. See [Usage](docs/usage.md#light-launcher).
 
-> [!WARNING]
-> `bun run dev` and `make dev` do not work yet. The `dev:server` script starts the launcher with `--dev-token` and `--port`. The launcher does not accept these flags, so it exits with code 2. The Vite proxy in `src/renderer/vite.config.ts` also expects port 9246.
+For a Vite dev server with live reload, run `make dev` and open the URL that Vite prints. It proxies API calls to the launcher on port 9246.
 
 ## Scripts
 
@@ -67,7 +66,7 @@ make build
 | `bun run lint`           | Runs `oxlint`.                                                 |
 | `bun run format`         | Formats the code with `oxfmt`.                                 |
 | `bun run format:check`   | Checks formatting without changing files.                      |
-| `make build`             | Same as the Go and UI builds, through `Makefile`.              |
+| `make build`             | Builds all programs; the launcher embeds the UI.               |
 | `make clean`             | Removes `bin`, `dist` and the UI build folder.                 |
 
 ## Tests and checks

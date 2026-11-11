@@ -67,7 +67,6 @@ Optional:
 | :----------------------- | :-------------------------------------------------------------------------- |
 | Show on Wayland          | Qt picks Wayland or X11 by itself.                                          |
 | Force X11                | `QT_QPA_PLATFORM=xcb light-launcher`                                        |
-| Old display flags        | `--wayland`, `--x11` and `--ozone-platform` are accepted and ignored.       |
 | Window position and size | Saved in `~/.config/light-launcher/window-geometry` when the window closes. |
 
 ## Why there is no AppImage
