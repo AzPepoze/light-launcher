@@ -9,14 +9,18 @@
 
 	let {
 		initialSource = "",
+		progress = "",
 		onInstalled,
 		onClose,
 	}: {
 		initialSource?: string;
+		/** "Plugin 2 of 3" when the plugin is one of several queued. */
+		progress?: string;
 		onInstalled: (plugin: PluginInfo) => void;
 		onClose: () => void;
 	} = $props();
 
+	const title = $derived(progress || "Install plugin");
 	let source = $state("");
 
 	onMount(() => {
@@ -44,6 +48,12 @@
 		}
 	}
 
+	/** In a queue, Cancel skips this plugin. Alone, it goes back to the link form. */
+	function cancelReview() {
+		if (progress) onClose();
+		else preview = null;
+	}
+
 	async function install(shown: PluginPreview) {
 		busy = true;
 		message = "";
@@ -57,7 +67,7 @@
 	}
 </script>
 
-<Modal show={true} title="Install plugin" showDone={false} {onClose}>
+<Modal show={true} {title} showDone={false} {onClose}>
 	<form
 		class="row"
 		onsubmit={(event) => {
@@ -86,7 +96,7 @@
 			confirmLabel="Install plugin"
 			{busy}
 			onConfirm={() => install(shown)}
-			onCancel={() => (preview = null)}
+			onCancel={cancelReview}
 		/>
 	{/if}
 </Modal>

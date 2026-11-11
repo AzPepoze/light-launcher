@@ -14,7 +14,13 @@
 		toPluginInfo,
 		toPluginUpdatesStatus
 	} from "../../lib/features/pluginsMap";
-	import { planPluginUpload, uploadPlugin, type UploadFile } from "../../lib/features/pluginUpload";
+	import { PluginInstallQueue, type QueueView } from "../../lib/features/pluginInstallQueue";
+	import {
+		planPluginUploads,
+		uploadPlugin,
+		type SkippedUpload,
+		type UploadFile
+	} from "../../lib/features/pluginUpload";
 	import type { PluginInfo, PluginUpdateStatus, PluginUpdatesStatus } from "../../lib/features/types";
 	import type {
 		WirePluginInfo,
@@ -29,9 +35,14 @@
 		CHECKING_UPDATES_LABEL,
 		CHECK_UPDATES_LABEL,
 		COMMUNITY_PLUGINS_URL,
+		DISMISS_LABEL,
+		NOTHING_TO_INSTALL_COPY,
+		QUEUE_BUSY_COPY,
 		SLEEPING_BADGE,
-		UPLOAD_PROBLEM_COPY,
-		UPLOADING_TEXT
+		UPLOADING_TEXT,
+		installedSummary,
+		pluginProgress,
+		skippedText
 	} from "./pluginCopy";
 
 	let plugins = $state<PluginInfo[]>([]);
@@ -39,15 +50,18 @@
 	let error = $state("");
 	let notice = $state("");
 	let selectedId = $state<string | null>(null);
+	/** The Install button, which opens the dialog with an empty link box. */
 	let installOpen = $state(false);
-	/** Server path of a dropped plugin, passed to the install dialog to check. */
-	let droppedSource = $state("");
-	let uploading = $state(false);
+	const queue = new PluginInstallQueue(uploadPlugin);
+	let batch = $state<QueueView>(queue.view);
+	/** Dropped items that are not plugins, shown by name. */
+	let skipped = $state<SkippedUpload[]>([]);
 	let uploadError = $state("");
 	let updates = $state<PluginUpdatesStatus>({ checkedAt: null, plugins: [] });
 	let checkingUpdates = $state(false);
 	let updatesError = $state("");
 
+	const queued = $derived(batch.total > 1);
 	const selected = $derived(plugins.find((plugin) => plugin.id === selectedId));
 	const updateCount = $derived(updates.plugins.filter((item) => item.available).length);
 	const updateProblems = $derived(
@@ -108,6 +122,7 @@
 	/** Keeps the list in step with plugin events. Returns a function that stops them. */
 	function subscribe(): () => void {
 		const stops = [
+			queue.subscribe((view) => (batch = view)),
 			listen<WirePluginInfo | WireRemovedPlugin>(PLUGIN_STATE_EVENT, onState),
 			listen<WirePluginNotify>(PLUGIN_NOTIFY_EVENT, (event) => {
 				notice = `${event.plugin}: ${event.message}`;
@@ -134,10 +149,19 @@
 			: [...plugins, plugin];
 	}
 
-	function installed(plugin: PluginInfo) {
+	function showInstalled(plugin: PluginInfo) {
 		replacePlugin(plugin);
-		closeInstall();
 		selectedId = plugin.id;
+	}
+
+	function installedManually(plugin: PluginInfo) {
+		showInstalled(plugin);
+		closeInstall();
+	}
+
+	function installedFromQueue(plugin: PluginInfo) {
+		showInstalled(plugin);
+		void queue.markInstalled();
 	}
 
 	function removed(id: string) {
@@ -145,32 +169,23 @@
 		if (selectedId === id) selectedId = null;
 	}
 
-	function openInstall(source = "") {
-		droppedSource = source;
+	function openInstall() {
 		installOpen = true;
 	}
 
 	function closeInstall() {
 		installOpen = false;
-		droppedSource = "";
 	}
 
-	async function uploadDropped(files: UploadFile[]) {
-		const plan = planPluginUpload(files);
-		if (plan.ok === false) {
-			uploadError = UPLOAD_PROBLEM_COPY[plan.problem];
+	function uploadDropped(files: UploadFile[]) {
+		if (queue.busy) {
+			uploadError = QUEUE_BUSY_COPY;
 			return;
 		}
-
-		uploading = true;
-		uploadError = "";
-		try {
-			openInstall(await uploadPlugin(plan.files));
-		} catch (err) {
-			uploadError = errorMessage(err);
-		} finally {
-			uploading = false;
-		}
+		const plan = planPluginUploads(files);
+		skipped = plan.skipped;
+		uploadError = plan.plugins.length ? "" : NOTHING_TO_INSTALL_COPY;
+		void queue.start(plan.plugins);
 	}
 </script>
 
@@ -197,8 +212,27 @@
 		<p class="upload-error" role="alert">{problem}</p>
 	{/each}
 
-	{#if uploading}
+	{#if batch.phase === "uploading"}
 		<p class="notice" role="status">{UPLOADING_TEXT}</p>
+	{/if}
+
+	{#if batch.phase === "failed"}
+		<div class="failure">
+			<p class="upload-error" role="alert">{batch.failure}</p>
+			<button class="btn sm" onclick={() => queue.dismissFailure()}>{DISMISS_LABEL}</button>
+		</div>
+	{/if}
+
+	{#if batch.phase === "done" && queued}
+		<p class="notice" role="status">{installedSummary(batch.installed, batch.total)}</p>
+	{/if}
+
+	{#if skipped.length}
+		<ul class="skipped" aria-label="Skipped items">
+			{#each skipped as item (item.name)}
+				<li>{skippedText(item)}</li>
+			{/each}
+		</ul>
 	{/if}
 
 	{#if uploadError}
@@ -257,8 +291,17 @@
 	{/if}
 </PluginDropZone>
 
-{#if installOpen}
-	<PluginInstallDialog initialSource={droppedSource} onInstalled={installed} onClose={closeInstall} />
+{#if batch.phase === "review"}
+	{#key batch.position}
+		<PluginInstallDialog
+			initialSource={batch.source}
+			progress={queued ? pluginProgress(batch.position, batch.total) : ""}
+			onInstalled={installedFromQueue}
+			onClose={() => queue.skip()}
+		/>
+	{/key}
+{:else if installOpen}
+	<PluginInstallDialog onInstalled={installedManually} onClose={closeInstall} />
 {/if}
 
 <style lang="scss">
@@ -310,6 +353,24 @@
 		margin: 0 0 12px;
 		font-size: 0.85rem;
 		color: var(--danger);
+	}
+
+	.failure {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		margin-bottom: 12px;
+
+		.upload-error {
+			margin: 0;
+		}
+	}
+
+	.skipped {
+		margin: 0 0 12px;
+		padding-left: 18px;
+		font-size: 0.85rem;
+		color: var(--text-muted);
 	}
 
 	.badges {

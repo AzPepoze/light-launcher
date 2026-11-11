@@ -2,7 +2,9 @@ import { postForm } from "@lib/transport";
 
 const UPLOAD_PATH = "/api/plugin-upload";
 const ARCHIVE_EXTENSIONS = [".llplugin", ".zip"];
-const MANIFEST_IN_FOLDER = /^[^/]+\/plugin\.json$/;
+const MANIFEST = "plugin.json";
+/** A manifest one folder below a dropped folder, such as "bundle/one/plugin.json". */
+const NESTED_MANIFEST = /^[^/]+\/[^/]+\/plugin\.json$/;
 
 export interface UploadFile {
 	/** Relative path with '/' separators, such as "myplugin/plugin.json". */
@@ -10,39 +12,73 @@ export interface UploadFile {
 	file: File;
 }
 
-export type UploadProblem = "not-a-plugin" | "several-plugins";
+/** "not-a-plugin": nothing usable. "nested-plugins": a folder that holds plugin folders. */
+export type SkipReason = "not-a-plugin" | "nested-plugins";
 
-export type UploadPlan = { ok: true; files: UploadFile[] } | { ok: false; problem: UploadProblem };
+export interface SkippedUpload {
+	/** The top-level name of the skipped file or folder. */
+	name: string;
+	reason: SkipReason;
+}
+
+export interface PluginUploadPlan {
+	/** The files of each plugin, in drop order. */
+	plugins: UploadFile[][];
+	skipped: SkippedUpload[];
+}
 
 export function isArchivePath(path: string): boolean {
 	const lower = path.toLowerCase();
 	return ARCHIVE_EXTENSIONS.some((extension) => lower.endsWith(extension));
 }
 
-/** The first folder of each path. Files at the top level have no folder. */
-function topFolders(files: UploadFile[]): Set<string> {
-	const folders = new Set<string>();
-	for (const { path } of files) {
-		const [first, ...rest] = path.split("/");
-		if (rest.length > 0) folders.add(first);
+function topEntryName(path: string): string {
+	return path.split("/")[0];
+}
+
+/** Groups the files by their top-level name, in the order the names first appear. */
+function groupByTopEntry(files: UploadFile[]): Map<string, UploadFile[]> {
+	const groups = new Map<string, UploadFile[]>();
+	for (const file of files) {
+		const name = topEntryName(file.path);
+		const group = groups.get(name) ?? [];
+		group.push(file);
+		groups.set(name, group);
 	}
-	return folders;
+	return groups;
 }
 
-function isSingleArchive(files: UploadFile[]): boolean {
-	return files.length === 1 && isArchivePath(files[0].path);
+function isArchiveFile(name: string, group: UploadFile[]): boolean {
+	return group.length === 1 && group[0].path === name && isArchivePath(name);
 }
 
-function hasManifestInFolder(files: UploadFile[]): boolean {
-	return files.some(({ path }) => MANIFEST_IN_FOLDER.test(path));
+function hasManifest(name: string, group: UploadFile[]): boolean {
+	return group.some(({ path }) => path === `${name}/${MANIFEST}`);
 }
 
-/** Accepts one .llplugin or .zip file, or one folder that has plugin.json at its top level. */
-export function planPluginUpload(files: UploadFile[]): UploadPlan {
-	if (isSingleArchive(files)) return { ok: true, files };
-	if (!hasManifestInFolder(files)) return { ok: false, problem: "not-a-plugin" };
-	if (topFolders(files).size > 1) return { ok: false, problem: "several-plugins" };
-	return { ok: true, files };
+function hasNestedManifest(group: UploadFile[]): boolean {
+	return group.some(({ path }) => NESTED_MANIFEST.test(path));
+}
+
+function skipReason(group: UploadFile[]): SkipReason {
+	return hasNestedManifest(group) ? "nested-plugins" : "not-a-plugin";
+}
+
+/**
+ * Splits a drop into plugins. Each top-level archive is one plugin, and each top-level
+ * folder with plugin.json directly inside is one plugin. Everything else is skipped by name.
+ */
+export function planPluginUploads(files: UploadFile[]): PluginUploadPlan {
+	const plugins: UploadFile[][] = [];
+	const skipped: SkippedUpload[] = [];
+	for (const [name, group] of groupByTopEntry(files)) {
+		if (isArchiveFile(name, group) || hasManifest(name, group)) {
+			plugins.push(group);
+		} else {
+			skipped.push({ name, reason: skipReason(group) });
+		}
+	}
+	return { plugins, skipped };
 }
 
 /** Uploads the plugin files and returns the server path to use as an install source. */

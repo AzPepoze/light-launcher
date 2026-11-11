@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { isArchivePath, planPluginUpload, uploadPlugin, type UploadFile } from "./pluginUpload";
+import {
+	isArchivePath,
+	planPluginUploads,
+	uploadPlugin,
+	type UploadFile
+} from "./pluginUpload";
 
 function fakeFile(name: string): File {
 	return new File(["data"], name);
@@ -7,6 +12,11 @@ function fakeFile(name: string): File {
 
 function item(path: string): UploadFile {
 	return { path, file: fakeFile(path.split("/").pop() ?? path) };
+}
+
+/** The paths of each plugin, so the tests read as the plugins the user will see. */
+function pluginPaths(plugins: UploadFile[][]): string[][] {
+	return plugins.map((files) => files.map((file) => file.path));
 }
 
 function jsonResponse(body: unknown): Response {
@@ -27,41 +37,129 @@ describe("isArchivePath", () => {
 	});
 });
 
-describe("planPluginUpload", () => {
-	it("accepts one archive file", () => {
+describe("planPluginUploads", () => {
+	it("takes one archive as one plugin", () => {
 		const files = [item("name.llplugin")];
 
-		expect(planPluginUpload(files)).toEqual({ ok: true, files });
+		expect(planPluginUploads(files)).toEqual({ plugins: [files], skipped: [] });
 	});
 
-	it("accepts a folder with plugin.json at its top level", () => {
+	it("takes one folder with plugin.json at its top level as one plugin", () => {
 		const files = [item("myplugin/plugin.json"), item("myplugin/src/main.js")];
 
-		expect(planPluginUpload(files)).toEqual({ ok: true, files });
+		expect(planPluginUploads(files)).toEqual({ plugins: [files], skipped: [] });
 	});
 
-	it("rejects a folder without plugin.json", () => {
-		const plan = planPluginUpload([item("myplugin/src/main.js")]);
+	it("takes each archive as its own plugin, in drop order", () => {
+		const plan = planPluginUploads([item("one.llplugin"), item("two.zip"), item("three.LLPLUGIN")]);
 
-		expect(plan).toEqual({ ok: false, problem: "not-a-plugin" });
+		expect(pluginPaths(plan.plugins)).toEqual([["one.llplugin"], ["two.zip"], ["three.LLPLUGIN"]]);
+		expect(plan.skipped).toEqual([]);
 	});
 
-	it("rejects plugin.json nested deeper than the folder", () => {
-		const plan = planPluginUpload([item("myplugin/sub/plugin.json")]);
+	it("takes each plugin folder as its own plugin with only its own files", () => {
+		const plan = planPluginUploads([
+			item("one/plugin.json"),
+			item("one/main.js"),
+			item("two/plugin.json"),
+			item("two/src/index.js")
+		]);
 
-		expect(plan).toEqual({ ok: false, problem: "not-a-plugin" });
+		expect(pluginPaths(plan.plugins)).toEqual([
+			["one/plugin.json", "one/main.js"],
+			["two/plugin.json", "two/src/index.js"]
+		]);
+		expect(plan.skipped).toEqual([]);
 	});
 
-	it("rejects a loose file that is not an archive", () => {
-		const plan = planPluginUpload([item("readme.txt")]);
+	it("takes a mix of archives and folders as separate plugins", () => {
+		const plan = planPluginUploads([
+			item("archive.llplugin"),
+			item("folder/plugin.json"),
+			item("other.zip")
+		]);
 
-		expect(plan).toEqual({ ok: false, problem: "not-a-plugin" });
+		expect(pluginPaths(plan.plugins)).toEqual([
+			["archive.llplugin"],
+			["folder/plugin.json"],
+			["other.zip"]
+		]);
 	});
 
-	it("rejects two plugin folders at once", () => {
-		const plan = planPluginUpload([item("one/plugin.json"), item("two/plugin.json")]);
+	it("skips a folder without plugin.json and still takes the valid plugins", () => {
+		const plan = planPluginUploads([item("good.llplugin"), item("loose/src/main.js")]);
 
-		expect(plan).toEqual({ ok: false, problem: "several-plugins" });
+		expect(pluginPaths(plan.plugins)).toEqual([["good.llplugin"]]);
+		expect(plan.skipped).toEqual([{ name: "loose", reason: "not-a-plugin" }]);
+	});
+
+	it("skips a loose text file by name", () => {
+		const plan = planPluginUploads([item("notes.txt"), item("good.zip")]);
+
+		expect(pluginPaths(plan.plugins)).toEqual([["good.zip"]]);
+		expect(plan.skipped).toEqual([{ name: "notes.txt", reason: "not-a-plugin" }]);
+	});
+
+	it("skips plugin.json loose at the top level", () => {
+		const plan = planPluginUploads([item("plugin.json")]);
+
+		expect(plan).toEqual({
+			plugins: [],
+			skipped: [{ name: "plugin.json", reason: "not-a-plugin" }]
+		});
+	});
+
+	it("skips a plugin.json two folders down, and hints that the folder holds plugins", () => {
+		const plan = planPluginUploads([item("myplugin/sub/plugin.json")]);
+
+		expect(plan).toEqual({
+			plugins: [],
+			skipped: [{ name: "myplugin", reason: "nested-plugins" }]
+		});
+	});
+
+	it("skips a folder with files only three folders down", () => {
+		const plan = planPluginUploads([item("myplugin/a/b/plugin.json")]);
+
+		expect(plan).toEqual({
+			plugins: [],
+			skipped: [{ name: "myplugin", reason: "not-a-plugin" }]
+		});
+	});
+
+	it("skips an archive inside a folder, since only top-level archives are plugins", () => {
+		const plan = planPluginUploads([item("bundle/inner.zip")]);
+
+		expect(plan).toEqual({
+			plugins: [],
+			skipped: [{ name: "bundle", reason: "not-a-plugin" }]
+		});
+	});
+
+	it("does not expand a folder that holds several plugin folders, and says why", () => {
+		const plan = planPluginUploads([
+			item("bundle/one/plugin.json"),
+			item("bundle/two/plugin.json"),
+			item("good.llplugin")
+		]);
+
+		expect(pluginPaths(plan.plugins)).toEqual([["good.llplugin"]]);
+		expect(plan.skipped).toEqual([{ name: "bundle", reason: "nested-plugins" }]);
+	});
+
+	it("reports only junk as skipped and no plugins", () => {
+		const plan = planPluginUploads([item("a.txt"), item("b.png"), item("empty/readme.md")]);
+
+		expect(plan.plugins).toEqual([]);
+		expect(plan.skipped).toEqual([
+			{ name: "a.txt", reason: "not-a-plugin" },
+			{ name: "b.png", reason: "not-a-plugin" },
+			{ name: "empty", reason: "not-a-plugin" }
+		]);
+	});
+
+	it("returns nothing for an empty drop", () => {
+		expect(planPluginUploads([])).toEqual({ plugins: [], skipped: [] });
 	});
 });
 

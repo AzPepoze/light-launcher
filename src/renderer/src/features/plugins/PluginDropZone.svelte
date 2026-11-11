@@ -87,6 +87,7 @@
 			class="hidden-input"
 			type="file"
 			accept=".llplugin,.zip"
+			multiple
 			onchange={() => fileInput && onPicked(fileInput)}
 		/>
 		<input
