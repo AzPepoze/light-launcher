@@ -30,9 +30,13 @@ type Download struct {
 	ETag        string
 	Headers     map[string]string
 	Install     bool
-	CreatedAt   time.Time
-	StartedAt   time.Time
-	FinishedAt  time.Time
+	// InstallSubfolder is the folder under the games folder for the install. Empty means the games folder.
+	InstallSubfolder string
+	// DeleteArchive overrides the KeepArchives setting after an install. Nil uses the setting.
+	DeleteArchive *bool
+	CreatedAt     time.Time
+	StartedAt     time.Time
+	FinishedAt    time.Time
 }
 
 // Segment is one byte range of a download. End is exclusive; Done bytes are already on disk.

@@ -44,37 +44,41 @@ type installResult struct {
 }
 
 // Install unpacks the archive, finds the launcher and moves the game into the library.
-func (in *FolderInstaller) Install(ctx context.Context, downloadID, gameID int64, archivePath string) error {
-	rep := newInstallReporter(in.Events, &in.running, downloadID, gameID)
-	result, err := in.install(ctx, downloadID, gameID, archivePath, rep)
+func (in *FolderInstaller) Install(ctx context.Context, job InstallJob) error {
+	rep := newInstallReporter(in.Events, &in.running, job.DownloadID, job.GameID)
+	result, err := in.install(ctx, job, rep)
 	if err != nil {
-		logger.Warn(logCategory, "install of download %d failed: %v", downloadID, err)
+		logger.Warn(logCategory, "install of download %d failed: %v", job.DownloadID, err)
 		rep.fail(err)
 		return err
 	}
 	rep.done(result)
-	logger.Info(logCategory, "installed download %d into %s", downloadID, filepath.Base(result.dir))
+	logger.Info(logCategory, "installed download %d into %s", job.DownloadID, filepath.Base(result.dir))
 	return nil
 }
 
-func (in *FolderInstaller) install(ctx context.Context, downloadID, gameID int64, archivePath string, rep *installReporter) (installResult, error) {
-	if !fileExists(archivePath) {
-		return installResult{}, fmt.Errorf("archive is missing: %s", filepath.Base(archivePath))
+func (in *FolderInstaller) install(ctx context.Context, job InstallJob, rep *installReporter) (installResult, error) {
+	if !fileExists(job.Archive) {
+		return installResult{}, fmt.Errorf("archive is missing: %s", filepath.Base(job.Archive))
 	}
 	if err := os.MkdirAll(in.Root, 0o755); err != nil {
 		return installResult{}, err
 	}
-	staging := filepath.Join(in.Root, fmt.Sprintf(".staging-%d-%d", downloadID, time.Now().UnixNano()))
+	parent, err := resolveFolder(in.Root, job.Subfolder)
+	if err != nil {
+		return installResult{}, err
+	}
+	staging := filepath.Join(in.Root, fmt.Sprintf(".staging-%d-%d", job.DownloadID, time.Now().UnixNano()))
 	defer os.RemoveAll(staging)
 	if err := os.MkdirAll(staging, 0o755); err != nil {
 		return installResult{}, err
 	}
 
-	title := in.titleOf(ctx, gameID)
+	title := in.titleOf(ctx, job.GameID)
 	rep.titled(title)
 	rep.phase("extracting")
-	in.warnIfSevenZipMissing(archivePath)
-	err := Extract(ctx, archivePath, staging, ExtractOptions{
+	in.warnIfSevenZipMissing(job.Archive)
+	err = Extract(ctx, job.Archive, staging, ExtractOptions{
 		OnProgress: rep.progress,
 		OnEngine:   rep.engine,
 	})
@@ -96,14 +100,14 @@ func (in *FolderInstaller) install(ctx context.Context, downloadID, gameID int64
 	if err != nil {
 		return installResult{}, err
 	}
-	target, err := in.targetFolder(gameID, archivePath, title)
+	target, err := in.targetFolder(parent, job.GameID, job.Archive, title)
 	if err != nil {
 		return installResult{}, err
 	}
 	if err := os.Rename(root, target); err != nil {
 		return installResult{}, err
 	}
-	if err := writeManifest(target, downloadID, gameID, archivePath); err != nil {
+	if err := writeManifest(target, job.DownloadID, job.GameID, job.Archive); err != nil {
 		return installResult{}, err
 	}
 	result := installResult{dir: target, size: treeSize(target)}
@@ -142,17 +146,17 @@ func (in *FolderInstaller) titleOf(ctx context.Context, gameID int64) string {
 	return title
 }
 
-// targetFolder picks a free folder in the library for the game. The title names it, or else the archive does.
-func (in *FolderInstaller) targetFolder(gameID int64, archivePath, title string) (string, error) {
+// targetFolder picks a free folder in parent for the game. The title names it, or else the archive does.
+func (in *FolderInstaller) targetFolder(parent string, gameID int64, archivePath, title string) (string, error) {
 	name := strings.TrimSuffix(filepath.Base(archivePath), filepath.Ext(archivePath))
 	if title != "" {
 		name = title
 	}
 	base := folderName(name, gameID)
 	for n := 1; ; n++ {
-		candidate := filepath.Join(in.Root, base)
+		candidate := filepath.Join(parent, base)
 		if n > 1 {
-			candidate = filepath.Join(in.Root, fmt.Sprintf("%s (%d)", base, n))
+			candidate = filepath.Join(parent, fmt.Sprintf("%s (%d)", base, n))
 		}
 		if !fileExists(candidate) {
 			return candidate, nil

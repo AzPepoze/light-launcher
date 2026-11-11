@@ -32,6 +32,7 @@ func (s *services) openDownloads(ctx context.Context, dirs folders, hub *api.Hub
 		Store:     store,
 		Events:    hub,
 		Dir:       dirs.Downloads,
+		GamesDir:  dirs.Games,
 		Installer: s.installer,
 	})
 	if err != nil {
@@ -75,7 +76,7 @@ type archiveSink struct {
 }
 
 func (a archiveSink) Accept(ctx context.Context, gameID int64, path string) error {
-	return a.installer.Install(ctx, 0, gameID, path)
+	return a.installer.Install(ctx, downloads.InstallJob{GameID: gameID, Archive: path})
 }
 
 // updateInstaller downloads a newer version of a game and installs it.

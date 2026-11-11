@@ -17,7 +17,7 @@ func TestInstallCarriesTitleAndClearsRunningInstall(t *testing.T) {
 		Titles: func(context.Context, int64) (string, error) { return "Harbor Tale", nil },
 	}
 
-	if err := in.Install(context.Background(), 1, 1, archive); err != nil {
+	if err := in.Install(context.Background(), InstallJob{DownloadID: 1, GameID: 1, Archive: archive}); err != nil {
 		t.Fatal(err)
 	}
 	installs := events.installs()

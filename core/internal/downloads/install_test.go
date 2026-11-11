@@ -86,7 +86,7 @@ func TestInstallUnpacksAndFindsLauncher(t *testing.T) {
 	events := &eventLog{}
 	in := &FolderInstaller{Root: library, Events: events}
 
-	if err := in.Install(context.Background(), 7, 3, archive); err != nil {
+	if err := in.Install(context.Background(), InstallJob{DownloadID: 7, GameID: 3, Archive: archive}); err != nil {
 		t.Fatal(err)
 	}
 	installs := events.installs()
@@ -118,7 +118,7 @@ func TestInstallPeelsWrapperArchive(t *testing.T) {
 	events := &eventLog{}
 	in := &FolderInstaller{Root: t.TempDir(), Events: events}
 
-	if err := in.Install(context.Background(), 1, 1, archive); err != nil {
+	if err := in.Install(context.Background(), InstallJob{DownloadID: 1, GameID: 1, Archive: archive}); err != nil {
 		t.Fatal(err)
 	}
 	last := events.installs()[len(events.installs())-1]
@@ -138,7 +138,7 @@ func TestInstallNamesFolderFromTitle(t *testing.T) {
 			return "Dungeon: Crawl [v2] (Final).", nil
 		},
 	}
-	if err := in.Install(context.Background(), 2, 9, archive); err != nil {
+	if err := in.Install(context.Background(), InstallJob{DownloadID: 2, GameID: 9, Archive: archive}); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := os.Stat(filepath.Join(library, "Dungeon Crawl")); err != nil {
@@ -153,7 +153,7 @@ func TestInstallFailureCleansUpAndReports(t *testing.T) {
 	events := &eventLog{}
 	in := &FolderInstaller{Root: library, Events: events}
 
-	if err := in.Install(context.Background(), 4, 2, archive); err == nil {
+	if err := in.Install(context.Background(), InstallJob{DownloadID: 4, GameID: 2, Archive: archive}); err == nil {
 		t.Fatal("a broken archive must fail the install")
 	}
 	entries, _ := os.ReadDir(library)
@@ -172,7 +172,7 @@ func TestInstallWarnsWhenSevenZipIsMissing(t *testing.T) {
 	events := &eventLog{}
 	in := &FolderInstaller{Root: t.TempDir(), Events: events}
 
-	if err := in.Install(context.Background(), 5, 5, archive); err == nil {
+	if err := in.Install(context.Background(), InstallJob{DownloadID: 5, GameID: 5, Archive: archive}); err == nil {
 		t.Fatal("a .7z without 7-Zip cannot be installed")
 	}
 	toasts := events.toasts()
