@@ -79,6 +79,7 @@ func (h *Host) supervisorFor(id string) (*Supervisor, error) {
 	cfg.hostVersion = h.hostVersion
 	cfg.env = env
 	cfg.onDisable = func(reason string) { h.disable(id, reason) }
+	cfg.onIdle = func() { h.emitState(id) }
 	sup := newSupervisor(cfg)
 	h.supervisors[id] = sup
 	return sup, nil

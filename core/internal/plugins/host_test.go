@@ -130,6 +130,44 @@ func TestHostInstallRunDisableAndRemove(t *testing.T) {
 	}
 }
 
+func TestHostReportsIdlePluginAndRestartsIt(t *testing.T) {
+	host := newTestHost(t)
+	idle := 20 * time.Millisecond
+	host.tuning.idleTimeout = &idle
+	ctx := context.Background()
+	source := filepath.Join(t.TempDir(), "fixture.llplugin")
+	writeFixturePackage(t, source, "0.1.0")
+	if _, err := host.Install(ctx, InstallRequest{Source: source, AllowUnsigned: true, AcceptedPermissions: testConsent}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := host.CallPlugin(ctx, "fixture", "source.parseRef", nil); err != nil {
+		t.Fatal(err)
+	}
+
+	waitUntil(t, func() bool {
+		info := host.info("fixture")
+		return info.Idle && !info.Running && info.Status == "stopped" && info.LastActiveAt != ""
+	})
+	data, err := json.Marshal(host.List())
+	if err != nil {
+		t.Fatal(err)
+	}
+	var wire []map[string]any
+	if err := json.Unmarshal(data, &wire); err != nil {
+		t.Fatal(err)
+	}
+	if len(wire) != 1 || wire[0]["idle"] != true || wire[0]["lastActiveAt"] == "" {
+		t.Fatalf("idle plugin on the wire = %s", data)
+	}
+	if _, err := host.CallPlugin(ctx, "fixture", "source.parseRef", nil); err != nil {
+		t.Fatalf("call after idle stop: %v", err)
+	}
+	info := host.info("fixture")
+	if info.Idle || !info.Running || info.Status != "running" {
+		t.Fatalf("info after the restart = %+v", info)
+	}
+}
+
 func TestHostAutoDisablesAfterCrashes(t *testing.T) {
 	host := newTestHost(t)
 	ctx := context.Background()

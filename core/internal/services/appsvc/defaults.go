@@ -68,10 +68,11 @@ func defaultExtras() types.ExtrasConfig {
 
 func defaultSettings() *types.AppSettings {
 	return &types.AppSettings{
-		TransparentMode:   true,
-		NativeWayland:     false,
-		ScanFolders:       []string{},
-		ScanFolderConfigs: []types.ScanFolderConfig{},
-		Blacklist:         []string{},
+		TransparentMode:          true,
+		NativeWayland:            false,
+		ScanFolders:              []string{},
+		ScanFolderConfigs:        []types.ScanFolderConfig{},
+		Blacklist:                []string{},
+		PluginIdleTimeoutMinutes: defaultPluginIdleTimeout(),
 	}
 }

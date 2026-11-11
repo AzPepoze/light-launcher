@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"sync"
+	"time"
 
 	"light-launcher/core/internal/api"
 	"light-launcher/core/internal/contract"
@@ -29,6 +30,9 @@ type HostOptions struct {
 	// UpdateChecker defaults to one that asks GitHub Releases. AllowPrereleases includes release candidates.
 	UpdateChecker    UpdateChecker
 	AllowPrereleases bool
+
+	// IdleTimeout stops a plugin that no call touched for this long. Nil uses 5 minutes, zero disables it.
+	IdleTimeout *time.Duration
 }
 
 // Host installs, runs and manages plugins.
@@ -83,6 +87,7 @@ func NewHost(opts HostOptions) (*Host, error) {
 		install:     in,
 		deps:        deps,
 		updates:     newUpdateTracker(checker),
+		tuning:      supervisorConfig{idleTimeout: opts.IdleTimeout},
 		supervisors: map[string]*Supervisor{},
 		logs:        map[string]*lineRing{},
 	}, nil

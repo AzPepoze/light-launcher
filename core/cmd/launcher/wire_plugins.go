@@ -7,6 +7,7 @@ import (
 	"light-launcher/core/internal/contract"
 	"light-launcher/core/internal/logger"
 	"light-launcher/core/internal/plugins"
+	"light-launcher/core/internal/services/appsvc"
 )
 
 // pluginUpdateCheckDelay leaves the first start quiet while the launcher is still opening.
@@ -21,6 +22,7 @@ func newPluginHost(dirs folders, library contract.Library, downloads contract.Do
 		HostVersion: hostVersion(version),
 		Library:     library,
 		Downloads:   downloads,
+		IdleTimeout: appsvc.PluginIdleTimeout(),
 		Folders: map[string]string{
 			"$GAMES":     dirs.Games,
 			"$DOWNLOADS": dirs.Downloads,

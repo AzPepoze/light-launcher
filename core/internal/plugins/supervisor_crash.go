@@ -32,6 +32,8 @@ func (s *Supervisor) onExit(conn *connection) string {
 	defer s.mu.Unlock()
 	if s.conn == conn {
 		s.conn = nil
+		s.jobs = map[string]bool{}
+		s.cfg.env.clearPeer(conn.peer)
 	}
 	if conn.stopping {
 		return ""

@@ -18,6 +18,7 @@ const (
 	initializeTimeout  = 10 * time.Second
 	shutdownTimeout    = 3 * time.Second
 	exitGrace          = 3 * time.Second // the SDK waits up to 2 s for running requests before it answers shutdown
+	defaultIdleTimeout = 5 * time.Minute
 )
 
 // ErrPluginDisabled is returned for calls to a plugin that was turned off, or auto-disabled after crashes.
@@ -31,28 +32,39 @@ type supervisorConfig struct {
 	hostVersion string
 	env         *pluginEnv
 	onDisable   func(reason string)
+	onIdle      func()
 	heartbeat   time.Duration
 	backoff     time.Duration
 	crashWindow time.Duration
 	crashLimit  int
+	idleTimeout *time.Duration // 0 disables and nil takes defaultIdleTimeout
+	now         func() time.Time
+	after       func(time.Duration) <-chan time.Time
 }
 
 // Supervisor starts one plugin on first use, keeps it alive, and stops it on request.
 type Supervisor struct {
-	mu        sync.Mutex
-	cfg       supervisorConfig
-	conn      *connection
-	crashes   []time.Time
-	nextStart time.Time
-	disabled  bool
+	mu         sync.Mutex
+	cfg        supervisorConfig
+	conn       *connection
+	crashes    []time.Time
+	nextStart  time.Time
+	disabled   bool
+	idle       bool
+	lastActive time.Time
+	inFlight   int
+	jobs       map[string]bool
+	activityCh chan struct{}
 }
 
 // connection is one live plugin process and its JSON-RPC peer.
 type connection struct {
-	child    *childProcess
-	peer     *Peer
-	exited   chan struct{} // closed after the exit has been recorded
-	stopping bool          // set by Shutdown, so the exit is not counted as a crash
+	child        *childProcess
+	peer         *Peer
+	exited       chan struct{} // closed after the exit has been recorded
+	stopping     bool          // set by Shutdown or the idle watcher, so the exit is not counted as a crash
+	stopOnce     sync.Once
+	stopComplete chan struct{} // closed after the shutdown RPC and process exit
 }
 
 type initializeParams struct {
@@ -69,7 +81,12 @@ type initializeResult struct {
 }
 
 func newSupervisor(cfg supervisorConfig) *Supervisor {
-	return &Supervisor{cfg: cfg.withDefaults()}
+	sup := &Supervisor{cfg: cfg.withDefaults(), jobs: map[string]bool{}, activityCh: make(chan struct{}, 1)}
+	sup.lastActive = sup.cfg.now()
+	if sup.cfg.env != nil {
+		sup.cfg.env.setActivityHooks(sup.beginActivity, sup.endActivity, sup.activity, sup.progress)
+	}
+	return sup
 }
 
 // Call runs one plugin method. It starts the plugin when needed and applies a default timeout.
@@ -79,6 +96,8 @@ func (s *Supervisor) Call(ctx context.Context, method string, params, out any) e
 		ctx, cancel = context.WithTimeout(ctx, defaultCallTimeout)
 		defer cancel()
 	}
+	s.beginActivity()
+	defer s.endActivity()
 	conn, err := s.connect(ctx)
 	if err != nil {
 		return err
@@ -106,15 +125,42 @@ func (s *Supervisor) Disabled() bool {
 	return s.disabled
 }
 
+// Idle reports whether the plugin was stopped because it was idle.
+func (s *Supervisor) Idle() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.idle
+}
+
+// LastActive returns the time of the last call or notification.
+func (s *Supervisor) LastActive() time.Time {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.lastActive
+}
+
 // connect returns the live connection, starting the plugin when there is none.
 func (s *Supervisor) connect(ctx context.Context) (*connection, error) {
-	s.mu.Lock()
-	current := s.conn
-	s.mu.Unlock()
-	if current != nil && current.alive() {
-		return current, nil
-	}
-	if current != nil {
+	for {
+		s.mu.Lock()
+		current := s.conn
+		stopping := current != nil && current.stopping
+		s.mu.Unlock()
+		if current == nil {
+			break
+		}
+		if stopping {
+			// A stop is in progress. Wait for it, then start a fresh process.
+			select {
+			case <-current.exited:
+				continue
+			case <-ctx.Done():
+				return nil, contextError(ctx.Err())
+			}
+		}
+		if current.alive() {
+			return current, nil
+		}
 		// The exit must be recorded before a new start, so the backoff applies.
 		<-current.exited
 	}
@@ -143,6 +189,8 @@ func (s *Supervisor) startLocked(ctx context.Context) (*connection, string, erro
 		return nil, s.recordCrashLocked(time.Now()), err
 	}
 	s.conn = conn
+	s.idle = false
+	s.lastActive = s.cfg.now()
 	return conn, "", nil
 }
 
@@ -156,7 +204,7 @@ func (s *Supervisor) start(ctx context.Context) (*connection, error) {
 	if err != nil {
 		return nil, fmt.Errorf("start plugin %s: %w", s.cfg.manifest.ID, err)
 	}
-	conn := &connection{child: child, exited: make(chan struct{})}
+	conn := &connection{child: child, exited: make(chan struct{}), stopComplete: make(chan struct{})}
 	conn.peer = NewPeer(child.stdout, child.stdin, s.cfg.env.call, s.cfg.env.notify)
 	s.cfg.env.setPeer(conn.peer)
 	go s.watch(conn)
@@ -166,6 +214,7 @@ func (s *Supervisor) start(ctx context.Context) (*connection, error) {
 	}
 	logger.Info(s.cfg.env.category(), "started version %s", s.cfg.manifest.Version)
 	go s.heartbeat(conn)
+	go s.watchIdle(conn)
 	return conn, nil
 }
 
@@ -201,7 +250,6 @@ func grantedPermissions(p Permissions) Permissions {
 func (s *Supervisor) Shutdown() {
 	s.mu.Lock()
 	conn := s.conn
-	s.conn = nil
 	if conn != nil {
 		conn.stopping = true
 	}
@@ -209,16 +257,25 @@ func (s *Supervisor) Shutdown() {
 	if conn == nil {
 		return
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
-	defer cancel()
-	_ = conn.peer.Call(ctx, "shutdown", nil, nil)
-	_ = conn.child.stdin.Close()
-	select {
-	case <-conn.exited:
-	case <-time.After(exitGrace):
-		conn.child.kill()
-		<-conn.exited
-	}
+	s.stopConn(conn)
+}
+
+// stopConn runs the graceful shutdown once and waits until the process is gone.
+func (s *Supervisor) stopConn(conn *connection) {
+	conn.stopOnce.Do(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+		defer cancel()
+		_ = conn.peer.Call(ctx, "shutdown", nil, nil)
+		_ = conn.child.stdin.Close()
+		select {
+		case <-conn.exited:
+		case <-time.After(exitGrace):
+			conn.child.kill()
+			<-conn.exited
+		}
+		close(conn.stopComplete)
+	})
+	<-conn.stopComplete
 }
 
 func (c *connection) alive() bool {
@@ -228,6 +285,55 @@ func (c *connection) alive() bool {
 	default:
 		return true
 	}
+}
+
+// beginActivity marks the plugin as busy and resets its idle timer.
+func (s *Supervisor) beginActivity() {
+	s.mu.Lock()
+	s.inFlight++
+	s.idle = false
+	s.touchLocked()
+	s.mu.Unlock()
+}
+
+// endActivity releases one busy mark and resets the idle timer again.
+func (s *Supervisor) endActivity() {
+	s.mu.Lock()
+	if s.inFlight > 0 {
+		s.inFlight--
+	}
+	s.touchLocked()
+	s.mu.Unlock()
+}
+
+// activity records a notification or other sign of life without changing the busy count.
+func (s *Supervisor) activity() {
+	s.mu.Lock()
+	s.touchLocked()
+	s.mu.Unlock()
+}
+
+func (s *Supervisor) touchLocked() {
+	s.lastActive = s.cfg.now()
+	select {
+	case s.activityCh <- struct{}{}:
+	default:
+	}
+}
+
+// progress records a progress job. An unfinished job keeps the plugin from sleeping.
+func (s *Supervisor) progress(id string, done, total int64) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.touchLocked()
+	if id == "" {
+		return
+	}
+	if total > 0 && done >= total {
+		delete(s.jobs, id)
+		return
+	}
+	s.jobs[id] = true
 }
 
 func (c supervisorConfig) withDefaults() supervisorConfig {
@@ -245,6 +351,19 @@ func (c supervisorConfig) withDefaults() supervisorConfig {
 	}
 	if c.onDisable == nil {
 		c.onDisable = func(string) {}
+	}
+	if c.onIdle == nil {
+		c.onIdle = func() {}
+	}
+	if c.idleTimeout == nil {
+		timeout := defaultIdleTimeout
+		c.idleTimeout = &timeout
+	}
+	if c.now == nil {
+		c.now = time.Now
+	}
+	if c.after == nil {
+		c.after = time.After
 	}
 	return c
 }

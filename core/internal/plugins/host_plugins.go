@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"slices"
 	"sort"
+	"time"
 
 	"light-launcher/core/internal/contract"
 )
@@ -18,6 +19,8 @@ type PluginInfo struct {
 	Status         string                `json:"status"`
 	Enabled        bool                  `json:"enabled"`
 	Running        bool                  `json:"running"`
+	Idle           bool                  `json:"idle"`
+	LastActiveAt   string                `json:"lastActiveAt,omitempty"`
 	Error          string                `json:"error,omitempty"`
 	DisabledReason string                `json:"disabledReason,omitempty"`
 	Source         string                `json:"source,omitempty"`
@@ -224,7 +227,14 @@ func (h *Host) info(id string) PluginInfo {
 	info.Repository = inst.manifest.Repository
 	info.HasSettings = inst.manifest.Contributes.Settings != nil
 	info.Sources = sourceInfos(id, inst.manifest)
-	info.Running = h.running(id)
+	sup := h.supervisor(id)
+	info.Running = sup != nil && sup.Running()
+	if sup != nil {
+		info.Idle = sup.Idle()
+		if lastActive := sup.LastActive(); !lastActive.IsZero() {
+			info.LastActiveAt = lastActive.UTC().Format(time.RFC3339Nano)
+		}
+	}
 	switch {
 	case !state.Enabled:
 		info.Status = "disabled"
@@ -234,10 +244,16 @@ func (h *Host) info(id string) PluginInfo {
 	return info
 }
 
-func (h *Host) running(id string) bool {
+// supervisor returns the supervisor of a plugin, or nil when it never started or was reset.
+func (h *Host) supervisor(id string) *Supervisor {
 	h.mu.Lock()
-	sup := h.supervisors[id]
-	h.mu.Unlock()
+	defer h.mu.Unlock()
+	return h.supervisors[id]
+}
+
+// running reports whether the plugin process is up.
+func (h *Host) running(id string) bool {
+	sup := h.supervisor(id)
 	return sup != nil && sup.Running()
 }
 

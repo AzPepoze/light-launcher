@@ -4,6 +4,8 @@
 //   - initialize, shutdown, ping: handshake, exit and liveness
 //   - source.parseRef, source.echo: answer with their params
 //   - source.probe {service, args}: asks the host for a service and returns what the host answered
+//   - source.wait {ms}: answers after a delay, to keep a call in flight
+//   - source.progress {id, done, total}: reports a progress job
 //   - source.crash: exits at once, to test restarts
 package main
 
@@ -13,6 +15,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 )
 
 type message struct {
@@ -68,11 +71,37 @@ func handle(msg message) {
 		respond(msg.ID, msg.Params)
 	case "source.probe":
 		respond(msg.ID, probe(msg.Params))
+	case "source.wait":
+		wait(msg.Params)
+		respond(msg.ID, nil)
+	case "source.progress":
+		progress(msg.Params)
+		respond(msg.ID, nil)
 	case "source.crash":
 		os.Exit(3)
 	default:
 		respondError(msg.ID, -32601, "method not found: "+msg.Method)
 	}
+}
+
+// wait sleeps for the number of milliseconds in params.
+func wait(raw json.RawMessage) {
+	var params struct {
+		MS int `json:"ms"`
+	}
+	_ = json.Unmarshal(raw, &params)
+	time.Sleep(time.Duration(params.MS) * time.Millisecond)
+}
+
+// progress reports one progress job update.
+func progress(raw json.RawMessage) {
+	var params struct {
+		ID    string `json:"id"`
+		Done  int64  `json:"done"`
+		Total int64  `json:"total"`
+	}
+	_ = json.Unmarshal(raw, &params)
+	notify("progress", params)
 }
 
 // probe asks the host for a service and returns the host's answer, so the test can check it.

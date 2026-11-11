@@ -37,6 +37,10 @@ type pluginEnv struct {
 	storageMu      sync.Mutex
 	peerMu         sync.Mutex
 	peer           *Peer // the connection of the running plugin, set on each start
+	beginActivity  func()
+	endActivity    func()
+	activity       func()
+	progress       func(id string, done, total int64)
 }
 
 // setPeer records the connection of a newly started plugin.
@@ -44,6 +48,23 @@ func (env *pluginEnv) setPeer(peer *Peer) {
 	env.peerMu.Lock()
 	defer env.peerMu.Unlock()
 	env.peer = peer
+}
+
+// clearPeer forgets a connection that has ended, unless a newer one replaced it.
+func (env *pluginEnv) clearPeer(peer *Peer) {
+	env.peerMu.Lock()
+	defer env.peerMu.Unlock()
+	if env.peer == peer {
+		env.peer = nil
+	}
+}
+
+// setActivityHooks wires the supervisor's idle tracking into this plugin.
+func (env *pluginEnv) setActivityHooks(begin, end, activity func(), progress func(string, int64, int64)) {
+	env.beginActivity = begin
+	env.endActivity = end
+	env.activity = activity
+	env.progress = progress
 }
 
 // notifyPlugin sends a notification to the running plugin. It is dropped when no plugin is connected.
@@ -69,6 +90,10 @@ func (env *pluginEnv) call(ctx context.Context, method string, params json.RawMe
 	if !ok {
 		return nil, &RPCError{Code: CodeMethodNotFound, Message: "unknown host service " + method}
 	}
+	if env.beginActivity != nil {
+		env.beginActivity()
+		defer env.endActivity()
+	}
 	if svc.needs != nil && !svc.needs(env.manifest.Permissions) {
 		return nil, permissionDenied(method, svc.grantName)
 	}
@@ -80,12 +105,20 @@ func (env *pluginEnv) notify(method string, params json.RawMessage) {
 	switch method {
 	case "log":
 		env.handleLog(params)
-	case "notify":
-		env.handleNotify(params)
-	case "progress":
-		env.handleProgress(params)
-	default:
+	case "heartbeat":
 		logger.Debug(env.category(), "ignored notification %s", method)
+	default:
+		if env.activity != nil {
+			env.activity()
+		}
+		switch method {
+		case "notify":
+			env.handleNotify(params)
+		case "progress":
+			env.handleProgress(params)
+		default:
+			logger.Debug(env.category(), "ignored notification %s", method)
+		}
 	}
 }
 
@@ -123,6 +156,9 @@ func (env *pluginEnv) handleProgress(params json.RawMessage) {
 	var progress progressParams
 	if err := json.Unmarshal(params, &progress); err != nil {
 		return
+	}
+	if env.progress != nil {
+		env.progress(progress.ID, progress.Done, progress.Total)
 	}
 	env.emit("plugin-progress", map[string]any{
 		"plugin":  env.id,

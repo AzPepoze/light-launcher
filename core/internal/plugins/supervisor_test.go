@@ -79,6 +79,12 @@ func copyExecutable(t *testing.T, src, dst string) {
 // newFixtureSupervisor starts a supervisor for a copy of the fixture plugin.
 func newFixtureSupervisor(t *testing.T, perms Permissions) (*Supervisor, *pluginEnv, *disableRecorder) {
 	t.Helper()
+	return newFixtureSupervisorWith(t, perms, nil, nil)
+}
+
+// newFixtureSupervisorWith starts a fixture supervisor with an idle timeout and a clock.
+func newFixtureSupervisorWith(t *testing.T, perms Permissions, idle *time.Duration, clock *fakeClock) (*Supervisor, *pluginEnv, *disableRecorder) {
+	t.Helper()
 	dir := t.TempDir()
 	manifest := fixtureManifest(perms)
 	copyExecutable(t, fixtureBinary, filepath.Join(dir, filepath.FromSlash(manifest.Entry[PlatformKey()])))
@@ -91,7 +97,7 @@ func newFixtureSupervisor(t *testing.T, perms Permissions) (*Supervisor, *plugin
 	}
 	env := newPluginEnv(manifest, t.TempDir(), deps, newLineRing(100))
 	recorder := &disableRecorder{}
-	sup := newSupervisor(supervisorConfig{
+	cfg := supervisorConfig{
 		manifest:    manifest,
 		dir:         dir,
 		dataDir:     env.dataDir,
@@ -100,7 +106,13 @@ func newFixtureSupervisor(t *testing.T, perms Permissions) (*Supervisor, *plugin
 		onDisable:   recorder.record,
 		backoff:     10 * time.Millisecond,
 		crashLimit:  3,
-	})
+		idleTimeout: idle,
+	}
+	if clock != nil {
+		cfg.now = clock.Now
+		cfg.after = clock.After
+	}
+	sup := newSupervisor(cfg)
 	t.Cleanup(sup.Shutdown)
 	return sup, env, recorder
 }

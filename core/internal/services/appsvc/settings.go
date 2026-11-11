@@ -1,12 +1,36 @@
 package appsvc
 
 import (
+	"fmt"
 	"os"
 	"sync"
+	"time"
 
+	"light-launcher/core/internal/api"
 	"light-launcher/core/internal/logger"
 	"light-launcher/core/internal/types"
 )
+
+const (
+	defaultPluginIdleMinutes = 5
+	maxPluginIdleMinutes     = 1440
+)
+
+// defaultPluginIdleTimeout is the idle stop time when the settings file has no value.
+func defaultPluginIdleTimeout() *int {
+	minutes := defaultPluginIdleMinutes
+	return &minutes
+}
+
+// PluginIdleTimeout returns the idle stop time from the app settings. Nil means the host default.
+func PluginIdleTimeout() *time.Duration {
+	settings := loadAppSettings()
+	if settings.PluginIdleTimeoutMinutes == nil {
+		return nil
+	}
+	timeout := time.Duration(*settings.PluginIdleTimeoutMinutes) * time.Minute
+	return &timeout
+}
 
 // settingsCache holds the parsed settings.json. It is keyed by path, so a new base directory reloads.
 var settingsCache struct {
@@ -24,9 +48,33 @@ func loadAppSettings() types.AppSettings {
 
 // saveAppSettings writes settings.json and replaces the cached copy.
 func saveAppSettings(settings types.AppSettings) error {
+	if err := validateAppSettings(settings); err != nil {
+		return err
+	}
 	settingsCache.mu.Lock()
 	defer settingsCache.mu.Unlock()
 	return writeSettingsLocked(&settings)
+}
+
+// validateAppSettings checks the settings that the UI can change.
+func validateAppSettings(settings types.AppSettings) error {
+	minutes := settings.PluginIdleTimeoutMinutes
+	if minutes == nil {
+		return nil
+	}
+	if *minutes < 0 {
+		return &api.FieldsError{Fields: []api.FieldError{{
+			Field:   "pluginIdleTimeoutMinutes",
+			Message: "must be at least 0",
+		}}}
+	}
+	if *minutes > maxPluginIdleMinutes {
+		return &api.FieldsError{Fields: []api.FieldError{{
+			Field:   "pluginIdleTimeoutMinutes",
+			Message: fmt.Sprintf("must be at most %d", maxPluginIdleMinutes),
+		}}}
+	}
+	return nil
 }
 
 // updateAppSettings applies a change to a copy of the settings under the lock, then saves it.
@@ -96,6 +144,10 @@ func cloneSettings(settings *types.AppSettings) types.AppSettings {
 	copied.ScanFolders = cloneStrings(settings.ScanFolders)
 	copied.Blacklist = cloneStrings(settings.Blacklist)
 	copied.ScanFolderConfigs = cloneScanFolderConfigs(settings.ScanFolderConfigs)
+	if settings.PluginIdleTimeoutMinutes != nil {
+		minutes := *settings.PluginIdleTimeoutMinutes
+		copied.PluginIdleTimeoutMinutes = &minutes
+	}
 	return copied
 }
 

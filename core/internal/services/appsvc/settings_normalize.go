@@ -24,7 +24,20 @@ func normalizeSettings(settings *types.AppSettings) bool {
 	if backfillExcludeNames(settings) {
 		modified = true
 	}
+	if normalizePluginIdleTimeout(settings) {
+		modified = true
+	}
 	return modified
+}
+
+// normalizePluginIdleTimeout fills a missing idle timeout and replaces values outside the allowed range.
+func normalizePluginIdleTimeout(settings *types.AppSettings) bool {
+	minutes := settings.PluginIdleTimeoutMinutes
+	if minutes == nil || *minutes < 0 || *minutes > maxPluginIdleMinutes {
+		settings.PluginIdleTimeoutMinutes = defaultPluginIdleTimeout()
+		return true
+	}
+	return false
 }
 
 // addLegacyScanFolders turns plain ScanFolders entries into ScanFolderConfigs with default settings.
