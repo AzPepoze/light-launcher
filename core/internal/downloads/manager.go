@@ -17,7 +17,15 @@ const logCategory = "downloads"
 
 // Installer turns a finished archive into an installed game.
 type Installer interface {
-	Install(ctx context.Context, downloadID, gameID int64, archivePath string) error
+	Install(ctx context.Context, job InstallJob) error
+}
+
+// InstallJob is one archive to install.
+type InstallJob struct {
+	DownloadID int64
+	GameID     int64
+	Archive    string
+	Subfolder  string // folder under the games folder; empty means the folder itself
 }
 
 // Options configures NewManager.
@@ -25,6 +33,7 @@ type Options struct {
 	Store     Store
 	Events    api.Events   // optional
 	Dir       string       // folder that finished files are saved to
+	GamesDir  string       // optional; the games folder, needed for requests with Root "games"
 	Installer Installer    // optional; without it, downloads that ask for an install are only saved
 	Client    *http.Client // optional; a default client is used when nil
 	Settings  Settings     // optional; the zero value means DefaultSettings
@@ -35,6 +44,7 @@ type Manager struct {
 	store     Store
 	events    api.Events
 	dir       string
+	gamesDir  string
 	installer Installer
 	client    *http.Client
 	limiter   *RateLimiter
@@ -74,6 +84,7 @@ func NewManager(opts Options) (*Manager, error) {
 		store:     opts.Store,
 		events:    opts.Events,
 		dir:       opts.Dir,
+		gamesDir:  opts.GamesDir,
 		installer: opts.Installer,
 		client:    client,
 		limiter:   &RateLimiter{},
@@ -109,26 +120,35 @@ func (m *Manager) Enqueue(ctx context.Context, req contract.DownloadRequest) (in
 		probe = ProbeResult{URL: req.URL}
 	}
 	headers = stripForeignCredentials(headers, req.URL, probe.URL)
+	if err := checkInstallOptions(req); err != nil {
+		return 0, err
+	}
 
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.closed {
 		return 0, errors.New("downloads are shutting down")
 	}
-	dest, err := m.freeDestLocked(ctx, downloadName(req.Filename, probe))
+	dir, err := m.downloadFolder(req)
+	if err != nil {
+		return 0, err
+	}
+	dest, err := m.freeDestLocked(ctx, dir, downloadName(req.Filename, probe))
 	if err != nil {
 		return 0, err
 	}
 	id, err := m.store.Insert(ctx, Download{
-		GameID:      req.GameID,
-		URL:         probe.URL,
-		Filename:    filepath.Base(dest),
-		Dest:        dest,
-		Size:        probe.Size,
-		Connections: connectionsFor(probe, m.settings.Connections),
-		State:       StateQueued,
-		Headers:     headers,
-		Install:     req.Install,
+		GameID:           req.GameID,
+		URL:              probe.URL,
+		Filename:         filepath.Base(dest),
+		Dest:             dest,
+		Size:             probe.Size,
+		Connections:      connectionsFor(probe, m.settings.Connections),
+		State:            StateQueued,
+		Headers:          headers,
+		Install:          req.Install,
+		InstallSubfolder: req.InstallSubfolder,
+		DeleteArchive:    req.DeleteArchive,
 	})
 	if err != nil {
 		return 0, err

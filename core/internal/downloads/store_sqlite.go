@@ -33,6 +33,12 @@ create table if not exists downloads (
   finished_at text
 )`
 
+// sqliteAddedColumns are columns that older databases lack. They are added when missing.
+var sqliteAddedColumns = []struct{ name, definition string }{
+	{"install_subfolder", "text not null default ''"},
+	{"delete_archive", "integer"},
+}
+
 const sqliteSegmentsTable = `
 create table if not exists segments (
   download_id integer not null references downloads(id) on delete cascade,
@@ -43,7 +49,7 @@ create table if not exists segments (
   primary key (download_id, idx)
 )`
 
-const downloadColumns = `id, game_id, url, filename, dest, size, bytes_done, connections, status, error, etag, headers, install, created_at, started_at, finished_at`
+const downloadColumns = `id, game_id, url, filename, dest, size, bytes_done, connections, status, error, etag, headers, install, created_at, started_at, finished_at, install_subfolder, delete_archive`
 
 // updateDownloadSQL keeps every column whose argument is NULL.
 const updateDownloadSQL = `
@@ -65,7 +71,44 @@ func NewSQLiteStore(ctx context.Context, db *sql.DB) (*SQLiteStore, error) {
 			return nil, fmt.Errorf("create download tables: %w", err)
 		}
 	}
+	if err := addMissingColumns(ctx, db); err != nil {
+		return nil, fmt.Errorf("upgrade download tables: %w", err)
+	}
 	return &SQLiteStore{db: db}, nil
+}
+
+// addMissingColumns adds the sqliteAddedColumns that the downloads table does not have yet.
+func addMissingColumns(ctx context.Context, db *sql.DB) error {
+	existing, err := downloadTableColumns(ctx, db)
+	if err != nil {
+		return err
+	}
+	for _, col := range sqliteAddedColumns {
+		if existing[col.name] {
+			continue
+		}
+		if _, err := db.ExecContext(ctx, fmt.Sprintf("alter table downloads add column %s %s", col.name, col.definition)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func downloadTableColumns(ctx context.Context, db *sql.DB) (map[string]bool, error) {
+	rows, err := db.QueryContext(ctx, `select name from pragma_table_info('downloads')`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	columns := map[string]bool{}
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		columns[name] = true
+	}
+	return columns, rows.Err()
 }
 
 func (s *SQLiteStore) Insert(ctx context.Context, d Download) (int64, error) {
@@ -78,11 +121,12 @@ func (s *SQLiteStore) Insert(ctx context.Context, d Download) (int64, error) {
 		created = time.Now()
 	}
 	res, err := s.db.ExecContext(ctx, `
-insert into downloads (game_id, url, filename, dest, size, bytes_done, connections, status, error, etag, headers, install, created_at, started_at, finished_at)
-values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+insert into downloads (game_id, url, filename, dest, size, bytes_done, connections, status, error, etag, headers, install, created_at, started_at, finished_at, install_subfolder, delete_archive)
+values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
 		d.GameID, d.URL, d.Filename, d.Dest, d.Size, d.BytesDone, d.Connections, string(d.State),
 		nullString(d.Error), nullString(d.ETag), headers, boolInt(d.Install),
 		formatTime(created), optionalTime(d.StartedAt), optionalTime(d.FinishedAt),
+		d.InstallSubfolder, nullBoolInt(d.DeleteArchive),
 	)
 	if err != nil {
 		return 0, fmt.Errorf("insert download: %w", err)
@@ -194,10 +238,12 @@ func scanDownload(row rowScanner) (Download, error) {
 		state, created         string
 		errText, etag, headers sql.NullString
 		started, finished      sql.NullString
+		deleteArchive          sql.NullInt64
 		install                int
 	)
 	err := row.Scan(&d.ID, &d.GameID, &d.URL, &d.Filename, &d.Dest, &d.Size, &d.BytesDone,
-		&d.Connections, &state, &errText, &etag, &headers, &install, &created, &started, &finished)
+		&d.Connections, &state, &errText, &etag, &headers, &install, &created, &started, &finished,
+		&d.InstallSubfolder, &deleteArchive)
 	if err != nil {
 		return Download{}, err
 	}
@@ -205,6 +251,7 @@ func scanDownload(row rowScanner) (Download, error) {
 	d.Error = errText.String
 	d.ETag = etag.String
 	d.Install = install != 0
+	d.DeleteArchive = decodeBoolInt(deleteArchive)
 	if d.CreatedAt, err = parseTime(created); err != nil {
 		return Download{}, err
 	}

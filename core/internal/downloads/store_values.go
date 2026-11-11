@@ -45,6 +45,23 @@ func boolInt(b bool) int {
 	return 0
 }
 
+// nullBoolInt stores an optional flag. Nil means NULL, which keeps the settings' choice.
+func nullBoolInt(b *bool) any {
+	if b == nil {
+		return nil
+	}
+	return boolInt(*b)
+}
+
+// decodeBoolInt reads a flag stored by nullBoolInt.
+func decodeBoolInt(v sql.NullInt64) *bool {
+	if !v.Valid {
+		return nil
+	}
+	b := v.Int64 != 0
+	return &b
+}
+
 func formatTime(t time.Time) string {
 	return t.UTC().Format(time.RFC3339Nano)
 }

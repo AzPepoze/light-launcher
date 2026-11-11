@@ -156,14 +156,23 @@ func (m *Manager) startInstall(d Download) {
 	m.installs.Add(1)
 	go func() {
 		defer m.installs.Done()
-		if err := m.installer.Install(m.ctx, d.ID, d.GameID, d.Dest); err != nil {
+		job := InstallJob{DownloadID: d.ID, GameID: d.GameID, Archive: d.Dest, Subfolder: d.InstallSubfolder}
+		if err := m.installer.Install(m.ctx, job); err != nil {
 			logger.Warn(logCategory, "install of download %d failed: %v", d.ID, err)
 			return
 		}
-		if !m.Settings().KeepArchives {
+		if !m.keepArchive(d) {
 			removeFiles(d.Dest)
 		}
 	}()
+}
+
+// keepArchive reports whether an installed download keeps its archive. The download's own choice wins over the settings.
+func (m *Manager) keepArchive(d Download) bool {
+	if d.DeleteArchive != nil {
+		return !*d.DeleteArchive
+	}
+	return m.Settings().KeepArchives
 }
 
 // removeFiles deletes the finished file and its part file. A missing file is not an error.

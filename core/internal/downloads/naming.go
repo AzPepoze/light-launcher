@@ -9,6 +9,8 @@ import (
 	"path"
 	"path/filepath"
 	"sync"
+
+	"light-launcher/core/internal/contract"
 )
 
 // checkLink accepts only web links. The error never includes the link, since it may carry a token.
@@ -51,8 +53,31 @@ func urlPath(rawURL string) string {
 	return u.Path
 }
 
-// freeDestLocked returns a path in the download folder that no row and no file uses yet.
-func (m *Manager) freeDestLocked(ctx context.Context, name string) (string, error) {
+// downloadFolder returns the absolute folder a request saves into, creating any folders it needs.
+func (m *Manager) downloadFolder(req contract.DownloadRequest) (string, error) {
+	root, err := m.rootFolder(req.Root)
+	if err != nil {
+		return "", err
+	}
+	return resolveFolder(root, req.Subfolder)
+}
+
+// rootFolder maps a root name to its folder. An empty name means the downloads folder.
+func (m *Manager) rootFolder(root string) (string, error) {
+	switch root {
+	case "", contract.RootDownloads:
+		return m.dir, nil
+	case contract.RootGames:
+		if m.gamesDir == "" {
+			return "", badFolder("the games folder is not set")
+		}
+		return m.gamesDir, nil
+	}
+	return "", badFolder(fmt.Sprintf("unknown root %q", root))
+}
+
+// freeDestLocked returns a path in dir that no row and no file uses yet.
+func (m *Manager) freeDestLocked(ctx context.Context, dir, name string) (string, error) {
 	rows, err := m.store.List(ctx)
 	if err != nil {
 		return "", err
@@ -64,9 +89,9 @@ func (m *Manager) freeDestLocked(ctx context.Context, name string) (string, erro
 	ext := filepath.Ext(name)
 	stem := name[:len(name)-len(ext)]
 	for n := 1; ; n++ {
-		candidate := filepath.Join(m.dir, name)
+		candidate := filepath.Join(dir, name)
 		if n > 1 {
-			candidate = filepath.Join(m.dir, fmt.Sprintf("%s (%d)%s", stem, n, ext))
+			candidate = filepath.Join(dir, fmt.Sprintf("%s (%d)%s", stem, n, ext))
 		}
 		if !taken[candidate] && !fileExists(candidate) {
 			return candidate, nil
