@@ -2,7 +2,7 @@
 	import CardRunningIndicator from "./shared/CardRunningIndicator.svelte";
 	import CardSelectionCheckbox from "./shared/CardSelectionCheckbox.svelte";
 	import { getGamePath } from "@lib/gameUtils";
-	import LauncherMenu from "@components/home/shared/LauncherMenu.svelte";
+	import LauncherMenu from "../shared/LauncherMenu.svelte";
 	import { iconFade } from "@lib/iconReveal";
 
 	export let game: any;

@@ -3,13 +3,13 @@
 	import { fade } from "svelte/transition";
 	import { cubicOut } from "svelte/easing";
 	import { navigationCommand } from "@stores/navigationStore";
-	import { HomePageState } from "@components/home/HomePageState.svelte";
+	import { HomePageState } from "./state/HomePageState.svelte";
 
-	import GameGrid from "@components/home/GameGrid.svelte";
-	import AddGameModal from "@components/home/addgame/AddGameModal.svelte";
-	import QuickLaunchHeader from "@components/home/QuickLaunchHeader.svelte";
-	import HowItWorksModal from "@components/home/HowItWorksModal.svelte";
-	import BulkRemoveModal from "@components/home/BulkRemoveModal.svelte";
+	import GameGrid from "./GameGrid.svelte";
+	import AddGameModal from "./addgame/AddGameModal.svelte";
+	import QuickLaunchHeader from "./shared/QuickLaunchHeader.svelte";
+	import HowItWorksModal from "./shared/HowItWorksModal.svelte";
+	import BulkRemoveModal from "./shared/BulkRemoveModal.svelte";
 
 	const state = new HomePageState();
 

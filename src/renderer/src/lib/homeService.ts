@@ -14,6 +14,7 @@ import { notifications } from "@stores/notificationStore";
 import { createLaunchOptions } from "./formService";
 import { createLogger } from "./logger";
 import { launchGame } from "./gameLaunchService";
+import { getGamePath } from "./gameUtils";
 import type { GameInfo, RunningSession } from "@shared";
 
 const log = createLogger("homeService");
@@ -48,7 +49,7 @@ export async function refreshHomeData(): Promise<HomeData> {
 
 /** Quick launch via the shared pipeline with fresh saved config. */
 export async function quickLaunchGame(game: GameInfo, showLogs = false): Promise<void> {
-	const gamePath = game.path || game.config?.LauncherPath || game.config?.GamePath || "";
+	const gamePath = getGamePath(game);
 	let options = game.config;
 	if (gamePath) {
 		try {

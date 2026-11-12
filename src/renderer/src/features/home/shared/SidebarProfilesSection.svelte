@@ -1,7 +1,7 @@
 <script lang="ts">
-	import FolderHeader from "@components/home/shared/FolderHeader.svelte";
-	import GameCardGrid from "@components/home/shared/GameCardGrid.svelte";
-	import EmptySectionPlaceholder from "@components/home/shared/EmptySectionPlaceholder.svelte";
+	import FolderHeader from "./FolderHeader.svelte";
+	import GameCardGrid from "./GameCardGrid.svelte";
+	import EmptySectionPlaceholder from "./EmptySectionPlaceholder.svelte";
 
 	export let filteredGames: any[] = [];
 	export let gameIcons: Record<string, string> = {};

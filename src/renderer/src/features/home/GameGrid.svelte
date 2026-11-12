@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { onDestroy, onMount, tick } from "svelte";
 	import ContextMenu from "@components/shared/ContextMenu.svelte";
-	import SidebarPanel from "@components/home/SidebarPanel.svelte";
-	import FolderGroup from "@components/home/FolderGroup.svelte";
-	import SidebarProfilesSection from "@components/home/SidebarProfilesSection.svelte";
-	import GameCardGrid from "@components/home/shared/GameCardGrid.svelte";
+	import SidebarPanel from "./shared/SidebarPanel.svelte";
+	import FolderGroup from "./shared/FolderGroup.svelte";
+	import SidebarProfilesSection from "./shared/SidebarProfilesSection.svelte";
+	import GameCardGrid from "./shared/GameCardGrid.svelte";
 	import {
 		BlacklistGame,
 		RemoveGame,
@@ -16,7 +16,7 @@
 	} from "@lib/api";
 	import { notifications } from "@stores/notificationStore";
 	import { saveHomeScroll, getHomeScroll } from "@stores/homeScrollStore";
-	import Marquee from "@components/home/shared/Marquee.svelte";
+	import Marquee from "./shared/Marquee.svelte";
 	import { setIconQueuePaused } from "@lib/iconService";
 
 	export let currentView: "grid" | "list-grid" | "sidebar-grid" = "grid";

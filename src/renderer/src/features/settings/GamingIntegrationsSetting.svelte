@@ -1,45 +1,20 @@
 <script lang="ts">
-	import * as service from "@lib/settingsService";
-	import type { AppSettings } from "@shared";
+	import type { SettingsState } from "./settingsState.svelte";
 
-	export let appSettings: AppSettings;
-	export let onRefresh: () => Promise<void> | void = () => {};
+	let { settings } = $props<{ settings: SettingsState }>();
+	const appSettings = $derived(settings.appSettings);
+	const savingDiscordId = $derived(settings.savingDiscordId);
 
-	let savingDiscordId = false;
-
-	async function togglePlaytimeTracking() {
-		appSettings = {
-			...appSettings,
-			TrackPlaytime: appSettings.TrackPlaytime === false
-		};
-		await service.saveAppSettings(
-			appSettings,
-			appSettings.TrackPlaytime === false ? "Playtime tracking disabled" : "Playtime tracking enabled"
-		);
-		await onRefresh();
+	function togglePlaytimeTracking() {
+		return settings.togglePlaytimeTracking();
 	}
 
-	async function toggleDiscordPresence() {
-		appSettings = {
-			...appSettings,
-			DiscordRichPresence: appSettings.DiscordRichPresence === false
-		};
-		await service.saveAppSettings(
-			appSettings,
-			appSettings.DiscordRichPresence === false ? "Discord Rich Presence disabled" : "Discord Rich Presence enabled"
-		);
-		await onRefresh();
+	function toggleDiscordPresence() {
+		return settings.toggleDiscordPresence();
 	}
 
-	async function saveDiscordClientId() {
-		savingDiscordId = true;
-		try {
-			appSettings = { ...appSettings, DiscordClientId: appSettings.DiscordClientId?.trim() || "" };
-			await service.saveAppSettings(appSettings, "Discord Application ID saved");
-			await onRefresh();
-		} finally {
-			savingDiscordId = false;
-		}
+	function saveDiscordClientId() {
+		return settings.saveDiscordClientId();
 	}
 </script>
 
@@ -56,7 +31,7 @@
 		</p>
 		<button
 			class="btn {appSettings.TrackPlaytime !== false ? 'primary' : 'secondary'}"
-			on:click={togglePlaytimeTracking}
+			onclick={togglePlaytimeTracking}
 		>
 			<span class="material-icons mini-icon">{appSettings.TrackPlaytime !== false ? 'history' : 'history_toggle_off'}</span>
 			<span>Playtime Tracking: {appSettings.TrackPlaytime !== false ? 'ON' : 'OFF'}</span>
@@ -72,7 +47,7 @@
 		</p>
 		<button
 			class="btn {appSettings.DiscordRichPresence !== false ? 'primary' : 'secondary'}"
-			on:click={toggleDiscordPresence}
+			onclick={toggleDiscordPresence}
 		>
 			<span class="material-icons mini-icon">hub</span>
 			<span>Discord Presence: {appSettings.DiscordRichPresence !== false ? 'ON' : 'OFF'}</span>
@@ -84,12 +59,13 @@
 				<input
 					class="input"
 					type="text"
-					bind:value={appSettings.DiscordClientId}
+					value={settings.discordClientId}
+					oninput={(event) => settings.setDiscordClientId(event.currentTarget.value)}
 					placeholder="Discord application client ID"
 					autocomplete="off"
 					spellcheck="false"
 				/>
-				<button class="btn secondary" on:click={saveDiscordClientId} disabled={savingDiscordId}>
+				<button class="btn secondary" onclick={saveDiscordClientId} disabled={savingDiscordId}>
 					<span class="material-icons mini-icon">save</span>
 					{savingDiscordId ? 'Saving...' : 'Save'}
 				</button>

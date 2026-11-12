@@ -3,8 +3,8 @@
 	import { fade } from "svelte/transition";
 	import { cubicOut } from "svelte/easing";
 	import { observeOnce } from "@lib/lazyObserver";
-	import GridCard from "@components/home/gamecards/GridCard.svelte";
-	import ListGridCard from "@components/home/gamecards/ListGridCard.svelte";
+	import GridCard from "./GridCard.svelte";
+	import ListGridCard from "./ListGridCard.svelte";
 
 	export let game: any;
 	export let icon: string = "";

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Modal from "../shared/Modal.svelte";
+	import Modal from "@components/shared/Modal.svelte";
 
 	export let show: boolean;
 	export let selectedCount: number;

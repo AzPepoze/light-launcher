@@ -1,4 +1,4 @@
-import { GetExeIcon } from "@lib/api";
+import { GetExeIcon, GetImageBase64 } from "@lib/api";
 import { createLogger } from "./logger";
 
 const log = createLogger("iconService");
@@ -6,6 +6,11 @@ const log = createLogger("iconService");
 export type IconPriority = "high" | "low";
 
 const iconPromises = new Map<string, Promise<string>>();
+
+export interface GameIconResult {
+	icon: string;
+	source: "custom" | "exe" | null;
+}
 
 interface QueueItem {
 	filePath: string;
@@ -73,4 +78,23 @@ export function loadExeIcon(filePath: string, priority: IconPriority = "high"): 
 		iconPromises.set(filePath, promise);
 	}
 	return promise;
+}
+
+/** Loads a custom icon when configured, falling back to the executable icon. */
+export async function loadGameIcon(
+	gamePath: string,
+	customIconPath: string | null = null,
+	priority: IconPriority = "high"
+): Promise<GameIconResult> {
+	if (customIconPath) {
+		try {
+			const customIcon = (await GetImageBase64(customIconPath)) || "";
+			if (customIcon) return { icon: customIcon, source: "custom" };
+		} catch (error) {
+			log.warn("Custom game icon unavailable", error);
+		}
+	}
+
+	const icon = (await loadExeIcon(gamePath, priority)) || "";
+	return { icon, source: icon ? "exe" : null };
 }

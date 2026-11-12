@@ -1,5 +1,5 @@
 <script lang="ts">
-	import GameCard from "@components/home/GameCard.svelte";
+	import GameCard from "../cards/GameCard.svelte";
 	import { getGameId, getGamePath } from "@lib/gameUtils";
 	import type { GameInfo, RunningSession } from "@shared";
 

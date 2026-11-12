@@ -1,5 +1,6 @@
 import * as service from "@lib/homeService";
 import { getGamePath } from "@lib/gameUtils";
+import type { GameInfo } from "@shared";
 
 export class SelectionState {
 	isSelectionMode = $state(false);
@@ -7,9 +8,9 @@ export class SelectionState {
 	lastSelectedPath = $state("");
 	showBulkRemoveModal = $state(false);
 
-	getVisibleGames: () => any[];
+	getVisibleGames: () => GameInfo[];
 
-	constructor(getVisibleGames: () => any[]) {
+	constructor(getVisibleGames: () => GameInfo[]) {
 		this.getVisibleGames = getVisibleGames;
 	}
 
@@ -21,7 +22,7 @@ export class SelectionState {
 		}
 	}
 
-	toggleGameSelection(game: any, shiftKey: boolean = false, ctrlKey: boolean = false) {
+	toggleGameSelection(game: GameInfo, shiftKey: boolean = false, ctrlKey: boolean = false) {
 		const path = getGamePath(game);
 
 		// Ctrl+click only ever adds, so it never flips an existing selection off.
@@ -36,8 +37,8 @@ export class SelectionState {
 
 		if (shiftKey && this.lastSelectedPath) {
 			const visible = this.getVisibleGames();
-			const lastIdx = visible.findIndex((g) => getGamePath(g) === this.lastSelectedPath);
-			const currentIdx = visible.findIndex((g) => getGamePath(g) === path);
+			const lastIdx = visible.findIndex((item) => getGamePath(item) === this.lastSelectedPath);
+			const currentIdx = visible.findIndex((item) => getGamePath(item) === path);
 
 			if (lastIdx !== -1 && currentIdx !== -1) {
 				const start = Math.min(lastIdx, currentIdx);
@@ -45,11 +46,11 @@ export class SelectionState {
 				const shouldSelect = this.selectedPaths.has(this.lastSelectedPath);
 
 				for (let i = start; i <= end; i++) {
-					const p = getGamePath(visible[i]);
+					const selectedPath = getGamePath(visible[i]);
 					if (shouldSelect) {
-						this.selectedPaths.add(p);
+						this.selectedPaths.add(selectedPath);
 					} else {
-						this.selectedPaths.delete(p);
+						this.selectedPaths.delete(selectedPath);
 					}
 				}
 				this.selectedPaths = new Set(this.selectedPaths);
@@ -69,7 +70,7 @@ export class SelectionState {
 
 	applyMarquee(paths: string[], additive: boolean) {
 		const next = additive ? new Set(this.selectedPaths) : new Set<string>();
-		for (const p of paths) next.add(p);
+		for (const path of paths) next.add(path);
 		this.selectedPaths = next;
 		if (paths.length > 0) this.lastSelectedPath = paths[paths.length - 1];
 	}
@@ -78,7 +79,7 @@ export class SelectionState {
 		const visible = this.getVisibleGames();
 		if (visible.length === 0) return;
 		const next = new Set<string>();
-		for (const g of visible) next.add(getGamePath(g));
+		for (const game of visible) next.add(getGamePath(game));
 		this.selectedPaths = next;
 		this.lastSelectedPath = getGamePath(visible[visible.length - 1]);
 	}

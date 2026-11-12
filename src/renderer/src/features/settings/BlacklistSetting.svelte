@@ -1,15 +1,11 @@
 <script lang="ts">
-	import * as service from "@lib/settingsService";
-	import type { AppSettings } from "@shared";
+	import type { SettingsState } from "./settingsState.svelte";
 
-	let { appSettings, onRefresh } = $props<{
-		appSettings: AppSettings;
-		onRefresh: () => Promise<void>;
-	}>();
+	let { settings } = $props<{ settings: SettingsState }>();
+	const appSettings = $derived(settings.appSettings);
 
-	async function handleRestoreGame(path: string) {
-		await service.unblacklistGame(path);
-		await onRefresh();
+	function handleRestoreGame(path: string) {
+		return settings.restoreGame(path);
 	}
 
 	function getBaseName(path: string): string {

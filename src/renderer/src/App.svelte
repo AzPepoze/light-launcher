@@ -16,11 +16,11 @@
 	import { cubicOut } from "svelte/easing";
 	import { fly } from "svelte/transition";
 	import EditLsfg from "./pages/EditLsfg.svelte";
-	import Home from "./pages/Home.svelte";
+	import HomePage from "./features/home/HomePage.svelte";
 	import GameManager from "./pages/GameManager.svelte";
 	import Prefix from "./pages/Prefix.svelte";
 	import Run from "./pages/Run.svelte";
-	import Settings from "./pages/Settings.svelte";
+	import SettingsPage from "./features/settings/SettingsPage.svelte";
 	import Utils from "./pages/Utils.svelte";
 	import Versions from "./pages/Versions.svelte";
 	import LibraryPage from "./features/library/LibraryPage.svelte";
@@ -69,13 +69,13 @@
 	}
 
 	const pageComponents: Record<string, Component> = {
-		home: Home,
+		home: HomePage,
 		manager: GameManager,
 		run: Run,
 		versions: Versions,
 		prefix: Prefix,
 		utils: Utils,
-		settings: Settings,
+		settings: SettingsPage,
 		library: LibraryPage,
 		downloads: DownloadsPage,
 		updates: UpdatesPage,

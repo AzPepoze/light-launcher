@@ -1,6 +1,6 @@
 <script lang="ts">
-	import Dropdown from "../shared/Dropdown.svelte";
-	import SelectionActions from "@components/home/SelectionActions.svelte";
+	import Dropdown from "@components/shared/Dropdown.svelte";
+	import SelectionActions from "./SelectionActions.svelte";
 
 	export let isSelectionMode: boolean;
 	export let selectedCount: number;

@@ -2,7 +2,7 @@
 	import CardRunningIndicator from "./shared/CardRunningIndicator.svelte";
 	import CardSelectionCheckbox from "./shared/CardSelectionCheckbox.svelte";
 	import AnimatedPlayIcon from "./shared/AnimatedPlayIcon.svelte";
-	import LauncherMenu from "@components/home/shared/LauncherMenu.svelte";
+	import LauncherMenu from "../shared/LauncherMenu.svelte";
 	import { getDominantColor } from "@lib/dominantColor";
 	import { iconFade } from "@lib/iconReveal";
 

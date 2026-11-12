@@ -3,14 +3,16 @@ import {
 	SaveAppSettings,
 	RestartApp,
 	PickFileCustom,
+	PickFolder,
 	AddScanFolder,
 	RemoveScanFolder,
-	UnblacklistGame
+	UpdateScanFolderConfig,
+	UnblacklistGame,
+	IsDir,
+	GetAutoScannedGames
 } from "@lib/api";
-import { notifications } from "@stores/notificationStore";
-import { settingsStore } from "@stores/settingsStore";
 import { createLogger } from "./logger";
-import type { AppSettings } from "@shared";
+import type { AppSettings, ScannedFolderGroup } from "@shared";
 
 const log = createLogger("settingsService");
 
@@ -20,144 +22,62 @@ const log = createLogger("settingsService");
  */
 export async function loadAppSettings(): Promise<AppSettings | null> {
 	try {
-		const settings = await GetAppSettings();
-		return settings;
+		return await GetAppSettings();
 	} catch (err) {
 		log.error("Failed to load app settings", err);
 		return null;
 	}
 }
 
-/** Save settings that apply immediately without restarting the app. */
-export async function saveAppSettings(
-	settings: AppSettings,
-	successMessage = "Settings saved"
-): Promise<void> {
-	try {
-		await SaveAppSettings(settings);
-		notifications.add(successMessage, "success");
-	} catch (err) {
-		notifications.add(`Failed to save settings: ${err}`, "error");
-		throw err;
-	}
+export function saveAppSettings(settings: AppSettings): Promise<void> {
+	return SaveAppSettings(settings);
 }
 
-/**
- * Toggles the transparent window mode and restarts the app
- */
-export async function toggleTransparentMode(currentSettings: AppSettings): Promise<void> {
-	try {
-		const newSettings = { ...currentSettings, TransparentMode: !currentSettings.TransparentMode };
-		await SaveAppSettings(newSettings);
-		notifications.add("Restarting app to apply transparency changes...", "info");
-		setTimeout(async () => {
-			await RestartApp();
-		}, 1500);
-	} catch (err) {
-		notifications.add("Failed to save setting", "error");
-		throw err;
-	}
+export function restartApp(): Promise<void> {
+	return RestartApp();
 }
 
-/**
- * Toggles Native Wayland (Ozone platform) mode and restarts the app
- */
-export async function toggleNativeWayland(currentSettings: AppSettings): Promise<void> {
-	try {
-		const newSettings = { ...currentSettings, NativeWayland: !currentSettings.NativeWayland };
-		await SaveAppSettings(newSettings);
-		notifications.add("Restarting app to apply display platform changes...", "info");
-		setTimeout(async () => {
-			await RestartApp();
-		}, 1500);
-	} catch (err) {
-		notifications.add("Failed to save setting", "error");
-		throw err;
-	}
-}
-
-/**
- * Opens a file picker for background images
- */
-export async function browseBackgroundImage(): Promise<string | null> {
-	try {
-		const path = await PickFileCustom("Select Background Image", [
-			{
-				displayName: "Images",
-				pattern: "*.png;*.jpg;*.jpeg;*.svg;*.webp"
-			}
-		]);
-		if (path) {
-			settingsStore.update((s) => ({
-				...s,
-				backgroundImagePath: path
-			}));
-			notifications.add("Background image updated", "success");
-			return path;
+/** Opens the background image picker. Null means the user cancelled. */
+export async function pickBackgroundImage(): Promise<string | null> {
+	const path = await PickFileCustom("Select Background Image", [
+		{
+			displayName: "Images",
+			pattern: "*.png;*.jpg;*.jpeg;*.svg;*.webp"
 		}
-	} catch (err) {
-		notifications.add("Failed to pick image", "error");
-	}
-	return null;
+	]);
+	return path || null;
 }
 
-/**
- * Clears the custom background image
- */
-export function clearBackgroundImage(): void {
-	settingsStore.update((s) => ({
-		...s,
-		backgroundImagePath: ""
-	}));
-	notifications.add("Background image cleared", "info");
+/** Opens the folder picker for the Wine prefix location. Null means the user cancelled. */
+export async function pickPrefixDirectory(): Promise<string | null> {
+	const path = await PickFolder();
+	return path || null;
 }
 
-/**
- * Toggles the theme between light and dark
- */
-export function toggleTheme(): void {
-	settingsStore.update((s) => ({
-		...s,
-		theme: s.theme === "light" ? "dark" : "light"
-	}));
+export function loadScannedFolders(force: boolean): Promise<ScannedFolderGroup[]> {
+	return GetAutoScannedGames(force);
 }
 
-/**
- * Updates the window transparency level
- */
-export function updateTransparency(value: number): void {
-	settingsStore.update((s) => ({
-		...s,
-		transparency: value
-	}));
+export function isDirectory(path: string): Promise<boolean> {
+	return IsDir(path);
 }
 
-export async function addScanFolder(folderPath: string): Promise<void> {
-	try {
-		await AddScanFolder(folderPath);
-		notifications.add("Monitored folder added", "success");
-	} catch (err) {
-		notifications.add(`Failed to add folder: ${err}`, "error");
-		throw err;
-	}
+export function addScanFolder(folderPath: string): Promise<void> {
+	return AddScanFolder(folderPath);
 }
 
-export async function removeScanFolder(folderPath: string): Promise<void> {
-	try {
-		await RemoveScanFolder(folderPath);
-		notifications.add("Monitored folder removed", "info");
-	} catch (err) {
-		notifications.add(`Failed to remove folder: ${err}`, "error");
-		throw err;
-	}
+export function removeScanFolder(folderPath: string): Promise<void> {
+	return RemoveScanFolder(folderPath);
 }
 
-export async function unblacklistGame(path: string): Promise<void> {
-	try {
-		await UnblacklistGame(path);
-		notifications.add("Game restored to library", "success");
-	} catch (err) {
-		notifications.add(`Failed to restore game: ${err}`, "error");
-		throw err;
-	}
+export function updateScanFolderConfig(
+	folderPath: string,
+	depth: number,
+	excludeNames: string[]
+): Promise<void> {
+	return UpdateScanFolderConfig(folderPath, depth, excludeNames);
+}
+
+export function unblacklistGame(path: string): Promise<void> {
+	return UnblacklistGame(path);
 }

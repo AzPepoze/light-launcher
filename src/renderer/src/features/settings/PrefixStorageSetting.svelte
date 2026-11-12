@@ -1,42 +1,15 @@
 <script lang="ts">
-	import { PickFolder, SaveAppSettings } from "@lib/api";
-	import { notifications } from "@stores/notificationStore";
-	import type { AppSettings } from "@shared";
+	import type { SettingsState } from "./settingsState.svelte";
 
-	let { appSettings, onRefresh } = $props<{
-		appSettings: AppSettings;
-		onRefresh: () => Promise<void>;
-	}>();
+	let { settings } = $props<{ settings: SettingsState }>();
+	const appSettings = $derived(settings.appSettings);
 
-	async function handleBrowsePrefixDir() {
-		try {
-			const folder = await PickFolder();
-			if (folder) {
-				const updated: AppSettings = {
-					...appSettings,
-					CustomPrefixDir: folder
-				};
-				await SaveAppSettings(updated);
-				await onRefresh();
-				notifications.add("Updated Wine prefix storage directory", "success");
-			}
-		} catch (error) {
-			notifications.add(`Failed to select prefix directory: ${error}`, "error");
-		}
+	function handleBrowsePrefixDir() {
+		return settings.browsePrefixDirectory();
 	}
 
-	async function handleResetDefault() {
-		try {
-			const updated: AppSettings = {
-				...appSettings,
-				CustomPrefixDir: ""
-			};
-			await SaveAppSettings(updated);
-			await onRefresh();
-			notifications.add("Reset Wine prefix storage to default (~/.config/light-launcher/prefixes)", "success");
-		} catch (error) {
-			notifications.add(`Failed to reset prefix directory: ${error}`, "error");
-		}
+	function handleResetDefault() {
+		return settings.resetPrefixDirectory();
 	}
 </script>
 

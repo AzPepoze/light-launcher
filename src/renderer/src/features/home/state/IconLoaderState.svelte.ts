@@ -1,6 +1,7 @@
-import { GetImageBase64 } from "@lib/api";
-import { loadExeIcon, type IconPriority } from "@lib/iconService";
+import { loadGameIcon, type IconPriority } from "@lib/iconService";
 import { createLogger } from "@lib/logger";
+import { getGamePath } from "@lib/gameUtils";
+import type { GameInfo } from "@shared";
 
 const log = createLogger("IconLoader");
 
@@ -21,26 +22,14 @@ export class IconLoaderState {
 
 		this.loadingIcons.add(gamePath);
 		try {
-			let icon = "";
-			let resolvedSource: string | null = null;
+			const { icon, source } = await loadGameIcon(gamePath, customIconPath, priority);
 
-			if (customIconPath) {
-				try {
-					icon = (await GetImageBase64(customIconPath)) || "";
-					if (icon) resolvedSource = requestedSource;
-				} catch {
-					// Custom file missing; fall through to the exe icon.
-				}
-			}
-
-			if (!icon) {
-				icon = (await loadExeIcon(gamePath, priority)) || "";
-				if (icon) resolvedSource = `exe:${gamePath}`;
-			}
-
-			if (icon && resolvedSource) {
+			if (icon && source) {
 				this.gameIcons[gamePath] = icon;
-				this.iconSources.set(gamePath, resolvedSource);
+				this.iconSources.set(
+					gamePath,
+					source === "custom" ? `custom:${customIconPath ?? ""}` : `exe:${gamePath}`
+				);
 			} else if (customIconPath && this.iconSources.get(gamePath) === requestedSource) {
 				this.iconSources.delete(gamePath);
 			}
@@ -52,13 +41,12 @@ export class IconLoaderState {
 	}
 
 	/** Pre-extracts icons for the given games; the queue pauses during user scroll. */
-	warm(
-		games: Array<{ path?: string; config?: { LauncherPath?: string; CustomIconPath?: string } }>
-	) {
+	warm(games: GameInfo[]) {
 		for (const game of games) {
-			const gamePath = game?.path || game?.config?.LauncherPath;
-			if (gamePath)
-				void this.enqueueIconLoad(gamePath, game?.config?.CustomIconPath ?? null, "low");
+			const gamePath = getGamePath(game);
+			if (gamePath) {
+				void this.enqueueIconLoad(gamePath, game.config?.CustomIconPath ?? null, "low");
+			}
 		}
 	}
 }

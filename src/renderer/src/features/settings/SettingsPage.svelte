@@ -1,100 +1,34 @@
 <script lang="ts">
 	import PageHeader from "@components/shared/PageHeader.svelte";
-	import { settingsStore } from "@stores/settingsStore";
-	import { isLinux, platform } from "@stores/platformStore";
 	import { pendingSettingsSection } from "@stores/navigationStore";
-	import { sectionScroll } from "@lib/features/settingsSection";
-	import * as service from "@lib/settingsService";
+	import { platform } from "@stores/platformStore";
 	import { onMount } from "svelte";
-	import ScanFoldersSetting from "@components/settings/ScanFoldersSetting.svelte";
-	import BlacklistSetting from "@components/settings/BlacklistSetting.svelte";
-	import PrefixStorageSetting from "@components/settings/PrefixStorageSetting.svelte";
-	import GamingIntegrationsSetting from "@components/settings/GamingIntegrationsSetting.svelte";
+	import { get } from "svelte/store";
+	import type { PlatformInfo } from "@shared";
+	import BlacklistSetting from "./BlacklistSetting.svelte";
+	import GamingIntegrationsSetting from "./GamingIntegrationsSetting.svelte";
+	import PrefixStorageSetting from "./PrefixStorageSetting.svelte";
+	import ScanFoldersSetting from "./ScanFoldersSetting.svelte";
+	import { SettingsState } from "./settingsState.svelte";
 
-	let currentSettings = {
-		theme: "light",
-		transparency: 1.0,
-		backgroundImagePath: "",
-	};
-
-	let appSettings = {
-		TransparentMode: true,
-		NativeWayland: false,
-		ScanFolders: [] as string[],
-		ScanFolderConfigs: [] as any[],
-		Blacklist: [] as string[],
-		CustomPrefixDir: "",
-		TrackPlaytime: true,
-		DiscordRichPresence: true,
-		DiscordClientId: "",
-	};
-
-	async function refreshAppSettings() {
-		const settings = await service.loadAppSettings();
-		if (settings) {
-			appSettings = {
-				...appSettings,
-				...settings,
-				TrackPlaytime: settings.TrackPlaytime ?? true,
-				DiscordRichPresence: settings.DiscordRichPresence ?? true,
-				DiscordClientId: settings.DiscordClientId ?? "",
-			};
-		}
-	}
-
-	onMount(async () => {
-		await refreshAppSettings();
-	});
+	const settings = new SettingsState();
+	let platformInfo = $state<PlatformInfo>(get(platform));
 
 	onMount(() => {
-		const unsubscribe = settingsStore.subscribe((val) => {
-			currentSettings = val;
-		});
-		return unsubscribe;
+		void settings.start();
+		return settings.subscribeUserSettings();
 	});
 
-	// Subscribing after mount means the section exists when the first request is handled. This page uses the
-	// older component syntax, so it must not use $effect: one rune would switch the whole page to runes mode.
-	onMount(() => pendingSettingsSection.subscribe(scrollToPendingSection));
+	onMount(() => platform.subscribe((value) => (platformInfo = value)));
 
-	function scrollToPendingSection(section: string | null) {
-		const scroll = sectionScroll(section, prefersReducedMotion());
-		if (!scroll) return;
-		document.getElementById(scroll.id)?.scrollIntoView({ behavior: scroll.behavior, block: "start" });
-		pendingSettingsSection.set(null);
-	}
-
-	function prefersReducedMotion(): boolean {
-		return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-	}
-
-	function handleThemeToggle() {
-		service.toggleTheme();
-	}
-
-	function handleTransparencyChange(e: Event) {
-		const val = parseFloat((e.target as HTMLInputElement).value);
-		service.updateTransparency(val);
-	}
-
-	async function handleBrowseBackground() {
-		await service.browseBackgroundImage();
-	}
-
-	function handleClearBackground() {
-		service.clearBackgroundImage();
-	}
-
-	async function toggleTransparentMode() {
-		await service.toggleTransparentMode(appSettings);
-	}
-
-	async function toggleNativeWayland() {
-		await service.toggleNativeWayland(appSettings);
-	}
+	onMount(() =>
+		pendingSettingsSection.subscribe((section) => {
+			if (settings.scrollToSection(section)) pendingSettingsSection.set(null);
+		})
+	);
 </script>
 
-<div class="settings-container">
+<div class="settings-container" aria-busy={settings.loading}>
 	<PageHeader title="Appearance & Settings" icon="settings" />
 
 	<div class="zones-stack">
@@ -108,10 +42,10 @@
 			<div class="settings-section">
 				<h3>Theme Mode</h3>
 				<p class="desc">Switch between dark and light themes.</p>
-				<button class="btn" on:click={handleThemeToggle}>
+				<button class="btn" onclick={() => settings.toggleTheme()}>
 					<span class="material-icons mini-icon">contrast</span>
 					<span
-						>Switch to {currentSettings.theme === "light"
+						>Switch to {settings.userSettings.theme === "light"
 							? "Dark"
 							: "Light"} Mode</span
 					>
@@ -131,18 +65,27 @@
 						min="0.1"
 						max="1.0"
 						step="0.05"
-						value={currentSettings.transparency}
-						on:input={handleTransparencyChange}
+						value={settings.userSettings.transparency}
+						oninput={(event) => settings.setTransparency(parseFloat(event.currentTarget.value))}
 						class="transparency-slider"
 					/>
 					<span class="pct-display"
-						>{Math.round(currentSettings.transparency * 100)}%</span
+						>{Math.round(settings.userSettings.transparency * 100)}%</span
 					>
 				</div>
 				<div style="margin-top: 16px;">
-					<button class="btn {appSettings.TransparentMode ? 'primary' : 'secondary'}" on:click={toggleTransparentMode}>
-						<span class="material-icons mini-icon">{appSettings.TransparentMode ? 'visibility' : 'visibility_off'}</span>
-						<span>{appSettings.TransparentMode ? 'Transparent Background: ON' : 'Transparent Background: OFF'} (Restarts App)</span>
+					<button
+						class="btn {settings.appSettings.TransparentMode ? 'primary' : 'secondary'}"
+						onclick={() => settings.toggleTransparentMode()}
+					>
+						<span class="material-icons mini-icon"
+							>{settings.appSettings.TransparentMode ? 'visibility' : 'visibility_off'}</span
+						>
+						<span
+							>{settings.appSettings.TransparentMode
+								? 'Transparent Background: ON'
+								: 'Transparent Background: OFF'} (Restarts App)</span
+						>
 					</button>
 				</div>
 			</div>
@@ -160,24 +103,24 @@
 					Set a custom image background for the launcher that bleeds through the translucent glass surfaces.
 				</p>
 
-				{#if currentSettings.backgroundImagePath}
+				{#if settings.userSettings.backgroundImagePath}
 					<div class="bg-path-display">
 						<span class="material-icons mini-icon">wallpaper</span>
 						<span
 							class="path-text"
-							title={currentSettings.backgroundImagePath}
-							>{currentSettings.backgroundImagePath}</span
+							title={settings.userSettings.backgroundImagePath}
+							>{settings.userSettings.backgroundImagePath}</span
 						>
 					</div>
 				{/if}
 
 				<div class="actions-row">
-					<button class="btn primary" on:click={handleBrowseBackground}>
+					<button class="btn primary" onclick={() => settings.browseBackgroundImage()}>
 						<span class="material-icons mini-icon">folder</span>
 						Browse Image
 					</button>
-					{#if currentSettings.backgroundImagePath}
-						<button class="btn danger" on:click={handleClearBackground}>
+					{#if settings.userSettings.backgroundImagePath}
+						<button class="btn danger" onclick={() => settings.clearBackgroundImage()}>
 							<span class="material-icons mini-icon">delete</span>
 							Clear Image
 						</button>
@@ -187,7 +130,7 @@
 		</div>
 
 		<!-- Zone 3: Display & Window Platform (Ozone, Linux only) -->
-		{#if $isLinux}
+		{#if platformInfo.os === "linux"}
 			<div class="zone-card">
 				<div class="zone-header">
 					<span class="material-icons">desktop_windows</span>
@@ -200,27 +143,36 @@
 						Configure whether LightLauncher runs natively on Wayland or via X11/Xwayland.
 					</p>
 					<div>
-						<button class="btn {appSettings.NativeWayland ? 'primary' : 'secondary'}" on:click={toggleNativeWayland}>
-							<span class="material-icons mini-icon">{appSettings.NativeWayland ? 'layers' : 'view_in_ar'}</span>
-							<span>{appSettings.NativeWayland ? 'Platform: Native Wayland' : 'Platform: X11 / Xwayland'} (Restarts App)</span>
+						<button
+							class="btn {settings.appSettings.NativeWayland ? 'primary' : 'secondary'}"
+							onclick={() => settings.toggleNativeWayland()}
+						>
+							<span class="material-icons mini-icon"
+								>{settings.appSettings.NativeWayland ? 'layers' : 'view_in_ar'}</span
+							>
+							<span
+								>{settings.appSettings.NativeWayland
+									? 'Platform: Native Wayland'
+									: 'Platform: X11 / Xwayland'} (Restarts App)</span
+							>
 						</button>
 					</div>
 				</div>
 			</div>
 		{/if}
 
-		<GamingIntegrationsSetting {appSettings} onRefresh={refreshAppSettings} />
+		<GamingIntegrationsSetting {settings} />
 
 		<!-- Wine Prefix Storage Location (Linux only) -->
-		{#if $platform.features.prefix}
-			<PrefixStorageSetting {appSettings} onRefresh={refreshAppSettings} />
+		{#if platformInfo.features.prefix}
+			<PrefixStorageSetting {settings} />
 		{/if}
 
 		<!-- Automatic Scan Folders -->
-		<ScanFoldersSetting {appSettings} onRefresh={refreshAppSettings} />
+		<ScanFoldersSetting {settings} />
 
 		<!-- Hidden / Blacklisted Games -->
-		<BlacklistSetting {appSettings} onRefresh={refreshAppSettings} />
+		<BlacklistSetting {settings} />
 	</div>
 </div>
 
