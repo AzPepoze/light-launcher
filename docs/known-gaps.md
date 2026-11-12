@@ -45,7 +45,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | Updating a dropped-in plugin without a `repository` field (drop the new version again). A dropped-in plugin that names a repository does update from GitHub. |
 | [x] | Settings form built from each plugin's `settings.schema.json`. |
 | [x] | Nested objects in a settings schema are not drawn (only top-level fields). |
-| [ ] | SDK docs for the `settings.changed` notification and the `x-ll-*` schema extensions. |
+| [x] | SDK docs for the `settings.changed` notification and the `x-ll-*` schema extensions. |
 | [ ] | Check the settings form by eye in the real window (only typecheck, tests and build so far). |
 | [x] | Host options for a download folder, a subfolder per game, install after download and delete archive, including the optional `source.prepareDownload` result hints. |
 | [ ] | The game file download button is wired to `source.prepareDownload` but only tested with fakes and the fixture plugin. Click it in the real window with a plugin that opens the browser step. |
@@ -56,7 +56,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [x] | A running plugin gets a `settings.changed` notice when settings are saved (no restart; plugins must read settings per call). |
 | [x] | Embedded browser assist on Linux (GTK): ready, download (filename, size, Cookie, Referer, User-Agent), closed and persistent profile cookies verified against a local test page in a real window. |
 | [ ] | Check the GTK shell's external-link opening and transparent window by eye. The link rules and flags are unit-tested only. |
-| [ ] | No plugin calls the host `browser.assist` service yet (F95 still uses its own Chrome code), so a real plugin download through the embedded window is untested. |
+| [ ] | F95 now uses the host `browser.assist` service. A real F95 download through the embedded window is untested. |
 | [ ] | Embedded browser assist on Windows (WebView2) is untested on Windows. |
 | [x] | If the request that started a browser step ends first, the host cancels `browser.assist` and closes the window. |
 | [ ] | Plugin secrets saved before the cleanup change are not removed when the plugin is removed. |
@@ -70,11 +70,11 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 
 | Status | Item |
 |---|---|
-| [ ] | The file-host resolvers (Pixeldrain, Mega, MediaFire and others) are not called by `prepareDownload`, so only direct links work. Decide whether to connect them. |
+| [ ] | MEGA downloads need the AES file key, but `source.prepareDownload` has no field for it, so MEGA links fail with a clear error. Needs an SDK change. |
 | [ ] | Ask F95 Zone staff for written permission. Until then the README says it is not approved. |
 | [x] | Contact line in the README (an issue on the now public repo). |
 | [ ] | Cannot set: patch-over-full, skip extras, include pre-releases (the parser does not keep that information). |
-| [ ] | Delete the F95 plugin's own CDP code once the host browser assist service is used. |
+| [x] | Delete the F95 plugin's own CDP code once the host browser assist service is used. |
 
 ## itch.io plugin
 
@@ -82,7 +82,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 |---|---|
 | [ ] | Favourites-only import and bundle-or-key filter (the itch API does not expose them). |
 | [ ] | Upload type preference (only `default` is documented). |
-| [ ] | Decide a polite default request delay (it is 0 today). |
+| [x] | Default request delay is 1000 ms (it was 0). |
 
 ## Library and UI
 
@@ -108,12 +108,12 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | Helper programs are found by name only. A helper with another name still shows as a launcher. |
 | [ ] | A forced scan of 2,000 executables takes about 80 ms. Most of it is reading the config files, not grouping. |
 | [ ] | No manual setting for how deep the game folders are. The automatic rule can misjudge a game folder that has three or more sub-apps and no exe of its own. |
-| [ ] | The Library UI still reads sources, tags and stats from `LibraryList`; it must switch to `LibraryOverview` and paged `LibraryList`. |
+| [x] | The Library UI reads sources, tags and stats from `LibraryOverview` and pages `LibraryList`. |
 | [ ] | `LibrarySyncSource` rejects sources that only have the sync capability (no `listGames`). |
 | [x] | The Library sidebar for plugin sources: the overview carries each source's `sidebar`, and the page browses it through `LibraryBrowse` and `LibraryFilters`. Fixed groups, dynamic choices and a sort with direction are drawn. |
 | [ ] | Check the plugin Library sidebar by eye in the real window with the fixture plugin (only typecheck, tests and build so far). |
-| [ ] | The plugin SDK schema and docs do not describe `sidebar`, the `browse:filters` capability, `source.browse` or `source.listFilters` yet. |
-| [ ] | No real plugin (F95, itch) implements `source.browse` or `source.listFilters` yet. Only the fixture plugin does. |
+| [x] | The plugin SDK docs describe `sidebar`, the `browse:filters` capability, `source.browse` and `source.listFilters`. |
+| [ ] | The itch plugin does not implement `source.browse` or `source.listFilters` yet. F95 does. |
 
 ## Migration
 
@@ -129,8 +129,8 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | Status | Item |
 |---|---|
 | [x] | Duplicate config and activity code in `appsvc` and `runtimesvc`. |
-| [ ] | `llp validate` does not check that the settings file exists (pack fails instead). |
-| [ ] | The `parseRef` parameter check differs between itch (no validation) and f95 (strict). |
+| [x] | `llp validate` checks that the settings file exists. |
+| [x] | The itch `parseRef` is as strict as the F95 parser. |
 | [x] | Update flow downloads a package twice (once to preview, once to install). |
 | [x] | Failed plugin installs leave their upload folder until the next start. |
 
