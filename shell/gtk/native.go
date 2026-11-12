@@ -3,7 +3,8 @@
 package main
 
 /*
-#cgo pkg-config: gtk4 webkitgtk-6.0
+#cgo pkg-config: gtk4 webkitgtk-6.0 x11
+#cgo CFLAGS: -Wno-deprecated-declarations
 #include <stdlib.h>
 #include "shell.h"
 */
@@ -26,6 +27,7 @@ type gtkConfig struct {
 	assist       bool
 	devtools     bool
 	disableGPU   bool
+	geometry     windowGeometry
 }
 
 // runGTK opens the window on the main thread and blocks until it closes.
@@ -55,11 +57,37 @@ func runGTK(session *shellSession, config gtkConfig) (int, error) {
 		boolInt(config.assist),
 		boolInt(config.devtools),
 		boolInt(config.disableGPU),
+		C.LlGeometry{
+			x:          C.int(config.geometry.X),
+			y:          C.int(config.geometry.Y),
+			width:      C.int(config.geometry.Width),
+			height:     C.int(config.geometry.Height),
+			positioned: boolInt(config.geometry.Positioned),
+		},
 	))
 	if code != 0 {
 		return code, fmt.Errorf("GTK window failed to start (code %d)", code)
 	}
 	return 0, nil
+}
+
+// screenAreas returns every monitor in logical pixels.
+func screenAreas() []screenArea {
+	count := int(C.ll_shell_screen_count())
+	screens := make([]screenArea, 0, count)
+	for index := 0; index < count; index++ {
+		var x, y, width, height C.int
+		if C.ll_shell_screen_area(C.int(index), &x, &y, &width, &height) == 0 {
+			continue
+		}
+		screens = append(screens, screenArea{
+			X:      int(x),
+			Y:      int(y),
+			Width:  int(width),
+			Height: int(height),
+		})
+	}
+	return screens
 }
 
 func openPicker(id int, folder bool) {

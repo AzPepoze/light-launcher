@@ -15,6 +15,8 @@ type shellSession struct {
 	assist         bool
 	launcherOrigin string
 	events         *assist.Writer
+	geometry       windowGeometry
+	geometrySet    bool
 	finished       bool
 	code           int
 }
@@ -68,6 +70,21 @@ func (s *shellSession) onClosed() {
 		}
 	}
 	quitShell()
+}
+
+func (s *shellSession) onGeometry(x, y, width, height int, positioned bool) {
+	if s.assist || width <= 0 || height <= 0 {
+		return
+	}
+	s.geometry = windowGeometry{
+		Version:    geometryVersion,
+		X:          x,
+		Y:          y,
+		Width:      width,
+		Height:     height,
+		Positioned: positioned,
+	}
+	s.geometrySet = true
 }
 
 func (s *shellSession) onBridgeMessage(body, pageURI string) {

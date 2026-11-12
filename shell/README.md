@@ -105,7 +105,7 @@ The dialogs are native GTK4 file dialogs.
 | Title | LightLauncher | LightLauncher. Assist mode uses `--title`. |
 | Minimum size | 800 x 600 | 800 x 600. Assist mode has none. |
 | Default size | 1100 x 720 | 1100 x 720. Assist mode is 1000 x 720. |
-| Remembers position and size | No. | No. |
+| Remembers position and size | Yes. Size always; position on X11. | No. |
 | Links to other sites | Open in the default browser. | Open in the default browser. Assist mode keeps them in the window. |
 | Wayland or X11 | GTK picks it automatically. | Not applicable. |
 
@@ -115,7 +115,7 @@ The dialogs are native GTK4 file dialogs.
 | :--- | :--- |
 | GTK bridge | Pages talk to the shell through `window.webkit.messageHandlers.llshell`. Only the launcher's own address can use it. |
 | GTK page origin | The launcher origin is the scheme and host of the address you pass in. Other origins get no answers. |
-| GTK geometry | The window opens at the default size each time. Position and size are not saved. |
+| GTK geometry | The window size and, on X11, its position are saved to `<config folder>/window-geometry.json` and restored on start. A saved position that is no longer on a monitor falls back to the default size and position. Wayland does not let the shell place the window, so only the size is restored there. |
 | WebView2 bridge | Only the launcher's own address can use it. Other origins get no answers. |
 | WebView2 | Not run on a real Windows machine yet. See the build page. |
 | WebView2 assist output | Cross-compiled and unit-tested only. Not run on real Windows or Wine yet. |

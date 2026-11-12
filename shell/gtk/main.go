@@ -39,6 +39,11 @@ func main() {
 func runNormal(opts options) int {
 	session := newNormalSession(opts)
 	log.Info("window", "opened %s", session.launcherOrigin)
+	path := geometryPath()
+	geometry := defaultGeometry()
+	if saved, ok := loadGeometry(path); ok {
+		geometry = usableGeometry(saved, screenAreas())
+	}
 	config := gtkConfig{
 		url:          opts.url.String(),
 		title:        windowTitle,
@@ -46,10 +51,16 @@ func runNormal(opts options) int {
 		transparent:  opts.transparent,
 		devtools:     developerTools(),
 		disableGPU:   gpuDisabled(),
+		geometry:     geometry,
 	}
 	if _, err := runGTK(session, config); err != nil {
 		log.Error("window", "%v", err)
 		return exitFailure
+	}
+	if session.geometrySet {
+		if err := saveGeometry(path, session.geometry); err != nil {
+			log.Warn("window", "cannot save the window geometry: %v", err)
+		}
 	}
 	return exitOK
 }

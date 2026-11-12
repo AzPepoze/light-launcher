@@ -58,7 +58,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | Check the GTK shell's external-link opening and transparent window by eye. The link rules and flags are unit-tested only. |
 | [ ] | No plugin calls the host `browser.assist` service yet (F95 still uses its own Chrome code), so a real plugin download through the embedded window is untested. |
 | [ ] | Embedded browser assist on Windows (WebView2) is untested on Windows. |
-| [ ] | If the request that started a browser step ends first, the browser window stays open until its own time limit. The host does not pass that cancel on to `browser.assist` yet. |
+| [x] | If the request that started a browser step ends first, the host cancels `browser.assist` and closes the window. |
 | [ ] | Plugin secrets saved before the cleanup change are not removed when the plugin is removed. |
 | [x] | Stop plugins that stay idle for 5 minutes, with `pluginIdleTimeoutMinutes` to change or disable it. |
 | [ ] | Check the "Sleeping" plugin badge by eye in the real window (only typecheck, tests and build so far). |
@@ -95,7 +95,8 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [x] | Remove the old `/api/cover/{id}` route (the media route replaced it). |
 | [x] | `bun run build:launcher` embeds the UI, so the launcher starts without `--ui`. |
 | [ ] | The NativeWayland setting is saved but has no effect; GTK picks the display system. |
-| [ ] | The GTK shell does not remember the window position or size between runs. |
+| [x] | The GTK shell remembers the window position and size between runs. |
+| [ ] | The GTK shell can only restore the window position on X11; Wayland does not let a client place a toplevel. |
 | [x] | Cover and screenshot images are evicted from memory least-recently-used first (200 entries). |
 | [x] | Source filter shows labels from the library instead of raw ids. |
 | [x] | The game detail can link an existing install folder. |

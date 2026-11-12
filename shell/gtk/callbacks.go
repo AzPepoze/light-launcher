@@ -32,6 +32,13 @@ func llGoClosed(handle C.uintptr_t) {
 	}
 }
 
+//export llGoGeometry
+func llGoGeometry(handle C.uintptr_t, x, y, width, height C.int, positioned C.int) {
+	if session := sessionFrom(handle); session != nil {
+		session.onGeometry(int(x), int(y), int(width), int(height), positioned != 0)
+	}
+}
+
 //export llGoBridgeMessage
 func llGoBridgeMessage(handle C.uintptr_t, body, pageURI *C.char) {
 	if session := sessionFrom(handle); session != nil {

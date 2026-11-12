@@ -4,6 +4,8 @@
 #include "shell.h"
 #include "shell_internal.h"
 
+#include <gdk/x11/gdkx.h>
+
 typedef struct {
 	uintptr_t handle;
 	int id, folder;
@@ -24,6 +26,36 @@ static GtkWidget *new_window(const char *title, int width, int height) {
 	gtk_window_set_default_size(GTK_WINDOW(window), width, height);
 	gtk_widget_set_size_request(window, 800, 600);
 	return window;
+}
+
+// GTK4 cannot place a toplevel on Wayland; X11 still accepts an absolute move.
+static GdkSurface *x11_surface(GtkWidget *window) {
+	GdkSurface *surface = gtk_native_get_surface(GTK_NATIVE(window));
+	if (surface == NULL || !GDK_IS_X11_SURFACE(surface))
+		return NULL;
+	return surface;
+}
+
+static void move_window_to(GtkWidget *window, int x, int y) {
+	GdkSurface *surface = x11_surface(window);
+	if (surface == NULL)
+		return;
+	Display *display = gdk_x11_display_get_xdisplay(gdk_surface_get_display(surface));
+	XMoveWindow(display, gdk_x11_surface_get_xid(surface), x, y);
+}
+
+static void report_geometry(ShellApp *app) {
+	int x = 0, y = 0, positioned = 0;
+	GdkSurface *surface = x11_surface(app->window);
+	if (surface != NULL) {
+		Display *display = gdk_x11_display_get_xdisplay(gdk_surface_get_display(surface));
+		Window child;
+		XTranslateCoordinates(display, gdk_x11_surface_get_xid(surface),
+				      DefaultRootWindow(display), 0, 0, &x, &y, &child);
+		positioned = 1;
+	}
+	llGoGeometry(app->handle, x, y, gtk_widget_get_width(app->window),
+		     gtk_widget_get_height(app->window), positioned);
 }
 
 static WebKitWebView *new_view(WebKitNetworkSession *session) {
@@ -138,8 +170,36 @@ int ll_open_uri(const char *uri) {
 	return g_app_info_launch_default_for_uri(uri, NULL, NULL) ? 1 : 0;
 }
 
+int ll_shell_screen_count(void) {
+	if (!gtk_init_check())
+		return 0;
+	GdkDisplay *display = gdk_display_get_default();
+	if (display == NULL)
+		return 0;
+	return (int)g_list_model_get_n_items(gdk_display_get_monitors(display));
+}
+
+int ll_shell_screen_area(int index, int *x, int *y, int *width, int *height) {
+	GdkDisplay *display = gdk_display_get_default();
+	if (display == NULL)
+		return 0;
+	GdkMonitor *monitor = g_list_model_get_item(gdk_display_get_monitors(display), (guint)index);
+	if (monitor == NULL)
+		return 0;
+	GdkRectangle area;
+	gdk_monitor_get_geometry(monitor, &area);
+	*x = area.x;
+	*y = area.y;
+	*width = area.width;
+	*height = area.height;
+	g_object_unref(monitor);
+	return 1;
+}
+
 static gboolean on_close_request(GtkWindow *window, gpointer data) {
 	ShellApp *app = data;
+	if (!app->assist)
+		report_geometry(app);
 	app->closed = 1;
 	llGoClosed(app->handle);
 	ll_quit_requested = 1;
@@ -210,7 +270,8 @@ static void shell_app_free(ShellApp *app) {
 
 int ll_shell_run(uintptr_t handle, const char *url, const char *bridge_script,
 		 const char *profile_dir, const char *title, const char *banner,
-		 int transparent, int assist, int devtools, int disable_gpu) {
+		 int transparent, int assist, int devtools, int disable_gpu,
+		 LlGeometry geometry) {
 	if (!gtk_init_check()) {
 		llGoWarn(handle, (char *)"cannot start GTK");
 		return 1;
@@ -242,7 +303,8 @@ int ll_shell_run(uintptr_t handle, const char *url, const char *bridge_script,
 		g_free(cookie_file);
 	}
 
-	ll_current->window = new_window(title, assist ? 1000 : 1100, 720);
+	ll_current->window = new_window(title, assist ? 1000 : geometry.width,
+					assist ? 720 : geometry.height);
 	ll_current->view = new_view(ll_current->session);
 	configure_view(ll_current, disable_gpu, devtools, transparent && !assist);
 	if (assist && banner != NULL && *banner != '\0') {
@@ -271,6 +333,8 @@ int ll_shell_run(uintptr_t handle, const char *url, const char *bridge_script,
 		install_bridge(ll_current, bridge_script);
 
 	gtk_window_present(GTK_WINDOW(ll_current->window));
+	if (!assist && geometry.positioned)
+		move_window_to(ll_current->window, geometry.x, geometry.y);
 	llGoReady(handle);
 	if (!ll_quit_requested) {
 		webkit_web_view_load_uri(ll_current->view, url);
