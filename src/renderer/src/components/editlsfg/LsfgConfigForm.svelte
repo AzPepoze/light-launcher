@@ -1,5 +1,8 @@
 <script lang="ts">
-	import Dropdown from "@components/shared/Dropdown.svelte";
+	import Dropdown, { asOptions } from "@components/shared/Dropdown.svelte";
+
+	const pacingOptions = asOptions(["none", "monitor", "monitor_external"]);
+	$: gpuItems = asOptions(gpuList);
 	import SlideButton from "@components/shared/SlideButton.svelte";
 	import MultiplierInput from "@components/shared/MultiplierInput.svelte";
 	import * as core from "@shared";
@@ -76,7 +79,7 @@
 		<label for="lsfgGpu">GPU</label>
 		<div id="lsfgGpu">
 			<Dropdown
-				options={gpuList}
+				options={gpuItems}
 				bind:value={options.Extras.Lsfg.Gpu}
 				onChange={(val) =>
 					(options.Extras.Lsfg.Gpu = val === "Auto (Detect)" ? "" : val)}
@@ -107,7 +110,7 @@
 		<label for="lsfgPacing">Pacing</label>
 		<div id="lsfgPacing">
 			<Dropdown
-				options={["none", "monitor", "monitor_external"]}
+				options={pacingOptions}
 				bind:value={options.Extras.Lsfg.Pacing}
 				onChange={(val) => (options.Extras.Lsfg.Pacing = val)}
 			/>

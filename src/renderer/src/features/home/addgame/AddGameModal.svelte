@@ -4,7 +4,7 @@
 	import FolderConfiguration from "@components/shared/FolderConfiguration.svelte";
 	import ReviewView from "./ReviewView.svelte";
 	import Modal from "@components/shared/Modal.svelte";
-	import Dropdown from "@components/shared/Dropdown.svelte";
+	import Dropdown, { asOptions } from "@components/shared/Dropdown.svelte";
 	import { onMount } from "svelte";
 	import { fade } from "svelte/transition";
 	import { AddGameModalState } from "./AddGameModalState.svelte";
@@ -16,6 +16,7 @@
 	}>();
 
 	const state = new AddGameModalState();
+	const prefixItems = $derived(asOptions(state.prefixes));
 
 	onMount(() => {
 		state.initialize();
@@ -50,7 +51,7 @@
 			<div class="prefix-selection-quick" transition:fade>
 				<label for="quick-prefix">Target Prefix</label>
 				<Dropdown
-					options={state.prefixes}
+					options={prefixItems}
 					bind:value={state.selectedPrefix}
 					placeholder="Select WINE Prefix"
 				/>

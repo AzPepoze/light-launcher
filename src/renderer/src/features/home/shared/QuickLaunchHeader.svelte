@@ -1,5 +1,7 @@
 <script lang="ts">
-	import Dropdown from "@components/shared/Dropdown.svelte";
+	import Dropdown, { asOptions } from "@components/shared/Dropdown.svelte";
+
+	$: prefixItems = asOptions(prefixes);
 	import SelectionActions from "./SelectionActions.svelte";
 
 	export let isSelectionMode: boolean;
@@ -50,7 +52,7 @@
 
 	<div class="prefix-filter-container">
 		<Dropdown
-			options={prefixes}
+			options={prefixItems}
 			bind:value={selectedPrefixFilter}
 			placeholder="All Prefixes"
 		/>

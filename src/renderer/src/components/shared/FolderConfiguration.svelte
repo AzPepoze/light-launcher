@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { fade } from "svelte/transition";
 	import NumericInput from "@components/shared/NumericInput.svelte";
-	import Dropdown from "@components/shared/Dropdown.svelte";
+	import Dropdown, { asOptions } from "@components/shared/Dropdown.svelte";
+
+	$: prefixItems = asOptions(prefixes);
 	import BrowseInput from "@components/shared/BrowseInput.svelte";
 
 	export let selectedFolder: string;
@@ -35,7 +37,7 @@
 					>Target Prefix</label
 				>
 				<Dropdown
-					options={prefixes}
+					options={prefixItems}
 					bind:value={selectedPrefix}
 					placeholder="Select WINE Prefix"
 				/>

@@ -1,5 +1,7 @@
 <script lang="ts">
-	import Dropdown from "@components/shared/Dropdown.svelte";
+	import Dropdown, { asOptions } from "@components/shared/Dropdown.svelte";
+
+	$: protonItems = asOptions(protonOptions);
 
 	export let protonOptions: string[] = [];
 	export let selectedProton: string = "";
@@ -13,7 +15,7 @@
 	<label for="protonVersion">Proton Version</label>
 	<div id="protonVersion">
 		<Dropdown
-			options={protonOptions}
+			options={protonItems}
 			bind:value={selectedProton}
 			placeholder={isLoadingProton ? "Scanning..." : "Select Version"}
 			disabled={isLoadingProton || disabled}

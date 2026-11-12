@@ -1,5 +1,7 @@
 <script lang="ts">
-	import Dropdown from "@components/shared/Dropdown.svelte";
+	import Dropdown, { asOptions } from "@components/shared/Dropdown.svelte";
+
+	$: protonItems = asOptions(protonDisplayNames);
 	import BrowseInput from "@components/shared/BrowseInput.svelte";
 
 	export let currentPrefixName: string;
@@ -27,7 +29,7 @@
 			</label>
 			<div class="runtime-dropdown" id="prefix-runtime">
 				<Dropdown
-					options={protonDisplayNames}
+					options={protonItems}
 					bind:value={chosenProtonName}
 				/>
 			</div>

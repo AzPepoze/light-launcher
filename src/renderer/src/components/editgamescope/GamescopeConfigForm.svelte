@@ -1,13 +1,13 @@
 <script lang="ts">
-	import Dropdown from "@components/shared/Dropdown.svelte";
+	import Dropdown, { asOptions } from "@components/shared/Dropdown.svelte";
 	import SlideButton from "@components/shared/SlideButton.svelte";
 	import * as core from "@shared";
 
 	export let options: core.LaunchOptions;
 
-	const scalers = ["auto", "integer", "fit", "fill", "stretch"];
-	const filters = ["linear", "nearest", "fsr", "nis", "pixel"];
-	const windowModes = ["fullscreen", "borderless", "windowed"];
+	const scalers = asOptions(["auto", "integer", "fit", "fill", "stretch"]);
+	const filters = asOptions(["linear", "nearest", "fsr", "nis", "pixel"]);
+	const windowModes = asOptions(["fullscreen", "borderless", "windowed"]);
 </script>
 
 <div class="gamescope-config-form">

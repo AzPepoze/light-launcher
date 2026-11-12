@@ -1,17 +1,39 @@
+<script lang="ts" module>
+	export type DropdownOption = { value: string; label: string };
+
+	/** Makes options whose label is the same as the value. */
+	export function asOptions(values: string[]): DropdownOption[] {
+		return values.map((value) => ({ value, label: value }));
+	}
+</script>
+
 <script lang="ts">
+	import type { HTMLButtonAttributes } from "svelte/elements";
 
-	export let options: string[] = [];
-	export let value: string = "";
-	export let placeholder: string = "Select an option";
-	export let disabled: boolean = false;
-	export let disabledMessage: string = "";
-	export let onChange: (value: string) => void = () => {};
+	let {
+		options = [],
+		value = $bindable(""),
+		placeholder = "Select an option",
+		disabled = false,
+		disabledMessage = "",
+		onChange = () => {},
+		...rest
+	}: {
+		options: DropdownOption[];
+		value?: string;
+		placeholder?: string;
+		disabled?: boolean;
+		disabledMessage?: string;
+		onChange?: (value: string) => void;
+	} & Omit<HTMLButtonAttributes, "value"> = $props();
 
-	let isRendered = false;
-	let isOpen = false;
-	let isClosing = false;
+	let isRendered = $state(false);
+	let isOpen = $state(false);
+	let isClosing = $state(false);
 	let openTimeout: ReturnType<typeof setTimeout>;
 	let closeTimeout: ReturnType<typeof setTimeout>;
+
+	const selectedLabel = $derived(options.find((option) => option.value === value)?.label ?? placeholder);
 
 	function toggle() {
 		if (disabled) return;
@@ -42,10 +64,10 @@
 		}, 150);
 	}
 
-	function select(option: string) {
-		value = option;
+	function select(option: DropdownOption) {
+		value = option.value;
 		closeDropdown();
-		onChange(option);
+		onChange(option.value);
 	}
 
 	function handleOutsideClick(event: MouseEvent) {
@@ -56,16 +78,17 @@
 	}
 </script>
 
-<svelte:window on:click={handleOutsideClick} />
+<svelte:window onclick={handleOutsideClick} />
 
 <div class="custom-dropdown" class:disabled>
 	<button
+		{...rest}
 		class="dropdown-trigger"
 		class:open={isRendered && !isClosing}
-		on:click={toggle}
+		onclick={toggle}
 		type="button"
 	>
-		<span class="text">{value || placeholder}</span>
+		<span class="text">{selectedLabel}</span>
 		<span class="material-icons arrow">expand_more</span>
 	</button>
 
@@ -78,15 +101,15 @@
 
 	{#if isRendered}
 		<div class="dropdown-menu" class:open={isOpen && !isClosing}>
-			{#each options as option, i}
+			{#each options as option, i (option.value)}
 				<button
 					class="dropdown-item"
-					class:selected={option === value}
-					on:click={() => select(option)}
+					class:selected={option.value === value}
+					onclick={() => select(option)}
 					type="button"
 					style="animation-delay: {Math.min(i, 8) * 20}ms"
 				>
-					{option}
+					{option.label}
 				</button>
 			{/each}
 		</div>

@@ -1,5 +1,7 @@
 <script lang="ts">
-	import Dropdown from "@components/shared/Dropdown.svelte";
+	import Dropdown, { asOptions } from "@components/shared/Dropdown.svelte";
+
+	$: prefixItems = asOptions([...availablePrefixes, "Custom..."]);
 	import BrowseInput from "@components/shared/BrowseInput.svelte";
 
 	export let availablePrefixes: string[] = [];
@@ -15,7 +17,7 @@
 	<div class="input-group">
 		<div class="dropdown-wrapper">
 			<Dropdown
-				options={[...availablePrefixes, "Custom..."]}
+				options={prefixItems}
 				bind:value={selectedPrefixName}
 				onChange={onPrefixChange}
 			/>
