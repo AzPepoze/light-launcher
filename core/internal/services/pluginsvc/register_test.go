@@ -93,6 +93,41 @@ func TestBadPayloadIsRejected(t *testing.T) {
 	}
 }
 
+func TestFailedInstallRemovesItsUploadFolder(t *testing.T) {
+	base := t.TempDir()
+	layout := plugins.Layout{Root: filepath.Join(base, "plugins"), Data: filepath.Join(base, "data")}
+	host, err := plugins.NewHost(plugins.HostOptions{Layout: layout, HostVersion: "2.0.0"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(host.Shutdown)
+	store, err := uploads.Open(filepath.Join(base, "uploads"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	router := api.NewRouter()
+	Register(router, silentEvents{}, host, store)
+
+	folder, err := store.NewFolder()
+	if err != nil {
+		t.Fatal(err)
+	}
+	source := filepath.Join(folder, "broken")
+	if err := os.MkdirAll(source, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	payload, err := json.Marshal(map[string]string{"source": source})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := router.Dispatch(context.Background(), "PluginInstall", payload); err == nil {
+		t.Fatalf("an install without plugin.json must fail")
+	}
+	if _, err := os.Stat(folder); !os.IsNotExist(err) {
+		t.Fatalf("upload folder still exists after a failed install: %v", err)
+	}
+}
+
 type stubChecker struct {
 	result updater.Result
 }

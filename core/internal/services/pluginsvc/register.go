@@ -58,7 +58,7 @@ type logsInput struct {
 	Lines int    `json:"lines"`
 }
 
-// removeUpload deletes the upload that source is in. A failure only leaves a folder to clear on the next start.
+// removeUpload deletes the upload that source is in. A failure only logs, since the next start clears leftovers.
 func removeUpload(store *uploads.Store, source string) {
 	if err := store.Remove(source); err != nil {
 		logger.Warn("plugins", "remove upload: %v", err)
@@ -74,7 +74,7 @@ func pluginCall(ctx context.Context, host *plugins.Host, in callInput) (any, err
 }
 
 // Register adds the plugin methods to r. Host events such as "plugin-state" go to ev.
-// Installs from an upload remove that upload once it is installed.
+// Installs from an upload remove that upload whether or not the install succeeded.
 func Register(r *api.Router, ev api.Events, host *plugins.Host, uploads *uploads.Store) {
 	host.SetEvents(ev)
 
@@ -83,9 +83,7 @@ func Register(r *api.Router, ev api.Events, host *plugins.Host, uploads *uploads
 	}))
 	r.Handle("PluginInstall", api.Typed(func(ctx context.Context, in plugins.InstallRequest) (any, error) {
 		info, err := host.Install(ctx, in)
-		if err == nil {
-			removeUpload(uploads, in.Source)
-		}
+		removeUpload(uploads, in.Source)
 		return info, err
 	}))
 	r.Handle("PluginUpdate", api.Typed(func(ctx context.Context, in updateInput) (any, error) {

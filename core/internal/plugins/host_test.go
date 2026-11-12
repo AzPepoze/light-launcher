@@ -253,15 +253,26 @@ func TestHostRemoveDeletesPluginSecrets(t *testing.T) {
 	if err := host.deps.secrets.Set(ctx, "fixture", "token", "abc"); err != nil {
 		t.Fatal(err)
 	}
-	if keys := host.install.state.get("fixture").SecretKeys; !slices.Equal(keys, []string{"token"}) {
-		t.Fatalf("tracked secret keys = %v, want [token]", keys)
+	if err := host.deps.secrets.Set(ctx, "fixture", "apiKey", "def"); err != nil {
+		t.Fatal(err)
+	}
+	if err := host.deps.secrets.Set(ctx, "other", "token", "keep"); err != nil {
+		t.Fatal(err)
+	}
+	if keys := host.install.state.get("fixture").SecretKeys; !slices.Equal(keys, []string{"token", "apiKey"}) {
+		t.Fatalf("tracked secret keys = %v, want [token apiKey]", keys)
 	}
 
 	if err := host.Remove("fixture", false); err != nil {
 		t.Fatalf("Remove: %v", err)
 	}
-	if _, found, err := host.deps.secrets.Get(ctx, "fixture", "token"); err != nil || found {
-		t.Fatalf("secret after Remove: found = %v, err = %v; want it deleted", found, err)
+	for _, key := range []string{"token", "apiKey"} {
+		if _, found, err := host.deps.secrets.Get(ctx, "fixture", key); err != nil || found {
+			t.Fatalf("secret %q after Remove: found = %v, err = %v; want it deleted", key, found, err)
+		}
+	}
+	if value, found, err := host.deps.secrets.Get(ctx, "other", "token"); err != nil || !found || value != "keep" {
+		t.Fatalf("another plugin's secret = %q, %v, %v; want it kept", value, found, err)
 	}
 }
 

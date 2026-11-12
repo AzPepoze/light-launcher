@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 )
 
 var (
@@ -26,6 +27,16 @@ type installer struct {
 	state       *stateStore
 	client      *http.Client
 	hostVersion string
+
+	previewMu sync.Mutex
+	preview   *pendingPreview
+}
+
+// pendingPreview is a verified package kept until the install or update that follows it.
+type pendingPreview struct {
+	source   string
+	sha256   string
+	prepared preparedPackage
 }
 
 func newInstaller(layout Layout, hostVersion string) (*installer, error) {
@@ -38,12 +49,13 @@ func newInstaller(layout Layout, hostVersion string) (*installer, error) {
 
 // Preview unpacks and verifies a package and returns its manifest. Nothing is installed.
 // A non-empty expectedSHA must match the package file, as the release SHA256SUMS says.
+// The verified package is kept so the install or update that follows reuses it.
 func (in *installer) Preview(ctx context.Context, source, expectedSHA string) (Preview, error) {
 	prepared, err := in.preparePackage(ctx, source, expectedSHA)
 	if err != nil {
 		return Preview{}, err
 	}
-	defer prepared.discard()
+	in.keepPreview(source, expectedSHA, prepared)
 	return Preview{
 		Manifest: prepared.Manifest,
 		Unsigned: prepared.Unsigned,
@@ -51,10 +63,49 @@ func (in *installer) Preview(ctx context.Context, source, expectedSHA string) (P
 	}, nil
 }
 
+// keepPreview remembers a verified package and discards the one it replaces.
+func (in *installer) keepPreview(source, expectedSHA string, prepared preparedPackage) {
+	in.previewMu.Lock()
+	old := in.preview
+	in.preview = &pendingPreview{source: source, sha256: expectedSHA, prepared: prepared}
+	in.previewMu.Unlock()
+	if old != nil {
+		old.prepared.discard()
+	}
+}
+
+// takePreview returns the package kept by an earlier Preview and takes it out of the cache.
+// It claims the preview even when it does not match, so a stale package is never reused.
+func (in *installer) takePreview(source, expectedSHA string) (preparedPackage, bool) {
+	in.previewMu.Lock()
+	pending := in.preview
+	in.preview = nil
+	in.previewMu.Unlock()
+	if pending == nil {
+		return preparedPackage{}, false
+	}
+	if pending.source != source || (expectedSHA != "" && pending.sha256 != expectedSHA) {
+		pending.prepared.discard()
+		return preparedPackage{}, false
+	}
+	return pending.prepared, true
+}
+
+// discardPreview drops a package that no install or update claimed.
+func (in *installer) discardPreview() {
+	in.previewMu.Lock()
+	old := in.preview
+	in.preview = nil
+	in.previewMu.Unlock()
+	if old != nil {
+		old.prepared.discard()
+	}
+}
+
 // Install adds a new plugin. It fails when the plugin id is already installed, or when accepted
 // does not list the permissions the plugin asks for.
 func (in *installer) Install(ctx context.Context, source string, allowUnsigned bool, accepted []string) (string, error) {
-	prepared, err := in.preparePackage(ctx, source, "")
+	prepared, err := in.prepareForInstall(ctx, source)
 	if err != nil {
 		return "", err
 	}
@@ -71,6 +122,14 @@ func (in *installer) Install(ctx context.Context, source string, allowUnsigned b
 		return "", err
 	}
 	return id, in.commit(prepared, source, summary)
+}
+
+// prepareForInstall reuses a preview of the same package when there is one.
+func (in *installer) prepareForInstall(ctx context.Context, source string) (preparedPackage, error) {
+	if prepared, ok := in.takePreview(source, ""); ok {
+		return prepared, nil
+	}
+	return in.preparePackage(ctx, source, "")
 }
 
 // Update installs the version found at the source the plugin was installed from.
@@ -93,9 +152,13 @@ func (in *installer) prepareUpdate(ctx context.Context, id, source, expectedSHA 
 	if source == "" {
 		return preparedPackage{}, "", ErrNoSource
 	}
-	prepared, err := in.preparePackage(ctx, source, expectedSHA)
-	if err != nil {
-		return preparedPackage{}, "", err
+	prepared, ok := in.takePreview(source, expectedSHA)
+	if !ok {
+		var err error
+		prepared, err = in.preparePackage(ctx, source, expectedSHA)
+		if err != nil {
+			return preparedPackage{}, "", err
+		}
 	}
 	if err := in.checkUpdate(id, prepared, allowUnsigned, accepted); err != nil {
 		prepared.discard()

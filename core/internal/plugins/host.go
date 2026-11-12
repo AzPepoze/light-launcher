@@ -98,8 +98,9 @@ func (h *Host) SetEvents(events api.Events) {
 	h.deps.events = events
 }
 
-// Shutdown stops every running plugin.
+// Shutdown stops every running plugin and drops a package kept by the last preview.
 func (h *Host) Shutdown() {
+	h.install.discardPreview()
 	h.mu.Lock()
 	running := make([]*Supervisor, 0, len(h.supervisors))
 	for id, sup := range h.supervisors {

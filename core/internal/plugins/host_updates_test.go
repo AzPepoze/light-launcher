@@ -4,8 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"net/http"
+	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	"light-launcher/core/internal/plugins/updater"
@@ -118,6 +122,54 @@ func TestHostUpdatesFromCheckedRelease(t *testing.T) {
 	}
 	if status := host.UpdatesStatus(); len(status.Plugins) != 0 {
 		t.Fatalf("stale update status after update: %+v", status)
+	}
+}
+
+func TestHostUpdateReusesThePreviewedDownload(t *testing.T) {
+	host := newTestHostWithChecker(t, &fakeUpdateChecker{})
+	installFixtureWithRepository(t, host, "0.1.0", "github:ada/fixture")
+	ctx := context.Background()
+
+	packaged := filepath.Join(t.TempDir(), "fixture-0.2.0.llplugin")
+	manifest := fixtureManifest(Permissions{Network: []string{"127.0.0.1"}})
+	manifest.Version = "0.2.0"
+	manifest.Repository = "github:ada/fixture"
+	writeFixtureManifest(t, packaged, manifest)
+	body, err := os.ReadFile(packaged)
+	if err != nil {
+		t.Fatal(err)
+	}
+	digest, err := fileSHA256(packaged)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var downloads int32
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		atomic.AddInt32(&downloads, 1)
+		_, _ = w.Write(body)
+	}))
+	defer server.Close()
+	source := server.URL + "/fixture-0.2.0.llplugin"
+	host.install.client = server.Client()
+	checker := &fakeUpdateChecker{result: updater.Result{Available: true, Version: "0.2.0", AssetURL: source, SHA256: digest}}
+	host.updates.checker = checker
+	if _, err := host.CheckUpdates(ctx, "fixture"); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := host.PermissionsPreview(ctx, source, digest); err != nil {
+		t.Fatalf("PermissionsPreview: %v", err)
+	}
+	info, err := host.Update(ctx, UpdateRequest{ID: "fixture", Source: source, SHA256: digest, AllowUnsigned: true, AcceptedPermissions: testConsent})
+	if err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+	if info.Version != "0.2.0" {
+		t.Fatalf("version = %q", info.Version)
+	}
+	if got := atomic.LoadInt32(&downloads); got != 1 {
+		t.Fatalf("package downloads = %d, want 1", got)
 	}
 }
 
