@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NumberField from "@components/shared/NumberField.svelte";
 	import type { DownloadsState } from "./downloadsState.svelte";
 
 	let { downloads }: { downloads: DownloadsState } = $props();
@@ -31,10 +32,16 @@
 	</form>
 
 	<form class="form" onsubmit={applyLimit}>
-		<label class="field">
-			<span class="label">Speed limit (KB/s, 0 = none)</span>
-			<input class="input number" type="number" min="0" step="64" bind:value={limitInput} />
-		</label>
+		<div class="speed-limit">
+			<NumberField
+				id="speed-limit"
+				label="Speed limit (KB/s, 0 = none)"
+				value={limitInput}
+				min={0}
+				step={64}
+				oninput={(value) => (limitInput = value)}
+			/>
+		</div>
 		<button class="btn sm" type="submit">Apply</button>
 	</form>
 </div>
@@ -72,7 +79,7 @@
 		color: var(--text-muted);
 	}
 
-	.number {
+	.speed-limit {
 		width: 150px;
 	}
 </style>

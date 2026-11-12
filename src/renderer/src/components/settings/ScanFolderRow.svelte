@@ -8,6 +8,7 @@
 		validateDepth
 	} from "@lib/features/scanFolders";
 	import { createLogger } from "@lib/logger";
+	import NumberField from "@components/shared/NumberField.svelte";
 
 	const log = createLogger("ScanFolderRow");
 
@@ -81,24 +82,21 @@
 	<p class="rescan-note" role="status">{rescanNote}</p>
 
 	<div class="folder-fields">
-		<div class="field">
-			<label for="depth-{folder}">Scan depth</label>
-			<input
-				id="depth-{folder}"
-				type="number"
-				step="1"
-				value={depthText}
-				oninput={(event) => (depthDraft = event.currentTarget.value)}
-				aria-invalid={!depthCheck.ok}
-				aria-describedby="depth-hint-{folder}"
-			/>
+		<NumberField
+			id="depth-{folder}"
+			label="Scan depth"
+			value={depthText}
+			oninput={(value) => (depthDraft = value)}
+			invalid={!depthCheck.ok}
+			describedBy="depth-hint-{folder}"
+		>
 			{#if depthMessage}
 				<p class="error" role="alert">{depthMessage}</p>
 			{/if}
 			<p class="hint" id="depth-hint-{folder}">
 				How many folder levels to search. Use -1 for no limit.
 			</p>
-		</div>
+		</NumberField>
 
 		<div class="field">
 			<label for="ignore-{folder}">Ignore names</label>
@@ -200,10 +198,6 @@
 			border: 1px solid rgba(255, 255, 255, 0.1);
 			border-radius: var(--radius-md);
 			padding: 8px 12px;
-
-			&[aria-invalid="true"] {
-				border-color: var(--danger);
-			}
 
 			&:focus-visible {
 				outline: 2px solid var(--accent-primary);

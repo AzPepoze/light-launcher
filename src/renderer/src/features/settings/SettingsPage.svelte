@@ -1,5 +1,6 @@
 <script lang="ts">
 	import PageHeader from "@components/shared/PageHeader.svelte";
+	import Slider from "@components/shared/Slider.svelte";
 	import { pendingSettingsSection } from "@stores/navigationStore";
 	import { platform } from "@stores/platformStore";
 	import { onMount } from "svelte";
@@ -13,6 +14,10 @@
 
 	const settings = new SettingsState();
 	let platformInfo = $state<PlatformInfo>(get(platform));
+
+	function toPercent(value: number): string {
+		return `${Math.round(value * 100)}%`;
+	}
 
 	onMount(() => {
 		void settings.start();
@@ -59,20 +64,14 @@
 				<p class="desc">
 					Adjust the background opacity. Lower values make the background more see-through while keeping text and UI elements fully visible.
 				</p>
-				<div class="slider-row">
-					<input
-						type="range"
-						min="0.1"
-						max="1.0"
-						step="0.05"
-						value={settings.userSettings.transparency}
-						oninput={(event) => settings.setTransparency(parseFloat(event.currentTarget.value))}
-						class="transparency-slider"
-					/>
-					<span class="pct-display"
-						>{Math.round(settings.userSettings.transparency * 100)}%</span
-					>
-				</div>
+				<Slider
+					value={settings.userSettings.transparency}
+					min={0.1}
+					max={1}
+					step={0.05}
+					format={toPercent}
+					onChange={(value) => settings.setTransparency(value)}
+				/>
 				<div style="margin-top: 16px;">
 					<button
 						class="btn {settings.appSettings.TransparentMode ? 'primary' : 'secondary'}"
@@ -227,29 +226,6 @@
 		.mini-icon {
 			font-size: 18px;
 			margin-right: 6px;
-		}
-	}
-
-	.slider-row {
-		display: flex;
-		align-items: center;
-		gap: 16px;
-
-		.transparency-slider {
-			flex: 1;
-			accent-color: var(--accent-primary);
-			height: 6px;
-			border-radius: var(--radius-pill);
-			background: var(--bg-input);
-			outline: none;
-		}
-
-		.pct-display {
-			font-size: 1rem;
-			font-weight: 800;
-			color: var(--accent-primary);
-			width: 45px;
-			text-align: right;
 		}
 	}
 
