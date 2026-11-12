@@ -121,6 +121,59 @@ func TestCancelSendsCancelNotification(t *testing.T) {
 	}
 }
 
+func TestCancelNotificationStopsTheHandler(t *testing.T) {
+	started := make(chan struct{})
+	canceled := make(chan struct{})
+	slow := func(ctx context.Context, _ string, _ json.RawMessage) (any, error) {
+		close(started)
+		<-ctx.Done()
+		close(canceled)
+		return nil, ctx.Err()
+	}
+	host, _ := pipePeers(nil, slow, nil)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go func() {
+		<-started
+		cancel()
+	}()
+	err := host.Call(ctx, "slow", nil, nil)
+	var rpcErr *RPCError
+	if !errors.As(err, &rpcErr) || rpcErr.Code != CodeCanceled {
+		t.Fatalf("err = %v, want canceled", err)
+	}
+	select {
+	case <-canceled:
+	case <-time.After(2 * time.Second):
+		t.Fatal("the cancel notification did not stop the handler")
+	}
+}
+
+func TestStreamCloseStopsTheHandler(t *testing.T) {
+	started := make(chan struct{})
+	canceled := make(chan struct{})
+	reads, writes := io.Pipe()
+	peer := NewPeer(reads, io.Discard, func(ctx context.Context, _ string, _ json.RawMessage) (any, error) {
+		close(started)
+		<-ctx.Done()
+		close(canceled)
+		return nil, ctx.Err()
+	}, nil)
+
+	go func() {
+		_, _ = writes.Write([]byte(`{"jsonrpc":"2.0","id":1,"method":"slow"}` + "\n"))
+		<-started
+		_ = writes.Close()
+	}()
+	select {
+	case <-canceled:
+	case <-time.After(2 * time.Second):
+		t.Fatal("the closed stream did not stop the handler")
+	}
+	<-peer.Done()
+}
+
 func TestDeadlineReturnsTimeoutCode(t *testing.T) {
 	block := func(ctx context.Context, _ string, _ json.RawMessage) (any, error) {
 		<-ctx.Done()

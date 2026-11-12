@@ -43,6 +43,7 @@ type Peer struct {
 	nextID    atomic.Int64
 	mu        sync.Mutex
 	pending   map[string]chan response
+	serving   map[string]context.CancelFunc
 	closed    bool
 	onRequest requestHandler
 	onNotify  notifyHandler
@@ -59,6 +60,7 @@ func NewPeer(reader io.Reader, writer io.Writer, onRequest requestHandler, onNot
 	peer := &Peer{
 		writer:    writer,
 		pending:   map[string]chan response{},
+		serving:   map[string]context.CancelFunc{},
 		onRequest: onRequest,
 		onNotify:  onNotify,
 		done:      make(chan struct{}),
@@ -124,6 +126,10 @@ func (p *Peer) finish() {
 	defer p.mu.Unlock()
 	p.closed = true
 	p.pending = map[string]chan response{}
+	for _, cancel := range p.serving {
+		cancel()
+	}
+	p.serving = map[string]context.CancelFunc{}
 	close(p.done)
 }
 
@@ -140,22 +146,55 @@ func (p *Peer) handleLine(line []byte) {
 	case msg.Method != "" && len(msg.ID) == 0:
 		p.dispatchNotify(msg)
 	case msg.Method != "":
-		go p.serve(msg)
+		p.startServe(msg)
 	default:
 		p.deliver(msg)
 	}
 }
 
 func (p *Peer) dispatchNotify(msg envelope) {
+	if msg.Method == cancelMethod {
+		p.cancelRequest(msg.Params)
+	}
 	if p.onNotify != nil {
 		p.onNotify(msg.Method, msg.Params)
 	}
 }
 
-// serve answers one request from the other side. The response is written even when the handler fails.
-func (p *Peer) serve(msg envelope) {
+// startServe registers the request before it runs, so a cancel that arrives next can find it.
+func (p *Peer) startServe(msg envelope) {
 	ctx, cancel := context.WithTimeout(context.Background(), serveTimeoutFor(msg.Method))
+	p.mu.Lock()
+	if p.closed {
+		p.mu.Unlock()
+		cancel()
+		return
+	}
+	p.serving[requestIDText(msg.ID)] = cancel
+	p.mu.Unlock()
+	go p.serve(msg, ctx, cancel)
+}
+
+// cancelRequest stops an in-flight handler when the caller stops waiting for it.
+func (p *Peer) cancelRequest(params json.RawMessage) {
+	var request struct {
+		ID json.RawMessage `json:"id"`
+	}
+	if err := json.Unmarshal(params, &request); err != nil || len(request.ID) == 0 {
+		return
+	}
+	p.mu.Lock()
+	cancel := p.serving[requestIDText(request.ID)]
+	p.mu.Unlock()
+	if cancel != nil {
+		cancel()
+	}
+}
+
+// serve answers one request from the other side. The response is written even when the handler fails.
+func (p *Peer) serve(msg envelope, ctx context.Context, cancel context.CancelFunc) {
 	defer cancel()
+	defer p.endServing(requestIDText(msg.ID))
 	ctx = context.WithValue(ctx, requestIDKey{}, requestIDText(msg.ID))
 	result, err := p.handle(ctx, msg)
 	if err != nil {
@@ -168,6 +207,12 @@ func (p *Peer) serve(msg envelope) {
 		return
 	}
 	_ = p.writeResponse(msg.ID, raw, nil)
+}
+
+func (p *Peer) endServing(id string) {
+	p.mu.Lock()
+	delete(p.serving, id)
+	p.mu.Unlock()
 }
 
 func (p *Peer) handle(ctx context.Context, msg envelope) (any, error) {
