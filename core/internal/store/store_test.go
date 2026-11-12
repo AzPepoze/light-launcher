@@ -43,6 +43,62 @@ func TestSaveAndLoadRoundTripAddsVersion(t *testing.T) {
 	}
 }
 
+func TestLoadAcceptsLegacyVersionZero(t *testing.T) {
+	tests := []struct {
+		name    string
+		content string
+		want    payload
+	}{
+		{"fields", `{"hello": "world", "count": 7}`, payload{Hello: "world", Count: 7}},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			target := filepath.Join(t.TempDir(), "value.json")
+			if err := os.WriteFile(target, []byte(test.content), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			var loaded payload
+			found, err := NewFile(target, 1).Load(&loaded)
+			if err != nil || !found {
+				t.Fatalf("Load = %v, %v; want found", found, err)
+			}
+			if loaded != test.want {
+				t.Fatalf("loaded = %+v, want %+v", loaded, test.want)
+			}
+		})
+	}
+}
+
+func TestSaveAfterLegacyLoadWritesVersionOne(t *testing.T) {
+	target := filepath.Join(t.TempDir(), "value.json")
+	if err := os.WriteFile(target, []byte(`{"hello": "world", "count": 7}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	file := NewFile(target, 1)
+	var loaded payload
+	if _, err := file.Load(&loaded); err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if err := file.Save(loaded); err != nil {
+		t.Fatalf("Save: %v", err)
+	}
+
+	var raw map[string]any
+	data, err := os.ReadFile(target)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		t.Fatalf("file is not JSON: %v", err)
+	}
+	if raw["version"] != float64(1) {
+		t.Errorf("version = %v, want 1", raw["version"])
+	}
+	if raw["hello"] != "world" || raw["count"] != float64(7) {
+		t.Errorf("fields = %v, want hello=world count=7", raw)
+	}
+}
+
 func TestLoadMissingFileReportsNotFound(t *testing.T) {
 	file := NewFile(filepath.Join(t.TempDir(), "missing.json"), 1)
 	var loaded payload
@@ -61,7 +117,7 @@ func TestLoadRejectsEmptyCorruptAndUnknownVersions(t *testing.T) {
 	}{
 		{"empty", "", nil},
 		{"corrupt", "{", nil},
-		{"missing version", `{"hello": "world"}`, ErrVersion},
+		{"version 2", `{"version": 2, "hello": "world"}`, ErrVersion},
 		{"unknown version", `{"version": 99, "hello": "world"}`, ErrVersion},
 	}
 	for _, test := range tests {

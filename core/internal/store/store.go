@@ -47,7 +47,7 @@ func (f *File) Load(target any) (bool, error) {
 	if err := json.Unmarshal(data, &header); err != nil {
 		return false, fmt.Errorf("decode %s: %w", f.path, err)
 	}
-	if header.Version != f.version {
+	if header.Version != f.version && !(isLegacyVersion(header.Version) && f.version == 1) {
 		return false, fmt.Errorf("%w: %s has version %d, want %d", ErrVersion, f.path, header.Version, f.version)
 	}
 	if err := json.Unmarshal(data, target); err != nil {
@@ -112,6 +112,11 @@ func encode(version int, value any) ([]byte, error) {
 		return nil, fmt.Errorf("indent document: %w", err)
 	}
 	return indented.Bytes(), nil
+}
+
+// isLegacyVersion reports whether a file has no version field, so it uses the version 1 layout.
+func isLegacyVersion(version int) bool {
+	return version == 0
 }
 
 func writeFile(path string, data []byte) error {
