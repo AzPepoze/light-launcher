@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Dropdown, { asOptions } from "@components/shared/Dropdown.svelte";
 	import {
 		addItem,
 		moveItem,
@@ -20,6 +21,7 @@
 	let draft = $state("");
 	let chosen = $state("");
 	let choices = $derived(unusedOptions(field, items));
+	let choiceItems = $derived(asOptions(choices));
 	let usesOptions = $derived(field.options.length > 0);
 	let pick = $derived(choices.includes(chosen) ? chosen : (choices[0] ?? ""));
 
@@ -66,16 +68,14 @@
 	{#if usesOptions}
 		{#if choices.length > 0}
 			<div class="add">
-				<select
-					class="input"
-					aria-label="Item to add"
-					value={pick}
-					onchange={(event) => (chosen = event.currentTarget.value)}
-				>
-					{#each choices as choice (choice)}
-						<option value={choice}>{choice}</option>
-					{/each}
-				</select>
+				<div class="choose">
+					<Dropdown
+						aria-label="Item to add"
+						options={choiceItems}
+						value={pick}
+						onChange={(value) => (chosen = value)}
+					/>
+				</div>
 				<button class="btn sm primary" type="button" onclick={addDraft}>Add</button>
 			</div>
 		{/if}
@@ -116,7 +116,8 @@
 		white-space: nowrap;
 	}
 
-	.add .input {
+	.add .input,
+	.choose {
 		flex: 1;
 		min-width: 0;
 	}

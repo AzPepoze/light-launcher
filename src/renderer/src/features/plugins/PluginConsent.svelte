@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { PermissionKind, PermissionLines, PluginPreview } from "../../lib/features/types";
+	import Checkbox from "@components/shared/Checkbox.svelte";
 	import Notice from "./Notice.svelte";
 	import PluginIdentity from "./PluginIdentity.svelte";
 	import {
@@ -129,10 +130,9 @@
 
 	<p class="legal">{LEGAL_NOTICE}</p>
 
-	<label class="consent-check">
-		<input type="checkbox" bind:checked={accepted} />
-		<span>I trust this plugin and accept these permissions.</span>
-	</label>
+	<Checkbox checked={accepted} onChange={(value) => (accepted = value)}>
+		I trust this plugin and accept these permissions.
+	</Checkbox>
 
 	<div class="actions">
 		<button class="btn sm primary install" disabled={!accepted || busy} onclick={onConfirm}>
@@ -297,20 +297,6 @@
 		flex-direction: column;
 		gap: 6px;
 		color: var(--text-muted);
-	}
-
-	.consent-check {
-		display: flex;
-		align-items: center;
-		gap: 10px;
-		font-size: 1rem;
-		cursor: pointer;
-
-		input {
-			width: 18px;
-			height: 18px;
-			accent-color: var(--accent-primary);
-		}
 	}
 
 	.actions {

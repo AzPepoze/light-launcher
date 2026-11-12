@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Dropdown, { type DropdownOption } from "@components/shared/Dropdown.svelte";
 	import type { LibraryState } from "./libraryState.svelte";
 	import { SORT_LABELS } from "./libraryFilters";
 	import type { LibrarySort } from "../../lib/features/types";
@@ -8,11 +9,13 @@
 	let saveName = $state("");
 	let saving = $state(false);
 
-	const sortOptions = Object.entries(SORT_LABELS) as [LibrarySort, string][];
+	const sortOptions: DropdownOption[] = Object.entries(SORT_LABELS).map(([value, label]) => ({
+		value,
+		label
+	}));
 
-	function sortChanged(event: Event) {
-		const value = (event.currentTarget as HTMLSelectElement).value as LibrarySort;
-		library.patchFilters({ sort: value });
+	function sortChanged(value: string) {
+		library.patchFilters({ sort: value as LibrarySort });
 	}
 
 	function searchChanged(event: Event) {
@@ -40,14 +43,14 @@
 			/>
 		</label>
 
-		<label class="sort">
-			<span class="sr-only">Sort by</span>
-			<select class="input" value={library.filters.sort} onchange={sortChanged}>
-				{#each sortOptions as [value, label] (value)}
-					<option {value}>{label}</option>
-				{/each}
-			</select>
-		</label>
+		<div class="sort">
+			<Dropdown
+				aria-label="Sort by"
+				options={sortOptions}
+				value={library.filters.sort}
+				onChange={sortChanged}
+			/>
+		</div>
 
 	</div>
 
@@ -158,9 +161,9 @@
 		}
 	}
 
-	select.input {
+	.sort {
 		flex: 0 1 180px;
-		padding: 10px 12px;
+		min-width: 0;
 	}
 
 	.chips {

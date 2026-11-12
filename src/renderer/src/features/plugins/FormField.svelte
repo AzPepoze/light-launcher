@@ -8,6 +8,9 @@
 		type RawSettings,
 		type SettingsField
 	} from "../../lib/features/settingsForm";
+	import Dropdown, { asOptions, type DropdownOption } from "@components/shared/Dropdown.svelte";
+	import Switch from "@components/shared/Switch.svelte";
+	import NumberField from "@components/shared/NumberField.svelte";
 	import ListEditor from "./ListEditor.svelte";
 
 	let {
@@ -22,9 +25,17 @@
 
 	let inputId = $derived(`setting-${field.key}`);
 	let hintId = $derived(`${inputId}-hint`);
+	let labelText = $derived(`${field.label}${field.required ? " *" : ""}`);
 	let current = $derived(raw[field.key]);
 	let pickMethod = $derived(pickMethodFor(field, window.llShell));
 	let resettable = $derived(canResetToDefault(field, raw));
+	let selectItems = $derived(selectOptionsOf(field));
+
+	function selectOptionsOf(settings: SettingsField): DropdownOption[] {
+		if (settings.kind !== "select") return [];
+		const items = asOptions(settings.options.map(String));
+		return settings.required ? items : [{ value: "", label: "Not set" }, ...items];
+	}
 
 	function textOf(input: FieldInput | undefined): string {
 		return typeof input === "string" ? input : "";
@@ -51,45 +62,37 @@
 
 <div class="field">
 	{#if field.kind === "boolean"}
-		<label class="switch">
-			<input
-				type="checkbox"
-				role="switch"
-				checked={flagOf(current)}
-				aria-describedby={hintId}
-				onchange={(event) => (raw[field.key] = event.currentTarget.checked)}
-			/>
-			<span class="track" aria-hidden="true"></span>
+		<Switch
+			checked={flagOf(current)}
+			aria-describedby={hintId}
+			onChange={(checked) => (raw[field.key] = checked)}
+		>
 			<span>{field.label}{field.required ? " *" : ""}</span>
-		</label>
+		</Switch>
 	{:else}
-		<label for={inputId}>{field.label}{field.required ? " *" : ""}</label>
+		{#if field.kind !== "number"}
+			<label for={inputId}>{labelText}</label>
+		{/if}
 
 		{#if field.kind === "select"}
-			<select
+			<Dropdown
 				id={inputId}
-				class="input"
-				value={textOf(current)}
 				aria-describedby={hintId}
-				onchange={(event) => (raw[field.key] = event.currentTarget.value)}
-			>
-				{#if !field.required}<option value="">Not set</option>{/if}
-				{#each field.options as option (option)}
-					<option value={String(option)}>{option}</option>
-				{/each}
-			</select>
+				options={selectItems}
+				value={textOf(current)}
+				onChange={(value) => (raw[field.key] = value)}
+			/>
 		{:else if field.kind === "number"}
-			<input
+			<NumberField
 				id={inputId}
-				class="input"
-				type="number"
-				step={field.integer ? 1 : "any"}
+				label={labelText}
+				value={textOf(current)}
 				min={field.min}
 				max={field.max}
-				value={textOf(current)}
-				aria-describedby={hintId}
-				aria-invalid={Boolean(error)}
-				oninput={(event) => (raw[field.key] = event.currentTarget.value)}
+				step={field.integer ? 1 : "any"}
+				invalid={Boolean(error)}
+				describedBy={hintId}
+				oninput={(value) => (raw[field.key] = value)}
 			/>
 		{:else if field.kind === "path"}
 			<div class="path">
@@ -148,56 +151,6 @@
 
 		p {
 			margin: 0;
-		}
-	}
-
-	.switch {
-		display: flex;
-		align-items: center;
-		gap: 10px;
-		cursor: pointer;
-
-		input {
-			position: absolute;
-			opacity: 0;
-			pointer-events: none;
-		}
-
-		.track {
-			position: relative;
-			width: 38px;
-			height: 22px;
-			border-radius: 11px;
-			background: var(--bg-input);
-			border: 2px solid var(--glass-border);
-			transition: background var(--motion-quick) var(--ease-out);
-			flex-shrink: 0;
-
-			&::after {
-				content: "";
-				position: absolute;
-				top: 2px;
-				left: 2px;
-				width: 14px;
-				height: 14px;
-				border-radius: 50%;
-				background: var(--text-muted);
-				transition: transform var(--motion-quick) var(--ease-out);
-			}
-		}
-
-		input:checked + .track {
-			background: var(--accent-primary);
-			border-color: var(--accent-primary);
-
-			&::after {
-				transform: translateX(16px);
-				background: var(--bg-elevated);
-			}
-		}
-
-		input:focus-visible + .track {
-			box-shadow: 0 0 0 4px var(--accent-glow);
 		}
 	}
 

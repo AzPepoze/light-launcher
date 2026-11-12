@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { onMount, untrack } from "svelte";
+	import Checkbox from "@components/shared/Checkbox.svelte";
+	import Dropdown, { type DropdownOption } from "@components/shared/Dropdown.svelte";
 	import { libraryApi } from "../../lib/features/libraryApi";
 	import { errorMessage } from "../../lib/features/rpc";
 	import type { FilterOption, Game, LibrarySource, SidebarGroup, SidebarOption } from "../../lib/features/types";
@@ -137,6 +139,15 @@
 		return (dynamic[group.id] ?? []).map((option) => ({ ...option, icon: null }));
 	}
 
+	function selectItemsOf(group: SidebarGroup): DropdownOption[] {
+		return [{ value: "", label: "Any" }, ...optionsOf(group)];
+	}
+
+	function selectValueOf(group: SidebarGroup): string {
+		const current = filters.values[group.id];
+		return typeof current === "string" ? current : "";
+	}
+
 	function isSelected(group: SidebarGroup, value: string): boolean {
 		const current = filters.values[group.id];
 		return Array.isArray(current) && current.includes(value);
@@ -196,19 +207,15 @@
 					{/each}
 				</div>
 			{:else if group.type === "select"}
-				<label class="group">
+				<div class="group">
 					<span class="group-label">{group.label}</span>
-					<select
-						class="input"
-						value={typeof filters.values[group.id] === "string" ? filters.values[group.id] : ""}
-						onchange={(event) => selectChanged(group, event.currentTarget.value)}
-					>
-						<option value="">Any</option>
-						{#each optionsOf(group) as option (option.value)}
-							<option value={option.value}>{option.label}</option>
-						{/each}
-					</select>
-				</label>
+					<Dropdown
+						aria-label={group.label}
+						options={selectItemsOf(group)}
+						value={selectValueOf(group)}
+						onChange={(value) => selectChanged(group, value)}
+					/>
+				</div>
 			{:else if group.type === "multi"}
 				<fieldset class="group choices">
 					<legend class="group-label">{group.label}</legend>
@@ -227,33 +234,26 @@
 						<p class="muted">{group.dynamic ? "No choices." : "None declared."}</p>
 					{:else}
 						{#each optionsOf(group) as option (option.value)}
-							<label class="choice">
-								<input
-									type="checkbox"
-									checked={isSelected(group, option.value)}
-									onchange={() => multiChanged(group, option.value)}
-								/>
+							<Checkbox
+								checked={isSelected(group, option.value)}
+								onChange={() => multiChanged(group, option.value)}
+							>
 								{#if option.icon}<span class="material-icons" aria-hidden="true">{option.icon}</span>{/if}
 								<span>{option.label}</span>
 								{#if option.count !== null}<span class="count">{option.count}</span>{/if}
-							</label>
+							</Checkbox>
 						{/each}
 					{/if}
 				</fieldset>
 			{:else if group.type === "sort"}
 				<div class="group">
-					<label>
-						<span class="group-label">{group.label || "Sort"}</span>
-						<select
-							class="input"
-							value={filters.sort}
-							onchange={(event) => sortChanged(event.currentTarget.value)}
-						>
-							{#each group.options as option (option.value)}
-								<option value={option.value}>{option.label}</option>
-							{/each}
-						</select>
-					</label>
+					<span class="group-label">{group.label || "Sort"}</span>
+					<Dropdown
+						aria-label={group.label || "Sort"}
+						options={group.options}
+						value={filters.sort}
+						onChange={sortChanged}
+					/>
 					{#if group.orderable}
 						<button class="btn sm" onclick={orderToggled}>
 							{filters.order === "asc" ? "Ascending" : "Descending"}
@@ -338,14 +338,7 @@
 
 	.choices {
 		gap: 4px;
-	}
-
-	.choice {
-		display: flex;
-		align-items: center;
-		gap: 8px;
 		font-size: 0.9375rem;
-		cursor: pointer;
 	}
 
 	.count {
