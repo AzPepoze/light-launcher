@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Modal from "@components/shared/Modal.svelte";
+	import { onMount } from "svelte";
 	import { errorMessage } from "../../lib/features/rpc";
 	import { libraryApi } from "../../lib/features/libraryApi";
 	import type { Game, GamePreview, SearchHit } from "../../lib/features/types";
@@ -7,7 +8,8 @@
 	let {
 		onAdded,
 		onClose,
-	}: { onAdded: (game: Game) => void; onClose: () => void } = $props();
+		initialUrl = ""
+	}: { onAdded: (game: Game) => void; onClose: () => void; initialUrl?: string } = $props();
 
 	let query = $state("");
 	let hits = $state<SearchHit[]>([]);
@@ -17,6 +19,12 @@
 	let message = $state("");
 
 	const isLink = (text: string) => /^https?:\/\//i.test(text.trim());
+
+	// A browse tile opens the dialog with its link ready to preview.
+	onMount(() => {
+		query = initialUrl;
+		if (initialUrl) void search();
+	});
 
 	async function search() {
 		const text = query.trim();

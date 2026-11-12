@@ -29,6 +29,8 @@ type SourceCount struct {
 	Label string `json:"label"`
 	Tile  string `json:"tile"`
 	Count int    `json:"count"`
+	// Sidebar holds the filter groups the source declares for the Library sidebar. Empty for local games.
+	Sidebar []contract.SidebarGroup `json:"sidebar,omitempty"`
 }
 
 // Overview is the summary the library shows beside its list. It covers the whole visible library, not a filter.
@@ -163,7 +165,7 @@ func sourceCountOf(id string, count int, info contract.SourceInfo) SourceCount {
 	if label == "" {
 		label = id
 	}
-	return SourceCount{ID: id, Label: label, Tile: cardShape(info.Tile), Count: count}
+	return SourceCount{ID: id, Label: label, Tile: cardShape(info.Tile), Count: count, Sidebar: info.Sidebar}
 }
 
 // cardShape returns the declared card shape, or the poster shape when the source declares none it knows.

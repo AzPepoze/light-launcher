@@ -109,7 +109,8 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | No manual setting for how deep the game folders are. The automatic rule can misjudge a game folder that has three or more sub-apps and no exe of its own. |
 | [ ] | The Library UI still reads sources, tags and stats from `LibraryList`; it must switch to `LibraryOverview` and paged `LibraryList`. |
 | [ ] | `LibrarySyncSource` rejects sources that only have the sync capability (no `listGames`). |
-| [ ] | The Library sidebar for plugin sources is not in the UI yet. The host has `LibraryBrowse` and `LibraryFilters`, and the `SourceInfo` type in the UI does not carry `sidebar` yet. |
+| [x] | The Library sidebar for plugin sources: the overview carries each source's `sidebar`, and the page browses it through `LibraryBrowse` and `LibraryFilters`. Fixed groups, dynamic choices and a sort with direction are drawn. |
+| [ ] | Check the plugin Library sidebar by eye in the real window with the fixture plugin (only typecheck, tests and build so far). |
 | [ ] | The plugin SDK schema and docs do not describe `sidebar`, the `browse:filters` capability, `source.browse` or `source.listFilters` yet. |
 | [ ] | No real plugin (F95, itch) implements `source.browse` or `source.listFilters` yet. Only the fixture plugin does. |
 

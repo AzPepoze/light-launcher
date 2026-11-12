@@ -1,4 +1,7 @@
 import type {
+	BrowsePage,
+	BrowseQuery,
+	FilterOption,
 	Game,
 	GameChange,
 	GameFile,
@@ -16,13 +19,20 @@ import type {
 	LibraryStats,
 	PreviewFile,
 	SearchResponse,
+	SidebarGroup,
+	SidebarGroupType,
+	SidebarOption,
+	SidebarSort,
 	SourceTile,
 	UpdateHistoryEntry,
 	UpdatesResponse
 } from "./types";
 import type {
+	WireBrowsePage,
+	WireBrowseRequest,
 	WireCheck,
 	WireFileCandidate,
+	WireFilterOption,
 	WireGame,
 	WireGameDetail,
 	WireGameDTO,
@@ -36,6 +46,9 @@ import type {
 	WireLibraryStats,
 	WirePreview,
 	WireSearchResult,
+	WireSidebarGroup,
+	WireSidebarOption,
+	WireSortDefault,
 	WireSuggestion,
 	WireUpdateHistoryEntry,
 	WireUpdatesSummary
@@ -119,13 +132,110 @@ export function toSourceTile(value: string | undefined): SourceTile {
 	return SOURCE_TILES.find((tile) => tile === value) ?? "poster";
 }
 
+const SIDEBAR_TYPES: SidebarGroupType[] = ["search", "toggles", "select", "multi", "sort"];
+
+/** Unknown group types are dropped so a newer plugin cannot break the sidebar. */
+export function toSidebarGroups(groups: WireSidebarGroup[] | null | undefined): SidebarGroup[] {
+	const mapped: SidebarGroup[] = [];
+	for (const group of groups ?? []) {
+		const type = SIDEBAR_TYPES.find((known) => known === group.type);
+		if (!type) continue;
+		mapped.push({
+			type,
+			id: group.id,
+			label: group.label ?? "",
+			placeholder: group.placeholder ?? "",
+			options: (group.options ?? []).map(toSidebarOption),
+			dynamic: group.dynamic === true,
+			searchable: group.searchable === true,
+			orderable: group.orderable === true,
+			default: toSortDefault(group.default)
+		});
+	}
+	return mapped;
+}
+
+function toSidebarOption(option: WireSidebarOption | WireFilterOption): SidebarOption {
+	return {
+		value: option.value,
+		label: option.label,
+		icon: "icon" in option && option.icon ? option.icon : null,
+		count: "count" in option && typeof option.count === "number" ? option.count : null
+	};
+}
+
+function toSortDefault(value: WireSortDefault | undefined): SidebarSort | null {
+	if (!value) return null;
+	if (value.order !== "asc" && value.order !== "desc") return null;
+	return { value: value.value, order: value.order };
+}
+
+/** A browse result is not in the library yet, so it has no id and no local state. */
+export function toBrowseGame(wire: WireGameDTO): Game {
+	return {
+		id: 0,
+		source: wire.source,
+		url: wire.url,
+		title: wire.title,
+		version: orNull(wire.version),
+		developer: orNull(wire.developer),
+		engine: orNull(wire.engine),
+		tags: wire.tags ?? [],
+		cover: orNull(wire.coverUrl),
+		coverLocal: null,
+		screenshots: wire.screenshots ?? [],
+		screenshotLocals: [],
+		description: htmlToText(wire.descriptionHtml),
+		running: false,
+		favorite: false,
+		notes: null,
+		installed: false,
+		installedVersion: null,
+		installDir: null,
+		installSize: null,
+		exePath: null,
+		exeArgs: null,
+		playtimeS: 0,
+		lastPlayedAt: null,
+		addedAt: "",
+		updateAvailable: false
+	};
+}
+
+export function toBrowsePage(wire: WireBrowsePage): BrowsePage {
+	return {
+		games: (wire.games ?? []).map(toBrowseGame),
+		nextCursor: wire.nextCursor ?? null,
+		total: typeof wire.total === "number" ? wire.total : null
+	};
+}
+
+export function toFilterOptions(options: WireFilterOption[] | null | undefined): FilterOption[] {
+	return (options ?? []).map((option) => ({
+		value: option.value,
+		label: option.label,
+		count: typeof option.count === "number" ? option.count : null
+	}));
+}
+
+export function toWireBrowseRequest(query: BrowseQuery): WireBrowseRequest {
+	const request: WireBrowseRequest = { source: query.source, limit: query.limit };
+	if (query.query) request.query = query.query;
+	if (Object.keys(query.filters).length > 0) request.filters = query.filters;
+	if (query.sort) request.sort = query.sort;
+	if (query.order) request.order = query.order;
+	if (query.cursor) request.cursor = query.cursor;
+	return request;
+}
+
 export function toLibraryOverview(wire: WireLibraryOverview): LibraryOverview {
 	return {
 		sources: (wire.sources ?? []).map((source) => ({
 			source: source.id,
 			label: source.label,
 			count: source.count,
-			tile: toSourceTile(source.tile)
+			tile: toSourceTile(source.tile),
+			sidebar: toSidebarGroups(source.sidebar)
 		})),
 		tags: (wire.tags ?? []).map((tag) => ({ tag: tag.tag, count: tag.count })),
 		stats: toStats(wire.stats)

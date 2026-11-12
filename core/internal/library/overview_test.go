@@ -2,6 +2,7 @@ package library
 
 import (
 	"context"
+	"reflect"
 	"testing"
 	"time"
 
@@ -43,7 +44,7 @@ func TestOverviewCountsSourcesTagsAndStats(t *testing.T) {
 		t.Fatalf("sources = %+v, want %+v", overview.Sources, want)
 	}
 	for i := range want {
-		if overview.Sources[i] != want[i] {
+		if !reflect.DeepEqual(overview.Sources[i], want[i]) {
 			t.Errorf("source %d = %+v, want %+v", i, overview.Sources[i], want[i])
 		}
 	}
@@ -52,6 +53,34 @@ func TestOverviewCountsSourcesTagsAndStats(t *testing.T) {
 	}
 	if overview.Stats.Total != 2 {
 		t.Errorf("stats.total = %d, want 2", overview.Stats.Total)
+	}
+}
+
+func TestOverviewCarriesTheSourceSidebar(t *testing.T) {
+	sidebar := []contract.SidebarGroup{
+		{Type: "search", ID: "text", Placeholder: "Search titles"},
+		{Type: "multi", ID: "tags", Label: "Tags", Dynamic: true, Searchable: true},
+	}
+	sources := &fakeSources{infos: []contract.SourceInfo{
+		{Plugin: "shop", SourceID: "shop", Label: "Shop", Sidebar: sidebar},
+		{Plugin: "plain", SourceID: "plain", Label: "Plain"},
+	}}
+	lib := openTestLibrary(t, Options{Sources: sources})
+
+	overview, err := lib.Overview(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	byID := map[string]SourceCount{}
+	for _, source := range overview.Sources {
+		byID[source.ID] = source
+	}
+	if !reflect.DeepEqual(byID["shop"].Sidebar, sidebar) {
+		t.Errorf("shop sidebar = %+v, want %+v", byID["shop"].Sidebar, sidebar)
+	}
+	if len(byID["plain"].Sidebar) != 0 || len(byID["manual"].Sidebar) != 0 {
+		t.Errorf("sources without a sidebar must carry none: plain=%+v manual=%+v",
+			byID["plain"].Sidebar, byID["manual"].Sidebar)
 	}
 }
 

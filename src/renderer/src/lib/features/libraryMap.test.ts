@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
 	hasNewVersion,
 	htmlToText,
+	toBrowseGame,
+	toBrowsePage,
+	toFilterOptions,
 	toGame,
 	toGameDetail,
 	toGameUpdate,
@@ -11,12 +14,22 @@ import {
 	toPreview,
 	toSearchResponse,
 	toSourceTile,
+	toSidebarGroups,
 	toUpdateHistory,
 	toUpdatesSummary,
+	toWireBrowseRequest,
 	toWireListRequest
 } from "./libraryMap";
-import type { Game, LibraryQuery } from "./types";
-import type { WireGame, WireGameDetail, WireLibraryList, WireLibraryOverview } from "./wire";
+import type { BrowseQuery, Game, LibraryQuery } from "./types";
+import type {
+	WireBrowsePage,
+	WireGame,
+	WireGameDetail,
+	WireGameDTO,
+	WireLibraryList,
+	WireLibraryOverview,
+	WireSidebarGroup
+} from "./wire";
 
 function makeWire(overrides: Partial<WireGame> = {}): WireGame {
 	return {
@@ -187,8 +200,8 @@ describe("toLibraryOverview", () => {
 			})
 		);
 		expect(overview.sources).toEqual([
-			{ source: "manual", label: "Local games", count: 1, tile: "square" },
-			{ source: "f95", label: "F95 Zone", count: 2, tile: "wide" }
+			{ source: "manual", label: "Local games", count: 1, tile: "square", sidebar: [] },
+			{ source: "f95", label: "F95 Zone", count: 2, tile: "wide", sidebar: [] }
 		]);
 		expect(overview.tags).toEqual([{ tag: "a", count: 2 }]);
 		expect(overview.stats).toEqual({
@@ -219,6 +232,178 @@ describe("toSourceTile", () => {
 	it("falls back to the poster shape for an unknown or missing value", () => {
 		expect(toSourceTile("round")).toBe("poster");
 		expect(toSourceTile(undefined)).toBe("poster");
+	});
+});
+
+const SIDEBAR: WireSidebarGroup[] = [
+	{ type: "search", id: "text", placeholder: "Search titles" },
+	{ type: "multi", id: "tags", label: "Tags", dynamic: true, searchable: true },
+	{
+		type: "sort",
+		id: "sort",
+		orderable: true,
+		options: [{ value: "title", label: "Title", icon: "sort_by_alpha" }],
+		default: { value: "title", order: "asc" }
+	}
+];
+
+describe("toSidebarGroups", () => {
+	it("maps every known group with its optional fields", () => {
+		const groups = toSidebarGroups(SIDEBAR);
+		expect(groups).toHaveLength(3);
+		expect(groups[0]).toMatchObject({ type: "search", id: "text", placeholder: "Search titles" });
+		expect(groups[1]).toMatchObject({
+			type: "multi",
+			label: "Tags",
+			dynamic: true,
+			searchable: true
+		});
+		expect(groups[2]).toMatchObject({
+			type: "sort",
+			orderable: true,
+			default: { value: "title", order: "asc" },
+			options: [{ value: "title", label: "Title", icon: "sort_by_alpha", count: null }]
+		});
+	});
+
+	it("fills the missing optional fields and drops an unknown group type", () => {
+		const groups = toSidebarGroups([
+			{ type: "select", id: "status" },
+			{ type: "slider", id: "size" } as WireSidebarGroup
+		]);
+		expect(groups).toEqual([
+			{
+				type: "select",
+				id: "status",
+				label: "",
+				placeholder: "",
+				options: [],
+				dynamic: false,
+				searchable: false,
+				orderable: false,
+				default: null
+			}
+		]);
+	});
+
+	it("treats null as no groups", () => {
+		expect(toSidebarGroups(null)).toEqual([]);
+	});
+
+	it("drops a sort default with an unknown order", () => {
+		const group = toSidebarGroups([
+			{
+				type: "sort",
+				id: "sort",
+				options: [{ value: "title", label: "Title" }],
+				default: { value: "title", order: "up" }
+			}
+		])[0];
+		expect(group.default).toBeNull();
+	});
+});
+
+const BROWSE_QUERY: BrowseQuery = {
+	source: "shop",
+	query: "harbor",
+	filters: { tags: ["rpg"], featured: true },
+	sort: "title",
+	order: "desc",
+	cursor: "next",
+	limit: 20
+};
+
+describe("toWireBrowseRequest", () => {
+	it("sends the query, filters, sort and cursor", () => {
+		expect(toWireBrowseRequest(BROWSE_QUERY)).toEqual({
+			source: "shop",
+			query: "harbor",
+			filters: { tags: ["rpg"], featured: true },
+			sort: "title",
+			order: "desc",
+			cursor: "next",
+			limit: 20
+		});
+	});
+
+	it("leaves the optional fields out when they are empty", () => {
+		expect(
+			toWireBrowseRequest({
+				...BROWSE_QUERY,
+				query: "",
+				filters: {},
+				sort: "",
+				order: "",
+				cursor: ""
+			})
+		).toEqual({ source: "shop", limit: 20 });
+	});
+});
+
+describe("toBrowsePage", () => {
+	const dto: WireGameDTO = {
+		source: "shop",
+		sourceId: "b1",
+		url: "https://shop/b1",
+		title: "Alpha Quest",
+		version: "1.0",
+		developer: "Studio",
+		tags: ["rpg"],
+		coverUrl: "https://shop/b1.jpg",
+		descriptionHtml: "<p>Short &amp; sweet</p>"
+	};
+
+	it("maps a browse game that is not in the library yet", () => {
+		const game = toBrowseGame(dto);
+		expect(game).toMatchObject({
+			id: 0,
+			source: "shop",
+			url: "https://shop/b1",
+			title: "Alpha Quest",
+			version: "1.0",
+			tags: ["rpg"],
+			cover: "https://shop/b1.jpg",
+			description: "Short & sweet",
+			installed: false,
+			favorite: false
+		});
+	});
+
+	it("keeps the total and cursor when the source sends them", () => {
+		const page = toBrowsePage({
+			games: [dto],
+			nextCursor: "next",
+			total: 8
+		} satisfies WireBrowsePage);
+		expect(page.games).toHaveLength(1);
+		expect(page.nextCursor).toBe("next");
+		expect(page.total).toBe(8);
+	});
+
+	it("uses null for a missing total, cursor and game list", () => {
+		expect(toBrowsePage({ games: null } as WireBrowsePage)).toEqual({
+			games: [],
+			nextCursor: null,
+			total: null
+		});
+	});
+});
+
+describe("toFilterOptions", () => {
+	it("keeps the counts the source sends and null where it does not", () => {
+		expect(
+			toFilterOptions([
+				{ value: "rpg", label: "RPG", count: 4 },
+				{ value: "horror", label: "Horror" }
+			])
+		).toEqual([
+			{ value: "rpg", label: "RPG", count: 4 },
+			{ value: "horror", label: "Horror", count: null }
+		]);
+	});
+
+	it("treats a missing list as empty", () => {
+		expect(toFilterOptions(null)).toEqual([]);
 	});
 });
 

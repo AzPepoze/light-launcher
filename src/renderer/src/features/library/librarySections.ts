@@ -9,7 +9,8 @@ const EMPTY_LOCAL: LibrarySource = {
 	source: LOCAL_SOURCE,
 	label: LOCAL_LABEL,
 	count: 0,
-	tile: "square"
+	tile: "square",
+	sidebar: []
 };
 
 /** Local games first, then each plugin source in the order the server lists them. */

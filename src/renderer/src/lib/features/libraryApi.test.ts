@@ -2,7 +2,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { libraryApi } from "./libraryApi";
 import { rpc } from "./rpc";
 import type { LibraryQuery } from "./types";
-import type { WireGame, WireLibraryList, WireLibraryOverview, WireUpdatesSummary } from "./wire";
+import type {
+	WireBrowsePage,
+	WireFiltersPage,
+	WireGame,
+	WireLibraryList,
+	WireLibraryOverview,
+	WireUpdatesSummary
+} from "./wire";
 
 vi.mock("./rpc", () => ({ rpc: vi.fn() }));
 
@@ -93,7 +100,88 @@ describe("libraryApi.overview", () => {
 		expect(rpcMock).toHaveBeenCalledTimes(1);
 		expect(rpcMock).toHaveBeenCalledWith("LibraryOverview");
 		expect(overview.sources).toEqual([
-			{ source: "f95", label: "F95 Zone", count: 5, tile: "wide" }
+			{ source: "f95", label: "F95 Zone", count: 5, tile: "wide", sidebar: [] }
+		]);
+	});
+});
+
+describe("libraryApi.browse", () => {
+	beforeEach(() => {
+		rpcMock.mockReset();
+	});
+
+	it("sends the sidebar filters and maps the page", async () => {
+		answerWith({
+			LibraryBrowse: {
+				games: [{ source: "shop", sourceId: "b1", url: "https://shop/b1", title: "Alpha Quest" }],
+				total: 1
+			} satisfies WireBrowsePage
+		});
+
+		const page = await libraryApi.browse({
+			source: "shop",
+			query: "",
+			filters: { tags: ["rpg"] },
+			sort: "title",
+			order: "asc",
+			cursor: "",
+			limit: 60
+		});
+
+		expect(rpcMock).toHaveBeenCalledWith("LibraryBrowse", {
+			source: "shop",
+			filters: { tags: ["rpg"] },
+			sort: "title",
+			order: "asc",
+			limit: 60
+		});
+		expect(page.games.map((game) => game.title)).toEqual(["Alpha Quest"]);
+		expect(page.total).toBe(1);
+	});
+
+	it("passes a changed-list error on", async () => {
+		rpcMock.mockRejectedValue(new Error("the list changed; start again from the first page"));
+
+		await expect(
+			libraryApi.browse({
+				source: "shop",
+				query: "",
+				filters: {},
+				sort: "",
+				order: "",
+				cursor: "old",
+				limit: 60
+			})
+		).rejects.toThrow("start again");
+	});
+});
+
+describe("libraryApi.filters", () => {
+	beforeEach(() => {
+		rpcMock.mockReset();
+	});
+
+	it("asks for one dynamic group and keeps the counts", async () => {
+		answerWith({
+			LibraryFilters: {
+				options: [
+					{ value: "rpg", label: "RPG", count: 4 },
+					{ value: "horror", label: "Horror" }
+				]
+			} satisfies WireFiltersPage
+		});
+
+		const options = await libraryApi.filters("shop", "tags", "r");
+
+		expect(rpcMock).toHaveBeenCalledWith("LibraryFilters", {
+			source: "shop",
+			group: "tags",
+			query: "r",
+			limit: 200
+		});
+		expect(options).toEqual([
+			{ value: "rpg", label: "RPG", count: 4 },
+			{ value: "horror", label: "Horror", count: null }
 		]);
 	});
 });

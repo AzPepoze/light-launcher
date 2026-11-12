@@ -179,6 +179,7 @@ export interface WireLibrarySource {
 	label: string;
 	tile: string;
 	count: number;
+	sidebar?: WireSidebarGroup[];
 }
 
 /** library.UpdatesSummary, from core/internal/library/updates.go. */

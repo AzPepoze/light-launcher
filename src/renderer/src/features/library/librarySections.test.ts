@@ -3,9 +3,9 @@ import type { LibrarySource } from "../../lib/features/types";
 import { LOCAL_SOURCE, librarySections, sourceLabel } from "./librarySections";
 
 const SERVER_SOURCES: LibrarySource[] = [
-	{ source: "f95", label: "F95 Zone", count: 12, tile: "wide" },
-	{ source: LOCAL_SOURCE, label: "Local games", count: 3, tile: "square" },
-	{ source: "itch", label: "itch.io", count: 0, tile: "poster" }
+	{ source: "f95", label: "F95 Zone", count: 12, tile: "wide", sidebar: [] },
+	{ source: LOCAL_SOURCE, label: "Local games", count: 3, tile: "square", sidebar: [] },
+	{ source: "itch", label: "itch.io", count: 0, tile: "poster", sidebar: [] }
 ];
 
 describe("librarySections", () => {
@@ -24,13 +24,14 @@ describe("librarySections", () => {
 
 	it("adds an empty local section when the overview has none", () => {
 		const sections = librarySections([
-			{ source: "f95", label: "F95 Zone", count: 1, tile: "wide" }
+			{ source: "f95", label: "F95 Zone", count: 1, tile: "wide", sidebar: [] }
 		]);
 		expect(sections[0]).toEqual({
 			source: LOCAL_SOURCE,
 			label: "Local games",
 			count: 0,
-			tile: "square"
+			tile: "square",
+			sidebar: []
 		});
 	});
 

@@ -49,11 +49,44 @@ export type LibrarySort = "title" | "added" | "lastPlayed";
 /** The shape of a source's covers: 3:4, 16:9 or 1:1. */
 export type SourceTile = "poster" | "wide" | "square";
 
+/** The filter groups a plugin source can put in the Library sidebar. */
+export type SidebarGroupType = "search" | "toggles" | "select" | "multi" | "sort";
+
+export interface SidebarSort {
+	value: string;
+	order: "asc" | "desc";
+}
+
+export interface SidebarOption {
+	value: string;
+	label: string;
+	icon: string | null;
+	/** The number of games the source counts for this value, when it says. */
+	count: number | null;
+}
+
+export interface SidebarGroup {
+	type: SidebarGroupType;
+	id: string;
+	label: string;
+	placeholder: string;
+	options: SidebarOption[];
+	/** True when the options come from LibraryFilters instead of the manifest. */
+	dynamic: boolean;
+	/** True when a dynamic group can be narrowed with its own search box. */
+	searchable: boolean;
+	/** True when a sort group can be reversed. */
+	orderable: boolean;
+	default: SidebarSort | null;
+}
+
 export interface LibrarySource {
 	source: string;
 	label: string;
 	count: number;
 	tile: SourceTile;
+	/** Empty for local games and sources that declare no filters. */
+	sidebar: SidebarGroup[];
 }
 
 /** Counts and the tag list for the whole library. Loaded once, not per page. */
@@ -78,6 +111,33 @@ export interface LibraryPageRequest {
 	offset: number;
 	limit: number;
 	wantTotal: boolean;
+}
+
+/** A filter value the plugin protocol accepts: one choice, several, or a toggle. */
+export type BrowseFilterValue = string | string[] | boolean;
+
+/** One page request to a plugin source's browse method. Nothing is saved. */
+export interface BrowseQuery {
+	source: string;
+	query: string;
+	filters: Record<string, BrowseFilterValue>;
+	sort: string;
+	order: "asc" | "desc" | "";
+	cursor: string;
+	limit: number;
+}
+
+export interface BrowsePage {
+	games: Game[];
+	nextCursor: string | null;
+	total: number | null;
+}
+
+/** One choice of a dynamic sidebar group, with the source's count when it sends one. */
+export interface FilterOption {
+	value: string;
+	label: string;
+	count: number | null;
 }
 
 export interface LibraryListPage {

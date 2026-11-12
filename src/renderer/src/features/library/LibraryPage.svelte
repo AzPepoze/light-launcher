@@ -7,6 +7,7 @@
 	import GameDetail from "./GameDetail.svelte";
 	import IncomingPanel from "./IncomingPanel.svelte";
 	import LibraryGrid from "./LibraryGrid.svelte";
+	import PluginBrowse from "./PluginBrowse.svelte";
 	import SectionHeader from "./SectionHeader.svelte";
 	import SectionList from "./SectionList.svelte";
 	import { LibraryState } from "./libraryState.svelte";
@@ -20,10 +21,12 @@
 	let tab = $state<Tab>("games");
 	let selected = $state<Game | null>(null);
 	let addOpen = $state(false);
+	let addUrl = $state("");
 	let revealed = $state(false);
 
 	const current = $derived(library.sections.find((item) => item.source === library.section));
 	const isPlugin = $derived(library.section !== LOCAL_SOURCE);
+	const canBrowse = $derived((current?.sidebar.length ?? 0) > 0);
 	const subtitle = $derived(
 		`${library.overview.stats.total} games · ${library.overview.stats.installed} installed` +
 			(library.overview.stats.updates ? ` · ${library.overview.stats.updates} updates` : "")
@@ -67,6 +70,7 @@
 	}
 
 	function addedGame(game: Game) {
+		addUrl = "";
 		addOpen = false;
 		selected = game;
 		library.scheduleRefresh();
@@ -74,6 +78,17 @@
 
 	function syncNow() {
 		void library.startSync(library.section);
+	}
+
+	/** A browse result is not saved yet, so it opens the add dialog with its link. */
+	function openBrowseGame(game: Game) {
+		addUrl = game.url;
+		addOpen = true;
+	}
+
+	function closeAdd() {
+		addOpen = false;
+		addUrl = "";
 	}
 </script>
 
@@ -139,38 +154,44 @@
 					onSync={syncNow}
 				/>
 
-				<FilterBar {library} />
-
-				{#if library.error}
-					<div class="status">
-						<p>{library.error}</p>
-						<button class="btn sm" onclick={() => library.refresh()}>Retry</button>
-					</div>
-				{:else if library.total === 0 && library.filtersActive}
-					<div class="status">
-						<p>No games match these filters.</p>
-						<button class="btn sm" onclick={() => library.resetFilters()}>Clear filters</button>
-					</div>
-				{:else if library.total === 0 && isPlugin}
-					<div class="status">
-						<p>No games yet. Install the plugin, sign in, then press Sync now.</p>
-					</div>
-				{:else if library.total === 0}
-					<div class="status">
-						<p>No games yet. Add a link or scan your folders.</p>
-						<button class="btn sm primary" onclick={() => (addOpen = true)}>Add game</button>
-					</div>
-				{:else}
+				{#if canBrowse && current}
 					{#key library.section}
-						<LibraryGrid {library} shape={tileShapeFor(current.tile)} {revealed} onOpen={openGame} />
+						<PluginBrowse source={current} onOpenGame={openBrowseGame} />
 					{/key}
+				{:else}
+					<FilterBar {library} />
+
+					{#if library.error}
+						<div class="status">
+							<p>{library.error}</p>
+							<button class="btn sm" onclick={() => library.refresh()}>Retry</button>
+						</div>
+					{:else if library.total === 0 && library.filtersActive}
+						<div class="status">
+							<p>No games match these filters.</p>
+							<button class="btn sm" onclick={() => library.resetFilters()}>Clear filters</button>
+						</div>
+					{:else if library.total === 0 && isPlugin}
+						<div class="status">
+							<p>No games yet. Install the plugin, sign in, then press Sync now.</p>
+						</div>
+					{:else if library.total === 0}
+						<div class="status">
+							<p>No games yet. Add a link or scan your folders.</p>
+							<button class="btn sm primary" onclick={() => (addOpen = true)}>Add game</button>
+						</div>
+					{:else}
+						{#key library.section}
+							<LibraryGrid {library} shape={tileShapeFor(current.tile)} {revealed} onOpen={openGame} />
+						{/key}
+					{/if}
 				{/if}
 			</div>
 		</div>
 	{/if}
 
 	{#if addOpen}
-		<AddGameDialog onAdded={addedGame} onClose={() => (addOpen = false)} />
+		<AddGameDialog onAdded={addedGame} onClose={closeAdd} initialUrl={addUrl} />
 	{/if}
 </div>
 

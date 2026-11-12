@@ -1,4 +1,6 @@
 import {
+	toBrowsePage,
+	toFilterOptions,
 	toGame,
 	toGameDetail,
 	toGameUpdate,
@@ -9,10 +11,14 @@ import {
 	toSearchResponse,
 	toUpdateHistory,
 	toUpdatesSummary,
+	toWireBrowseRequest,
 	toWireListRequest
 } from "./libraryMap";
 import { rpc } from "./rpc";
 import type {
+	BrowsePage,
+	BrowseQuery,
+	FilterOption,
 	Game,
 	GamePreview,
 	IncomingListResponse,
@@ -26,7 +32,9 @@ import type {
 	UpdatesResponse
 } from "./types";
 import type {
+	WireBrowsePage,
 	WireCheckResult,
+	WireFiltersPage,
 	WireGame,
 	WireGameDetail,
 	WireIncomingReport,
@@ -41,6 +49,9 @@ import type {
 
 /** Games per update page. The server caps one list at 1000. */
 const UPDATES_PAGE_SIZE = 200;
+
+/** The host caps a filter list at 200. */
+const FILTERS_LIMIT = 200;
 
 /** Every game, with the updates filter on. */
 const UPDATES_QUERY: LibraryQuery = {
@@ -84,6 +95,21 @@ export const libraryApi = {
 	/** Counts, tags and stats for the whole library. Not sent per page. */
 	overview: async (): Promise<LibraryOverview> =>
 		toLibraryOverview(await rpc<WireLibraryOverview>("LibraryOverview")),
+
+	/** One page of a source's games with its sidebar filters. Browse results are not saved. */
+	browse: async (query: BrowseQuery): Promise<BrowsePage> =>
+		toBrowsePage(await rpc<WireBrowsePage>("LibraryBrowse", toWireBrowseRequest(query))),
+
+	/** The values of one dynamic sidebar group, such as the source's tags. */
+	filters: async (source: string, group: string, query = ""): Promise<FilterOption[]> => {
+		const page = await rpc<WireFiltersPage>("LibraryFilters", {
+			source,
+			group,
+			query,
+			limit: FILTERS_LIMIT
+		});
+		return toFilterOptions(page.options);
+	},
 
 	/** Starts an import from a plugin source. Progress arrives as library.sync events. */
 	syncSource: async (source: string): Promise<void> => {
