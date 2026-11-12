@@ -23,7 +23,6 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 
 | Status | Item |
 |---|---|
-| [ ] | First release needs `Release-As: 2.0.0` (the manifest still says 1.0.0). |
 | [ ] | Publish the plugin SDK. The plugins use a local `file:` link, so a fresh clone cannot install. |
 | [ ] | Run `actionlint` and `shellcheck` on the workflows and scripts (not installed yet). |
 | [x] | Make the plugin SDK and plugin repos public and push them. |
