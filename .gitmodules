@@ -1,0 +1,9 @@
+[submodule "plugins/light-launcher-plugin-sdk"]
+	path = plugins/light-launcher-plugin-sdk
+	url = https://github.com/AzPepoze/light-launcher-plugin-sdk.git
+[submodule "plugins/light-launcher-plugin-f95"]
+	path = plugins/light-launcher-plugin-f95
+	url = https://github.com/AzPepoze/light-launcher-plugin-f95.git
+[submodule "plugins/light-launcher-plugin-itch"]
+	path = plugins/light-launcher-plugin-itch
+	url = https://github.com/AzPepoze/light-launcher-plugin-itch.git
