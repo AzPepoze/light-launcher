@@ -135,6 +135,85 @@ describe("buildSettingsSections", () => {
 	});
 });
 
+describe("nested objects", () => {
+	const nestedSchema: JsonSchema = {
+		type: "object",
+		required: ["username"],
+		properties: {
+			username: { type: "string" },
+			proxy: {
+				type: "object",
+				title: "Proxy",
+				required: ["host"],
+				properties: {
+					host: { type: "string", title: "Host" },
+					port: { type: "integer", default: 8080 },
+					auth: {
+						type: "object",
+						title: "Auth",
+						properties: { token: { type: "string", "x-ll-advanced": true } }
+					}
+				}
+			},
+			limits: { type: "object", properties: { max: { type: "number" } } },
+			unused: { type: "object" }
+		}
+	};
+	const nestedFields = buildSettingsFields(nestedSchema);
+
+	it("flattens nested fields with dotted keys and their object heading", () => {
+		expect(nestedFields.map((field) => [field.key, field.path.join("/"), field.group])).toEqual([
+			["username", "username", ""],
+			["proxy.host", "proxy/host", "Proxy"],
+			["proxy.port", "proxy/port", "Proxy"],
+			["proxy.auth.token", "proxy/auth/token", "Auth"],
+			["limits.max", "limits/max", "limits"]
+		]);
+	});
+
+	it("puts nested fields under their object heading", () => {
+		const sections = buildSettingsSections(nestedFields);
+		expect(sections.map((section) => [section.title, section.advanced])).toEqual([
+			["", false],
+			["Proxy", false],
+			["limits", false],
+			["Advanced", true]
+		]);
+		expect(sections[3].fields.map((field) => field.key)).toEqual(["proxy.auth.token"]);
+	});
+
+	it("reads and writes nested saved values", () => {
+		const saved = {
+			username: "ada",
+			proxy: { host: "localhost", port: 9000, auth: { token: "t" } },
+			limits: { max: 5 }
+		};
+		const raw = rawSettings(nestedFields, saved);
+		expect(raw).toEqual({
+			username: "ada",
+			"proxy.host": "localhost",
+			"proxy.port": "9000",
+			"proxy.auth.token": "t",
+			"limits.max": "5"
+		});
+
+		const check = collectSettings(nestedFields, raw);
+		expect(check.errors).toEqual({});
+		expect(check.values).toEqual({
+			username: "ada",
+			proxy: { host: "localhost", port: 9000, auth: { token: "t" } },
+			limits: { max: 5 }
+		});
+	});
+
+	it("uses a nested field default and reports its required error by dotted key", () => {
+		const raw = rawSettings(nestedFields, {});
+		expect(raw["proxy.port"]).toBe("8080");
+		const check = collectSettings(nestedFields, { ...raw, username: "ada", "proxy.host": "" });
+		expect(check.errors).toEqual({ "proxy.host": "Required" });
+	});
+});
+
 describe("rawSettings", () => {
 	it("prefers saved values, then schema defaults", () => {
 		const raw = rawSettings(fields, { username: "ada", speed: 1.5, priorities: ["c"] });

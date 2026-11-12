@@ -337,7 +337,9 @@ Here is a small schema:
 
 | Keyword                               | Used on         | Effect                                                                     |
 | :------------------------------------ | :-------------- | :------------------------------------------------------------------------- |
-| `type`                                | Every field     | `string`, `number`, `integer`, `boolean` or `array`. Others are not drawn. |
+| `type`                                | Every field     | `string`, `number`, `integer`, `boolean`, `array` or `object`. Others are not drawn. |
+| `properties`                          | Object          | The fields of a nested object. The form draws them as a group under the object title. |
+| `required`                            | Object          | Names the fields that must have a value.                                   |
 | `title`                               | Every field     | The label. Defaults to the property name.                                  |
 | `description`                         | Every field     | A hint under the input.                                                    |
 | `examples`                            | Every field     | Shown under the input as "Examples: ...".                                  |
@@ -347,7 +349,6 @@ Here is a small schema:
 | `minLength`, `maxLength`              | String          | The length in characters.                                                  |
 | `items`                               | Array           | The item type: `string`, or an `enum` of strings or numbers.               |
 | `minItems`, `maxItems`, `uniqueItems` | Array           | The list size, and whether items may repeat.                               |
-| `required`                            | Top level       | Names the fields that must have a value.                                   |
 | `additionalProperties`                | Top level       | `false` rejects keys that are not in the schema.                           |
 
 ### Launcher extensions

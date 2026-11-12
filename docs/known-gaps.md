@@ -44,7 +44,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | The scheduler reads plugin sync intervals once at start, so a plugin installed later or a changed interval needs a restart. |
 | [ ] | Updating a dropped-in plugin without a `repository` field (drop the new version again). A dropped-in plugin that names a repository does update from GitHub. |
 | [x] | Settings form built from each plugin's `settings.schema.json`. |
-| [ ] | Nested objects in a settings schema are not drawn (only top-level fields). |
+| [x] | Nested objects in a settings schema are not drawn (only top-level fields). |
 | [ ] | SDK docs for the `settings.changed` notification and the `x-ll-*` schema extensions. |
 | [ ] | Check the settings form by eye in the real window (only typecheck, tests and build so far). |
 | [x] | Host options for a download folder, a subfolder per game, install after download and delete archive, including the optional `source.prepareDownload` result hints. |
@@ -102,7 +102,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [x] | The Updates page shows the update-check history with paging. |
 | [ ] | Check the new Library page and drop zone by eye in the real window. |
 | [ ] | Middle-click autoscroll is checked by typecheck, tests and build only; try it in the real window. |
-| [ ] | Home card per game folder: the backend is done, but the "Choose launcher" menu on the card is not in the UI yet. |
+| [x] | Home card per game folder: the backend is done, but the "Choose launcher" menu on the card is not in the UI yet. |
 | [ ] | Long game names on Home cards ellipsise on hover; there is no scrolling text marquee. |
 | [ ] | Helper programs are found by name only. A helper with another name still shows as a launcher. |
 | [ ] | A forced scan of 2,000 executables takes about 80 ms. Most of it is reading the config files, not grouping. |

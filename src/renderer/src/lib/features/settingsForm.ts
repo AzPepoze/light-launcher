@@ -14,6 +14,8 @@ export type RawSettings = Record<string, FieldInput>;
 
 export interface SettingsField {
 	key: string;
+	/** The property names from the schema root to this field. */
+	path: string[];
 	label: string;
 	description: string;
 	examples: string[];
@@ -96,19 +98,22 @@ function optionsOf(property: JsonSchemaProperty, kind: FieldKind): FieldOption[]
 }
 
 function fieldFrom(
-	key: string,
+	path: string[],
 	property: JsonSchemaProperty,
 	kind: FieldKind,
-	required: boolean
+	required: boolean,
+	group: string,
+	advanced: boolean
 ): SettingsField {
 	return {
-		key,
-		label: property.title ?? key,
+		key: path.join("."),
+		path,
+		label: property.title ?? path[path.length - 1],
 		description: property.description ?? "",
 		examples: (property.examples ?? []).map(String),
 		kind,
-		group: property["x-ll-group"] ?? "",
-		advanced: property["x-ll-advanced"] === true,
+		group: group || property["x-ll-group"] || "",
+		advanced: advanced || property["x-ll-advanced"] === true,
 		required,
 		integer: property.type === "integer",
 		options: optionsOf(property, kind),
@@ -124,15 +129,40 @@ function fieldFrom(
 	};
 }
 
-/** Turns the top-level properties of a settings schema into form fields. Unsupported types are skipped. */
+function addFields(
+	properties: Record<string, JsonSchemaProperty>,
+	required: string[],
+	prefix: string[],
+	group: string,
+	advanced: boolean,
+	fields: SettingsField[]
+): void {
+	const requiredNames = new Set(required);
+	for (const [name, property] of Object.entries(properties)) {
+		const path = [...prefix, name];
+		if (property.type === "object" && property.properties) {
+			addFields(
+				property.properties,
+				property.required ?? [],
+				path,
+				property.title || name,
+				advanced || property["x-ll-advanced"] === true,
+				fields
+			);
+			continue;
+		}
+		const kind = fieldKind(property);
+		if (kind) {
+			fields.push(fieldFrom(path, property, kind, requiredNames.has(name), group, advanced));
+		}
+	}
+}
+
+/** Turns the properties of a settings schema into form fields. Nested objects become groups. */
 export function buildSettingsFields(schema: JsonSchema | null): SettingsField[] {
 	if (!schema?.properties) return [];
-	const required = new Set(schema.required ?? []);
 	const fields: SettingsField[] = [];
-	for (const [key, property] of Object.entries(schema.properties)) {
-		const kind = fieldKind(property);
-		if (kind) fields.push(fieldFrom(key, property, kind, required.has(key)));
-	}
+	addFields(schema.properties, schema.required ?? [], [], "", false, fields);
 	return fields;
 }
 
@@ -171,11 +201,30 @@ function inputFromValue(field: SettingsField, value: unknown): FieldInput {
 	}
 }
 
+function valueAtPath(values: Record<string, unknown>, path: string[]): unknown {
+	let value: unknown = values;
+	for (const name of path) {
+		if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+		value = (value as Record<string, unknown>)[name];
+	}
+	return value;
+}
+
+function setAtPath(values: Record<string, unknown>, path: string[], value: unknown): void {
+	let target = values;
+	for (const name of path.slice(0, -1)) {
+		const next = target[name];
+		if (!next || typeof next !== "object" || Array.isArray(next)) target[name] = {};
+		target = target[name] as Record<string, unknown>;
+	}
+	target[path[path.length - 1]] = value;
+}
+
 /** The form state for saved values, with the schema default used for any value that is not saved. */
 export function rawSettings(fields: SettingsField[], saved: Record<string, unknown>): RawSettings {
 	const raw: RawSettings = {};
 	for (const field of fields) {
-		raw[field.key] = inputFromValue(field, saved[field.key] ?? field.defaultValue);
+		raw[field.key] = inputFromValue(field, valueAtPath(saved, field.path) ?? field.defaultValue);
 	}
 	return raw;
 }
@@ -304,7 +353,7 @@ export function collectSettings(fields: SettingsField[], raw: RawSettings): Sett
 		if (read.error) {
 			errors[field.key] = read.error;
 		} else if (read.value !== undefined) {
-			values[field.key] = read.value;
+			setAtPath(values, field.path, read.value);
 		}
 	}
 	return { values, errors };

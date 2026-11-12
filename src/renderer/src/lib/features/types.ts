@@ -382,6 +382,8 @@ export interface JsonSchemaProperty {
 	maxItems?: number;
 	uniqueItems?: boolean;
 	items?: JsonSchemaProperty;
+	properties?: Record<string, JsonSchemaProperty>;
+	required?: string[];
 	"x-ll-group"?: string;
 	"x-ll-widget"?: "folder" | "file";
 	"x-ll-advanced"?: boolean;

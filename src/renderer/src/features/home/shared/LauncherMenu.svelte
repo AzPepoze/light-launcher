@@ -1,17 +1,26 @@
 <script lang="ts">
 	import AppMenu from "@components/shared/AppMenu.svelte";
-	import { launcherCountLabel, launcherKindLabel } from "@lib/features/launcher";
+	import { launcherCountLabel } from "@lib/features/launcher";
 	import type { GameInfo } from "@shared";
+	import { launcherChoices } from "./launcherMenu";
 
-	export let game: GameInfo;
-	/** Receives the picked launcher path, or null for automatic. */
-	export let onChoose: (launcherPath: string | null) => void = () => {};
-	/** Cards paint-clip their box, so the panel has to open back over the cover. */
-	export let placement: "bottom" | "top" = "bottom";
+	let {
+		game,
+		onChoose = () => {},
+		placement = "bottom"
+	}: {
+		game: GameInfo;
+		/** Receives the picked launcher path, or null for automatic. */
+		onChoose?: (launcherPath: string | null) => void;
+		/** Cards paint-clip their box, so the panel has to open back over the cover. */
+		placement?: "bottom" | "top";
+	} = $props();
 
-	let isOpen = false;
+	let isOpen = $state(false);
+	let choices = $derived(launcherChoices(game.launchers ?? []));
 
-	function choose(launcherPath: string | null) {
+	function choose(event: MouseEvent, launcherPath: string | null) {
+		event.stopPropagation();
 		isOpen = false;
 		onChoose(launcherPath);
 	}
@@ -27,22 +36,23 @@
 			title="Choose launcher"
 			aria-haspopup="menu"
 			aria-expanded={isOpen}
-			on:click|stopPropagation={() => (isOpen = !isOpen)}
+			onclick={(event) => {
+				event.stopPropagation();
+				isOpen = !isOpen;
+			}}
 		>
 			<span class="material-icons">tune</span>
 			<span>{launcherCountLabel(game.launcherCount)}</span>
 		</button>
 		<AppMenu visible={isOpen} mode="anchor" {placement} onClose={() => (isOpen = false)}>
-			<button type="button" class="menu-item" on:click|stopPropagation={() => choose(null)}>
-				<span class="material-icons">autorenew</span>
-				<span>Use automatic</span>
-			</button>
-			{#each game.launchers as launcher (launcher.path)}
-				<button type="button" class="menu-item" on:click|stopPropagation={() => choose(launcher.path)}>
-					<span class="material-icons">{launcher.primary ? "check" : "play_arrow"}</span>
+			{#each choices as choice (choice.path ?? "automatic")}
+				<button type="button" class="menu-item" onclick={(event) => choose(event, choice.path)}>
+					<span class="material-icons">{choice.icon}</span>
 					<span class="launcher-text">
-						<span class="launcher-name">{launcher.name}</span>
-						<span class="launcher-kind">{launcherKindLabel(launcher.kind)}</span>
+						<span class="launcher-name">{choice.label}</span>
+						{#if choice.detail}
+							<span class="launcher-kind">{choice.detail}</span>
+						{/if}
 					</span>
 				</button>
 			{/each}
