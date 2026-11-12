@@ -53,18 +53,18 @@ func TestGameStoreListAndFind(t *testing.T) {
 	}
 }
 
-func TestGameStoreSkipsBrokenAndOldConfigs(t *testing.T) {
+func TestGameStoreSkipsBrokenAndLoadsLegacyConfigs(t *testing.T) {
 	dir := t.TempDir()
 	writeRaw(t, filepath.Join(dir, "broken", "config.json"), "{")
-	writeRaw(t, filepath.Join(dir, "old", "config.json"), `{"ID": "old", "Name": "Old"}`)
+	writeRaw(t, filepath.Join(dir, "legacy", "config.json"), `{"ID": "legacy", "Name": "Old"}`)
 	valid := types.LaunchOptions{ID: "ok", Name: "Good", GamePath: "/games/Good.exe"}
 	if err := NewGameStore(dir).Save(&valid); err != nil {
 		t.Fatalf("Save: %v", err)
 	}
 
 	list := NewGameStore(dir).List()
-	if len(list) != 1 || list[0].ID != "ok" {
-		t.Fatalf("List = %+v, want only the valid config", list)
+	if len(list) != 2 {
+		t.Fatalf("List = %+v, want the valid and the legacy config", list)
 	}
 }
 

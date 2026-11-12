@@ -170,14 +170,16 @@ func TestPathVariantsShareOneEntry(t *testing.T) {
 	}
 }
 
-func TestCorruptAndOldStoresReset(t *testing.T) {
+func TestStoreLoadsLegacyAndResetsBadFiles(t *testing.T) {
 	tests := []struct {
-		name    string
-		content string
+		name      string
+		content   string
+		wantGames int
 	}{
-		{"corrupt", "{"},
-		{"missing version", `{"games": {"/game": {"gameName": "Old"}}}`},
-		{"unknown version", `{"version": 99, "games": {"/game": {"gameName": "Old"}}}`},
+		{"corrupt", "{", 0},
+		{"missing version loads as legacy", `{"games": {"/game": {"gameName": "Old"}}}`, 1},
+		{"version 2", `{"version": 2, "games": {"/game": {"gameName": "Old"}}}`, 0},
+		{"unknown version", `{"version": 99, "games": {"/game": {"gameName": "Old"}}}`, 0},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -185,8 +187,8 @@ func TestCorruptAndOldStoresReset(t *testing.T) {
 			if err := os.WriteFile(path, []byte(test.content), 0o644); err != nil {
 				t.Fatal(err)
 			}
-			if got := New(path, stubSettings{}).List(); len(got) != 0 {
-				t.Fatalf("List = %+v, want an empty store", got)
+			if got := New(path, stubSettings{}).List(); len(got) != test.wantGames {
+				t.Fatalf("List = %+v, want %d games", got, test.wantGames)
 			}
 		})
 	}
