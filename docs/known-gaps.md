@@ -36,7 +36,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | Check the Home status line (library load and folder scan) and the "No games yet" empty state by eye in the real window. Only typecheck, tests and build so far. |
 | [x] | Skeleton tiles on the first library load. Built and tested, not seen in a window. |
 | [x] | The scan status shows the folder being scanned ("Scanning Library... 3 of 5"). Built and tested, not seen in a window. |
-| [ ] | Game cards without an icon show the rocket fallback until their icon loads. |
+| [x] | Game cards show a neutral skeleton while an icon is pending, share in-flight loads, and use the rocket only when the icon is truly missing or failed. Grid and list views match. |
 
 ## Plugin system
 
@@ -48,7 +48,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | Plugin screens: the consent ledger, queue bar, list rows and motion. Only typecheck, tests and build so far: check them by eye in the real window. |
 | [ ] | A folder that holds several plugin folders is skipped with a hint, not expanded. Drop each plugin folder on its own. |
 | [x] | Plugin updates from GitHub Releases: `repository` field, manual "Check for updates", update screen with consent, release `SHA256SUMS` check, and rollback when a new version does not start. |
-| [ ] | Daily plugin release check (the launcher checks once soon after start and on "Check now"; the scheduler does not run it yet). |
+| [x] | The scheduler runs a daily `plugins.update-check` job; the startup check and "Check now" remain. |
 | [x] | Release workflow in each plugin repo (not yet run on GitHub). |
 | [x] | The scheduler rebuilds its jobs when a plugin is installed, updated, enabled or its settings change; no restart. |
 | [ ] | Updating a dropped-in plugin without a `repository` field (drop the new version again). A dropped-in plugin that names a repository does update from GitHub. |
@@ -68,7 +68,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | F95 now uses the host `browser.assist` service. A real F95 download through the embedded window is untested. |
 | [ ] | Embedded browser assist on Windows (WebView2) is untested on Windows. |
 | [x] | If the request that started a browser step ends first, the host cancels `browser.assist` and closes the window. |
-| [ ] | Plugin secrets saved before the cleanup change are not removed when the plugin is removed. |
+| [x] | Removing a plugin deletes every secret for it, including keys saved before the per-key tracking existed; keyring stores fall back to recorded keys when they cannot enumerate. |
 | [x] | Stop plugins that stay idle for 5 minutes, with `pluginIdleTimeoutMinutes` to change or disable it. |
 | [ ] | Check the "Sleeping" plugin badge by eye in the real window (only typecheck, tests and build so far). |
 | [ ] | OS-level sandbox for plugins (permissions only cover host services today). |
@@ -118,7 +118,8 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | A forced scan of 2,000 executables takes about 80 ms. Most of it is reading the config files, not grouping. |
 | [ ] | No manual setting for how deep the game folders are. The automatic rule can misjudge a game folder that has three or more sub-apps and no exe of its own. |
 | [x] | The Library UI reads sources, tags and stats from `LibraryOverview` and pages `LibraryList`. |
-| [ ] | `LibrarySyncSource` rejects sources that only have the sync capability (no `listGames`). |
+| [x] | `LibrarySyncSource` accepts sync-only sources (`sync:games` / `sync:index`) and saves games returned by `source.sync`. |
+| [x] | Scheduled sync uses `Library.SyncSource`, so sync-only sources save their games on the timer just like a manual sync. |
 | [x] | The Library sidebar for plugin sources: the overview carries each source's `sidebar`, and the page browses it through `LibraryBrowse` and `LibraryFilters`. Fixed groups, dynamic choices and a sort with direction are drawn. |
 | [ ] | Check the plugin Library sidebar by eye in the real window with the fixture plugin (only typecheck, tests and build so far). |
 | [x] | The plugin SDK docs describe `sidebar`, the `browse:filters` capability, `source.browse` and `source.listFilters`. |
@@ -148,7 +149,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [x] | Downloads sampling is owned by the long-lived library state; it continues while the Downloads tab is closed and stops when no transfer is active. |
 | [ ] | Confirm the real plugin `kind` values for files; the Full and Patch badges only handle "full" and "patch". |
 | [x] | The Library overview carries `kind`, `capabilities`, `sync` and `updateCheck`; the Updates page reads them from the overview instead of `PluginsList`. |
-| [ ] | The Updates and Downloads tabs unmount when you switch tabs; a running check continues and the page restores progress from saved status. |
+| [x] | Updates, Downloads and Incoming mount lazily on first visit and then stay mounted but hidden; in-flight and expanded state survives tab switches. Per-tab scroll still uses the shared page scroller. |
 | [x] | Library sidebar and rail have no background or divider; choices are rows with a tinted selected state, no checkbox. |
 | [x] | Library cards: no Installed badge, name and version in a hover overlay on the cover, denser 12 px grid. |
 | [x] | Updates page shows "Last checked X ago · Next check in Y" from `nextRunAt`. |
@@ -158,22 +159,24 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [x] | F95 1.0.1 and itch 0.1.0 rebuilt against the current SDK, packed, installed, and `source.listFilters` answered through the host with real engine options. |
 | [x] | Windows plugin binaries rebuilt and both `.llplugin` packages repacked; each Windows `.exe` now contains `source.listFilters`. The installed Linux copies are unchanged; a Windows install uses the new packages. |
 | [ ] | Local games are now library rows with launch settings, but launching one from the Library and its prefix/Proton/playtime behavior has only been unit-tested. Check in the real window. |
-| [ ] | Plugin commands now appear in the command palette; no test covers the palette entry and no window check has been done. |
-| [ ] | Stale itch "API key is not configured" rows in the update check history need a one-time cleanup. |
+| [x] | Plugin commands are covered in the command palette: entries carry the plugin/command ids, running one calls `PluginCall`, and a plugin without commands adds none. |
+| [ ] | The plugin command palette entries are unit-tested only; check the badge, labels and result toast in a running window. |
+| [x] | One-time cleanup removes the stale itch "API key is not configured" history rows (including the `(code -32603)` form); real failures stay. |
 | [x] | Per-source "Check every" now sets a minimum gap before that source's games are due again. |
 | [x] | The overview sends the `sync` flag; `canSyncGames` reads it and local games never show Sync now. |
 | [x] | The first enabled plugin that claims a source id owns it; later plugins with a colliding id are marked broken with a clear error. |
 | [x] | `pages`, `hooks`, `launchAdapters`, `importers` and `themes` are rejected in apiVersion 1 with a clear error; the SDK schema and docs no longer advertise them. |
 | [x] | F95's initialize-time `settings.get` no longer times out: the supervisor held its state mutex across the handshake, so the host service blocked until the plugin gave up. Starts now use a separate start lock, and a regression test covers host calls during initialize. |
 | [x] | The shared Dropdown has an optional search box for lists over 8 choices; select-type Library sidebar groups pass the plugin's `searchable` flag. |
-| [ ] | The plugin games folder path is not exposed to the frontend, so the scan-folder warning ("a plugin already scans this folder") is not wired. |
+| [x] | Sources expose the plugin games folder; scan-folder rows show a non-blocking warning when a folder overlaps it. Path matching is unit-tested. |
 | [x] | Plugin update checks carry `not_found`, `rate_limited` or `untrusted_host`; the UI no longer matches error text. |
 | [x] | IPC errors carry a stable `code`; `method_not_found`, `auth_required` and the plugin RPC codes reach `InvokeError`. |
 | [x] | No `.btn` buttons remain in the plugin screens. PluginRow's full-row button and the sites disclosure stay raw on purpose: Button cannot express their layout/aria structure without neutralizing the kit. |
 | [x] | The text marquee is one shared component used by GameTile and GridCard. |
 | [ ] | Add a lint test that stops new `class="btn` and `material-icons` spans in features. |
 | [ ] | Migrate the remaining `material-icons` spans and `btn` classes. |
-| [ ] | The Updates settings source list calls PluginsList on open and shows no source icons. |
+| [x] | The Updates settings source list no longer calls `PluginsList`; it reads one local library overview and shows each source icon and label. |
+| [ ] | `SettingRow` has no icon slot, so the Updates settings source rows use a small local row for icon + label. Add an optional icon prop if that markup should be shared. |
 | [ ] | Checkbox is kept for PluginConsent only. |
 
 ## Migration

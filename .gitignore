@@ -7,6 +7,7 @@ core/cmd/launcher/ui/
 
 # Go
 vendor/
+.gocache/
 *.exe
 *.exe~
 *.dll
