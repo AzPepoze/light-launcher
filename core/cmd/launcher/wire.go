@@ -4,9 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"sync"
+	"time"
 
+	"light-launcher/core/internal/activity"
 	"light-launcher/core/internal/api"
 	"light-launcher/core/internal/browserassist"
+	"light-launcher/core/internal/config"
 	"light-launcher/core/internal/contract"
 	"light-launcher/core/internal/downloads"
 	"light-launcher/core/internal/library"
@@ -20,6 +23,7 @@ import (
 	"light-launcher/core/internal/services/runtimesvc"
 	"light-launcher/core/internal/services/schedulersvc"
 	"light-launcher/core/internal/services/systemsvc"
+	"light-launcher/core/internal/types"
 	"light-launcher/core/internal/uploads"
 )
 
@@ -33,6 +37,8 @@ type services struct {
 	installer     *downloads.FolderInstaller
 	uploads       *uploads.Store
 	scheduler     *scheduler.Scheduler
+	rebuildJobs   func() error
+	hub           *api.Hub
 	stop          context.CancelFunc
 	jobs          sync.WaitGroup
 }
@@ -73,6 +79,9 @@ func (s *services) open(ctx context.Context, router *api.Router, hub *api.Hub, d
 	}
 	s.library = lib
 	updates.library = lib
+	if err := backfillLocal(ctx, lib); err != nil {
+		logger.Warn("main", "could not import local games into the library: %v", err)
+	}
 
 	browser, err := browserassist.New(browserassist.Options{
 		ProfilesDir: dirs.BrowserProfiles,
@@ -89,11 +98,13 @@ func (s *services) open(ctx context.Context, router *api.Router, hub *api.Hub, d
 	s.host = host
 	sources.registry = plugins.NewRegistry(host)
 
-	sched, err := newScheduler(ctx, s.library, host, sources, libraryImporter(s.library), hub.Emit)
+	sched, rebuild, err := newScheduler(ctx, s.library, host, sources, libraryImporter(s.library), hub.Emit)
 	if err != nil {
 		return err
 	}
 	s.scheduler = sched
+	s.rebuildJobs = rebuild
+	s.hub = hub
 
 	s.registerMethods(router, hub, sources)
 	s.startJobs(ctx)
@@ -106,7 +117,10 @@ func (s *services) gameTitle(ctx context.Context, gameID int64) (string, error) 
 }
 
 func (s *services) registerMethods(router *api.Router, hub *api.Hub, sources contract.Sources) {
-	appsvc.Register(router, hub)
+	appsvc.RegisterWithLocalView(router, hub, func(ctx context.Context, groups []types.ScannedFolderGroup) error {
+		_, err := s.library.SyncScanned(ctx, groups)
+		return err
+	}, s.library)
 	runtimesvc.Register(router, hub)
 	systemsvc.Register(router, hub)
 	pluginsvc.Register(router, hub, s.host, s.uploads)
@@ -118,7 +132,7 @@ func (s *services) registerMethods(router *api.Router, hub *api.Hub, sources con
 
 // startJobs runs the watch folder poller, the background scheduler and the plugin release check until Close.
 func (s *services) startJobs(ctx context.Context) {
-	s.jobs.Add(3)
+	s.jobs.Add(4)
 	go func() {
 		defer s.jobs.Done()
 		s.library.RunWatcher(ctx, watchInterval)
@@ -131,6 +145,42 @@ func (s *services) startJobs(ctx context.Context) {
 		defer s.jobs.Done()
 		s.runPluginUpdateCheck(ctx)
 	}()
+	go func() {
+		defer s.jobs.Done()
+		s.watchJobChanges(ctx)
+	}()
+}
+
+// watchJobChanges rebuilds the scheduler jobs when a plugin is installed, updated, enabled or its
+// settings change. A short debounce collapses the burst of events one install sends.
+func (s *services) watchJobChanges(ctx context.Context) {
+	if s.hub == nil || s.rebuildJobs == nil {
+		return
+	}
+	events, cancel := s.hub.Subscribe()
+	defer cancel()
+	timer := time.NewTimer(time.Hour)
+	if !timer.Stop() {
+		<-timer.C
+	}
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case event, ok := <-events:
+			if !ok {
+				return
+			}
+			if event.Channel != "plugin-state" && event.Channel != "plugin-settings" {
+				continue
+			}
+			timer.Reset(time.Second)
+		case <-timer.C:
+			if err := s.rebuildJobs(); err != nil {
+				logger.Warn("scheduler", "could not apply plugin job changes: %v", err)
+			}
+		}
+	}
 }
 
 // Close stops the jobs, the browser window, the plugins and the downloads, then closes the databases.
@@ -178,4 +228,23 @@ func (l *lateSources) Browse(ctx context.Context, plugin string, request contrac
 
 func (l *lateSources) ListFilters(ctx context.Context, plugin string, request contract.FiltersRequest) (contract.FiltersPage, error) {
 	return l.registry.ListFilters(ctx, plugin, request)
+}
+
+func (l *lateSources) CallAction(ctx context.Context, plugin, method string, params any, out any) error {
+	return l.registry.CallAction(ctx, plugin, method, params, out)
+}
+
+// backfillLocal imports the old JSON game configs, ignored paths and playtime into the library once.
+func backfillLocal(ctx context.Context, lib *library.Library) error {
+	settings := config.NewSettingsStore(config.SettingsFilePath())
+	current := settings.Load()
+	configs := config.NewGameStore(config.GetConfigDirectory()).List()
+	activityStore := activity.New(config.ActivityFilePath(), settings)
+	_, err := lib.BackfillLocal(ctx, library.LocalBackfillInput{
+		Configs:     configs,
+		ScanFolders: current.ScanFolders,
+		Blacklist:   current.Blacklist,
+		Activity:    activityStore.List(),
+	})
+	return err
 }

@@ -107,6 +107,10 @@ func (noSources) Browse(context.Context, string, contract.BrowseRequest) (contra
 	return contract.BrowsePage{}, errors.New("no plugin host configured")
 }
 
+func (noSources) CallAction(context.Context, string, string, any, any) error {
+	return nil
+}
+
 func (noSources) ListFilters(context.Context, string, contract.FiltersRequest) (contract.FiltersPage, error) {
 	return contract.FiltersPage{}, errors.New("no plugin host configured")
 }

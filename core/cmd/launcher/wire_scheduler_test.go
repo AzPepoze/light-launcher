@@ -50,6 +50,10 @@ func (f *fakeSources) Browse(context.Context, string, contract.BrowseRequest) (c
 	return contract.BrowsePage{}, errors.New("not used")
 }
 
+func (f *fakeSources) CallAction(context.Context, string, string, any, any) error {
+	return nil
+}
+
 func (f *fakeSources) ListFilters(context.Context, string, contract.FiltersRequest) (contract.FiltersPage, error) {
 	return contract.FiltersPage{}, errors.New("not used")
 }

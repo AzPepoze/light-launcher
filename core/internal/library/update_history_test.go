@@ -42,7 +42,7 @@ func TestUpdateHistoryRecordsEveryOutcome(t *testing.T) {
 			if _, err := lib.CheckGame(context.Background(), game.ID); err != nil {
 				t.Fatal(err)
 			}
-			entries, err := lib.UpdateHistory(context.Background(), 0, 10, 0)
+			entries, err := lib.UpdateHistory(context.Background(), 0, 10, 0, "")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -84,14 +84,14 @@ func TestUpdateHistoryPagesNewestFirst(t *testing.T) {
 		}
 	}
 
-	first, err := lib.UpdateHistory(ctx, 0, 2, 0)
+	first, err := lib.UpdateHistory(ctx, 0, 2, 0, "")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(first) != 2 || first[0].GameID != ids[2] || first[1].GameID != ids[1] {
 		t.Fatalf("first page = %+v, want the two newest checks", first)
 	}
-	second, err := lib.UpdateHistory(ctx, 0, 2, first[1].ID)
+	second, err := lib.UpdateHistory(ctx, 0, 2, first[1].ID, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -99,7 +99,7 @@ func TestUpdateHistoryPagesNewestFirst(t *testing.T) {
 		t.Fatalf("second page = %+v, want the oldest check", second)
 	}
 
-	filtered, err := lib.UpdateHistory(ctx, ids[1], 10, 0)
+	filtered, err := lib.UpdateHistory(ctx, ids[1], 10, 0, "")
 	if err != nil {
 		t.Fatal(err)
 	}

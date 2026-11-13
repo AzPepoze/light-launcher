@@ -31,6 +31,8 @@ type PluginUpdateStatus struct {
 	Notes            string `json:"notes,omitempty"`
 	PublishedAt      string `json:"publishedAt,omitempty"`
 	Error            string `json:"error,omitempty"`
+	// Code is a stable reason when the check failed: not_found, rate_limited, untrusted_host or check_failed.
+	Code string `json:"code,omitempty"`
 }
 
 // PluginUpdatesStatus is the latest update check of every plugin.
@@ -114,6 +116,7 @@ func (h *Host) checkOne(ctx context.Context, target updateTarget) PluginUpdateSt
 	entry := PluginUpdateStatus{ID: target.id, InstalledVersion: target.version}
 	if target.err != nil {
 		entry.Error = target.err.Error()
+		entry.Code = updateErrorCode(target.err)
 		return entry
 	}
 	if target.repository == "" {
@@ -126,6 +129,7 @@ func (h *Host) checkOne(ctx context.Context, target updateTarget) PluginUpdateSt
 	})
 	if err != nil {
 		entry.Error = err.Error()
+		entry.Code = updateErrorCode(err)
 		return entry
 	}
 	entry.Available = result.Available
@@ -136,6 +140,21 @@ func (h *Host) checkOne(ctx context.Context, target updateTarget) PluginUpdateSt
 	entry.Notes = result.Notes
 	entry.PublishedAt = result.PublishedAt
 	return entry
+}
+
+// updateErrorCode turns a check error into a code the UI can act on without reading the text.
+func updateErrorCode(err error) string {
+	var limit *updater.RateLimitError
+	switch {
+	case errors.As(err, &limit), errors.Is(err, updater.ErrRateLimited):
+		return "rate_limited"
+	case errors.Is(err, updater.ErrNoRelease):
+		return "not_found"
+	case errors.Is(err, updater.ErrUntrustedHost):
+		return "untrusted_host"
+	default:
+		return "check_failed"
+	}
 }
 
 // store replaces the cache on a full check and merges one plugin otherwise.

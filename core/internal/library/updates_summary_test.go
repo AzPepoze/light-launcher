@@ -47,7 +47,7 @@ func TestForcedCheckIgnoresRecheckInterval(t *testing.T) {
 		calls.Add(1)
 		return nil, nil
 	})
-	lib := openTestLibrary(t, Options{Sources: sources, UpdateRecheck: time.Hour})
+	lib := openTestLibrary(t, Options{Sources: sources, UpdateRule: recheckEvery(time.Hour)})
 	ctx := context.Background()
 	game := f95Game(t, lib, "1.0")
 	stamp := nowStamp()

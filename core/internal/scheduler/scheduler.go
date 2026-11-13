@@ -65,6 +65,7 @@ type JobStatus struct {
 
 type job struct {
 	Job
+	retired      bool
 	running      bool
 	lastRunAt    time.Time
 	lastDuration time.Duration
@@ -123,25 +124,85 @@ func New(ctx context.Context, opts Options) (*Scheduler, error) {
 		ready:  make(chan struct{}),
 		byName: map[string]*job{},
 	}
+	if err := validateJobs(opts.Jobs); err != nil {
+		return nil, err
+	}
 	for _, spec := range opts.Jobs {
-		if spec.Name == "" {
-			return nil, errors.New("scheduler: job needs a name")
-		}
-		if spec.Interval <= 0 {
-			return nil, fmt.Errorf("scheduler: job %s needs a positive interval", spec.Name)
-		}
-		if spec.Run == nil {
-			return nil, fmt.Errorf("scheduler: job %s needs a run function", spec.Name)
-		}
-		if _, exists := s.byName[spec.Name]; exists {
-			return nil, fmt.Errorf("scheduler: duplicate job %s", spec.Name)
-		}
 		item := &job{Job: spec, lastRunAt: lastRuns[spec.Name]}
 		s.jobs = append(s.jobs, item)
 		s.byName[spec.Name] = item
 	}
 	sort.Slice(s.jobs, func(i, j int) bool { return s.jobs[i].Name < s.jobs[j].Name })
 	return s, nil
+}
+
+// SetJobs replaces the job list. Existing jobs keep their last run and next run times; a running job
+// that is removed finishes without being rescheduled. A scheduler that has started schedules new
+// jobs with the usual first-run jitter.
+func (s *Scheduler) SetJobs(specs []Job) error {
+	if err := validateJobs(specs); err != nil {
+		return err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.closed {
+		return errors.New("scheduler is closed")
+	}
+	now := s.clock.Now()
+	next := make([]*job, 0, len(specs))
+	seen := make(map[string]bool, len(specs))
+	for _, spec := range specs {
+		if existing, ok := s.byName[spec.Name]; ok {
+			existing.Job = spec
+			if s.started && !existing.running && existing.nextRunAt.IsZero() {
+				s.scheduleFirstLocked(existing, now)
+			}
+			next = append(next, existing)
+			seen[spec.Name] = true
+			continue
+		}
+		item := &job{Job: spec}
+		if s.started {
+			s.scheduleFirstLocked(item, now)
+		}
+		s.byName[spec.Name] = item
+		next = append(next, item)
+		seen[spec.Name] = true
+	}
+	for name, item := range s.byName {
+		if seen[name] {
+			continue
+		}
+		item.retired = true
+		delete(s.byName, name)
+	}
+	sort.Slice(next, func(i, j int) bool { return next[i].Name < next[j].Name })
+	s.jobs = next
+	select {
+	case s.free <- struct{}{}:
+	default:
+	}
+	return nil
+}
+
+func validateJobs(specs []Job) error {
+	names := make(map[string]bool, len(specs))
+	for _, spec := range specs {
+		if spec.Name == "" {
+			return errors.New("scheduler: job needs a name")
+		}
+		if spec.Interval <= 0 {
+			return fmt.Errorf("scheduler: job %s needs a positive interval", spec.Name)
+		}
+		if spec.Run == nil {
+			return fmt.Errorf("scheduler: job %s needs a run function", spec.Name)
+		}
+		if names[spec.Name] {
+			return fmt.Errorf("scheduler: duplicate job %s", spec.Name)
+		}
+		names[spec.Name] = true
+	}
+	return nil
 }
 
 // Ready is closed once Run has scheduled every job for the first time.
@@ -347,6 +408,10 @@ func (s *Scheduler) record(item *job, start, finish time.Time, runErr error) {
 	var failed, recovered, notify bool
 	s.mu.Lock()
 	item.running = false
+	if item.retired {
+		s.mu.Unlock()
+		return
+	}
 	if errors.Is(runErr, ErrSkipped) {
 		item.nextRunAt = finish.Add(item.Interval + s.jitter(item.Jitter))
 		s.mu.Unlock()

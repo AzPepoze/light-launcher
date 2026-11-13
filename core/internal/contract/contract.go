@@ -104,8 +104,14 @@ type SourceInfo struct {
 	SourceID     string   `json:"sourceId"`
 	Label        string   `json:"label"`
 	Capabilities []string `json:"capabilities"`
-	// Tile is the card shape the source declares: poster, wide or square.
+	// Tile is the card shape the source declares: poster, wide or square. Kept for older consumers.
 	Tile string `json:"tile,omitempty"`
+	// Cover is the card box as "W:H", from the manifest cover or from Tile.
+	Cover string `json:"cover"`
+	// Actions are the buttons the source adds to the Library, with the default scope filled in.
+	Actions []SourceAction `json:"actions,omitempty"`
+	// Card names the game fields the source's cards show. Nil uses the defaults.
+	Card *SourceCard `json:"card,omitempty"`
 	// Sidebar is the filter groups the source declares. Empty when it declares none.
 	Sidebar []SidebarGroup `json:"sidebar,omitempty"`
 }
@@ -124,4 +130,6 @@ type Sources interface {
 	// Browse runs source.browse and ListFilters runs source.listFilters, each with its own time limit.
 	Browse(ctx context.Context, plugin string, request BrowseRequest) (BrowsePage, error)
 	ListFilters(ctx context.Context, plugin string, request FiltersRequest) (FiltersPage, error)
+	// CallAction runs an action method the plugin declares in its manifest. The name need not start with "source.".
+	CallAction(ctx context.Context, plugin, method string, params any, out any) error
 }

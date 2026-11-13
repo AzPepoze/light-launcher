@@ -39,6 +39,8 @@ var (
 	ErrUntrustedHost = errors.New("refusing to contact a host that is not GitHub")
 	// ErrResponseTooLarge means a GitHub reply was larger than the updater accepts.
 	ErrResponseTooLarge = errors.New("GitHub response is too large")
+	// ErrNoRelease means the repository has no release the updater can use yet.
+	ErrNoRelease = errors.New("the repository has no published release")
 
 	repositoryPattern = regexp.MustCompile(`^github:([A-Za-z0-9._-]+)/([A-Za-z0-9._-]+)$`)
 )
@@ -254,7 +256,7 @@ func (c *Checker) latestRelease(ctx context.Context, owner, repo string) (releas
 				return candidate, nil
 			}
 		}
-		return release{}, errors.New("the repository has no published release")
+		return release{}, ErrNoRelease
 	}
 	var latest release
 	target := fmt.Sprintf("%s/repos/%s/%s/releases/latest", c.apiBase, owner, repo)
@@ -262,7 +264,7 @@ func (c *Checker) latestRelease(ctx context.Context, owner, repo string) (releas
 		return release{}, err
 	}
 	if latest.Draft {
-		return release{}, errors.New("the latest release is a draft")
+		return release{}, fmt.Errorf("%w: the latest release is a draft", ErrNoRelease)
 	}
 	return latest, nil
 }
@@ -359,6 +361,8 @@ func (c *Checker) readResponse(response *http.Response, maxBytes int64) ([]byte,
 		return nil, "", true, nil
 	case response.StatusCode == http.StatusForbidden || response.StatusCode == http.StatusTooManyRequests:
 		return nil, "", false, c.rateLimitError(response)
+	case response.StatusCode == http.StatusNotFound:
+		return nil, "", false, fmt.Errorf("GitHub returned HTTP 404: %w", ErrNoRelease)
 	case response.StatusCode != http.StatusOK:
 		return nil, "", false, fmt.Errorf("GitHub returned HTTP %d", response.StatusCode)
 	}

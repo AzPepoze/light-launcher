@@ -3,9 +3,12 @@ package library
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"strings"
+	"sync"
 	"time"
 
+	"light-launcher/core/internal/contract"
 	"light-launcher/core/internal/logger"
 )
 
@@ -13,6 +16,8 @@ const (
 	logCategory = "library"
 	// notModified is the error text a plugin uses when the source answered "unchanged".
 	notModified = "not-modified"
+	// checkWorkers is how many games CheckAll checks at once.
+	checkWorkers = 3
 )
 
 // CheckResult is the outcome of one update check.
@@ -62,35 +67,43 @@ func (l *Library) UpdatesSummary(ctx context.Context) (UpdatesSummary, error) {
 
 // CheckGame asks the game's source for a newer version and records what it finds.
 func (l *Library) CheckGame(ctx context.Context, id int64) (CheckResult, error) {
+	result, _, err := l.checkGame(ctx, id)
+	return result, err
+}
+
+// checkGame is CheckGame. It also reports whether the source asked for a sign-in.
+func (l *Library) checkGame(ctx context.Context, id int64) (CheckResult, bool, error) {
 	game, err := l.Get(ctx, id)
 	if err != nil {
-		return CheckResult{}, err
+		return CheckResult{}, false, err
 	}
 	info, ok := l.pluginFor(game.Source)
 	if !ok || !hasCapability(info, CapabilityUpdateCheck) {
-		return noUpdate(game), nil
+		return noUpdate(game), false, nil
 	}
 
-	stamp := nowStamp()
+	checkedAt := stamp(l.now())
 	var reply updateReply
 	params := gameParams{Source: info.SourceID, Game: gameRefOf(game)}
 	if err := l.sources.Call(ctx, info.Plugin, methodCheckUpdate, params, &reply); err != nil {
-		return l.handleCheckError(ctx, game, stamp, err)
+		result, handleErr := l.handleCheckError(ctx, game, checkedAt, err)
+		return result, errors.Is(err, contract.ErrAuthRequired), handleErr
 	}
-	if _, err := l.Patch(ctx, id, Patch{LastCheckedAt: &stamp}); err != nil {
-		return CheckResult{}, err
+	if _, err := l.Patch(ctx, id, Patch{LastCheckedAt: &checkedAt}); err != nil {
+		return CheckResult{}, false, err
 	}
 	if reply.Update == nil {
 		result := noUpdate(game)
 		l.recordCheck(ctx, game, derefString(result.From), derefString(result.To), "", ResultCurrent, "")
-		return result, nil
+		return result, false, nil
 	}
-	return l.applyUpdate(ctx, game, *reply.Update)
+	result, err := l.applyUpdate(ctx, game, *reply.Update)
+	return result, false, err
 }
 
-func (l *Library) handleCheckError(ctx context.Context, game Game, stamp string, err error) (CheckResult, error) {
+func (l *Library) handleCheckError(ctx context.Context, game Game, checkedAt string, err error) (CheckResult, error) {
 	if strings.Contains(err.Error(), notModified) {
-		if _, patchErr := l.Patch(ctx, game.ID, Patch{LastCheckedAt: &stamp}); patchErr != nil {
+		if _, patchErr := l.Patch(ctx, game.ID, Patch{LastCheckedAt: &checkedAt}); patchErr != nil {
 			return CheckResult{}, patchErr
 		}
 		result := noUpdate(game)
@@ -98,6 +111,10 @@ func (l *Library) handleCheckError(ctx context.Context, game Game, stamp string,
 		return result, nil
 	}
 	logger.Warn(logCategory, "update check failed for %s: %v", game.Title, err)
+	// A failed check still counts as a check, so a scheduled run does not retry it every tick.
+	if _, patchErr := l.Patch(ctx, game.ID, Patch{LastCheckedAt: &checkedAt}); patchErr != nil {
+		return CheckResult{}, patchErr
+	}
 	result := noUpdate(game)
 	result.Error = err.Error()
 	l.recordCheck(ctx, game, derefString(result.From), "", "", ResultError, err.Error())
@@ -162,26 +179,115 @@ func (l *Library) autoInstall(ctx context.Context, game Game, version string) {
 }
 
 // CheckAll checks the given games, or every visible game when ids is empty.
-// With skipRecent, games checked within UpdateRecheck are left out.
+// Given ids are always checked. With skipRecent and no ids, only the games that are due are checked.
+// A check that is already running is joined: its results are returned and nothing is checked twice.
+// Progress is pushed on UpdateCheckChannel as games finish.
 func (l *Library) CheckAll(ctx context.Context, ids []int64, skipRecent bool) ([]CheckResult, error) {
 	targets, err := l.checkTargets(ctx, ids, skipRecent)
 	if err != nil {
 		return nil, err
 	}
-	results := make([]CheckResult, 0, len(targets))
-	for _, game := range targets {
-		result, err := l.CheckGame(ctx, game.ID)
-		if err != nil {
-			result = CheckResult{ID: game.ID, Title: game.Title, From: game.Version, To: game.Version, Error: err.Error()}
-		}
-		results = append(results, result)
+	if len(targets) == 0 {
+		return nil, nil
 	}
+	run, running := l.activeCheck.claim(len(targets), l.pushUpdateCheck)
+	if running != nil {
+		return running.wait(ctx)
+	}
+	run.start()
+	results := l.checkGames(ctx, targets, run)
 	l.saveRun(ctx, results)
+	l.activeCheck.release()
+	run.complete(results)
 	count, err := l.UnseenCount(ctx)
 	if err == nil {
 		l.notify("library.updates", map[string]any{"count": count})
 	}
 	return results, nil
+}
+
+func (l *Library) pushUpdateCheck(event UpdateCheckEvent) {
+	l.notify(UpdateCheckChannel, event)
+}
+
+// checkGames checks the games with a pool of checkWorkers. The results keep the order of games.
+func (l *Library) checkGames(ctx context.Context, games []Game, run *checkRun) []CheckResult {
+	results := make([]CheckResult, len(games))
+	jobs := make(chan int)
+	var wg sync.WaitGroup
+	for range min(checkWorkers, len(games)) {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for i := range jobs {
+				results[i] = l.checkOne(ctx, games[i], run)
+			}
+		}()
+	}
+	for i := range games {
+		jobs <- i
+	}
+	close(jobs)
+	wg.Wait()
+	return results
+}
+
+// checkOne checks one game. When its source needs a sign-in, the other games of that source are skipped.
+func (l *Library) checkOne(ctx context.Context, game Game, run *checkRun) CheckResult {
+	gate := run.gate(game.Source)
+	if !gate.settled.Load() {
+		if result, probed := l.probe(ctx, game, run, gate); probed {
+			return result
+		}
+	}
+	if gate.blocked.Load() {
+		return run.skipSignIn(game)
+	}
+	return l.checkNow(ctx, game, run)
+}
+
+// probe runs the first check of a source while the other games of it wait. It returns false when
+// another game already got the answer, so the caller goes on with that answer.
+func (l *Library) probe(ctx context.Context, game Game, run *checkRun, gate *sourceGate) (CheckResult, bool) {
+	gate.probe.Lock()
+	defer gate.probe.Unlock()
+	if gate.settled.Load() {
+		return CheckResult{}, false
+	}
+	run.begin(game)
+	result, needsSignIn := l.checkResult(ctx, game)
+	if needsSignIn {
+		gate.blocked.Store(true)
+		run.signInNeeded(game.Source, l.sourceLabel(game.Source))
+	}
+	gate.settled.Store(true)
+	run.finish(game, result)
+	return result, true
+}
+
+// checkNow checks a game whose source has already answered.
+func (l *Library) checkNow(ctx context.Context, game Game, run *checkRun) CheckResult {
+	run.begin(game)
+	result, _ := l.checkResult(ctx, game)
+	run.finish(game, result)
+	return result
+}
+
+// checkResult runs CheckGame for a game. A failure becomes the result's error, so the run goes on.
+func (l *Library) checkResult(ctx context.Context, game Game) (CheckResult, bool) {
+	result, needsSignIn, err := l.checkGame(ctx, game.ID)
+	if err != nil {
+		return CheckResult{ID: game.ID, Title: game.Title, From: game.Version, To: game.Version, Error: err.Error()}, false
+	}
+	return result, needsSignIn
+}
+
+// sourceLabel returns the name a source shows in the UI, or its id when it has none.
+func (l *Library) sourceLabel(source string) string {
+	if info, ok := l.pluginFor(source); ok && info.Label != "" {
+		return info.Label
+	}
+	return source
 }
 
 // saveRun keeps the results of a check for the updates view. A failed save is logged only.
@@ -193,56 +299,47 @@ func (l *Library) saveRun(ctx context.Context, results []CheckResult) {
 }
 
 func (l *Library) checkTargets(ctx context.Context, ids []int64, skipRecent bool) ([]Game, error) {
-	var candidates []Game
 	if len(ids) > 0 {
-		for _, id := range ids {
-			game, err := l.Get(ctx, id)
-			if err == nil {
-				candidates = append(candidates, game)
-			}
-		}
-	} else {
-		all, err := l.All(ctx)
-		if err != nil {
-			return nil, err
-		}
-		for _, game := range all {
-			if game.Hidden == 0 {
-				candidates = append(candidates, game)
-			}
+		return l.gamesByID(ctx, ids), nil
+	}
+	all, err := l.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var visible []Game
+	for _, game := range all {
+		// Local games have no source to ask; they are never part of a check run.
+		if game.Hidden == 0 && game.SourceKind != "local" {
+			visible = append(visible, game)
 		}
 	}
 	if !skipRecent {
-		return candidates, nil
+		return visible, nil
 	}
-	return dueForCheck(candidates, sinceOrZero(time.Now(), l.opts.UpdateRecheck)), nil
+	return dueForCheck(visible, l.ruleLookup(), l.now()), nil
 }
 
-// dueForCheck keeps games never checked, or last checked before the cutoff.
-func dueForCheck(games []Game, cutoff time.Time) []Game {
-	if cutoff.IsZero() {
-		return games
+// gamesByID returns the games that exist. Unknown ids are skipped.
+func (l *Library) gamesByID(ctx context.Context, ids []int64) []Game {
+	var games []Game
+	for _, id := range ids {
+		game, err := l.Get(ctx, id)
+		if err == nil {
+			games = append(games, game)
+		}
 	}
+	return games
+}
+
+// dueForCheck keeps the games that are due at now, each under the rule of its own source.
+func dueForCheck(games []Game, rule func(source string) UpdateRule, now time.Time) []Game {
 	var due []Game
 	for _, game := range games {
-		if game.LastCheckedAt == nil {
-			due = append(due, game)
-			continue
-		}
-		checked, err := time.Parse(time.RFC3339Nano, *game.LastCheckedAt)
-		if err != nil || checked.Before(cutoff) {
+		if rule(game.Source).due(game.LastCheckedAt, now) {
 			due = append(due, game)
 		}
 	}
 	return due
-}
-
-// sinceOrZero returns the cutoff before which a check is stale. A zero recheck means every game is due.
-func sinceOrZero(now time.Time, recheck time.Duration) time.Time {
-	if recheck <= 0 {
-		return time.Time{}
-	}
-	return now.Add(-recheck)
 }
 
 func noUpdate(game Game) CheckResult {

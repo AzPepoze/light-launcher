@@ -190,7 +190,7 @@ func TestInvokeUsesTheMethodTimeout(t *testing.T) {
 func TestInvokeUnknownMethod(t *testing.T) {
 	fx := newFixture(t, testPort)
 	env := decodeEnvelope(t, fx.serve(fx.request(http.MethodPost, "/api/invoke", `{"method":"Nope"}`)))
-	if env.Success || !strings.Contains(env.Error, "unknown method") {
+	if env.Success || !strings.Contains(env.Error, "unknown method") || env.Code != "method_not_found" {
 		t.Fatalf("envelope %+v", env)
 	}
 }

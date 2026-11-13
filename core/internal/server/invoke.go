@@ -41,7 +41,7 @@ func (s *server) handleInvoke(w http.ResponseWriter, r *http.Request) {
 	data, err := s.cfg.Router.Dispatch(ctx, req.Method, req.Payload)
 	if err != nil {
 		logger.Warn("api", "%q failed: %v", req.Method, err)
-		writeJSON(w, http.StatusOK, envelope{Error: err.Error(), Fields: api.FieldErrorsOf(err)})
+		writeJSON(w, http.StatusOK, envelope{Error: err.Error(), Code: api.ErrorCodeOf(err), Fields: api.FieldErrorsOf(err)})
 		return
 	}
 	writeJSON(w, http.StatusOK, envelope{Success: true, Data: data})

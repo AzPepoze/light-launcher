@@ -632,3 +632,51 @@ func TestDecodeStateRejectsNewerVersion(t *testing.T) {
 		t.Fatal("a future state version must fail")
 	}
 }
+
+func TestSetJobsAddsAndRemovesJobs(t *testing.T) {
+	clock := newFakeClock()
+	run := func(context.Context) error { return nil }
+	sched, err := New(context.Background(), Options{
+		Clock: clock,
+		Rand:  rand.New(rand.NewSource(2)),
+		Jobs:  []Job{{Name: "one", Interval: time.Hour, Run: run}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	cancel, done := startScheduler(t, sched)
+	defer stopScheduler(t, cancel, done)
+
+	if err := sched.SetJobs([]Job{
+		{Name: "one", Interval: 2 * time.Hour, Run: run},
+		{Name: "two", Interval: time.Minute, Run: run},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	jobStatus(t, sched, "one")
+	jobStatus(t, sched, "two")
+	if got := jobStatus(t, sched, "one").IntervalSeconds; got != 7200 {
+		t.Errorf("one interval = %d, want 7200", got)
+	}
+
+	if err := sched.SetJobs([]Job{{Name: "two", Interval: time.Minute, Run: run}}); err != nil {
+		t.Fatal(err)
+	}
+	for _, item := range sched.Status().Jobs {
+		if item.Name == "one" {
+			t.Fatal("removed job one is still listed")
+		}
+	}
+	jobStatus(t, sched, "two")
+}
+
+func TestSetJobsRejectsDuplicates(t *testing.T) {
+	sched, err := New(context.Background(), Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	run := func(context.Context) error { return nil }
+	if err := sched.SetJobs([]Job{{Name: "same", Interval: time.Hour, Run: run}, {Name: "same", Interval: time.Hour, Run: run}}); err == nil {
+		t.Fatal("duplicate job names must be rejected")
+	}
+}

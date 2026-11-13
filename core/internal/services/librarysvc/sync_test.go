@@ -55,6 +55,10 @@ func (listingSources) Browse(context.Context, string, contract.BrowseRequest) (c
 	return contract.BrowsePage{}, errors.New("browse is not faked here")
 }
 
+func (listingSources) CallAction(context.Context, string, string, any, any) error {
+	return nil
+}
+
 func (listingSources) ListFilters(context.Context, string, contract.FiltersRequest) (contract.FiltersPage, error) {
 	return contract.FiltersPage{}, errors.New("list filters is not faked here")
 }

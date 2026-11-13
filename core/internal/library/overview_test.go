@@ -36,9 +36,9 @@ func TestOverviewCountsSourcesTagsAndStats(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []SourceCount{
-		{ID: "f95", Label: "F95 Zone", Tile: "wide", Count: 1},
-		{ID: "itch", Label: "itch.io", Tile: "poster", Count: 0},
-		{ID: "manual", Label: "Local games", Tile: "square", Count: 1},
+		{ID: "f95", Label: "F95 Zone", Kind: "plugin", Plugin: "f95", Capabilities: []string{}, Tile: "wide", Cover: "16:9", Actions: []contract.SourceAction{}, Count: 1},
+		{ID: "itch", Label: "itch.io", Kind: "plugin", Plugin: "itch", Capabilities: []string{}, Tile: "poster", Cover: "3:4", Actions: []contract.SourceAction{}, Count: 0},
+		{ID: "manual", Label: "Local games", Kind: "local", Capabilities: []string{"launch", "scan"}, Tile: "square", Cover: "1:1", Actions: []contract.SourceAction{}, Count: 1},
 	}
 	if len(overview.Sources) != len(want) {
 		t.Fatalf("sources = %+v, want %+v", overview.Sources, want)
@@ -53,6 +53,43 @@ func TestOverviewCountsSourcesTagsAndStats(t *testing.T) {
 	}
 	if overview.Stats.Total != 2 {
 		t.Errorf("stats.total = %d, want 2", overview.Stats.Total)
+	}
+}
+
+func TestOverviewCarriesCoverActionsAndCard(t *testing.T) {
+	action := contract.SourceAction{ID: "sync", Label: "Sync", Method: "demo.sync", Scope: contract.ActionScopeLibrary}
+	card := &contract.SourceCard{Title: "title", Badges: []string{"installed"}}
+	sources := &fakeSources{infos: []contract.SourceInfo{
+		{Plugin: "demo", SourceID: "demo", Label: "Demo", Tile: "wide", Cover: "4:3", Actions: []contract.SourceAction{action}, Card: card},
+	}}
+	lib := openTestLibrary(t, Options{Sources: sources})
+
+	overview, err := lib.Overview(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	demo := overview.Sources[0]
+	if demo.Cover != "4:3" {
+		t.Errorf("cover = %q, want 4:3 from the source", demo.Cover)
+	}
+	if !reflect.DeepEqual(demo.Actions, []contract.SourceAction{action}) {
+		t.Errorf("actions = %+v, want the source action", demo.Actions)
+	}
+	if !reflect.DeepEqual(demo.Card, card) {
+		t.Errorf("card = %+v, want the source card", demo.Card)
+	}
+}
+
+func TestOverviewCoverFallsBackToTile(t *testing.T) {
+	sources := &fakeSources{infos: []contract.SourceInfo{{Plugin: "demo", SourceID: "demo", Label: "Demo", Tile: "square"}}}
+	lib := openTestLibrary(t, Options{Sources: sources})
+
+	overview, err := lib.Overview(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if demo := overview.Sources[0]; demo.Cover != "1:1" || demo.Card != nil {
+		t.Errorf("source = %+v, want cover 1:1 from the tile and no card", demo)
 	}
 }
 

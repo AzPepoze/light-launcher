@@ -70,6 +70,10 @@ func (f *strictSources) Browse(context.Context, string, contract.BrowseRequest) 
 	return contract.BrowsePage{}, errors.New("Browse is not faked here")
 }
 
+func (f *strictSources) CallAction(context.Context, string, string, any, any) error {
+	return nil
+}
+
 func (f *strictSources) ListFilters(context.Context, string, contract.FiltersRequest) (contract.FiltersPage, error) {
 	return contract.FiltersPage{}, errors.New("ListFilters is not faked here")
 }

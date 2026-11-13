@@ -18,6 +18,7 @@ const (
 	CodeRateLimited      = -32004
 	CodeRemoteError      = -32005
 	CodeNotModified      = -32006
+	CodeAuthRequired     = -32008
 )
 
 // cancelMethod is the notification that asks the other side to stop a request.
@@ -35,6 +36,32 @@ type RPCError struct {
 
 func (e *RPCError) Error() string {
 	return fmt.Sprintf("%s (code %d)", e.Message, e.Code)
+}
+
+// ErrorCode gives the API layer a stable string for the numeric JSON-RPC code.
+func (e *RPCError) ErrorCode() string {
+	switch e.Code {
+	case CodeMethodNotFound:
+		return "method_not_found"
+	case CodeInvalidParams, CodeInvalidRequest, CodeParseError:
+		return "invalid_params"
+	case CodePermissionDenied:
+		return "permission_denied"
+	case CodeCanceled:
+		return "canceled"
+	case CodeTimeout:
+		return "timeout"
+	case CodeRateLimited:
+		return "rate_limited"
+	case CodeAuthRequired:
+		return "auth_required"
+	case CodeRemoteError:
+		return "remote_error"
+	case CodeNotModified:
+		return "not_modified"
+	default:
+		return "plugin_error"
+	}
 }
 
 // envelope is one JSON-RPC message. Requests have a method and an id, notifications have no id.

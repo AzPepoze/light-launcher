@@ -111,7 +111,11 @@ func Register(r *api.Router, ev api.Events, host *plugins.Host, uploads *uploads
 		return host.SettingsGet(in.ID)
 	}))
 	r.Handle("PluginSettingsSet", api.Typed(func(_ context.Context, in settingsSetInput) (any, error) {
-		return nil, host.SettingsSet(in.ID, in.Settings)
+		if err := host.SettingsSet(in.ID, in.Settings); err != nil {
+			return nil, err
+		}
+		ev.Emit("plugin-settings", map[string]any{"id": in.ID})
+		return nil, nil
 	}))
 	r.Handle("PluginCall", api.Typed(func(ctx context.Context, in callInput) (any, error) {
 		return pluginCall(ctx, host, in)

@@ -6,11 +6,16 @@ import (
 	"regexp"
 	"strings"
 
+	"light-launcher/core/internal/contract"
 	"light-launcher/core/internal/semver"
 )
 
+// maxSourceActions is the most buttons one source can add to the Library.
+const maxSourceActions = 8
+
 var (
 	idPattern         = regexp.MustCompile(`^[a-z][a-z0-9-]{1,39}$`)
+	iconPattern       = regexp.MustCompile(`^[a-z][a-z0-9_]*$`)
 	itemIDPattern     = regexp.MustCompile(`^[a-z][a-z0-9-]{0,39}$`)
 	versionPattern    = regexp.MustCompile(`^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$`)
 	apiVersionPattern = regexp.MustCompile(`^[0-9]+$`)
@@ -28,6 +33,20 @@ var validCapabilities = map[string]bool{
 
 var validTiles = map[string]bool{
 	TilePoster: true, TileWide: true, TileSquare: true,
+}
+
+var validActionScopes = map[string]bool{
+	contract.ActionScopeLibrary: true, contract.ActionScopeGame: true,
+}
+
+// cardTextFields are the game fields a card can show as its title or subtitle.
+var cardTextFields = map[string]bool{
+	"sourceId": true, "title": true, "version": true, "developer": true, "engine": true, "status": true, "updatedAt": true,
+}
+
+// cardBadges are the game flags a card can show as badges.
+var cardBadges = map[string]bool{
+	"favorite": true, "updateAvailable": true, "installed": true,
 }
 
 var validHooks = map[string]bool{
@@ -115,47 +134,48 @@ func (m Manifest) validateContributes() error {
 	if c.Settings != nil && !isRelativePath(c.Settings.Ref) {
 		return fieldError("contributes.settings.$ref", "must be a relative path inside the package")
 	}
-	for i, page := range c.Pages {
-		if err := validateItem(fmt.Sprintf("contributes.pages[%d]", i), page.ID, page.Title); err != nil {
-			return err
-		}
-		if !isRelativePath(page.Path) {
-			return fieldError(fmt.Sprintf("contributes.pages[%d].path", i), "must be a relative path inside the package")
-		}
-	}
 	if err := validateCommands(c.Commands); err != nil {
 		return err
 	}
-	for _, group := range [][]NamedItem{c.LaunchAdapters, c.Importers} {
-		if err := validateNamedItems(group); err != nil {
-			return err
-		}
-	}
-	return validateHooksAndThemes(c)
+	return validateUnsupportedContributions(c)
 }
 
 func validateSources(sources []SourceContribution) error {
 	seen := map[string]bool{}
 	for i, source := range sources {
 		field := fmt.Sprintf("contributes.sources[%d]", i)
-		if err := validateItem(field, source.ID, source.Label); err != nil {
+		if err := validateSource(field, source); err != nil {
 			return err
 		}
 		if seen[source.ID] {
 			return fieldError(field+".id", "duplicate source id %q", source.ID)
 		}
 		seen[source.ID] = true
-		if err := validateCapabilities(field, source.Capabilities); err != nil {
-			return err
-		}
-		if err := validateTile(field, source.Tile); err != nil {
-			return err
-		}
-		if err := validateSidebar(field, source.Sidebar, source.Capabilities); err != nil {
-			return err
-		}
 	}
 	return nil
+}
+
+// validateSource checks one source's id, capabilities, card shape, cover, actions, card and sidebar.
+func validateSource(field string, source SourceContribution) error {
+	if err := validateItem(field, source.ID, source.Label); err != nil {
+		return err
+	}
+	if err := validateCapabilities(field, source.Capabilities); err != nil {
+		return err
+	}
+	if err := validateTile(field, source.Tile); err != nil {
+		return err
+	}
+	if err := validateCover(field, source.Cover); err != nil {
+		return err
+	}
+	if err := validateActions(field, source.Actions); err != nil {
+		return err
+	}
+	if err := validateCard(field, source.Card); err != nil {
+		return err
+	}
+	return validateSidebar(field, source.Sidebar, source.Capabilities)
 }
 
 // validateTile accepts an empty tile (the default poster) or one of the known card shapes.
@@ -164,6 +184,86 @@ func validateTile(field, tile string) error {
 		return nil
 	}
 	return fieldError(field+".tile", "must be poster, wide or square, not %q", tile)
+}
+
+// validateCover accepts a missing cover. A present one must be a ratio the host can draw.
+func validateCover(field string, cover *CoverContribution) error {
+	if cover == nil || contract.ValidCover(cover.Ratio) {
+		return nil
+	}
+	return fieldError(field+".cover.ratio", "must be W:H with sides 1 to 32 and a width to height ratio from 0.25 to 4, not %q", cover.Ratio)
+}
+
+// validateActions checks the source's buttons: at most maxSourceActions, each with a unique id.
+func validateActions(field string, actions []contract.SourceAction) error {
+	if len(actions) > maxSourceActions {
+		return fieldError(field+".actions", "at most %d actions, got %d", maxSourceActions, len(actions))
+	}
+	seen := map[string]bool{}
+	for i, action := range actions {
+		actionField := fmt.Sprintf("%s.actions[%d]", field, i)
+		if err := validateActionItem(actionField, action); err != nil {
+			return err
+		}
+		if seen[action.ID] {
+			return fieldError(actionField+".id", "duplicate action id %q", action.ID)
+		}
+		seen[action.ID] = true
+	}
+	return nil
+}
+
+// validateActionItem checks one action's id, label, method, scope and icon.
+func validateActionItem(field string, action contract.SourceAction) error {
+	if err := validateItem(field, action.ID, action.Label); err != nil {
+		return err
+	}
+	if !methodPattern.MatchString(action.Method) {
+		return fieldError(field+".method", "invalid method %q, use a name such as demo-site.importKey", action.Method)
+	}
+	if action.Scope != "" && !validActionScopes[action.Scope] {
+		return fieldError(field+".scope", "must be library or game, not %q", action.Scope)
+	}
+	if action.Icon != "" && !iconPattern.MatchString(action.Icon) {
+		return fieldError(field+".icon", "must be a Material icon name such as sync, not %q", action.Icon)
+	}
+	return nil
+}
+
+// validateCard checks the optional card. Title and subtitle must be game fields, badges must be known flags.
+func validateCard(field string, card *contract.SourceCard) error {
+	if card == nil {
+		return nil
+	}
+	if err := validateCardField(field+".card.title", card.Title); err != nil {
+		return err
+	}
+	if err := validateCardField(field+".card.subtitle", card.Subtitle); err != nil {
+		return err
+	}
+	return validateBadges(field+".card.badges", card.Badges)
+}
+
+// validateCardField accepts an empty field (the default) or a text field of the game.
+func validateCardField(field, name string) error {
+	if name == "" || cardTextFields[name] {
+		return nil
+	}
+	return fieldError(field, "unknown game field %q", name)
+}
+
+func validateBadges(field string, badges []string) error {
+	seen := map[string]bool{}
+	for _, badge := range badges {
+		if !cardBadges[badge] {
+			return fieldError(field, "unknown badge %q, use favorite, updateAvailable or installed", badge)
+		}
+		if seen[badge] {
+			return fieldError(field, "duplicate badge %q", badge)
+		}
+		seen[badge] = true
+	}
+	return nil
 }
 
 // validateCapabilities checks names, duplicates, and that sync:games and sync:index are not both set.
@@ -206,25 +306,20 @@ func validateNamedItems(items []NamedItem) error {
 	return nil
 }
 
-func validateHooksAndThemes(c Contributes) error {
-	seenHooks := map[string]bool{}
-	for _, hook := range c.Hooks {
-		if !validHooks[hook] {
-			return fieldError("contributes.hooks", "unknown hook %q", hook)
-		}
-		if seenHooks[hook] {
-			return fieldError("contributes.hooks", "duplicate hook %q", hook)
-		}
-		seenHooks[hook] = true
-	}
-	for i, theme := range c.Themes {
-		field := fmt.Sprintf("contributes.themes[%d]", i)
-		if err := validateItem(field, theme.ID, theme.Label); err != nil {
-			return err
-		}
-		if !isRelativePath(theme.Path) {
-			return fieldError(field+".path", "must be a relative path inside the package")
-		}
+// validateUnsupportedContributions rejects contributions the API version 1 host does not run yet.
+// Silently accepting them makes a plugin look broken to its author and to the user.
+func validateUnsupportedContributions(c Contributes) error {
+	switch {
+	case len(c.Pages) > 0:
+		return fieldError("contributes.pages", "pages are not supported in apiVersion 1 yet")
+	case len(c.Hooks) > 0:
+		return fieldError("contributes.hooks", "hooks are not supported in apiVersion 1 yet")
+	case len(c.LaunchAdapters) > 0:
+		return fieldError("contributes.launchAdapters", "launch adapters are not supported in apiVersion 1 yet")
+	case len(c.Importers) > 0:
+		return fieldError("contributes.importers", "importers are not supported in apiVersion 1 yet")
+	case len(c.Themes) > 0:
+		return fieldError("contributes.themes", "themes are not supported in apiVersion 1 yet")
 	}
 	return nil
 }

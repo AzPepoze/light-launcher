@@ -55,10 +55,21 @@ type SourceContribution struct {
 	ID           string   `json:"id"`
 	Label        string   `json:"label"`
 	Capabilities []string `json:"capabilities"`
-	// Tile is the Library card shape: poster (the default), wide or square.
+	// Tile is the Library card shape: poster (the default), wide or square. Cover wins when both are set.
 	Tile string `json:"tile,omitempty"`
+	// Cover is the Library card box as a width to height ratio.
+	Cover *CoverContribution `json:"cover,omitempty"`
+	// Actions are the buttons the Library shows at the top of the sidebar, or in the game detail.
+	Actions []contract.SourceAction `json:"actions,omitempty"`
+	// Card names the game fields the Library card shows.
+	Card *contract.SourceCard `json:"card,omitempty"`
 	// Sidebar is the filter groups the Library shows for this source. It needs the browse:filters capability.
 	Sidebar []contract.SidebarGroup `json:"sidebar,omitempty"`
+}
+
+// CoverContribution is a card box as a ratio string such as "4:3".
+type CoverContribution struct {
+	Ratio string `json:"ratio"`
 }
 
 // SettingsRef points at the JSON Schema file that builds the settings form.

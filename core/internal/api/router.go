@@ -58,7 +58,7 @@ func (r *Router) Dispatch(ctx context.Context, method string, payload json.RawMe
 	handler, ok := r.handlers[method]
 	r.mu.RUnlock()
 	if !ok {
-		return nil, fmt.Errorf("unknown method %s", method)
+		return nil, WithCode(fmt.Errorf("unknown method %s", method), "method_not_found")
 	}
 	return handler(ctx, payload)
 }
@@ -80,7 +80,7 @@ func Typed[In any, Out any](fn func(ctx context.Context, in In) (Out, error)) Ha
 		var in In
 		if len(payload) > 0 && string(payload) != "null" {
 			if err := json.Unmarshal(payload, &in); err != nil {
-				return nil, fmt.Errorf("bad payload: %w", err)
+				return nil, WithCode(fmt.Errorf("bad payload: %w", err), "invalid_params")
 			}
 		}
 		return fn(ctx, in)

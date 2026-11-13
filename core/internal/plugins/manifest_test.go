@@ -1,6 +1,7 @@
 package plugins
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"slices"
@@ -18,7 +19,6 @@ const validManifest = `{
   "contributes": {
     "sources": [{ "id": "demo", "label": "Demo", "capabilities": ["browse", "updateCheck"] }],
     "settings": { "$ref": "settings.schema.json" },
-    "hooks": ["onGameLaunch"],
     "commands": [{ "id": "import-key", "label": "Import key", "method": "demo.importKey" }]
   },
   "permissions": { "network": ["demo.example", "*.pixeldrain.com"], "fs": ["$GAMES"], "secrets": true }
@@ -53,7 +53,6 @@ func TestParseManifestRejectsBadFiles(t *testing.T) {
 		"unknown tile":        {`"capabilities": ["browse", "updateCheck"]`, `"capabilities": ["browse", "updateCheck"], "tile": "tall"`, "tile"},
 		"old sync capability": {`"updateCheck"`, `"sync"`, "unknown capability"},
 		"both sync":           {`"browse", "updateCheck"`, `"browse", "sync:games", "sync:index"`, "not both"},
-		"unknown hook":        {`"onGameLaunch"`, `"onGameWhatever"`, "unknown hook"},
 		"bad host":            {`"demo.example"`, `"demo"`, "invalid host"},
 		"bad folder":          {`"$GAMES"`, `"GAMES"`, "invalid folder"},
 		"old folder name":     {`"$GAMES"`, `"$ITCH_APP_DATA"`, "invalid folder"},
@@ -70,6 +69,31 @@ func TestParseManifestRejectsBadFiles(t *testing.T) {
 			}
 			if !strings.Contains(err.Error(), tc.wantErr) {
 				t.Fatalf("error %q does not mention %q", err, tc.wantErr)
+			}
+		})
+	}
+}
+
+func TestParseManifestRejectsUnsupportedContributions(t *testing.T) {
+	cases := map[string]struct {
+		field string
+		value string
+		want  string
+	}{
+		"pages":          {"pages", `[{"id":"page","title":"Page","path":"ui/page.html"}]`, "pages"},
+		"hooks":          {"hooks", `["onGameLaunch"]`, "hooks"},
+		"launchAdapters": {"launchAdapters", `[{"id":"adapter","label":"Adapter"}]`, "launchAdapters"},
+		"importers":      {"importers", `[{"id":"importer","label":"Importer"}]`, "importers"},
+		"themes":         {"themes", `[{"id":"theme","label":"Theme","path":"ui/theme.json"}]`, "themes"},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			source := strings.Replace(validManifest,
+				`"commands": [{ "id": "import-key", "label": "Import key", "method": "demo.importKey" }]`,
+				fmt.Sprintf(`"commands": [{ "id": "import-key", "label": "Import key", "method": "demo.importKey" }], %q: %s`, tc.field, tc.value), 1)
+			_, err := ParseManifest([]byte(source))
+			if err == nil || !strings.Contains(err.Error(), tc.want) {
+				t.Fatalf("error = %v, want mention of %s", err, tc.want)
 			}
 		})
 	}

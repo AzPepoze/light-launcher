@@ -7,11 +7,18 @@ import (
 	"time"
 
 	"light-launcher/core/internal/contract"
+	"light-launcher/core/internal/types"
 )
 
 // Launcher starts a game and blocks until it exits. args is the raw argument line stored on the game.
 type Launcher interface {
 	Launch(ctx context.Context, exePath, args, name string) error
+}
+
+// ConfigLauncher starts a local game with its saved prefix, Proton and argument settings.
+// It blocks until the game exits, so the library can add the playtime.
+type ConfigLauncher interface {
+	LaunchConfig(ctx context.Context, options types.LaunchOptions) error
 }
 
 // Installer installs a newer version of a game. The download side is implemented by the host.
@@ -38,12 +45,17 @@ type Options struct {
 	// Downloads queues saved links of games whose source cannot prepare them.
 	Downloads contract.Downloads
 	Launcher  Launcher
-	Installer Installer
-	Sink      ArchiveSink
+	// ConfigLauncher starts local rows that carry LaunchOptions. Nil means local rows cannot start.
+	ConfigLauncher ConfigLauncher
+	Installer      Installer
+	Sink           ArchiveSink
 	// AutoUpdate reports whether a game should be installed as soon as an update is found.
 	AutoUpdate func(Game) bool
-	// UpdateRecheck skips games checked more recently than this in scheduled runs. Zero checks every game.
-	UpdateRecheck time.Duration
+	// UpdateRule returns how background checks treat the games of a source. It is read on every run,
+	// so Settings changes apply without a restart. Nil checks every game of every source.
+	UpdateRule func(source string) UpdateRule
+	// UpdateSchedule returns when background runs start. It is read on every tick. Nil means no runs.
+	UpdateSchedule func() UpdateSchedule
 	// Notify pushes background changes to the UI, such as new updates or watched files.
 	Notify func(channel string, data any)
 }
@@ -61,6 +73,10 @@ type Library struct {
 	artwork  *artworkQueue
 	imports  *importer
 	overview overviewCache
+	// activeCheck is the update check in progress, if any.
+	activeCheck activeCheck
+	// now is the clock of the update schedule. Tests replace it.
+	now func() time.Time
 }
 
 // Open creates or opens the library database and prepares the background jobs.
@@ -86,6 +102,7 @@ func Open(ctx context.Context, opts Options) (*Library, error) {
 		watch:    newWatchState(),
 		artwork:  newArtworkQueue(),
 		imports:  newImporter(),
+		now:      time.Now,
 	}, nil
 }
 

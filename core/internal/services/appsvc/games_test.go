@@ -2,10 +2,62 @@ package appsvc
 
 import (
 	"path/filepath"
+	"slices"
 	"testing"
 
 	"light-launcher/core/internal/config"
+	"light-launcher/core/internal/types"
 )
+
+type scanEventRecorder struct {
+	events []types.HomeScanEvent
+}
+
+func (r *scanEventRecorder) Emit(channel string, data any) {
+	if channel == homeScanChannel {
+		r.events = append(r.events, data.(types.HomeScanEvent))
+	}
+}
+
+func TestGetAutoScannedGamesReportsFolderProgress(t *testing.T) {
+	svc := newTestService(t)
+	folders := make([]string, 0, 2)
+	for range 2 {
+		folder := config.CleanPath(t.TempDir())
+		folders = append(folders, folder)
+		mustWrite(t, filepath.Join(folder, "game.exe"))
+		if err := svc.addScanFolder(folder); err != nil {
+			t.Fatalf("addScanFolder: %v", err)
+		}
+	}
+	recorder := &scanEventRecorder{}
+	svc.events = recorder
+
+	if _, err := svc.getAutoScannedGames(true); err != nil {
+		t.Fatalf("getAutoScannedGames: %v", err)
+	}
+	want := []types.HomeScanEvent{
+		{State: types.HomeScanRunning, Done: 0, Total: 2, Current: filepath.Base(folders[0])},
+		{State: types.HomeScanRunning, Done: 1, Total: 2, Current: filepath.Base(folders[1])},
+		{State: types.HomeScanDone, Done: 2, Total: 2},
+	}
+	if !slices.Equal(recorder.events, want) {
+		t.Fatalf("scan events = %+v, want %+v", recorder.events, want)
+	}
+}
+
+func TestGetAutoScannedGamesWithoutFoldersReportsNoEvents(t *testing.T) {
+	svc := newTestService(t)
+	recorder := &scanEventRecorder{}
+	svc.events = recorder
+
+	if _, err := svc.getAutoScannedGames(true); err != nil {
+		t.Fatalf("getAutoScannedGames: %v", err)
+	}
+	if len(recorder.events) != 0 {
+		t.Fatalf("scan events = %+v, want none", recorder.events)
+	}
+}
 
 func TestAddScanFolderSavesDefaultConfig(t *testing.T) {
 	svc := newTestService(t)

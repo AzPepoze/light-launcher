@@ -76,6 +76,24 @@ func (r *Registry) Call(ctx context.Context, plugin, method string, params any, 
 	if err != nil {
 		return err
 	}
+	return mapAuthRequired(sup.Call(ctx, method, params, out))
+}
+
+// mapAuthRequired turns a plugin's sign-in error into contract.ErrAuthRequired, so callers can detect it.
+func mapAuthRequired(err error) error {
+	var rpcErr *RPCError
+	if errors.As(err, &rpcErr) && rpcErr.Code == CodeAuthRequired {
+		return contract.ErrAuthRequired
+	}
+	return err
+}
+
+// CallAction runs an action method the plugin declares in its manifest. Unlike Call, it needs no "source." prefix.
+func (r *Registry) CallAction(ctx context.Context, plugin, method string, params any, out any) error {
+	sup, err := r.host.supervisorFor(plugin)
+	if err != nil {
+		return err
+	}
 	return sup.Call(ctx, method, params, out)
 }
 

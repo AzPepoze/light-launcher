@@ -45,6 +45,10 @@ func (f *fakeSources) Browse(context.Context, string, contract.BrowseRequest) (c
 	return contract.BrowsePage{}, fmt.Errorf("no fake for Browse")
 }
 
+func (f *fakeSources) CallAction(context.Context, string, string, any, any) error {
+	return nil
+}
+
 func (f *fakeSources) ListFilters(context.Context, string, contract.FiltersRequest) (contract.FiltersPage, error) {
 	return contract.FiltersPage{}, fmt.Errorf("no fake for ListFilters")
 }

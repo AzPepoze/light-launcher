@@ -5,12 +5,16 @@
 //   - source.parseRef, source.echo: answer with their params
 //   - source.prepareDownload: returns a URL with download hints
 //   - source.probe {service, args}: asks the host for a service and returns what the host answered
+//   - source.initializeProbe: returns what a settings.get during initialize saw, when the test asked for it
 //   - source.wait {ms}: answers after a delay, to keep a call in flight
 //   - source.progress {id, done, total}: reports a progress job
 //   - source.crash: exits at once, to test restarts
 //   - source.listGames {source, scope, cursor, limit}: pages through 250 fixed games
 //   - source.browse {source, query, filters, sort, order, cursor, limit}: pages through a fixed catalog of 8 games
 //   - source.listFilters {source, group, query, limit}: counts the tags of the catalog
+//
+// When the plugin data folder holds initializeSettingsMarker, initialize asks the host for its
+// settings before answering, so a test can prove that host services run during the handshake.
 package main
 
 import (
@@ -18,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 )
@@ -28,7 +33,13 @@ const (
 	listGamesMaxLimit = 200
 	fixtureSource     = "fixture"
 	fixtureScope      = "mine"
+	// initializeSettingsMarker is a file name in the data folder that turns on the initialize probe.
+	initializeSettingsMarker = "initialize-probes-settings"
 )
+
+// initializeProbe records the settings.get a probed initialize made. It is null unless the
+// plugin data folder holds initializeSettingsMarker.
+var initializeProbe map[string]any
 
 type message struct {
 	ID     json.RawMessage `json:"id"`
@@ -65,12 +76,15 @@ func main() {
 func handle(msg message) {
 	switch msg.Method {
 	case "initialize":
+		probeSettingsDuringInitialize(msg.Params)
 		respond(msg.ID, map[string]any{
 			"pluginVersion": "0.1.0",
 			"capabilities": map[string]any{
 				"fixture": map[string]any{"browse": true, "auth": "none", "updateCheck": false, "resolveFiles": false, "versioned": false},
 			},
 		})
+	case "source.initializeProbe":
+		respond(msg.ID, initializeProbe)
 	case "shutdown":
 		respond(msg.ID, nil)
 		os.Exit(0)
@@ -219,6 +233,30 @@ func progress(raw json.RawMessage) {
 	}
 	_ = json.Unmarshal(raw, &params)
 	notify("progress", params)
+}
+
+// probeSettingsDuringInitialize asks the host for settings before initialize answers. It runs only
+// when the test left initializeSettingsMarker in the plugin data folder.
+func probeSettingsDuringInitialize(raw json.RawMessage) {
+	var params struct {
+		DataDir string `json:"dataDir"`
+	}
+	if err := json.Unmarshal(raw, &params); err != nil || params.DataDir == "" {
+		return
+	}
+	if _, err := os.Stat(filepath.Join(params.DataDir, initializeSettingsMarker)); err != nil {
+		return
+	}
+	result, hostErr := hostCall("settings.get", json.RawMessage(`{}`))
+	if hostErr != nil {
+		initializeProbe = map[string]any{"received": false, "error": string(hostErr)}
+		return
+	}
+	var answer struct {
+		Settings map[string]any `json:"settings"`
+	}
+	_ = json.Unmarshal(result, &answer)
+	initializeProbe = map[string]any{"received": true, "settings": answer.Settings}
 }
 
 // probe asks the host for a service and returns the host's answer, so the test can check it.

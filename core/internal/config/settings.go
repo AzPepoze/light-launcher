@@ -124,7 +124,100 @@ func NormalizeSettings(settings *types.AppSettings) bool {
 	if normalizePluginIdleTimeout(settings) {
 		modified = true
 	}
+	if normalizeLibraryCardSize(settings) {
+		modified = true
+	}
+	if normalizeUpdateChecks(settings) {
+		modified = true
+	}
 	return modified
+}
+
+// normalizeUpdateChecks fills missing update check defaults, clamps hours and fixes unknown source modes.
+func normalizeUpdateChecks(settings *types.AppSettings) bool {
+	checks := settings.UpdateChecks
+	if checks == nil {
+		settings.UpdateChecks = defaultUpdateChecks()
+		return true
+	}
+	modified := false
+	if checks.Enabled == nil {
+		checks.Enabled = boolPtr(types.DefaultUpdateEnabled)
+		modified = true
+	}
+	if checks.OnStartup == nil {
+		checks.OnStartup = boolPtr(types.DefaultUpdateOnStartup)
+		modified = true
+	}
+	if normalizeHours(&checks.IntervalHours, types.DefaultUpdateIntervalHours) {
+		modified = true
+	}
+	if normalizeHours(&checks.RecheckHours, types.DefaultUpdateRecheckHours) {
+		modified = true
+	}
+	for id, source := range checks.Sources {
+		if normalizeSourceUpdateCheck(&source) {
+			checks.Sources[id] = source
+			modified = true
+		}
+	}
+	return modified
+}
+
+// normalizeSourceUpdateCheck replaces an unknown mode with inherit and clamps the source hours.
+func normalizeSourceUpdateCheck(source *types.SourceUpdateCheck) bool {
+	modified := false
+	switch source.Mode {
+	case types.UpdateModeInherit, types.UpdateModeCustom, types.UpdateModeOff:
+	default:
+		source.Mode = types.UpdateModeInherit
+		modified = true
+	}
+	if normalizeOptionalHours(&source.IntervalHours) {
+		modified = true
+	}
+	if normalizeOptionalHours(&source.RecheckHours) {
+		modified = true
+	}
+	return modified
+}
+
+// normalizeHours fills a missing value with the default and clamps one outside the allowed range.
+func normalizeHours(value **int, fallback int) bool {
+	if *value == nil {
+		*value = intPtr(fallback)
+		return true
+	}
+	return normalizeOptionalHours(value)
+}
+
+// normalizeOptionalHours clamps an hour value that is set. A nil value stays nil.
+func normalizeOptionalHours(value **int) bool {
+	if *value == nil {
+		return false
+	}
+	hours := **value
+	clamped := min(max(hours, 0), types.MaxUpdateHours)
+	if clamped == hours {
+		return false
+	}
+	*value = intPtr(clamped)
+	return true
+}
+
+// normalizeLibraryCardSize fills a missing card size and clamps one outside the allowed range.
+func normalizeLibraryCardSize(settings *types.AppSettings) bool {
+	current := settings.LibraryCardSize
+	if current != nil && *current >= libraryCardSizeMin && *current <= libraryCardSizeMax {
+		return false
+	}
+	if current == nil {
+		settings.LibraryCardSize = defaultLibraryCardSize()
+		return true
+	}
+	size := min(max(*current, libraryCardSizeMin), libraryCardSizeMax)
+	settings.LibraryCardSize = &size
+	return true
 }
 
 // normalizePluginIdleTimeout fills a missing idle timeout and replaces values outside the allowed range.

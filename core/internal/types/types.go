@@ -1,5 +1,7 @@
 package types
 
+import "time"
+
 type LsfgConfig struct {
 	Enabled    bool   `json:"Enabled"`
 	Multiplier string `json:"Multiplier"`
@@ -129,6 +131,20 @@ type ScannedFolderGroup struct {
 	Games      []GameInfo `json:"games"`
 }
 
+// HomeScanEvent is the payload of home.scan: folder scan progress for the Home page.
+type HomeScanEvent struct {
+	State   string `json:"state"`
+	Done    int    `json:"done"`
+	Total   int    `json:"total"`
+	Current string `json:"current,omitempty"`
+}
+
+// Values of HomeScanEvent.State.
+const (
+	HomeScanRunning = "running"
+	HomeScanDone    = "done"
+)
+
 type RunningSession struct {
 	Pid       int    `json:"pid"`
 	GamePath  string `json:"gamePath"`
@@ -186,4 +202,116 @@ type AppSettings struct {
 	PluginIdleTimeoutMinutes *int `json:"pluginIdleTimeoutMinutes,omitempty"`
 	// BrowserAssistEnabled opens the embedded browser window for plugins. Nil means on.
 	BrowserAssistEnabled *bool `json:"browserAssistEnabled,omitempty"`
+	// LibraryCardSize is the minimum Library card width in px. Nil means the default.
+	LibraryCardSize *int `json:"LibraryCardSize,omitempty"`
+	// BlurCoversUntilHover blurs Library covers until hovered or focused. Nil means off.
+	BlurCoversUntilHover *bool `json:"BlurCoversUntilHover,omitempty"`
+	// UpdateChecks is how background update checks run. Nil means the defaults.
+	UpdateChecks *UpdateCheckSettings `json:"updateChecks,omitempty"`
+}
+
+// Update check modes of one source.
+const (
+	UpdateModeInherit = "inherit"
+	UpdateModeCustom  = "custom"
+	UpdateModeOff     = "off"
+)
+
+// Update check defaults and the allowed hour range.
+const (
+	DefaultUpdateEnabled       = true
+	DefaultUpdateOnStartup     = true
+	DefaultUpdateIntervalHours = 24
+	DefaultUpdateRecheckHours  = 24
+	MaxUpdateHours             = 720
+)
+
+// UpdateCheckSettings is how background update checks run. Nil fields use the defaults.
+type UpdateCheckSettings struct {
+	// Enabled turns background checks on or off.
+	Enabled *bool `json:"enabled,omitempty"`
+	// OnStartup runs one check shortly after launch.
+	OnStartup *bool `json:"onStartup,omitempty"`
+	// IntervalHours is the minimum gap between two scheduled runs. Zero means no scheduled runs.
+	IntervalHours *int `json:"intervalHours,omitempty"`
+	// RecheckHours skips a game checked within this many hours. Zero checks every game.
+	RecheckHours *int `json:"recheckHours,omitempty"`
+	// Sources holds the overrides, keyed by source id.
+	Sources map[string]SourceUpdateCheck `json:"sources,omitempty"`
+}
+
+// SourceUpdateCheck overrides the global update check for one source.
+type SourceUpdateCheck struct {
+	// Mode is "inherit" (the default), "custom" or "off".
+	Mode          string `json:"mode,omitempty"`
+	IntervalHours *int   `json:"intervalHours,omitempty"`
+	RecheckHours  *int   `json:"recheckHours,omitempty"`
+}
+
+// ResolveUpdateCheck returns whether a source's games are checked in the background, and how old a
+// check may be before the game is due again. Zero recheck means every game is due.
+func ResolveUpdateCheck(settings AppSettings, source string) (enabled bool, recheck time.Duration) {
+	global := settings.globalUpdateChecks()
+	globalEnabled := boolOr(global.Enabled, DefaultUpdateEnabled)
+	globalRecheck := hoursOr(global.RecheckHours, DefaultUpdateRecheckHours)
+	override := global.Sources[source]
+	switch override.Mode {
+	case UpdateModeOff:
+		return false, hoursDuration(globalRecheck)
+	case UpdateModeCustom:
+		return globalEnabled, hoursDuration(hoursOr(override.RecheckHours, globalRecheck))
+	default:
+		return globalEnabled, hoursDuration(globalRecheck)
+	}
+}
+
+// ResolveSourceInterval returns how often one source should be checked. It uses the source override
+// when it has a custom interval, otherwise the global interval. Zero means no scheduled run.
+func ResolveSourceInterval(settings AppSettings, source string) time.Duration {
+	global := settings.globalUpdateChecks()
+	interval := hoursOr(global.IntervalHours, DefaultUpdateIntervalHours)
+	override := global.Sources[source]
+	if override.Mode == UpdateModeOff {
+		return 0
+	}
+	if override.Mode == UpdateModeCustom && override.IntervalHours != nil {
+		interval = *override.IntervalHours
+	}
+	return hoursDuration(interval)
+}
+
+// ResolveSchedule returns whether background runs are on, whether one runs shortly after launch,
+// and the minimum gap between scheduled runs. Zero interval means no scheduled runs.
+func ResolveSchedule(settings AppSettings) (enabled, onStartup bool, interval time.Duration) {
+	global := settings.globalUpdateChecks()
+	return boolOr(global.Enabled, DefaultUpdateEnabled),
+		boolOr(global.OnStartup, DefaultUpdateOnStartup),
+		hoursDuration(hoursOr(global.IntervalHours, DefaultUpdateIntervalHours))
+}
+
+// globalUpdateChecks returns the update check settings, or the defaults when there are none.
+func (s AppSettings) globalUpdateChecks() UpdateCheckSettings {
+	if s.UpdateChecks == nil {
+		return UpdateCheckSettings{}
+	}
+	return *s.UpdateChecks
+}
+
+func boolOr(value *bool, fallback bool) bool {
+	if value == nil {
+		return fallback
+	}
+	return *value
+}
+
+// hoursOr returns the hours, or the fallback when unset. Values outside 0..MaxUpdateHours are clamped.
+func hoursOr(value *int, fallback int) int {
+	if value == nil {
+		return fallback
+	}
+	return min(max(*value, 0), MaxUpdateHours)
+}
+
+func hoursDuration(hours int) time.Duration {
+	return time.Duration(hours) * time.Hour
 }

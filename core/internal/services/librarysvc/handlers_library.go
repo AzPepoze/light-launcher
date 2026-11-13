@@ -64,9 +64,11 @@ type downloadFileResult struct {
 
 // updateHistoryPayload pages the check history. Before is the id of the last entry already shown.
 type updateHistoryPayload struct {
-	GameID int64 `json:"gameId"`
-	Limit  int   `json:"limit"`
-	Before int64 `json:"before"`
+	GameID int64  `json:"gameId"`
+	Limit  int    `json:"limit"`
+	Before int64  `json:"before"`
+	Result string `json:"result"`
+	Source string `json:"source"`
 }
 
 // list returns one page of games. The sources, tags and stats come from overview.
@@ -188,7 +190,11 @@ func (s *service) updatesSummary(ctx context.Context) (library.UpdatesSummary, e
 }
 
 func (s *service) updateHistory(ctx context.Context, in updateHistoryPayload) ([]library.UpdateHistoryEntry, error) {
-	return s.lib.UpdateHistory(ctx, in.GameID, in.Limit, in.Before)
+	return s.lib.UpdateHistorySource(ctx, in.GameID, in.Limit, in.Before, in.Result, in.Source)
+}
+
+func (s *service) updateStatus(ctx context.Context) (library.UpdateStatus, error) {
+	return s.lib.UpdateStatus(ctx)
 }
 
 func (s *service) setFavorite(ctx context.Context, in favoritePayload) (library.Game, error) {

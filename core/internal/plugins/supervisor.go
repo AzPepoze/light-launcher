@@ -44,7 +44,11 @@ type supervisorConfig struct {
 
 // Supervisor starts one plugin on first use, keeps it alive, and stops it on request.
 type Supervisor struct {
-	mu         sync.Mutex
+	mu sync.Mutex
+	// startMu serializes starts, including the initialize handshake. It is separate from mu
+	// because the plugin may call host services during the handshake, and those calls record
+	// activity on this supervisor; holding mu there would deadlock the handshake.
+	startMu    sync.Mutex
 	cfg        supervisorConfig
 	conn       *connection
 	crashes    []time.Time
@@ -164,33 +168,47 @@ func (s *Supervisor) connect(ctx context.Context) (*connection, error) {
 		// The exit must be recorded before a new start, so the backoff applies.
 		<-current.exited
 	}
-	conn, reason, err := s.startLocked(ctx)
+	conn, reason, err := s.startSerial(ctx)
 	if reason != "" {
 		s.notifyDisabled(reason)
 	}
 	return conn, err
 }
 
-// startLocked holds the lock while it starts the plugin. It returns a disable reason when the start counts as a crash.
-func (s *Supervisor) startLocked(ctx context.Context) (*connection, string, error) {
+// startSerial starts the plugin when no live connection exists. It returns a disable reason
+// when the start counts as a crash. Only the short state checks and updates hold mu; the
+// backoff sleep and the handshake run under startMu alone, so host services the plugin calls
+// during initialize can still reach this supervisor.
+func (s *Supervisor) startSerial(ctx context.Context) (*connection, string, error) {
+	s.startMu.Lock()
+	defer s.startMu.Unlock()
+
 	s.mu.Lock()
-	defer s.mu.Unlock()
 	if s.disabled {
+		s.mu.Unlock()
 		return nil, "", ErrPluginDisabled
 	}
 	if s.conn != nil && s.conn.alive() {
-		return s.conn, "", nil
+		conn := s.conn
+		s.mu.Unlock()
+		return conn, "", nil
 	}
-	if err := sleepContext(ctx, time.Until(s.nextStart)); err != nil {
+	nextStart := s.nextStart
+	s.mu.Unlock()
+
+	if err := sleepContext(ctx, time.Until(nextStart)); err != nil {
 		return nil, "", contextError(err)
 	}
 	conn, err := s.start(ctx)
 	if err != nil {
-		return nil, s.recordCrashLocked(time.Now()), err
+		return nil, s.recordCrash(time.Now()), err
 	}
+
+	s.mu.Lock()
 	s.conn = conn
 	s.idle = false
 	s.lastActive = s.cfg.now()
+	s.mu.Unlock()
 	return conn, "", nil
 }
 
@@ -248,12 +266,15 @@ func grantedPermissions(p Permissions) Permissions {
 
 // Shutdown asks the plugin to exit, then stops its process group after a short wait.
 func (s *Supervisor) Shutdown() {
+	// Wait for a start in progress, so a plugin that is still handshaking is stopped too.
+	s.startMu.Lock()
 	s.mu.Lock()
 	conn := s.conn
 	if conn != nil {
 		conn.stopping = true
 	}
 	s.mu.Unlock()
+	s.startMu.Unlock()
 	if conn == nil {
 		return
 	}

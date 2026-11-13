@@ -23,6 +23,10 @@ func (b *browseSources) Browse(_ context.Context, plugin string, request contrac
 	return b.page, b.err
 }
 
+func (b *browseSources) CallAction(context.Context, string, string, any, any) error {
+	return nil
+}
+
 func (b *browseSources) ListFilters(_ context.Context, plugin string, request contract.FiltersRequest) (contract.FiltersPage, error) {
 	b.filters = append(b.filters, request)
 	return b.filtersPage, b.err

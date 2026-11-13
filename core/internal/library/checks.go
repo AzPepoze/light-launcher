@@ -3,6 +3,7 @@ package library
 import (
 	"context"
 	"database/sql"
+	"fmt"
 )
 
 // The result values of one update check, as stored in the checks table.
@@ -91,12 +92,26 @@ type UpdateHistoryEntry struct {
 	To        *string `json:"to"`
 	Result    string  `json:"result"`
 	Error     *string `json:"error"`
+	CoverPath *string `json:"coverPath"`
+	CoverURL  *string `json:"coverUrl"`
+	// Source is the game's source id, so a source tab can page the server-side history.
+	Source string `json:"source"`
 }
 
 // UpdateHistory returns recent checks, newest first. before is the id to page from, or zero for the first page.
-func (s *Store) UpdateHistory(ctx context.Context, gameID int64, limit int, before int64) ([]UpdateHistoryEntry, error) {
-	query := `select c.id, c.game_id, g.title, c.checked_at, c.old_version, c.new_version, c.result, c.error
-		from checks c join games g on g.id = c.game_id where 1 = 1`
+// result keeps only one result value (update, current or error). Empty keeps all of them.
+func (s *Store) UpdateHistory(ctx context.Context, gameID int64, limit int, before int64, result string) ([]UpdateHistoryEntry, error) {
+	return s.UpdateHistorySource(ctx, gameID, limit, before, result, "")
+}
+
+// UpdateHistorySource is UpdateHistory with an optional source filter. Paging a source on the
+// server keeps its pages full instead of filtering already-loaded rows in the browser.
+func (s *Store) UpdateHistorySource(ctx context.Context, gameID int64, limit int, before int64, result, source string) ([]UpdateHistoryEntry, error) {
+	if err := checkHistoryResult(result); err != nil {
+		return nil, err
+	}
+	query := `select c.id, c.game_id, g.title, c.checked_at, c.old_version, c.new_version, c.result, c.error,
+		g.cover_path, g.cover_url, g.source from checks c join games g on g.id = c.game_id where 1 = 1`
 	args := []any{}
 	if gameID != 0 {
 		query += ` and c.game_id = ?`
@@ -105,6 +120,14 @@ func (s *Store) UpdateHistory(ctx context.Context, gameID int64, limit int, befo
 	if before > 0 {
 		query += ` and c.id < ?`
 		args = append(args, before)
+	}
+	if result != "" {
+		query += ` and c.result = ?`
+		args = append(args, result)
+	}
+	if source != "" {
+		query += ` and g.source = ?`
+		args = append(args, source)
 	}
 	query += ` order by c.id desc limit ?`
 	args = append(args, clamp(limit, 1, 200, 50))
@@ -116,19 +139,30 @@ func (s *Store) UpdateHistory(ctx context.Context, gameID int64, limit int, befo
 	out := []UpdateHistoryEntry{}
 	for rows.Next() {
 		var (
-			entry             UpdateHistoryEntry
-			from, to, failure sql.NullString
+			entry                          UpdateHistoryEntry
+			from, to, failure, cover, link sql.NullString
 		)
 		if err := rows.Scan(&entry.ID, &entry.GameID, &entry.Title, &entry.CheckedAt, &from, &to,
-			&entry.Result, &failure); err != nil {
+			&entry.Result, &failure, &cover, &link, &entry.Source); err != nil {
 			return nil, err
 		}
 		entry.From = stringPtr(from)
 		entry.To = stringPtr(to)
 		entry.Error = stringPtr(failure)
+		entry.CoverPath = stringPtr(cover)
+		entry.CoverURL = stringPtr(link)
 		out = append(out, entry)
 	}
 	return out, rows.Err()
+}
+
+// checkHistoryResult accepts an empty result filter or one of the three result values.
+func checkHistoryResult(result string) error {
+	switch result {
+	case "", ResultUpdate, ResultCurrent, ResultError:
+		return nil
+	}
+	return fmt.Errorf("unknown update result %q", result)
 }
 
 // MarkApplied marks every check of a game as applied and seen.

@@ -84,6 +84,17 @@ func TestPickPrimaryLauncher(t *testing.T) {
 			},
 		},
 		{
+			name:   "flash player runtimes are removed from the launchers",
+			folder: []string{"games", "Sample"},
+			exes: []scannedFile{
+				exeFile(100, "games", "Sample", "Sample.exe"),
+				exeFile(900, "games", "Sample", "flashplayer.exe"),
+			},
+			want: []types.Launcher{
+				wantLauncher(types.LauncherMain, true, "games", "Sample", "Sample.exe"),
+			},
+		},
+		{
 			name:   "a folder with only helper programs has no launcher",
 			folder: []string{"games", "Junk"},
 			exes: []scannedFile{

@@ -20,6 +20,11 @@ func updateSources(reply func(params any) (any, error)) *fakeSources {
 	}
 }
 
+// recheckEvery is an UpdateRule func that keeps every source on for background checks.
+func recheckEvery(recheck time.Duration) func(string) UpdateRule {
+	return func(string) UpdateRule { return UpdateRule{Auto: true, Recheck: recheck} }
+}
+
 func f95Game(t *testing.T, lib *Library, version string) Game {
 	t.Helper()
 	id, err := lib.Upsert(context.Background(), contract.GameDTO{Source: "f95", SourceID: "42", URL: "https://f95/42", Title: "Harbor", Version: version})
@@ -134,7 +139,7 @@ func TestSkipRecentLeavesRecentlyCheckedGames(t *testing.T) {
 		calls.Add(1)
 		return nil, nil
 	})
-	lib := openTestLibrary(t, Options{Sources: sources, UpdateRecheck: time.Hour})
+	lib := openTestLibrary(t, Options{Sources: sources, UpdateRule: recheckEvery(time.Hour)})
 	game := f95Game(t, lib, "1.0")
 	stamp := nowStamp()
 	if _, err := lib.Patch(context.Background(), game.ID, Patch{LastCheckedAt: &stamp}); err != nil {

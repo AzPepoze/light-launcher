@@ -24,6 +24,7 @@ var junkExecutablePatterns = []string{
 	"*uninstall*.exe",
 	"*redist*.exe",
 	"dotNetFx*.exe",
+	"*flashplayer*.exe",
 	"*notification*.exe",
 	"*subprocess*.exe",
 }

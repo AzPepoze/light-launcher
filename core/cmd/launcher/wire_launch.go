@@ -37,6 +37,23 @@ func (g gameLauncher) Launch(ctx context.Context, exePath, args, name string) er
 	return g.waitForExit(ctx, exePath)
 }
 
+// LaunchConfig starts a local game with its saved prefix, Proton and argument settings, then waits
+// until it exits so the library can add the playtime.
+func (g gameLauncher) LaunchConfig(ctx context.Context, options types.LaunchOptions) error {
+	payload, err := json.Marshal(map[string]any{"options": options})
+	if err != nil {
+		return err
+	}
+	if _, err := g.router.Dispatch(ctx, "RunGame", payload); err != nil {
+		return err
+	}
+	path := options.GamePath
+	if !options.UseGamePath && options.LauncherPath != "" {
+		path = options.LauncherPath
+	}
+	return g.waitForExit(ctx, path)
+}
+
 // waitForExit returns once the game was seen running and is no longer running. RunGame returns as soon
 // as the instance is spawned, so the first checks may come before the game shows up.
 func (g gameLauncher) waitForExit(ctx context.Context, exePath string) error {

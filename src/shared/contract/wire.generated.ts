@@ -42,6 +42,12 @@ export interface WireGame {
 	addedAt: string;
 	updatedAt: string;
 	extra: Record<string, unknown> | null;
+	origin: string;
+	sourceKind: string;
+	folderPath?: string;
+	scanFolder?: string;
+	localConfig?: WireLaunchOptions;
+	pinned: number;
 }
 
 /** library.GameFile, from core/internal/library/types.go. */
@@ -108,6 +114,12 @@ export interface WireGameDetail {
 	addedAt: string;
 	updatedAt: string;
 	extra: Record<string, unknown> | null;
+	origin: string;
+	sourceKind: string;
+	folderPath?: string;
+	scanFolder?: string;
+	localConfig?: WireLaunchOptions;
+	pinned: number;
 	files: WireGameFile[] | null;
 	changes: WireCheck[] | null;
 }
@@ -177,8 +189,16 @@ export interface WireLibraryOverview {
 export interface WireLibrarySource {
 	id: string;
 	label: string;
+	kind: string;
+	plugin?: string;
+	capabilities: string[] | null;
+	sync: boolean;
+	updateCheck: boolean;
 	tile: string;
+	cover: string;
 	count: number;
+	actions: WireSourceAction[] | null;
+	card: WireSourceCard | null;
 	sidebar?: WireSidebarGroup[];
 }
 
@@ -214,6 +234,63 @@ export interface WireUpdateHistoryEntry {
 	to: string | null;
 	result: string;
 	error: string | null;
+	coverPath: string | null;
+	coverUrl: string | null;
+	source: string;
+}
+
+/** library.UpdateStatus, from core/internal/library/update_status.go. */
+export interface WireUpdateStatus {
+	lastCheckedAt: string | null;
+	running: boolean;
+	progress: WireUpdateProgress | null;
+	count: number;
+	nextRunAt: string | null;
+	games: WireGame[] | null;
+}
+
+/** library.UpdateProgress, from core/internal/library/update_status.go. */
+export interface WireUpdateProgress {
+	done: number;
+	total: number;
+}
+
+/** library.UpdateCheckEvent, from core/internal/library/update_progress.go. */
+export interface WireUpdateCheckEvent {
+	state: string;
+	done: number;
+	total: number;
+	skipped: number;
+	current: WireUpdateCheckCurrent | null;
+	result: WireUpdateCheckOutcome | null;
+	issues: WireUpdateCheckIssue[] | null;
+}
+
+/** library.UpdateCheckCurrent, from core/internal/library/update_progress.go. */
+export interface WireUpdateCheckCurrent {
+	gameId: number;
+	title: string;
+}
+
+/** library.UpdateCheckOutcome, from core/internal/library/update_progress.go. */
+export interface WireUpdateCheckOutcome {
+	gameId: number;
+	title: string;
+	from: string | null;
+	to: string | null;
+	result: string;
+	error: string | null;
+	coverPath: string | null;
+	coverUrl: string | null;
+}
+
+/** library.UpdateCheckIssue, from core/internal/library/update_progress.go. */
+export interface WireUpdateCheckIssue {
+	source: string;
+	label: string;
+	kind: string;
+	message: string;
+	games: number;
 }
 
 /** library.SearchResult, from core/internal/library/search.go. */
@@ -339,6 +416,9 @@ export interface WireSource {
 	label: string;
 	capabilities: string[] | null;
 	tile?: string;
+	cover: string;
+	actions?: WireSourceAction[];
+	card?: WireSourceCard;
 	sidebar?: WireSidebarGroup[];
 }
 
@@ -404,6 +484,35 @@ export interface WireSidebarOption {
 export interface WireSortDefault {
 	value: string;
 	order: string;
+}
+
+/** contract.SourceAction, from core/internal/contract/source_view.go. */
+export interface WireSourceAction {
+	id: string;
+	label: string;
+	icon?: string;
+	method: string;
+	scope?: string;
+}
+
+/** contract.SourceCard, from core/internal/contract/source_view.go. */
+export interface WireSourceCard {
+	title?: string;
+	subtitle?: string;
+	badges?: string[];
+}
+
+/** contract.ActionRequest, from core/internal/contract/source_view.go. */
+export interface WireActionRequest {
+	source: string;
+	action: string;
+	gameId: number | null;
+}
+
+/** contract.ActionResult, from core/internal/contract/source_view.go. */
+export interface WireActionResult {
+	message: string;
+	refresh: boolean;
 }
 
 // core/internal/downloads
@@ -502,6 +611,7 @@ export interface WirePluginInfo {
 	homepage: string;
 	repository?: string;
 	hasSettings: boolean;
+	commands: WireCommandContribution[] | null;
 }
 
 /** plugins.Permissions, from core/internal/plugins/manifest.go. */
@@ -547,7 +657,15 @@ export interface WireSourceContribution {
 	label: string;
 	capabilities: string[] | null;
 	tile?: string;
+	cover?: WireCoverContribution;
+	actions?: WireSourceAction[];
+	card?: WireSourceCard;
 	sidebar?: WireSidebarGroup[];
+}
+
+/** plugins.CoverContribution, from core/internal/plugins/manifest.go. */
+export interface WireCoverContribution {
+	ratio: string;
 }
 
 /** plugins.SettingsRef, from core/internal/plugins/manifest.go. */
@@ -616,6 +734,7 @@ export interface WirePluginUpdateStatus {
 	notes?: string;
 	publishedAt?: string;
 	error?: string;
+	code?: string;
 }
 
 /** plugins.PluginUpdatesStatus, from core/internal/plugins/host_updates.go. */
@@ -639,6 +758,25 @@ export interface WireAppSettings {
 	DiscordClientId?: string;
 	pluginIdleTimeoutMinutes?: number;
 	browserAssistEnabled?: boolean;
+	LibraryCardSize?: number;
+	BlurCoversUntilHover?: boolean;
+	updateChecks?: WireUpdateCheckSettings;
+}
+
+/** types.UpdateCheckSettings, from core/internal/types/types.go. */
+export interface WireUpdateCheckSettings {
+	enabled?: boolean;
+	onStartup?: boolean;
+	intervalHours?: number;
+	recheckHours?: number;
+	sources?: Record<string, WireSourceUpdateCheck>;
+}
+
+/** types.SourceUpdateCheck, from core/internal/types/types.go. */
+export interface WireSourceUpdateCheck {
+	mode?: string;
+	intervalHours?: number;
+	recheckHours?: number;
 }
 
 /** types.ScanFolderConfig, from core/internal/types/types.go. */
@@ -735,6 +873,14 @@ export interface WireScannedFolderGroup {
 	folderPath: string;
 	folderName: string;
 	games: WireGameInfo[] | null;
+}
+
+/** types.HomeScanEvent, from core/internal/types/types.go. */
+export interface WireHomeScan {
+	state: string;
+	done: number;
+	total: number;
+	current?: string;
 }
 
 /** types.RunningSession, from core/internal/types/types.go. */

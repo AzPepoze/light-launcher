@@ -57,7 +57,8 @@ func (s *Store) Relink(ctx context.Context, id int64, dto contract.GameDTO) erro
 	}
 	_, err = s.db.ExecContext(ctx, `update games set source=?, source_id=?, url=?, title=?, version=?, developer=?,
 		engine=?, tags=?, cover_url=?, cover_path=null, screenshots=?, description=?, changelog=?, rating=?, status=?,
-		source_updated_at=?, extra=?, updated_at=? where id=?`,
+		source_updated_at=?, extra=?, origin='plugin', source_kind='plugin', folder_path=null, scan_folder=null,
+		root_key=null, exe_key=null, scan_folder_key=null, local_config=null, pinned=0, updated_at=? where id=?`,
 		dto.Source, dto.SourceID, dto.URL, dto.Title, nullIfEmpty(dto.Version), nullIfEmpty(dto.Developer),
 		nullIfEmpty(dto.Engine), tags, nullIfEmpty(dto.CoverURL), screenshots, nullIfEmpty(dto.DescriptionHTML),
 		nullIfEmpty(dto.Changelog), dto.Rating, statusOr(dto.Status, "completed"), nullIfEmpty(dto.UpdatedAt), extra,

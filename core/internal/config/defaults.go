@@ -38,10 +38,41 @@ const (
 	maxPluginIdleMinutes     = 1440
 )
 
+// Library card width limits in px.
+const (
+	libraryCardSizeDefault = 160
+	libraryCardSizeMin     = 100
+	libraryCardSizeMax     = 260
+)
+
 // defaultPluginIdleTimeout is the idle stop time when the settings file has no value.
 func defaultPluginIdleTimeout() *int {
 	minutes := defaultPluginIdleMinutes
 	return &minutes
+}
+
+// defaultLibraryCardSize is the Library card width when the settings file has no value.
+func defaultLibraryCardSize() *int {
+	size := libraryCardSizeDefault
+	return &size
+}
+
+// defaultUpdateChecks is the update check block when the settings file has none.
+func defaultUpdateChecks() *types.UpdateCheckSettings {
+	return &types.UpdateCheckSettings{
+		Enabled:       boolPtr(types.DefaultUpdateEnabled),
+		OnStartup:     boolPtr(types.DefaultUpdateOnStartup),
+		IntervalHours: intPtr(types.DefaultUpdateIntervalHours),
+		RecheckHours:  intPtr(types.DefaultUpdateRecheckHours),
+	}
+}
+
+func boolPtr(value bool) *bool {
+	return &value
+}
+
+func intPtr(value int) *int {
+	return &value
 }
 
 // DefaultScanExcludeNames returns a fresh copy of the executable scan excludes.
@@ -81,6 +112,8 @@ func DefaultSettings() types.AppSettings {
 		ScanFolderConfigs:        []types.ScanFolderConfig{},
 		Blacklist:                []string{},
 		PluginIdleTimeoutMinutes: defaultPluginIdleTimeout(),
+		LibraryCardSize:          defaultLibraryCardSize(),
+		UpdateChecks:             defaultUpdateChecks(),
 	}
 }
 

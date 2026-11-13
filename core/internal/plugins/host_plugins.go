@@ -32,6 +32,8 @@ type PluginInfo struct {
 	Homepage       string                `json:"homepage"`
 	Repository     string                `json:"repository,omitempty"`
 	HasSettings    bool                  `json:"hasSettings"`
+	// Commands are the palette actions the plugin declares. They call the plugin when picked.
+	Commands []CommandContribution `json:"commands"`
 }
 
 // InstallRequest asks for one package, from a local path or an https URL.
@@ -62,6 +64,27 @@ func (h *Host) List() []PluginInfo {
 	infos := make([]PluginInfo, 0, len(ids))
 	for _, id := range ids {
 		infos = append(infos, h.info(id))
+	}
+	return markSourceCollisions(infos)
+}
+
+// markSourceCollisions keeps the first enabled plugin that claims a source id and marks later ones
+// broken. Without this, two plugins could shadow each other and the UI would silently pick one.
+func markSourceCollisions(infos []PluginInfo) []PluginInfo {
+	owners := map[string]string{}
+	for i := range infos {
+		info := &infos[i]
+		if !info.Enabled || info.Status == "broken" {
+			continue
+		}
+		for _, source := range info.Sources {
+			if owner, taken := owners[source.SourceID]; taken && owner != info.ID {
+				info.Status = "broken"
+				info.Error = fmt.Sprintf("source id %q is already provided by plugin %s", source.SourceID, owner)
+				break
+			}
+			owners[source.SourceID] = info.ID
+		}
 	}
 	return infos
 }
@@ -226,6 +249,7 @@ func (h *Host) info(id string) PluginInfo {
 	info.Homepage = inst.manifest.Homepage
 	info.Repository = inst.manifest.Repository
 	info.HasSettings = inst.manifest.Contributes.Settings != nil
+	info.Commands = inst.manifest.Contributes.Commands
 	info.Sources = sourceInfos(id, inst.manifest)
 	sup := h.supervisor(id)
 	info.Running = sup != nil && sup.Running()
@@ -272,6 +296,9 @@ func sourceInfos(id string, manifest Manifest) []contract.SourceInfo {
 			Label:        source.Label,
 			Capabilities: source.Capabilities,
 			Tile:         tileOrDefault(source.Tile),
+			Cover:        contract.NormalizeCover(coverRatio(source.Cover), source.Tile),
+			Actions:      actionsWithScope(source.Actions),
+			Card:         source.Card,
 			Sidebar:      source.Sidebar,
 		})
 	}
@@ -284,4 +311,23 @@ func tileOrDefault(tile string) string {
 		return TilePoster
 	}
 	return tile
+}
+
+// coverRatio returns the declared cover ratio, or "" when the manifest has no cover.
+func coverRatio(cover *CoverContribution) string {
+	if cover == nil {
+		return ""
+	}
+	return cover.Ratio
+}
+
+// actionsWithScope returns a copy of the actions with the library scope filled in where none is set.
+func actionsWithScope(actions []contract.SourceAction) []contract.SourceAction {
+	out := slices.Clone(actions)
+	for i := range out {
+		if out[i].Scope == "" {
+			out[i].Scope = contract.ActionScopeLibrary
+		}
+	}
+	return out
 }

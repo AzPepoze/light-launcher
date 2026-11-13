@@ -61,6 +61,12 @@ var structTypes = []typeRef{
 	{modulePath + "/core/internal/library", "UpdateRun", "WireUpdateRun"},
 	{modulePath + "/core/internal/library", "CheckResult", "WireCheckResult"},
 	{modulePath + "/core/internal/library", "UpdateHistoryEntry", "WireUpdateHistoryEntry"},
+	{modulePath + "/core/internal/library", "UpdateStatus", "WireUpdateStatus"},
+	{modulePath + "/core/internal/library", "UpdateProgress", "WireUpdateProgress"},
+	{modulePath + "/core/internal/library", "UpdateCheckEvent", "WireUpdateCheckEvent"},
+	{modulePath + "/core/internal/library", "UpdateCheckCurrent", "WireUpdateCheckCurrent"},
+	{modulePath + "/core/internal/library", "UpdateCheckOutcome", "WireUpdateCheckOutcome"},
+	{modulePath + "/core/internal/library", "UpdateCheckIssue", "WireUpdateCheckIssue"},
 	{modulePath + "/core/internal/library", "SearchResult", "WireSearchResult"},
 	{modulePath + "/core/internal/library", "SearchGame", "WireSearchGame"},
 	{modulePath + "/core/internal/library", "Preview", "WirePreview"},
@@ -82,6 +88,10 @@ var structTypes = []typeRef{
 	{modulePath + "/core/internal/contract", "SidebarGroup", "WireSidebarGroup"},
 	{modulePath + "/core/internal/contract", "SidebarOption", "WireSidebarOption"},
 	{modulePath + "/core/internal/contract", "SortDefault", "WireSortDefault"},
+	{modulePath + "/core/internal/contract", "SourceAction", "WireSourceAction"},
+	{modulePath + "/core/internal/contract", "SourceCard", "WireSourceCard"},
+	{modulePath + "/core/internal/contract", "ActionRequest", "WireActionRequest"},
+	{modulePath + "/core/internal/contract", "ActionResult", "WireActionResult"},
 
 	// Downloads.
 	{modulePath + "/core/internal/downloads", "View", "WireDownloadView"},
@@ -97,6 +107,7 @@ var structTypes = []typeRef{
 	{modulePath + "/core/internal/plugins", "Manifest", "WireManifest"},
 	{modulePath + "/core/internal/plugins", "Contributes", "WireContributes"},
 	{modulePath + "/core/internal/plugins", "SourceContribution", "WireSourceContribution"},
+	{modulePath + "/core/internal/plugins", "CoverContribution", "WireCoverContribution"},
 	{modulePath + "/core/internal/plugins", "SettingsRef", "WireSettingsRef"},
 	{modulePath + "/core/internal/plugins", "PageContribution", "WirePageContribution"},
 	{modulePath + "/core/internal/plugins", "NamedItem", "WireNamedItem"},
@@ -110,6 +121,8 @@ var structTypes = []typeRef{
 
 	// Shared app, game, system and prefix types still declared in src/shared/types.
 	{modulePath + "/core/internal/types", "AppSettings", "WireAppSettings"},
+	{modulePath + "/core/internal/types", "UpdateCheckSettings", "WireUpdateCheckSettings"},
+	{modulePath + "/core/internal/types", "SourceUpdateCheck", "WireSourceUpdateCheck"},
 	{modulePath + "/core/internal/types", "ScanFolderConfig", "WireScanFolderConfig"},
 	{modulePath + "/core/internal/types", "LaunchOptions", "WireLaunchOptions"},
 	{modulePath + "/core/internal/types", "ExtrasConfig", "WireExtrasConfig"},
@@ -119,6 +132,7 @@ var structTypes = []typeRef{
 	{modulePath + "/core/internal/types", "GameInfo", "WireGameInfo"},
 	{modulePath + "/core/internal/types", "Launcher", "WireLauncher"},
 	{modulePath + "/core/internal/types", "ScannedFolderGroup", "WireScannedFolderGroup"},
+	{modulePath + "/core/internal/types", "HomeScanEvent", "WireHomeScan"},
 	{modulePath + "/core/internal/types", "RunningSession", "WireRunningSession"},
 	{modulePath + "/core/internal/types", "GameActivity", "WireGameActivity"},
 	{modulePath + "/core/internal/types", "SystemInfo", "WireSystemInfo"},

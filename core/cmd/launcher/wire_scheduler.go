@@ -17,7 +17,6 @@ const (
 	syncIntervalDefault = 24 * time.Hour
 	syncJobTimeout      = 10 * time.Minute
 	syncJobJitter       = 5 * time.Minute
-	updateCheckJitter   = 2 * time.Minute
 	updateCheckTimeout  = 10 * time.Minute
 	capabilitySyncGames = "sync:games"
 	capabilitySyncIndex = "sync:index"
@@ -27,23 +26,44 @@ const (
 
 // newScheduler builds the plugin sync jobs and the library update check. The scheduler itself
 // knows nothing about plugins or the library. importSource imports the games of a source that lists them.
-func newScheduler(ctx context.Context, lib *library.Library, host *plugins.Host, sources contract.Sources, importSource func(ctx context.Context, plugin, source string) error, notify func(string, any)) (*scheduler.Scheduler, error) {
-	jobs := pluginSyncJobs(host, sources, importSource)
-	jobs = append(jobs, scheduler.Job{
-		Name:     "library.update-check",
-		Interval: updateInterval,
-		Jitter:   updateCheckJitter,
-		Timeout:  updateCheckTimeout,
-		Run: func(ctx context.Context) error {
-			_, err := lib.CheckAll(ctx, nil, true)
-			return err
-		},
-	})
-	return scheduler.New(ctx, scheduler.Options{
-		Jobs:   jobs,
+func newScheduler(ctx context.Context, lib *library.Library, host *plugins.Host, sources contract.Sources, importSource func(ctx context.Context, plugin, source string) error, notify func(string, any)) (*scheduler.Scheduler, func() error, error) {
+	build := func() []scheduler.Job {
+		jobs := pluginSyncJobs(host, sources, importSource)
+		jobs = append(jobs, scheduler.Job{
+			Name:     "library.update-check",
+			Interval: library.UpdateTick,
+			Timeout:  updateCheckTimeout,
+			Run:      updateCheckRun(lib),
+		})
+		return jobs
+	}
+	sched, err := scheduler.New(ctx, scheduler.Options{
+		Jobs:   build(),
 		State:  lib,
 		Notify: notify,
 	})
+	if err != nil {
+		return nil, nil, err
+	}
+	return sched, func() error { return sched.SetJobs(build()) }, nil
+}
+
+// updateCheckRun returns the run function of the background update check. The first call is the
+// run after launch. Later calls run when the schedule allows it, and the scheduler skips the rest.
+func updateCheckRun(lib *library.Library) func(ctx context.Context) error {
+	first := true
+	return func(ctx context.Context) error {
+		startup := first
+		first = false
+		ran, err := lib.ScheduledCheck(ctx, startup)
+		if err != nil {
+			return err
+		}
+		if !ran {
+			return scheduler.ErrSkipped
+		}
+		return nil
+	}
 }
 
 func pluginSyncJobs(host *plugins.Host, sources contract.Sources, importSource func(ctx context.Context, plugin, source string) error) []scheduler.Job {

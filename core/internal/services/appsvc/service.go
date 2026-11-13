@@ -2,6 +2,7 @@ package appsvc
 
 import (
 	"light-launcher/core/internal/activity"
+	"light-launcher/core/internal/api"
 	"light-launcher/core/internal/config"
 	"light-launcher/core/internal/types"
 )
@@ -29,6 +30,12 @@ type service struct {
 	games       gameConfigStore
 	activity    activityStore
 	preferences preferenceStore
+	// events receives home.scan progress. Nil in tests, which then send nothing.
+	events api.Events
+	// scanSink saves a finished folder scan into the library. Nil in tests and older wiring.
+	scanSink ScanSink
+	// localView reads the canonical local rows. Nil in tests and older wiring.
+	localView LocalView
 }
 
 func newService(settings settingsStore, games gameConfigStore, activity activityStore, preferences preferenceStore) *service {

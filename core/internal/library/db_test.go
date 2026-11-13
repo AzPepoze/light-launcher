@@ -145,7 +145,7 @@ func TestMigrationFromV1KeepsChecks(t *testing.T) {
 		t.Fatalf("upgrade v1 database: %v", err)
 	}
 	defer lib.Close()
-	entries, err := lib.UpdateHistory(context.Background(), 0, 10, 0)
+	entries, err := lib.UpdateHistory(context.Background(), 0, 10, 0, "")
 	if err != nil {
 		t.Fatal(err)
 	}

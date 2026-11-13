@@ -2,6 +2,7 @@ package library
 
 import (
 	"context"
+	"database/sql"
 	"path/filepath"
 	"sort"
 	"testing"
@@ -130,20 +131,26 @@ func TestSearchIndexIsBuiltForGamesStoredBeforeTheMigration(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "library.db")
 	ctx := context.Background()
-	lib, err := Open(ctx, Options{DBPath: path, MediaDir: filepath.Join(dir, "media")})
+	// Build a real v3 database, store one game, then let Open run the later migrations.
+	db, err := sql.Open("sqlite", "file:"+path)
 	if err != nil {
 		t.Fatal(err)
 	}
-	upsertGame(t, lib, "old", "Harbor Before")
-	for _, statement := range []string{
-		`drop trigger games_fts_insert`, `drop trigger games_fts_delete`, `drop trigger games_fts_update`,
-		`drop table games_fts`, `pragma user_version = 3`,
-	} {
-		if _, err := lib.db.ExecContext(ctx, statement); err != nil {
-			t.Fatalf("%s: %v", statement, err)
+	for _, m := range migrations[:3] {
+		for _, statement := range m.statements {
+			if _, err := db.ExecContext(ctx, statement); err != nil {
+				t.Fatalf("v3 schema: %v", err)
+			}
 		}
 	}
-	if err := lib.Close(); err != nil {
+	if _, err := db.ExecContext(ctx, `pragma user_version = 3`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.ExecContext(ctx, `insert into games (source, source_id, url, title, added_at, updated_at)
+		values ('manual', 'old', 'u', 'Harbor Before', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')`); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Close(); err != nil {
 		t.Fatal(err)
 	}
 

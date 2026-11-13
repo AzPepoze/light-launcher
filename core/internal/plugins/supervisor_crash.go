@@ -42,6 +42,13 @@ func (s *Supervisor) onExit(conn *connection) string {
 	return s.recordCrashLocked(time.Now())
 }
 
+// recordCrash counts a crash after a failed start. It returns a disable reason at the limit.
+func (s *Supervisor) recordCrash(now time.Time) string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.recordCrashLocked(now)
+}
+
 // recordCrashLocked counts a crash. It returns a disable reason when the crash limit is reached.
 func (s *Supervisor) recordCrashLocked(now time.Time) string {
 	s.crashes = append(recentTimes(s.crashes, now.Add(-s.cfg.crashWindow)), now)

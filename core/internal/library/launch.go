@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"light-launcher/core/internal/logger"
+	"light-launcher/core/internal/types"
 )
 
 // ErrAlreadyRunning means the game has a launch in progress.
@@ -56,12 +57,15 @@ func (s *launchSet) isRunning(id int64) bool {
 // Launch starts an installed game. It returns once the game is started; the
 // launcher keeps running in the background, and playtime is added when it exits.
 func (l *Library) Launch(ctx context.Context, id int64) (LaunchResult, error) {
-	if l.opts.Launcher == nil {
-		return LaunchResult{}, errors.New("no launcher is configured")
-	}
 	game, err := l.Get(ctx, id)
 	if err != nil {
 		return LaunchResult{}, err
+	}
+	if game.LocalConfig != nil {
+		return l.launchLocal(ctx, game)
+	}
+	if l.opts.Launcher == nil {
+		return LaunchResult{}, errors.New("no launcher is configured")
 	}
 	if game.InstallDir == nil {
 		return LaunchResult{}, errors.New("game is not installed")
@@ -83,6 +87,51 @@ func (l *Library) Launch(ctx context.Context, id int64) (LaunchResult, error) {
 	go l.runGame(id, game, exe, started)
 	l.notify("library.game", map[string]any{"id": id})
 	return LaunchResult{ExePath: exe, Started: true}, nil
+}
+
+// launchLocal starts a game that has its own launch settings. The launcher keeps the prefix,
+// Proton and argument handling; the library only records the session and its playtime.
+func (l *Library) launchLocal(ctx context.Context, game Game) (LaunchResult, error) {
+	if l.opts.ConfigLauncher == nil {
+		return LaunchResult{}, errors.New("no local launcher is configured")
+	}
+	config := *game.LocalConfig
+	exe := config.LauncherPath
+	if !config.UseGamePath && exe == "" {
+		exe = config.GamePath
+	}
+	if !l.launches.begin(game.ID) {
+		return LaunchResult{}, ErrAlreadyRunning
+	}
+	started := time.Now()
+	playedAt := stamp(started)
+	status := "completed"
+	if game.InstallDir != nil {
+		status = "installed"
+	}
+	if _, err := l.Patch(ctx, game.ID, Patch{LastPlayedAt: &playedAt, Status: &status}); err != nil {
+		l.launches.end(game.ID)
+		return LaunchResult{}, err
+	}
+	go l.runLocal(game, config, started)
+	l.notify("library.game", map[string]any{"id": game.ID})
+	return LaunchResult{ExePath: exe, Started: true}, nil
+}
+
+// runLocal waits for a local game to exit and adds the playtime.
+func (l *Library) runLocal(game Game, config types.LaunchOptions, started time.Time) {
+	err := l.opts.ConfigLauncher.LaunchConfig(context.Background(), config)
+	l.launches.end(game.ID)
+	seconds := int64(math.Round(time.Since(started).Seconds()))
+	if err := l.addPlaytime(context.Background(), game.ID, seconds); err != nil {
+		logger.Warn(logCategory, "could not save playtime for %s: %v", game.Title, err)
+	}
+	if err != nil {
+		logger.Warn(logCategory, "%s exited with error: %v", game.Title, err)
+	} else {
+		logger.Info(logCategory, "%s exited after %ds", game.Title, seconds)
+	}
+	l.notify("library.game", map[string]any{"id": game.ID})
 }
 
 // runGame waits for the launcher to return and adds the elapsed time to the game's playtime.

@@ -23,12 +23,30 @@ const (
 	overviewMinInterval = time.Second
 )
 
-// SourceCount is a source with its label, card shape and how many visible games it has.
+// SourceCount is a source with its label, card box and how many visible games it has.
 type SourceCount struct {
 	ID    string `json:"id"`
 	Label string `json:"label"`
-	Tile  string `json:"tile"`
+	// Kind is local for games from folders or by hand, plugin for imported source games.
+	Kind string `json:"kind"`
+	// Plugin is the plugin that supplies a plugin source. Empty for local games.
+	Plugin string `json:"plugin,omitempty"`
+	// Capabilities are the source features the UI may show: browse, listGames, sync:*,
+	// updateCheck, resolveFiles, auth, browse:filters.
+	Capabilities []string `json:"capabilities"`
+	// Sync says the source can import or sync the user's games.
+	Sync bool `json:"sync"`
+	// UpdateCheck says the source can look for newer game versions.
+	UpdateCheck bool `json:"updateCheck"`
+	// Tile is the older card shape name, kept for consumers that predate Cover.
+	Tile string `json:"tile"`
+	// Cover is the card box as "W:H".
+	Cover string `json:"cover"`
 	Count int    `json:"count"`
+	// Actions are the buttons the source adds to the Library. Never null.
+	Actions []contract.SourceAction `json:"actions"`
+	// Card names the game fields the source's cards show. Null uses the defaults.
+	Card *contract.SourceCard `json:"card"`
 	// Sidebar holds the filter groups the source declares for the Library sidebar. Empty for local games.
 	Sidebar []contract.SidebarGroup `json:"sidebar,omitempty"`
 }
@@ -159,13 +177,37 @@ func (l *Library) sourceList(counts map[string]int) []SourceCount {
 // sourceCountOf builds the entry for one source. The local source has a fixed label and a square card.
 func sourceCountOf(id string, count int, info contract.SourceInfo) SourceCount {
 	if id == manualSourceID {
-		return SourceCount{ID: id, Label: manualSourceLabel, Tile: tileSquare, Count: count}
+		return SourceCount{ID: id, Label: manualSourceLabel, Kind: "local", Tile: tileSquare,
+			Cover: contract.NormalizeCover("", tileSquare), Count: count, Actions: []contract.SourceAction{},
+			Capabilities: []string{"launch", "scan"}}
 	}
 	label := info.Label
 	if label == "" {
 		label = id
 	}
-	return SourceCount{ID: id, Label: label, Tile: cardShape(info.Tile), Count: count, Sidebar: info.Sidebar}
+	return SourceCount{
+		ID:           id,
+		Label:        label,
+		Kind:         "plugin",
+		Plugin:       info.Plugin,
+		Capabilities: append([]string{}, info.Capabilities...),
+		Sync:         hasCapability(info, CapabilityListGames) || hasCapability(info, "sync:games") || hasCapability(info, "sync:index"),
+		UpdateCheck:  hasCapability(info, CapabilityUpdateCheck),
+		Tile:         cardShape(info.Tile),
+		Cover:        contract.NormalizeCover(info.Cover, info.Tile),
+		Count:        count,
+		Actions:      actionList(info.Actions),
+		Card:         info.Card,
+		Sidebar:      info.Sidebar,
+	}
+}
+
+// actionList returns the actions, or an empty list, so the JSON array is never null.
+func actionList(actions []contract.SourceAction) []contract.SourceAction {
+	if actions == nil {
+		return []contract.SourceAction{}
+	}
+	return actions
 }
 
 // cardShape returns the declared card shape, or the poster shape when the source declares none it knows.

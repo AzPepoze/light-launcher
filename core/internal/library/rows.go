@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"time"
+
+	"light-launcher/core/internal/types"
 )
 
 // rowScanner is satisfied by both *sql.Row and *sql.Rows.
@@ -14,7 +16,7 @@ type rowScanner interface {
 const gameColumns = `id, source, source_id, url, title, version, developer, engine, tags, cover_path, cover_url,
 	screenshots, description, changelog, rating, status, favorite, hidden, notes, installed_version, install_dir,
 	install_size, exe_path, exe_args, last_played_at, playtime_s, source_updated_at, last_checked_at, added_at,
-	updated_at, extra`
+	updated_at, extra, origin, source_kind, folder_path, scan_folder, local_config, pinned`
 
 func scanGame(row rowScanner) (Game, error) {
 	var (
@@ -26,12 +28,14 @@ func scanGame(row rowScanner) (Game, error) {
 		exeArgs, lastPlayedAt, sourceUpdatedAt, lastCheck sql.NullString
 		installSize                                       sql.NullInt64
 		extra                                             sql.NullString
+		folderPath, scanFolder, localConfig               sql.NullString
 	)
 	err := row.Scan(
 		&g.ID, &g.Source, &g.SourceID, &g.URL, &g.Title, &version, &developer, &engine, &tags,
 		&coverPath, &coverURL, &screenshots, &description, &changelog, &rating, &g.Status,
 		&g.Favorite, &g.Hidden, &notes, &installedVersion, &installDir, &installSize, &exePath,
 		&exeArgs, &lastPlayedAt, &g.PlaytimeS, &sourceUpdatedAt, &lastCheck, &g.AddedAt, &g.UpdatedAt, &extra,
+		&g.Origin, &g.SourceKind, &folderPath, &scanFolder, &localConfig, &g.Pinned,
 	)
 	if err != nil {
 		return Game{}, err
@@ -60,7 +64,23 @@ func scanGame(row rowScanner) (Game, error) {
 	g.Tags = decodeStrings(tags.String)
 	g.Screenshots = decodeStrings(screenshots.String)
 	g.Extra = decodeExtra(extra)
+	g.FolderPath = stringPtr(folderPath)
+	g.ScanFolder = stringPtr(scanFolder)
+	g.LocalConfig = decodeLocalConfig(localConfig)
 	return g, nil
+}
+
+// decodeLocalConfig reads the launch options stored for a local row. A broken value is nil,
+// so a damaged row still opens instead of failing the whole list.
+func decodeLocalConfig(raw sql.NullString) *types.LaunchOptions {
+	if !raw.Valid || raw.String == "" {
+		return nil
+	}
+	var config types.LaunchOptions
+	if err := json.Unmarshal([]byte(raw.String), &config); err != nil {
+		return nil
+	}
+	return &config
 }
 
 func scanFile(row rowScanner) (GameFile, error) {

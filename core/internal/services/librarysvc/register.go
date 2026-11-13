@@ -38,10 +38,12 @@ func Register(r *api.Router, ev api.Events, lib *library.Library, sources contra
 	r.Handle("LibraryLinkFolder", api.Typed(s.linkFolder))
 	r.Handle("LibraryCheckUpdates", api.Typed(s.checkUpdates))
 	r.Handle("LibraryUpdatesSummary", api.NoInput(s.updatesSummary))
+	r.Handle("LibraryUpdateStatus", api.NoInput(s.updateStatus))
 	r.Handle("LibraryUpdateHistory", api.Typed(s.updateHistory))
 	r.Handle("LibrarySetFavorite", api.Typed(s.setFavorite))
 	r.Handle("LibraryLaunch", api.Typed(s.launch))
 	r.HandleWithTimeout("LibraryDownloadFile", downloadFileTimeout, api.Typed(s.downloadFile))
+	r.HandleWithTimeout("LibraryRunAction", actionTimeout, api.Typed(s.runAction))
 
 	r.Handle("IncomingList", api.NoInput(s.incomingList))
 	r.Handle("IncomingLink", api.Typed(s.incomingLink))

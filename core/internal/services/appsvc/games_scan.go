@@ -1,11 +1,14 @@
 package appsvc
 
 import (
+	"path/filepath"
 	"sync"
 
 	"light-launcher/core/internal/config"
 	"light-launcher/core/internal/types"
 )
+
+const homeScanChannel = "home.scan"
 
 // scanCache keeps the last auto-scan result until a folder or game changes.
 var scanCache struct {
@@ -30,11 +33,15 @@ func (s *service) getAutoScannedGames(force bool) ([]types.ScannedFolderGroup, e
 	}
 
 	settings := s.settings.Load()
+	folders := settings.ScanFolderConfigs
 	index := newScanIndex(settings.ScanFolders, s.games.List(), s.preferences.Preferred())
 	blacklist := blacklistSet(settings.Blacklist)
 
+	defer s.reportScan(types.HomeScanDone, len(folders), len(folders), "")
+
 	groups := []types.ScannedFolderGroup{}
-	for _, folderCfg := range settings.ScanFolderConfigs {
+	for i, folderCfg := range folders {
+		s.reportScan(types.HomeScanRunning, i, len(folders), filepath.Base(folderCfg.Path))
 		group, err := s.scanFolderGroup(folderCfg, index, blacklist)
 		if err != nil {
 			return nil, err
@@ -44,6 +51,14 @@ func (s *service) getAutoScannedGames(force bool) ([]types.ScannedFolderGroup, e
 
 	storeScanGroups(groups)
 	return groups, nil
+}
+
+// reportScan sends folder scan progress as home.scan. A scan with no folders sends nothing.
+func (s *service) reportScan(state string, done, total int, current string) {
+	if s.events == nil || total == 0 {
+		return
+	}
+	s.events.Emit(homeScanChannel, types.HomeScanEvent{State: state, Done: done, Total: total, Current: current})
 }
 
 func cachedScanGroups() ([]types.ScannedFolderGroup, bool) {

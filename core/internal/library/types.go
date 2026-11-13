@@ -1,6 +1,10 @@
 package library
 
-import "errors"
+import (
+	"errors"
+
+	"light-launcher/core/internal/types"
+)
 
 // ErrNotFound is returned when a row does not exist.
 var ErrNotFound = errors.New("not found")
@@ -43,6 +47,18 @@ type Game struct {
 	AddedAt          string         `json:"addedAt"`
 	UpdatedAt        string         `json:"updatedAt"`
 	Extra            map[string]any `json:"extra"`
+	// Origin says how a local row was found: plugin, hand, scan, watch or linked. Plugin rows keep plugin.
+	Origin string `json:"origin"`
+	// SourceKind is local or plugin. Plugin rows keep plugin.
+	SourceKind string `json:"sourceKind"`
+	// FolderPath is the game folder of a local row.
+	FolderPath *string `json:"folderPath,omitempty"`
+	// ScanFolder is the watched folder a scanned row came from, when it has one.
+	ScanFolder *string `json:"scanFolder,omitempty"`
+	// LocalConfig is the launch settings of a local row. Plugin rows have nil.
+	LocalConfig *types.LaunchOptions `json:"localConfig,omitempty"`
+	// Pinned rows are never swept by a scan. A row becomes pinned when the user edits it.
+	Pinned int `json:"pinned"`
 }
 
 // GameFile is one download candidate stored for a game.

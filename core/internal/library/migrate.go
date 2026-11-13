@@ -122,6 +122,7 @@ var migrations = []migration{
 		},
 	},
 	searchMigration,
+	localSourcesMigration,
 }
 
 func migrate(ctx context.Context, db *sql.DB) error {
