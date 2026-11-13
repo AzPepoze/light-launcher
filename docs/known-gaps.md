@@ -51,7 +51,8 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [x] | The scheduler runs a daily `plugins.update-check` job; the startup check and "Check now" remain. |
 | [x] | Release workflow in each plugin repo (not yet run on GitHub). |
 | [x] | The scheduler rebuilds its jobs when a plugin is installed, updated, enabled or its settings change; no restart. |
-| [ ] | Updating a dropped-in plugin without a `repository` field (drop the new version again). A dropped-in plugin that names a repository does update from GitHub. |
+| [x] | Dropping a newer local package updates the installed plugin in place through `PluginInstallOrUpdate`; data/secrets survive, failed starts roll back, same version gives a clear error. GitHub updates stay strict. |
+| [ ] | The install dialog still says "Install plugin" when the same package will update an installed plugin. Use the preview's manifest id and the installed list to switch the title/confirm copy. |
 | [x] | Settings form built from each plugin's `settings.schema.json`. |
 | [x] | Nested objects in a settings schema are not drawn (only top-level fields). |
 | [x] | SDK docs for the `settings.changed` notification and the `x-ll-*` schema extensions. |
