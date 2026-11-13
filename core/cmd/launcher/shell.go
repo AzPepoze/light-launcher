@@ -14,6 +14,23 @@ import (
 
 const shellExitTimeout = 3 * time.Second
 
+// applyDisplayBackend makes the NativeWayland setting real for the GTK shell. GDK needs the choice
+// before the child starts; the Go process itself is not a GTK app.
+func applyDisplayBackend(native bool) {
+	if runtime.GOOS != "linux" {
+		return
+	}
+	_ = os.Setenv("GDK_BACKEND", gdkBackend(native))
+}
+
+// gdkBackend maps the setting to GDK's backend name. The off state is X11/Xwayland.
+func gdkBackend(native bool) string {
+	if native {
+		return "wayland"
+	}
+	return "x11"
+}
+
 // resolveShell turns "auto" into the window type for this OS.
 func resolveShell(name string) string {
 	if name != "auto" {

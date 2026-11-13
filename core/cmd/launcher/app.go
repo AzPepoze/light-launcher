@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"light-launcher/core/internal/api"
+	"light-launcher/core/internal/config"
 	"light-launcher/core/internal/logger"
 	"light-launcher/core/internal/server"
 )
@@ -96,6 +97,8 @@ func run(ctx context.Context, cfg runConfig) error {
 		<-ctx.Done()
 		return nil
 	}
+	settings := config.NewSettingsStore(config.SettingsFilePath()).Load()
+	applyDisplayBackend(settings.NativeWayland)
 	return openWindow(ctx, cfg.Shell, pageURL)
 }
 

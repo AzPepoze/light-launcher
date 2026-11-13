@@ -106,7 +106,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | Covers behind a login (F95) may fail because media fetches send no cookies. |
 | [x] | Remove the old `/api/cover/{id}` route (the media route replaced it). |
 | [x] | `bun run build:launcher` embeds the UI, so the launcher starts without `--ui`. |
-| [ ] | The NativeWayland setting is saved but has no effect; GTK picks the display system. |
+| [x] | The NativeWayland setting now sets `GDK_BACKEND=wayland` (or `x11`) for the GTK shell, so the toggle takes effect after restart. |
 | [x] | The GTK shell remembers the window position and size between runs. |
 | [ ] | The GTK shell can only restore the window position on X11; Wayland does not let a client place a toplevel. |
 | [x] | Cover and screenshot images are evicted from memory least-recently-used first (200 entries). |
