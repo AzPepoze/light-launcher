@@ -1,7 +1,10 @@
 <script lang="ts">
 	import type { PermissionKind, PermissionLines, PluginPreview } from "../../lib/features/types";
+	import Button from "@components/shared/Button.svelte";
 	import Checkbox from "@components/shared/Checkbox.svelte";
-	import Notice from "./Notice.svelte";
+	import EmptyState from "@components/shared/EmptyState.svelte";
+	import Icon from "@components/shared/Icon.svelte";
+	import Notice from "@components/shared/Notice.svelte";
 	import PluginIdentity from "./PluginIdentity.svelte";
 	import {
 		LEGAL_NOTICE,
@@ -63,26 +66,22 @@
 	</header>
 
 	{#if !preview.signed}
-		<Notice icon="warning">
-			<p>{UNSIGNED_WARNING}</p>
-		</Notice>
+		<Notice tone="warning" icon="warning">{UNSIGNED_WARNING}</Notice>
 	{/if}
 
 	{#if preview.repositoryChanged}
-		<Notice icon="report">
-			<p>
-				{REPOSITORY_CHANGED_WARNING}
-				{#if preview.installedRepository}
-					Installed from {preview.installedRepository}.
-				{/if}
-			</p>
+		<Notice tone="warning" icon="report">
+			{REPOSITORY_CHANGED_WARNING}
+			{#if preview.installedRepository}
+				Installed from {preview.installedRepository}.
+			{/if}
 		</Notice>
 	{/if}
 
 	<section class="ledger" aria-label={hint}>
 		<p class="hint">{hint}</p>
 		{#if isEmpty}
-			<p class="empty">{emptyText}</p>
+			<EmptyState icon="check_circle" title={emptyText} />
 		{:else}
 			<ul class="rows">
 				{#if hasSites}
@@ -94,11 +93,9 @@
 							aria-controls={sitesId}
 							onclick={() => (sitesOpen = !sitesOpen)}
 						>
-							<span class="material-icons icon" aria-hidden="true">language</span>
+							<Icon name="language" size={20} class="icon" />
 							<span class="sites-title">{sitesTitle(lines.sites.length)}</span>
-							<span class="material-icons chevron" class:turned={sitesOpen} aria-hidden="true">
-								expand_more
-							</span>
+							<Icon name="expand_more" size={20} class={sitesOpen ? "chevron turned" : "chevron"} />
 						</button>
 						<div id={sitesId} class="sites-body" class:open={sitesOpen} inert={!sitesOpen}>
 							<div class="clip">
@@ -120,7 +117,7 @@
 						class:staggered={position < STAGGER_LIMIT}
 						style:--row-index={position}
 					>
-						<span class="material-icons icon" aria-hidden="true">{KIND_ICONS[row.kind]}</span>
+						<Icon name={KIND_ICONS[row.kind]} size={20} class="icon" />
 						<span class="text">{row.text}</span>
 					</li>
 				{/each}
@@ -135,10 +132,10 @@
 	</Checkbox>
 
 	<div class="actions">
-		<button class="btn sm primary install" disabled={!accepted || busy} onclick={onConfirm}>
+		<Button variant="primary" size="sm" disabled={!accepted || busy} onclick={onConfirm}>
 			{confirmLabel}
-		</button>
-		<button class="btn sm secondary" disabled={busy} onclick={onCancel}>Cancel</button>
+		</Button>
+		<Button size="sm" disabled={busy} onclick={onCancel}>Cancel</Button>
 	</div>
 </article>
 
@@ -185,7 +182,6 @@
 		font-weight: 600;
 	}
 
-	.empty,
 	.legal {
 		font-size: 0.875rem;
 		color: var(--text-muted);
@@ -210,7 +206,7 @@
 			border-left-color: var(--danger);
 			background: color-mix(in srgb, var(--danger) 8%, transparent);
 
-			.icon {
+			:global(.icon) {
 				color: var(--danger);
 			}
 		}
@@ -221,9 +217,8 @@
 		}
 	}
 
-	.icon {
+	.row :global(.icon) {
 		color: var(--text-muted);
-		font-size: 1.25rem;
 		margin-top: 1px;
 	}
 
@@ -255,7 +250,7 @@
 			outline-offset: 2px;
 		}
 
-		.icon {
+		:global(.icon) {
 			margin-top: 0;
 		}
 	}
@@ -265,13 +260,13 @@
 		min-width: 0;
 	}
 
-	.chevron {
+	.sites-toggle :global(.chevron) {
 		color: var(--text-muted);
 		transition: transform var(--motion-quick) var(--ease-out);
+	}
 
-		&.turned {
-			transform: rotate(180deg);
-		}
+	.sites-toggle :global(.chevron.turned) {
+		transform: rotate(180deg);
 	}
 
 	.sites-body {
@@ -303,13 +298,6 @@
 		display: flex;
 		flex-wrap: wrap;
 		gap: 8px;
-	}
-
-	.install {
-		transition:
-			background-color var(--motion-quick) var(--ease-out),
-			opacity var(--motion-quick) var(--ease-out),
-			transform var(--motion-quick) var(--ease-out);
 	}
 
 	@keyframes row-in {

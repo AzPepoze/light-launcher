@@ -1,159 +1,84 @@
 <script lang="ts">
-	import PageHeader from "@components/shared/PageHeader.svelte";
-	import { onMount } from "svelte";
-	import { speed } from "../../lib/features/format";
+	import Button from "@components/shared/Button.svelte";
+	import EmptyState from "@components/shared/EmptyState.svelte";
+	import LoadingState from "@components/shared/LoadingState.svelte";
+	import Notice from "@components/shared/Notice.svelte";
 	import DownloadControls from "./DownloadControls.svelte";
 	import DownloadRow from "./DownloadRow.svelte";
-	import { DownloadsState } from "./downloadsState.svelte";
-	import { groupDownloads, installLine, totalSpeed } from "./downloadGroups";
+	import GroupHeader from "./GroupHeader.svelte";
+	import SpeedPanel from "./SpeedPanel.svelte";
+	import type { DownloadsState } from "./downloadsState.svelte";
+	import { buildRows, groupRows, listEntries, toastTone, totalSpeed } from "./downloadGroups";
 
-	const downloads = new DownloadsState();
-	const groups = $derived(groupDownloads(downloads.items));
-	const installing = $derived(downloads.installs.filter((install) => install.state !== "done"));
-	const running = $derived(totalSpeed(downloads.items));
-	const subtitle = $derived(
-		`${groups.active.length} active` +
-			(running ? ` · ${speed(running)}` : "") +
-			(groups.failed.length ? ` · ${groups.failed.length} failed` : ""),
-	);
+	/** Owned by the Library page, which keeps it subscribed and sampling while another tab is open. */
+	let { downloads }: { downloads: DownloadsState } = $props();
 
-	onMount(() => {
-		downloads.load();
-		return downloads.subscribe();
-	});
+	let finishedOpen = $state(false);
+	let controls: { focusInput: () => void } | undefined = $state();
+
+	const rows = $derived(buildRows(downloads.items, downloads.installs));
+	const groups = $derived(groupRows(rows));
+	const entries = $derived(listEntries(groups, finishedOpen));
+	const speedNow = $derived(totalSpeed(downloads.items));
+
 </script>
 
-<PageHeader title="Downloads" {subtitle} icon="downloading" />
-
 {#if downloads.toast}
-	<p class="notice" role="alert">{downloads.toast.message}</p>
+	<Notice tone={toastTone(downloads.toast.level)}>{downloads.toast.message}</Notice>
 {/if}
 
 {#if downloads.error}
-	<p class="notice" role="alert">{downloads.error}</p>
+	<Notice tone="error">
+		{downloads.error}
+		<Button variant="text" size="sm" icon="refresh" onclick={() => downloads.load()}>Retry</Button>
+	</Notice>
 {/if}
 
-<DownloadControls {downloads} />
+<DownloadControls {downloads} bind:this={controls} />
 
 {#if downloads.loading}
-	<p class="empty">Loading downloads...</p>
-{:else if downloads.items.length === 0 && installing.length === 0}
-	<div class="empty">
-		<p>No downloads yet.</p>
-		<p class="hint">Pick a file from a game, or paste a direct link above.</p>
-	</div>
+	<LoadingState label="Loading downloads" />
 {:else}
-	{#if groups.active.length}
-		<section aria-labelledby="active-title">
-			<h2 id="active-title">In progress</h2>
-			<ul class="list">
-				{#each groups.active as item (item.id)}
-					<DownloadRow {item} onAct={(action, id) => downloads.act(action, id)} />
-				{/each}
-			</ul>
-		</section>
-	{/if}
+	<SpeedPanel
+		speed={speedNow}
+		samples={downloads.speedSamples}
+		active={groups.active.length}
+		queued={groups.queued.length}
+		limitKBps={downloads.speedLimitKBps}
+	/>
 
-	{#if installing.length}
-		<section aria-labelledby="install-title">
-			<h2 id="install-title">Installing</h2>
-			<ul class="list">
-				{#each installing as install (install.downloadId)}
-					<li class="install" class:error={install.state === "error"}>
-						<p class="name">{install.title}</p>
-						<p class="meta">{install.error ?? installLine(install)}</p>
-					</li>
-				{/each}
-			</ul>
-		</section>
-	{/if}
-
-	{#if groups.finished.length}
-		<section aria-labelledby="finished-title">
-			<h2 id="finished-title">Finished</h2>
-			<ul class="list">
-				{#each groups.finished as item (item.id)}
-					<DownloadRow {item} onAct={(action, id) => downloads.act(action, id)} />
-				{/each}
-			</ul>
-		</section>
-	{/if}
-
-	{#if groups.failed.length}
-		<section aria-labelledby="failed-title">
-			<h2 id="failed-title">Failed</h2>
-			<ul class="list">
-				{#each groups.failed as item (item.id)}
-					<DownloadRow {item} onAct={(action, id) => downloads.act(action, id)} />
-				{/each}
-			</ul>
-		</section>
+	{#if rows.length === 0}
+		<EmptyState icon="download" title="Nothing downloading" hint="Paste a direct link above to start.">
+			<Button variant="secondary" size="sm" icon="add_link" onclick={() => controls?.focusInput()}>
+				Add a link
+			</Button>
+		</EmptyState>
+	{:else}
+		<ul class="list">
+			{#each entries as entry (entry.key)}
+				{#if entry.kind === "header"}
+					<GroupHeader
+						group={entry.group}
+						count={entry.count}
+						open={finishedOpen}
+						onToggle={entry.group === "finished" ? () => (finishedOpen = !finishedOpen) : undefined}
+						onClear={entry.group === "finished" ? () => downloads.clearFinished() : undefined}
+					/>
+				{:else}
+					<DownloadRow row={entry.row} onAct={(action) => downloads.act(action, entry.row.item.id)} />
+				{/if}
+			{/each}
+		</ul>
 	{/if}
 {/if}
 
 <style lang="scss">
-	section {
-		margin-bottom: 24px;
-	}
-
-	h2 {
-		margin: 0 0 10px;
-		font-size: 0.8rem;
-		font-weight: 800;
-		letter-spacing: 1px;
-		text-transform: uppercase;
-		color: var(--text-muted);
-	}
-
 	.list {
-		list-style: none;
-		margin: 0;
-		padding: 0;
 		display: flex;
 		flex-direction: column;
 		gap: 8px;
-	}
-
-	.install {
-		padding: 12px 14px;
-		border-radius: var(--radius-md);
-		background: var(--bg-surface);
-
-		p {
-			margin: 0;
-		}
-
-		&.error .meta {
-			color: var(--danger);
-		}
-	}
-
-	.name {
-		font-weight: 700;
-		font-size: 0.9rem;
-	}
-
-	.meta,
-	.hint {
-		font-size: 0.8rem;
-		color: var(--text-muted);
-	}
-
-	.notice {
-		margin: 0 0 14px;
-		padding: 10px 14px;
-		border-radius: var(--radius-md);
-		border: 1px solid var(--danger);
-		font-size: 0.85rem;
-	}
-
-	.empty {
-		padding: 40px 16px;
-		text-align: center;
-		color: var(--text-muted);
-
-		p {
-			margin: 0 0 6px;
-		}
+		margin: 0;
+		padding: 0;
+		list-style: none;
 	}
 </style>

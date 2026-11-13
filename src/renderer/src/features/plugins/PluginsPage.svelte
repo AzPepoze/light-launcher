@@ -1,5 +1,10 @@
 <script lang="ts">
+	import Button from "@components/shared/Button.svelte";
+	import EmptyState from "@components/shared/EmptyState.svelte";
+	import LoadingState from "@components/shared/LoadingState.svelte";
+	import Notice from "@components/shared/Notice.svelte";
 	import PageHeader from "@components/shared/PageHeader.svelte";
+	import { notifications } from "@stores/notificationStore";
 	import { onMount } from "svelte";
 	import { ago } from "../../lib/features/format";
 	import { errorMessage, listen } from "../../lib/features/rpc";
@@ -18,7 +23,6 @@
 	import {
 		planPluginUploads,
 		uploadPlugin,
-		type SkippedUpload,
 		type UploadFile
 	} from "../../lib/features/pluginUpload";
 	import type { PluginInfo, PluginUpdateStatus, PluginUpdatesStatus } from "../../lib/features/types";
@@ -32,44 +36,31 @@
 	import PluginDropZone from "./PluginDropZone.svelte";
 	import PluginInstallDialog from "./PluginInstallDialog.svelte";
 	import PluginRow from "./PluginRow.svelte";
-	import SuccessCheck from "./SuccessCheck.svelte";
 	import {
 		CHECKING_UPDATES_LABEL,
 		CHECK_UPDATES_LABEL,
 		COMMUNITY_PLUGINS_URL,
-		DISMISS_LABEL,
 		NOTHING_TO_INSTALL_COPY,
 		QUEUE_BUSY_COPY,
-		SKIPPED_HEADING,
 		UPLOADING_TEXT,
-		installedSummary,
-		skippedText
+		installedSummary
 	} from "./pluginCopy";
+	import { checkOutcome, skippedSummary } from "./pluginNotices";
 
 	let plugins = $state<PluginInfo[]>([]);
 	let loading = $state(true);
-	let error = $state("");
-	let notice = $state("");
+	let loadFailed = $state(false);
 	let selectedId = $state<string | null>(null);
 	/** The Install button, which opens the dialog with an empty link box. */
 	let installOpen = $state(false);
 	const queue = new PluginInstallQueue(uploadPlugin);
 	let batch = $state<QueueView>(queue.view);
-	/** Dropped items that are not plugins, shown by name. */
-	let skipped = $state<SkippedUpload[]>([]);
-	let uploadError = $state("");
 	let updates = $state<PluginUpdatesStatus>({ checkedAt: null, plugins: [] });
 	let checkingUpdates = $state(false);
-	let updatesError = $state("");
 
 	const queued = $derived(batch.total > 1);
 	const selected = $derived(plugins.find((plugin) => plugin.id === selectedId));
 	const updateCount = $derived(updates.plugins.filter((item) => item.available).length);
-	const updateProblems = $derived(
-		updates.plugins
-			.flatMap((item) => (item.error ? [item.error] : []))
-			.filter((message, index, all) => all.indexOf(message) === index)
-	);
 	const subtitle = $derived(
 		loading
 			? "Loading plugins"
@@ -90,31 +81,34 @@
 
 	async function load() {
 		loading = true;
-		error = "";
+		loadFailed = false;
 		try {
 			plugins = await pluginsApi.list();
-		} catch (err) {
-			error = errorMessage(err);
+		} catch {
+			loadFailed = true;
 		} finally {
 			loading = false;
 		}
 	}
 
+	/** Reads the cached update results. It does not ask GitHub. */
 	async function loadUpdates() {
 		try {
 			updates = await pluginsApi.updatesStatus();
 		} catch (err) {
-			updatesError = errorMessage(err);
+			notifications.error(errorMessage(err));
 		}
 	}
 
+	/** One check run, one notification with the result. */
 	async function checkUpdates() {
 		checkingUpdates = true;
-		updatesError = "";
 		try {
 			updates = await pluginsApi.checkUpdates();
+			const outcome = checkOutcome(updates.plugins);
+			notifications[outcome.tone](outcome.message);
 		} catch (err) {
-			updatesError = errorMessage(err);
+			notifications.error(errorMessage(err));
 		} finally {
 			checkingUpdates = false;
 		}
@@ -123,16 +117,28 @@
 	/** Keeps the list in step with plugin events. Returns a function that stops them. */
 	function subscribe(): () => void {
 		const stops = [
-			queue.subscribe((view) => (batch = view)),
+			queue.subscribe(onQueueView),
 			listen<WirePluginInfo | WireRemovedPlugin>(PLUGIN_STATE_EVENT, onState),
 			listen<WirePluginNotify>(PLUGIN_NOTIFY_EVENT, (event) => {
-				notice = `${event.plugin}: ${event.message}`;
+				notifications.info(`${event.plugin}: ${event.message}`);
 			}),
 			listen<WirePluginUpdatesStatus>(PLUGIN_UPDATES_EVENT, (event) => {
 				updates = toPluginUpdatesStatus(event);
 			})
 		];
 		return () => stops.forEach((stop) => stop());
+	}
+
+	function onQueueView(view: QueueView) {
+		batch = view;
+		if (view.phase === "uploading") notifications.info(UPLOADING_TEXT);
+		if (view.phase === "failed") {
+			notifications.error(view.failure);
+			void queue.dismissFailure();
+		}
+		if (view.phase === "done" && view.total > 1) {
+			notifications.success(installedSummary(view.installed, view.total));
+		}
 	}
 
 	function onState(payload: WirePluginInfo | WireRemovedPlugin) {
@@ -180,12 +186,15 @@
 
 	function uploadDropped(files: UploadFile[]) {
 		if (queue.busy) {
-			uploadError = QUEUE_BUSY_COPY;
+			notifications.info(QUEUE_BUSY_COPY);
 			return;
 		}
 		const plan = planPluginUploads(files);
-		skipped = plan.skipped;
-		uploadError = plan.plugins.length ? "" : NOTHING_TO_INSTALL_COPY;
+		if (plan.skipped.length > 0) notifications.error(skippedSummary(plan.skipped));
+		if (plan.plugins.length === 0) {
+			notifications.error(NOTHING_TO_INSTALL_COPY);
+			return;
+		}
 		void queue.start(plan.plugins);
 	}
 </script>
@@ -194,65 +203,20 @@
 	{#if updates.checkedAt}
 		<span class="checked">Checked {ago(updates.checkedAt)}</span>
 	{/if}
-	<button class="btn sm" disabled={checkingUpdates} onclick={checkUpdates}>
+	<Button size="sm" disabled={checkingUpdates} onclick={checkUpdates}>
 		{checkingUpdates ? CHECKING_UPDATES_LABEL : CHECK_UPDATES_LABEL}
-	</button>
-	<button class="btn sm primary" onclick={() => openInstall()}>Install</button>
+	</Button>
+	<Button variant="primary" size="sm" onclick={() => openInstall()}>Install</Button>
 </PageHeader>
 
 <PluginDropZone onFiles={uploadDropped}>
-	{#if notice}
-		<p class="notice" role="status">{notice}</p>
-	{/if}
-
-	{#if updatesError}
-		<p class="upload-error" role="alert">{updatesError}</p>
-	{/if}
-
-	{#each updateProblems as problem (problem)}
-		<p class="upload-error" role="alert">{problem}</p>
-	{/each}
-
-	{#if batch.phase === "uploading"}
-		<p class="notice" role="status">{UPLOADING_TEXT}</p>
-	{/if}
-
-	{#if batch.phase === "failed"}
-		<div class="failure">
-			<p class="upload-error" role="alert">{batch.failure}</p>
-			<button class="btn sm" onclick={() => queue.dismissFailure()}>{DISMISS_LABEL}</button>
-		</div>
-	{/if}
-
-	{#if batch.phase === "done" && queued}
-		<p class="done" role="status">
-			<SuccessCheck />
-			{installedSummary(batch.installed, batch.total)}
-		</p>
-	{/if}
-
-	{#if skipped.length}
-		<div class="skipped">
-			<p role="alert">{SKIPPED_HEADING}</p>
-			<ul aria-label="Skipped items">
-				{#each skipped as item (item.name)}
-					<li>{skippedText(item)}</li>
-				{/each}
-			</ul>
-		</div>
-	{/if}
-
-	{#if uploadError}
-		<p class="upload-error" role="alert">{uploadError}</p>
-	{/if}
-
-	{#if error}
-		<div class="status">
-			<p role="alert">{error}</p>
-			<button class="btn sm" onclick={load}>Retry</button>
-		</div>
+	{#if loadFailed}
+		<Notice tone="error">
+			<p>Plugins could not be loaded.</p>
+			<Button size="sm" onclick={load}>Retry</Button>
+		</Notice>
 	{:else if loading}
-		<p class="status">Loading plugins...</p>
+		<LoadingState label="Loading plugins..." />
 	{:else if selected}
 		{#key selected.id}
 			<PluginDetail
@@ -264,9 +228,8 @@
 			/>
 		{/key}
 	{:else if plugins.length === 0}
-		<div class="status">
-			<p class="title">No plugins installed</p>
-			<button class="btn sm primary" onclick={() => openInstall()}>Install a plugin</button>
+		<EmptyState icon="extension" title="No plugins installed">
+			<Button variant="primary" size="sm" onclick={() => openInstall()}>Install a plugin</Button>
 			<p class="community">
 				{#if COMMUNITY_PLUGINS_URL}
 					<a href={COMMUNITY_PLUGINS_URL} target="_blank" rel="noreferrer">Community plugins</a>
@@ -274,7 +237,7 @@
 					<span>Community plugins</span>
 				{/if}
 			</p>
-		</div>
+		</EmptyState>
 	{:else}
 		<ul class="list" aria-label="Installed plugins">
 			{#each plugins as plugin (plugin.id)}
@@ -309,74 +272,14 @@
 		gap: 8px;
 	}
 
-	.upload-error {
-		margin: 0 0 12px;
-		font-size: 0.9375rem;
-		color: var(--danger);
-	}
-
-	.failure {
-		display: flex;
-		align-items: center;
-		gap: 12px;
-		margin-bottom: 12px;
-
-		.upload-error {
-			margin: 0;
-		}
-	}
-
-	.done {
-		display: flex;
-		align-items: center;
-		gap: 10px;
-		margin: 0 0 12px;
-		font-size: 1rem;
-	}
-
-	.skipped {
-		margin: 0 0 12px;
-		font-size: 0.9375rem;
-		color: var(--text-muted);
-
-		p {
-			margin: 0 0 6px;
-			color: var(--danger);
-		}
-
-		ul {
-			margin: 0;
-			padding-left: 18px;
-		}
-	}
-
 	.checked {
 		font-size: 0.875rem;
 		color: var(--text-muted);
 	}
 
-	.status {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 12px;
-		padding: 48px 16px;
-		color: var(--text-muted);
-		text-align: center;
-
-		p {
-			margin: 0;
-		}
-
-		.title {
-			font-size: 1.05rem;
-			font-weight: 600;
-			color: var(--text-main);
-		}
-
-		.community {
-			font-size: 0.875rem;
-			text-decoration: underline;
-		}
+	.community {
+		margin: 0;
+		font-size: 0.875rem;
+		text-decoration: underline;
 	}
 </style>

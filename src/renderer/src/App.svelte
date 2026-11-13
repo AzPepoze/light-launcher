@@ -24,9 +24,8 @@
 	import Utils from "./pages/Utils.svelte";
 	import Versions from "./pages/Versions.svelte";
 	import LibraryPage from "./features/library/LibraryPage.svelte";
-	import DownloadsPage from "./features/downloads/DownloadsPage.svelte";
-	import UpdatesPage from "./features/updates/UpdatesPage.svelte";
 	import PluginsPage from "./features/plugins/PluginsPage.svelte";
+	import NotificationsPage from "./features/notifications/NotificationsPage.svelte";
 	import CommandPalette from "@components/shared/CommandPalette.svelte";
 	import { commandPaletteState } from "@components/shared/CommandPaletteState.svelte";
 	import { createLogger } from "@lib/logger";
@@ -77,9 +76,8 @@
 		utils: Utils,
 		settings: SettingsPage,
 		library: LibraryPage,
-		downloads: DownloadsPage,
-		updates: UpdatesPage,
 		plugins: PluginsPage,
+		notifications: NotificationsPage,
 	};
 
 	let activePage = "home";
@@ -249,7 +247,7 @@
 						easing: cubicOut,
 					}}
 				>
-					<div class="content-zone" class:full-width={activePage === "home" || activePage === "editlsfg" || activePage === "manager" || activePage === "prefix"} class:home-zone={activePage === "home"} class:prefix-zone={activePage === "prefix"}>
+					<div class="content-zone" class:full-width={activePage === "home" || activePage === "editlsfg" || activePage === "manager" || activePage === "prefix" || activePage === "library"} class:home-zone={activePage === "home"} class:prefix-zone={activePage === "prefix"}>
 						{#if activePage === "editlsfg"}
 							<EditLsfg gamePath={editLsfgGamePath} />
 						{:else if Object.hasOwn(pageComponents, activePage)}

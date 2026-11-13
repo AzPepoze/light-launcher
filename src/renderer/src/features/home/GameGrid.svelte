@@ -15,7 +15,8 @@
 		OpenFileLocation
 	} from "@lib/api";
 	import { notifications } from "@stores/notificationStore";
-	import { saveHomeScroll, getHomeScroll } from "@stores/homeScrollStore";
+	import { plainMessage } from "@lib/plainMessage";
+	import { saveHomeScroll, getHomeView } from "@stores/homeViewStore";
 	import Marquee from "./shared/Marquee.svelte";
 	import { setIconQueuePaused } from "@lib/iconService";
 
@@ -64,7 +65,7 @@
 			activeFolderMenu = null;
 			onRefresh();
 		} catch (err) {
-			notifications.add(`Failed to remove watched folder: ${err}`, "error");
+			notifications.add(`Failed to remove watched folder: ${plainMessage(err)}`, "error");
 		}
 	}
 
@@ -97,7 +98,7 @@
 		try {
 			await OpenFileLocation(targetPath);
 		} catch (err) {
-			notifications.add(`Failed to open file location: ${err}`, "error");
+			notifications.add(`Failed to open file location: ${plainMessage(err)}`, "error");
 		}
 	}
 
@@ -115,7 +116,7 @@
 			notifications.add(`Stopping ${activeMenuGame.name}...`, "info");
 			onRefresh();
 		} catch (err) {
-			notifications.add(`Failed to stop game: ${err}`, "error");
+			notifications.add(`Failed to stop game: ${plainMessage(err)}`, "error");
 		}
 	}
 
@@ -136,7 +137,7 @@
 			notifications.add("Custom game icon saved", "success");
 			onRefresh();
 		} catch (err) {
-			notifications.add(`Failed to set custom icon: ${err}`, "error");
+			notifications.add(`Failed to set custom icon: ${plainMessage(err)}`, "error");
 		}
 	}
 
@@ -149,7 +150,7 @@
 			notifications.add("Using executable icon again", "success");
 			onRefresh();
 		} catch (err) {
-			notifications.add(`Failed to clear custom icon: ${err}`, "error");
+			notifications.add(`Failed to clear custom icon: ${plainMessage(err)}`, "error");
 		}
 	}
 
@@ -162,7 +163,7 @@
 				notifications.add("Game hidden from library", "success");
 				onRefresh();
 			} catch (err) {
-				notifications.add(`Failed to hide game: ${err}`, "error");
+				notifications.add(`Failed to hide game: ${plainMessage(err)}`, "error");
 			}
 		} else {
 			try {
@@ -170,7 +171,7 @@
 				notifications.add("Game profile removed", "success");
 				onRefresh();
 			} catch (err) {
-				notifications.add(`Failed to remove game: ${err}`, "error");
+				notifications.add(`Failed to remove game: ${plainMessage(err)}`, "error");
 			}
 		}
 	}
@@ -279,6 +280,7 @@
 			cancelAnimationFrame(scrollSaveRaf);
 			scrollSaveRaf = null;
 		}
+		saveHomeScroll(getScroller()?.scrollTop ?? pendingScrollTop);
 		if (stuckRaf !== null) {
 			cancelAnimationFrame(stuckRaf);
 			stuckRaf = null;
@@ -306,11 +308,15 @@
 			const el = getScroller();
 			if (!el) return;
 			restoredForView = view;
-			const saved = getHomeScroll();
-			if (saved > 0 && el.scrollTop !== saved) {
-				el.scrollTop = saved;
+			const target = clampScrollTop(el, getHomeView().scrollTop);
+			if (target > 0 && el.scrollTop !== target) {
+				el.scrollTop = target;
 			}
 		});
+	}
+
+	function clampScrollTop(el: HTMLElement, scrollTop: number): number {
+		return Math.min(scrollTop, Math.max(0, el.scrollHeight - el.clientHeight));
 	}
 
 	// Rubber-band marquee: pointerdown arms it, >5px movement starts it.

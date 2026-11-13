@@ -1,5 +1,9 @@
 import { GetAllGames, GetImageBase64 } from "@lib/api";
 import { navigationCommand } from "@stores/navigationStore";
+import { notifications } from "@stores/notificationStore";
+import { pluginsApi } from "../../lib/features/pluginsApi";
+import { errorMessage } from "../../lib/features/rpc";
+import { openLibraryTab, type LibraryTab } from "@stores/libraryTabStore";
 import { loadExeIcon } from "@lib/iconService";
 import { quickLaunchGame } from "@lib/homeService";
 import { createLogger } from "@lib/logger";
@@ -12,6 +16,7 @@ export class CommandPaletteState {
 	show = $state(false);
 	searchQuery = $state("");
 	games = $state<any[]>([]);
+	pluginCommands = $state<any[]>([]);
 	gameIcons = $state<Record<string, string>>({});
 	filteredItems = $state<any[]>([]);
 	selectedIndex = $state(0);
@@ -21,15 +26,32 @@ export class CommandPaletteState {
 	resultsContainer = $state<HTMLDivElement | null>(null);
 	previousFocusElement = $state<HTMLElement | null>(null);
 
-	readonly PAGES = routes
-		.filter((route) => !route.hidden)
-		.map((route) => ({
-			page: route.id,
-			name: route.paletteLabel ?? `Go to ${route.label}`,
-			icon: route.icon,
-			isCustomIcon: route.isCustomIcon,
-			action: () => this.navigateTo(route.id)
-		}));
+	readonly PAGES = [
+		...routes
+			.filter((route) => !route.hidden)
+			.map((route) => ({
+				page: route.id,
+				name: route.paletteLabel ?? `Go to ${route.label}`,
+				icon: route.icon,
+				isCustomIcon: route.isCustomIcon,
+				action: () => this.navigateTo(route.id)
+			})),
+		// Updates and Downloads are Library tabs.
+		{
+			page: "library:updates",
+			name: "Go to Updates",
+			icon: "system_update_alt",
+			isCustomIcon: false,
+			action: () => this.openTab("updates")
+		},
+		{
+			page: "library:downloads",
+			name: "Go to Downloads",
+			icon: "downloading",
+			isCustomIcon: false,
+			action: () => this.openTab("downloads")
+		}
+	];
 
 	/** Pages the current platform supports. */
 	availablePages() {
@@ -38,6 +60,7 @@ export class CommandPaletteState {
 	}
 
 	async loadGames() {
+		void this.loadPluginCommands();
 		try {
 			const fetched = await GetAllGames();
 			this.games = fetched || [];
@@ -63,12 +86,32 @@ export class CommandPaletteState {
 		}
 	}
 
+	/** Reads the commands the installed plugins declare. They join the palette results. */
+	async loadPluginCommands() {
+		try {
+			const plugins = await pluginsApi.list();
+			this.pluginCommands = plugins.flatMap((plugin) =>
+				plugin.commands.map((command) => ({
+					name: `${plugin.name}: ${command.label}`,
+					icon: "extension",
+					type: "command",
+					pluginId: plugin.id,
+					commandId: command.id
+				}))
+			);
+			this.filterItems();
+		} catch {
+			this.pluginCommands = [];
+		}
+	}
+
 	filterItems() {
 		const query = this.searchQuery.trim().toLowerCase();
 
 		if (!query) {
 			this.filteredItems = [
 				...this.availablePages().map((p) => ({ ...p, type: "page" })),
+				...this.pluginCommands,
 				...this.games
 					.slice(0, 5)
 					.map((g) => ({ name: `Launch ${g.name}`, icon: "sports_esports", type: "game", game: g }))
@@ -80,11 +123,14 @@ export class CommandPaletteState {
 		const matchedPages = this.availablePages()
 			.filter((p) => p.name.toLowerCase().includes(query))
 			.map((p) => ({ ...p, type: "page" }));
+		const matchedCommands = this.pluginCommands.filter((command) =>
+			command.name.toLowerCase().includes(query)
+		);
 		const matchedGames = this.games
 			.filter((g) => g.name.toLowerCase().includes(query))
 			.map((g) => ({ name: `Launch ${g.name}`, icon: "sports_esports", type: "game", game: g }));
 
-		this.filteredItems = [...matchedPages, ...matchedGames];
+		this.filteredItems = [...matchedPages, ...matchedCommands, ...matchedGames];
 		this.selectedIndex = 0;
 	}
 
@@ -93,9 +139,22 @@ export class CommandPaletteState {
 		this.close();
 	}
 
+	openTab(tab: LibraryTab) {
+		openLibraryTab(tab);
+		this.close();
+	}
+
 	async executeItem(item: any) {
 		if (item.type === "page") {
 			item.action();
+		} else if (item.type === "command") {
+			try {
+				this.close();
+				await pluginsApi.command(item.pluginId, item.commandId);
+				notifications.success(`${item.name} finished.`);
+			} catch (error) {
+				notifications.error(errorMessage(error));
+			}
 		} else if (item.type === "game") {
 			try {
 				this.close();

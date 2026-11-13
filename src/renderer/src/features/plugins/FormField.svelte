@@ -8,6 +8,7 @@
 		type RawSettings,
 		type SettingsField
 	} from "../../lib/features/settingsForm";
+	import Button from "@components/shared/Button.svelte";
 	import Dropdown, { asOptions, type DropdownOption } from "@components/shared/Dropdown.svelte";
 	import Switch from "@components/shared/Switch.svelte";
 	import NumberField from "@components/shared/NumberField.svelte";
@@ -106,7 +107,7 @@
 					oninput={(event) => (raw[field.key] = event.currentTarget.value)}
 				/>
 				{#if pickMethod}
-					<button class="btn sm" type="button" onclick={() => browse(pickMethod)}>Browse</button>
+					<Button size="sm" onclick={() => browse(pickMethod)}>Browse</Button>
 				{/if}
 			</div>
 		{:else if field.kind === "list"}
@@ -134,7 +135,7 @@
 		<p class="error" role="alert">{error}</p>
 	{/if}
 	{#if resettable}
-		<button class="reset" type="button" onclick={resetToDefault}>Reset to default</button>
+		<Button variant="text" size="sm" class="reset" onclick={resetToDefault}>Reset to default</Button>
 	{/if}
 </div>
 
@@ -174,14 +175,7 @@
 		color: var(--danger);
 	}
 
-	.reset {
+	:global(.field .reset) {
 		align-self: flex-start;
-		padding: 0;
-		border: none;
-		background: none;
-		font-size: 0.875rem;
-		font-weight: 700;
-		color: var(--accent-primary);
-		cursor: pointer;
 	}
 </style>

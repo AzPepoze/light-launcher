@@ -10,10 +10,14 @@ import type {
 	DownloadAction,
 	DownloadItem,
 	DownloadsListResponse,
+	DownloadStatus,
 	InstallProgress,
 	Toast
 } from "../../lib/features/types";
 import type { WireDownloadProgress, WireInstallProgress } from "../../lib/features/wire";
+import { totalSpeed } from "./downloadGroups";
+import { SpeedSampler } from "./speedSampler";
+import { pushSample } from "./speedView";
 
 /** Adds or replaces an item by id, keeping the list order. */
 function upsert<T>(list: T[], item: T, idOf: (value: T) => number): T[] {
@@ -29,8 +33,12 @@ export class DownloadsState {
 	/** The latest message from the Go side, such as the 7-Zip warning. */
 	toast = $state<Toast | null>(null);
 	speedLimitKBps = $state(0);
+	/** Total download speed, one sample a second while transfers run. */
+	speedSamples = $state<number[]>([]);
 	loading = $state(true);
 	error = $state("");
+
+	private readonly sampler = new SpeedSampler(() => this.sample());
 
 	async load() {
 		this.loading = true;
@@ -88,20 +96,56 @@ export class DownloadsState {
 		}
 	}
 
+	/** Adds the current total speed to the sparkline. */
+	sample() {
+		this.speedSamples = pushSample(this.speedSamples, totalSpeed(this.items));
+	}
+
+	/** Starts or stops sampling to match whether transfers are running. */
+	setSamplingActive(active: boolean) {
+		this.sampler.setActive(active);
+	}
+
+	/** Stops the sampling timer. The Library page calls this when it unmounts. */
+	stopSampling() {
+		this.sampler.stop();
+	}
+
 	async act(action: DownloadAction, id: number) {
-		await this.run(() => downloadsApi.act(action, id));
+		await this.actOn(action, [id]);
+	}
+
+	pauseAll() {
+		return this.actOnStatuses("pause", ["downloading"]);
+	}
+
+	resumeAll() {
+		return this.actOnStatuses("resume", ["paused", "queued"]);
+	}
+
+	clearFinished() {
+		return this.actOnStatuses("remove", ["done"]);
+	}
+
+	private actOnStatuses(action: DownloadAction, statuses: DownloadStatus[]) {
+		const ids = this.items
+			.filter((item) => statuses.includes(item.status))
+			.map((item) => item.id);
+		return this.actOn(action, ids);
+	}
+
+	/** Removing a row changes the list, so the rows are loaded again. */
+	private async actOn(action: DownloadAction, ids: number[]) {
+		if (ids.length === 0) return;
+		await this.run(async () => {
+			for (const id of ids) await downloadsApi.act(action, id);
+		});
+		if (action === "remove") await this.refreshItems();
 	}
 
 	async enqueue(url: string, gameId: number | null = null) {
 		await this.run(async () => {
 			this.items = upsert(this.items, await downloadsApi.enqueue(url, gameId), (v) => v.id);
-		});
-	}
-
-	async setSpeedLimit(kbps: number) {
-		await this.run(async () => {
-			await downloadsApi.setSpeedLimit(kbps);
-			this.speedLimitKBps = kbps;
 		});
 	}
 

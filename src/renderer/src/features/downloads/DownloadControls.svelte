@@ -1,85 +1,89 @@
 <script lang="ts">
-	import NumberField from "@components/shared/NumberField.svelte";
+	import Button from "@components/shared/Button.svelte";
+	import Icon from "@components/shared/Icon.svelte";
+	import IconButton from "@components/shared/IconButton.svelte";
+	import { isDirectLink } from "./addLink";
 	import type { DownloadsState } from "./downloadsState.svelte";
 
 	let { downloads }: { downloads: DownloadsState } = $props();
 
 	let url = $state("");
-	let limitInput = $state("0");
+	let input: HTMLInputElement | undefined = $state();
+
+	const ready = $derived(isDirectLink(url));
+	const canPauseAll = $derived(downloads.items.some((item) => item.status === "downloading"));
+	const canResumeAll = $derived(
+		downloads.items.some((item) => item.status === "paused" || item.status === "queued")
+	);
+
+	export function focusInput() {
+		input?.focus();
+	}
+
+	/** Pasting a link fills the field with it, without spaces around it. */
+	function onPaste(event: ClipboardEvent) {
+		const text = event.clipboardData?.getData("text") ?? "";
+		if (!isDirectLink(text)) return;
+		event.preventDefault();
+		url = text.trim();
+	}
 
 	function submitUrl(event: SubmitEvent) {
 		event.preventDefault();
-		const link = url.trim();
-		if (!link) return;
-		downloads.enqueue(link);
+		if (!ready) return;
+		downloads.enqueue(url.trim());
 		url = "";
-	}
-
-	function applyLimit(event: SubmitEvent) {
-		event.preventDefault();
-		const kbps = Math.max(0, Math.floor(Number(limitInput)) || 0);
-		downloads.setSpeedLimit(kbps);
 	}
 </script>
 
-<div class="controls">
-	<form class="form" onsubmit={submitUrl}>
-		<label class="field grow">
-			<span class="label">Add a direct link</span>
-			<input class="input" type="url" placeholder="https://..." bind:value={url} />
-		</label>
-		<button class="btn sm primary" type="submit" disabled={!url.trim()}>Add</button>
-	</form>
+<form class="bar" onsubmit={submitUrl}>
+	<Icon name="add_link" size={22} />
+	<input
+		bind:this={input}
+		bind:value={url}
+		class="input"
+		type="url"
+		placeholder="Paste a direct link"
+		aria-label="Direct link"
+		onpaste={onPaste}
+	/>
+	<Button type="submit" variant="primary" size="sm" disabled={!ready}>Add</Button>
+	<IconButton
+		icon="pause"
+		label="Pause all"
+		disabled={!canPauseAll}
+		onclick={() => downloads.pauseAll()}
+	/>
+	<IconButton
+		icon="play_arrow"
+		label="Resume all"
+		disabled={!canResumeAll}
+		onclick={() => downloads.resumeAll()}
+	/>
+</form>
 
-	<form class="form" onsubmit={applyLimit}>
-		<div class="speed-limit">
-			<NumberField
-				id="speed-limit"
-				label="Speed limit (KB/s, 0 = none)"
-				value={limitInput}
-				min={0}
-				step={64}
-				oninput={(value) => (limitInput = value)}
-			/>
-		</div>
-		<button class="btn sm" type="submit">Apply</button>
-	</form>
-</div>
+{#if url.trim() && !ready}
+	<p class="hint">Use a link that starts with http:// or https://.</p>
+{/if}
 
 <style lang="scss">
-	.controls {
+	.bar {
 		display: flex;
-		flex-wrap: wrap;
-		gap: 14px 20px;
-		align-items: flex-end;
-		margin-bottom: 20px;
-	}
-
-	.form {
-		display: flex;
-		align-items: flex-end;
+		align-items: center;
 		gap: 8px;
-		margin: 0;
-		min-width: 0;
-	}
-
-	.field {
-		display: flex;
-		flex-direction: column;
-		gap: 6px;
-		min-width: 0;
-
-		&.grow {
-			flex: 1 1 260px;
-		}
-	}
-
-	.label {
-		font-size: 0.75rem;
+		margin: 0 0 8px;
 		color: var(--text-muted);
 	}
 
-	.speed-limit {
-		width: 150px;
+	.input {
+		flex: 1;
+		min-width: 0;
+		font-size: 0.9rem;
+	}
+
+	.hint {
+		margin: 0 0 16px;
+		color: var(--text-muted);
+		font-size: 0.8rem;
 	}
 </style>

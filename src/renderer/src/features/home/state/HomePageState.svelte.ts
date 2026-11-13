@@ -10,11 +10,17 @@ import { getGamePath } from "@lib/gameUtils";
 import { createLogger } from "@lib/logger";
 import { navigationCommand } from "@stores/navigationStore";
 import { notifications } from "@stores/notificationStore";
+import { plainMessage } from "@lib/plainMessage";
 import { runState } from "@stores/runState";
+import { getHomeView, saveHomeViewMode } from "@stores/homeViewStore";
+import { HOME_SCAN_EVENT } from "@lib/features/events";
+import { toHomeScan, type HomeScan } from "@lib/homeScan";
 import type { GameInfo, RunningSession, ScannedFolderGroup } from "@shared";
 import { IconLoaderState } from "./IconLoaderState.svelte";
 import { SelectionState } from "./SelectionState.svelte";
 import { droppedFiles } from "./homeEvents";
+import type { HomeViewMode } from "./homeViewMemory";
+import { homeStatus } from "./homeLoadingStatus";
 
 const log = createLogger("HomePage");
 
@@ -62,11 +68,26 @@ export class HomePageState {
 	showHelpModal = $state(false);
 	showAddModal = $state(false);
 	isLoading = $state(true);
-	currentView = $state<"grid" | "list-grid" | "sidebar-grid">("grid");
+	scan = $state<HomeScan | null>(null);
+	status = $derived(homeStatus(this.isLoading, this.scan));
+	/** True once the library and folder scan are both done and nothing is listed. */
+	showEmptyState = $derived(
+		!this.isLoading &&
+			this.scan?.state !== "running" &&
+			this.games.length === 0 &&
+			this.scannedFolderGroups.length === 0
+	);
+	currentView = $state<HomeViewMode>(getHomeView().view);
 	searchQuery = $state("");
 
 	icons = new IconLoaderState();
 	selection = new SelectionState(() => this.getVisibleGames());
+
+	constructor() {
+		$effect(() => {
+			saveHomeViewMode(this.currentView);
+		});
+	}
 
 	filteredGames = $derived.by(() => {
 		return this.games.filter((game) => {
@@ -89,6 +110,7 @@ export class HomePageState {
 	});
 
 	dropUnsubscribe: (() => void) | null = null;
+	scanUnsubscribe: (() => void) | null = null;
 	sessionPollInFlight = false;
 	iconWarmTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -158,6 +180,11 @@ export class HomePageState {
 	}
 
 	initialize() {
+		// Subscribe before the first refresh so the scan's first progress event is not missed.
+		this.scanUnsubscribe = onEvent(HOME_SCAN_EVENT, (event: unknown) => {
+			const scan = toHomeScan(event);
+			if (scan) this.scan = scan;
+		});
 		this.refreshData(false);
 
 		this.dropUnsubscribe = onEvent("FilesDropped", async (event: unknown) => {
@@ -175,6 +202,7 @@ export class HomePageState {
 	destroy() {
 		if (this.sessionInterval) clearInterval(this.sessionInterval);
 		if (this.dropUnsubscribe) this.dropUnsubscribe();
+		if (this.scanUnsubscribe) this.scanUnsubscribe();
 		if (this.iconWarmTimer) clearTimeout(this.iconWarmTimer);
 	}
 
@@ -206,7 +234,7 @@ export class HomePageState {
 			this.refreshData();
 		} catch (error) {
 			log.error("Failed to choose launcher", error);
-			notifications.add(`Failed to choose launcher: ${error}`, "error");
+			notifications.add(`Failed to choose launcher: ${plainMessage(error)}`, "error");
 		}
 	}
 

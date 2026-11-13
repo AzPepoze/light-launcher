@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { onMount } from "svelte";
+	import Button from "@components/shared/Button.svelte";
+	import { notifications } from "@stores/notificationStore";
 	import { errorMessage } from "../../lib/features/rpc";
 	import { pluginsApi } from "../../lib/features/pluginsApi";
 	import type { AuthState, PluginInfo } from "../../lib/features/types";
@@ -10,7 +12,6 @@
 	let statuses = $state<Record<string, AuthState>>({});
 	let credentials = $state<Record<string, string>>({});
 	let busySource = $state("");
-	let message = $state("");
 
 	const STATUS_LABELS: Record<AuthState["status"], string> = {
 		unconfigured: "Not signed in",
@@ -34,12 +35,11 @@
 
 	async function run(source: string, action: () => Promise<unknown>) {
 		busySource = source;
-		message = "";
 		try {
 			await action();
 			await refresh(source);
 		} catch (err) {
-			message = errorMessage(err);
+			notifications.error(errorMessage(err));
 		} finally {
 			busySource = "";
 		}
@@ -82,24 +82,22 @@
 						placeholder="Paste a session token"
 						bind:value={credentials[source]}
 					/>
-					<button
-						class="btn sm primary"
+					<Button
+						variant="primary"
+						size="sm"
 						disabled={busySource === source || !credentials[source]?.trim()}
 						onclick={() => saveCredential(source)}
 					>
 						Save
-					</button>
-					<button class="btn sm" disabled={busySource === source} onclick={() => clearCredential(source)}>
+					</Button>
+					<Button size="sm" disabled={busySource === source} onclick={() => clearCredential(source)}>
 						Clear
-					</button>
+					</Button>
 				</div>
 			</li>
 		{/each}
 	</ul>
 
-	{#if message}
-		<p class="error" role="alert">{message}</p>
-	{/if}
 </section>
 
 <style lang="scss">
@@ -167,11 +165,6 @@
 			flex: 1 1 200px;
 			min-width: 0;
 		}
-	}
-
-	.error {
-		font-size: 0.9375rem;
-		color: var(--danger);
 	}
 
 	.sr-only {

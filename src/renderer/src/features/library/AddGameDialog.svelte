@@ -1,7 +1,9 @@
 <script lang="ts">
+	import Button from "@components/shared/Button.svelte";
 	import Modal from "@components/shared/Modal.svelte";
 	import { onMount } from "svelte";
-	import { errorMessage } from "../../lib/features/rpc";
+	import { notifications } from "@stores/notificationStore";
+	import { libraryErrorMessage } from "./libraryError";
 	import { libraryApi } from "../../lib/features/libraryApi";
 	import type { Game, GamePreview, SearchHit } from "../../lib/features/types";
 
@@ -63,7 +65,7 @@
 		try {
 			await action();
 		} catch (err) {
-			message = errorMessage(err);
+			notifications.error(libraryErrorMessage(err));
 		} finally {
 			busy = false;
 		}
@@ -76,7 +78,7 @@
 			<span>Search by name or paste a link</span>
 			<div class="row">
 				<input class="input" type="text" bind:value={query} placeholder="Game name or https://..." />
-				<button class="btn primary sm" type="submit" disabled={busy || !query.trim()}>Search</button>
+				<Button variant="primary" size="sm" type="submit" disabled={busy || !query.trim()}>Search</Button>
 			</div>
 		</label>
 	</form>
@@ -101,14 +103,14 @@
 			{#if preview.existing}
 				<p class="message">Already in your library.</p>
 			{:else}
-				<button class="btn primary sm" disabled={busy} onclick={add}>Add to library</button>
+				<Button variant="primary" size="sm" disabled={busy} onclick={add}>Add to library</Button>
 			{/if}
 		</article>
 	{:else if hits.length}
 		<ul class="hits" aria-label="Search results">
 			{#each hits as hit (hit.url)}
 				<li>
-					<button class="hit" disabled={busy} onclick={() => choose(hit)}>{hit.title}</button>
+					<Button disabled={busy} onclick={() => choose(hit)}>{hit.title}</Button>
 				</li>
 			{/each}
 		</ul>
@@ -155,25 +157,9 @@
 		overflow-y: auto;
 	}
 
-	.hit {
+	.hits :global(.button) {
 		width: 100%;
-		padding: 10px 12px;
-		border: 1px solid var(--glass-border);
-		border-radius: var(--radius-sm);
-		background: var(--bg-elevated);
-		color: var(--text-main);
-		text-align: left;
-		cursor: pointer;
-		font: inherit;
-
-		&:hover {
-			border-color: var(--accent-primary);
-		}
-
-		&:focus-visible {
-			outline: 2px solid var(--accent-primary);
-			outline-offset: 2px;
-		}
+		justify-content: flex-start;
 	}
 
 	.preview {

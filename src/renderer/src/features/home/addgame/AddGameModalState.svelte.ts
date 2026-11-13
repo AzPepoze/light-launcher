@@ -9,6 +9,7 @@ import {
 	GetScanFolderConfig
 } from "@lib/api";
 import { notifications } from "@stores/notificationStore";
+import { plainMessage } from "@lib/plainMessage";
 import { DefaultExcludeNames } from "@shared";
 import { loadExeIcon } from "@lib/iconService";
 import { getDefaultPrefixName } from "@lib/prefixService";
@@ -93,7 +94,7 @@ export class AddGameModalState {
 				onClose();
 			}
 		} catch (err) {
-			notifications.add(`Failed to add game: ${err}`, "error");
+			notifications.add(`Failed to add game: ${plainMessage(err)}`, "error");
 		}
 	}
 
@@ -105,7 +106,7 @@ export class AddGameModalState {
 				this.addMode = "folder-config";
 			}
 		} catch (err) {
-			notifications.add(`Failed to select folder: ${err}`, "error");
+			notifications.add(`Failed to select folder: ${plainMessage(err)}`, "error");
 		}
 	}
 
@@ -182,7 +183,7 @@ export class AddGameModalState {
 			onRefresh();
 			onClose();
 		} catch (err) {
-			notifications.add(`Failed to add folder: ${err}`, "error");
+			notifications.add(`Failed to add folder: ${plainMessage(err)}`, "error");
 		}
 	}
 }

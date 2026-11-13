@@ -1,6 +1,8 @@
 // View types for the library, downloads, updates and plugin pages.
 // The Go payloads are in wire.ts. The mappers in *Map.ts turn them into these types.
 
+import type { LaunchOptions } from "@shared";
+
 export interface Game {
 	id: number;
 	source: string;
@@ -33,6 +35,18 @@ export interface Game {
 	lastPlayedAt: string | null;
 	addedAt: string;
 	updateAvailable: boolean;
+	/** How the row was found: plugin, hand, scan, watch or linked. */
+	origin: string;
+	/** local for games from folders and hand adding, plugin for imported source games. */
+	sourceKind: "local" | "plugin";
+	/** The game folder of a local row. */
+	folderPath: string | null;
+	/** The watched folder a scanned row came from. */
+	scanFolder: string | null;
+	/** The launch settings of a local row. Plugin rows have null. */
+	localConfig: LaunchOptions | null;
+	/** True when the row must survive scans and removals. */
+	pinned: boolean;
 }
 
 export interface LibraryStats {
@@ -80,11 +94,44 @@ export interface SidebarGroup {
 	default: SidebarSort | null;
 }
 
+/** A button a source adds to the Library. Library actions show in the sidebar, game actions in the game detail. */
+export interface SourceAction {
+	id: string;
+	label: string;
+	/** Material icon name. */
+	icon?: string;
+	method: string;
+	scope: "library" | "game";
+}
+
+export type SourceBadge = "favorite" | "updateAvailable" | "installed";
+
+/** The game fields a card shows. Missing fields use the defaults: title and version, no badges. */
+export interface SourceCard {
+	title?: string;
+	subtitle?: string;
+	badges?: SourceBadge[];
+}
+
 export interface LibrarySource {
 	source: string;
 	label: string;
+	kind: "local" | "plugin";
+	plugin: string | null;
+	/** Source features the UI may show: browse, sync:*, updateCheck, auth and so on. */
+	capabilities: string[];
+	/** True when the source can import or sync the user's games. */
+	sync: boolean;
+	/** True when the source can look for newer game versions. */
+	updateCheck: boolean;
 	count: number;
+	/** Older card shape name, kept for consumers that predate cover. */
 	tile: SourceTile;
+	/** Card box as "W:H", such as "3:4". */
+	cover: string;
+	actions: SourceAction[];
+	/** Null when the source names no card fields. */
+	card: SourceCard | null;
 	/** Empty for local games and sources that declare no filters. */
 	sidebar: SidebarGroup[];
 }
@@ -259,6 +306,9 @@ export interface IncomingListResponse {
 	warning?: string;
 }
 
+/** What one update check found for a game. */
+export type UpdateResult = "update" | "current" | "error";
+
 export interface UpdateHistoryEntry {
 	id: number;
 	gameId: number;
@@ -266,8 +316,14 @@ export interface UpdateHistoryEntry {
 	checkedAt: string;
 	from: string | null;
 	to: string | null;
-	result: "update" | "current" | "error";
+	result: UpdateResult;
 	error: string | null;
+	/** Cover file cached by the launcher, relative to the media folder. */
+	coverPath: string | null;
+	/** Remote cover image. */
+	coverUrl: string | null;
+	/** Source id of the game, so the history can be paged by source. */
+	source: string;
 }
 
 export interface UpdatesResponse {
@@ -277,6 +333,60 @@ export interface UpdatesResponse {
 	errors: string[];
 	/** When the last check ran, or null when none ran. */
 	lastCheckedAt: string | null;
+}
+
+/** The Updates page state, read without starting a check. */
+export interface UpdateStatus {
+	/** When the last saved check ran, or null when none ran. */
+	lastCheckedAt: string | null;
+	/** True while a check runs. */
+	running: boolean;
+	progress: UpdateProgress | null;
+	/** Unseen updates. */
+	count: number;
+	/** When the next background check starts, or null when none is scheduled. */
+	nextRunAt: string | null;
+	/** Games with a newer version. */
+	games: Game[];
+}
+
+export interface UpdateProgress {
+	done: number;
+	total: number;
+}
+
+/** The result of one game in a check run. Skipped games were not asked: their source needs a sign-in. */
+export interface UpdateCheckOutcome {
+	gameId: number;
+	title: string;
+	from: string | null;
+	to: string | null;
+	result: UpdateResult | "skipped";
+	error: string | null;
+	coverPath: string | null;
+	coverUrl: string | null;
+}
+
+/** One source that could not be checked. There is one per source. */
+export interface UpdateCheckIssue {
+	source: string;
+	label: string;
+	kind: "auth" | "error";
+	/** A plain sentence for the user. */
+	message: string;
+	/** Games of this source that were not checked. */
+	games: number;
+}
+
+/** A progress push of a check run. The issues come with the final "done" event. */
+export interface UpdateCheckEvent {
+	state: "running" | "done";
+	done: number;
+	total: number;
+	skipped: number;
+	current: { gameId: number; title: string } | null;
+	result: UpdateCheckOutcome | null;
+	issues: UpdateCheckIssue[];
 }
 
 export type DownloadStatus = "queued" | "downloading" | "paused" | "done" | "error" | "canceled";
@@ -358,10 +468,21 @@ export interface PluginInfo {
 	hasSettings: boolean;
 	/** Source ids this plugin contributes. */
 	sources: string[];
+	/** Source ids that can check for updates. */
+	updateSources: string[];
 	/** Where the plugin was installed from. Updates download from here. */
 	source: string | null;
 	/** The permissions the installed version has, as consent entries. */
 	consent: string[];
+	/** Command palette actions the plugin declares. */
+	commands: PluginCommand[];
+}
+
+export interface PluginCommand {
+	id: string;
+	label: string;
+	/** Null for a command that only shows up; the host refuses to run it. */
+	method: string | null;
 }
 
 export type PermissionKind = "site" | "files" | "sign-in" | "browser" | "program" | "other";
@@ -418,6 +539,8 @@ export interface PluginUpdateStatus {
 	notes: string | null;
 	publishedAt: string | null;
 	error: string | null;
+	/** Stable failure reason: not_found, rate_limited, untrusted_host or check_failed. */
+	code: string | null;
 }
 
 export interface PluginUpdatesStatus {

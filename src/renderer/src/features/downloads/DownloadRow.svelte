@@ -1,65 +1,74 @@
 <script lang="ts">
-	import { eta, speed } from "../../lib/features/format";
-	import type { DownloadAction, DownloadItem } from "../../lib/features/types";
-	import { progressPercent, statusLabel } from "./downloadGroups";
+	import Badge from "@components/shared/Badge.svelte";
+	import Icon from "@components/shared/Icon.svelte";
+	import IconButton from "@components/shared/IconButton.svelte";
+	import ProgressBar from "@components/shared/ProgressBar.svelte";
+	import TransferMeta from "@components/shared/TransferMeta.svelte";
+	import TransferStages from "@components/shared/TransferStages.svelte";
+	import type { DownloadAction } from "../../lib/features/types";
+	import type { TransferRow } from "./downloadGroups";
+	import {
+		fileIcon,
+		progressTone,
+		progressValue,
+		rowActions,
+		rowBadge,
+		rowMeta
+	} from "./rowView";
 
-	let {
-		item,
-		onAct,
-	}: { item: DownloadItem; onAct: (action: DownloadAction, id: number) => void } = $props();
+	let { row, onAct }: { row: TransferRow; onAct: (action: DownloadAction) => void } = $props();
 
-	const isRunning = $derived(item.status === "downloading");
-	const canResume = $derived(item.status === "paused" || item.status === "queued");
-	const isFailed = $derived(item.status === "error" || item.status === "canceled");
-	const isFinished = $derived(item.status === "done");
+	const transfer = $derived(row.transfer);
+	const actions = $derived(rowActions(row));
+	const badge = $derived(rowBadge(transfer));
+	const meta = $derived(rowMeta(transfer));
 </script>
 
-<li class="row">
+<li class="row {transfer.state}">
+	<span class="kind">
+		<Icon name={fileIcon(row.item.filename)} size={24} />
+	</span>
+
 	<div class="main">
-		<div class="title">
-			<p class="name" title={item.filename}>{item.filename}</p>
-			<span class="status">{statusLabel(item.status)}</span>
+		<div class="heading">
+			<p class="name" title={row.item.filename}>{row.item.filename}</p>
+			{#if row.gameTitle}<p class="game">{row.gameTitle}</p>{/if}
+			{#if badge}<Badge tone={badge.tone}>{badge.label}</Badge>{/if}
+			{#if transfer.state === "done"}
+				<span class="done-check">
+					<Icon name="check_circle" size={20} filled />
+				</span>
+			{/if}
 		</div>
 
-		{#if !isFinished}
-			<div
-				class="bar"
-				role="progressbar"
-				aria-label="Progress for {item.filename}"
-				aria-valuemin="0"
-				aria-valuemax="100"
-				aria-valuenow={progressPercent(item)}
-			>
-				<div class="fill" style="width: {progressPercent(item)}%"></div>
-			</div>
-		{/if}
+		<TransferStages stage={transfer.stage} failed={transfer.state === "failed"} />
 
-		<p class="meta">
-			{#if isRunning}
-				<span>{speed(item.speed)}</span>
-				<span>ETA {eta(item.eta)}</span>
-			{/if}
-			{#if item.error}<span class="warn">{item.error}</span>{/if}
-		</p>
+		<ProgressBar
+			value={progressValue(transfer)}
+			tone={progressTone(transfer.state)}
+			active={transfer.state === "active"}
+			label="Progress for {row.item.filename}"
+		/>
+
+		<TransferMeta
+			speed={meta.speed}
+			eta={meta.eta}
+			done={meta.done}
+			total={meta.total}
+		/>
+
+		{#if transfer.error}<p class="error">{transfer.error}</p>{/if}
 	</div>
 
 	<div class="actions">
-		{#if isRunning}
-			<button class="btn sm" onclick={() => onAct("pause", item.id)}>Pause</button>
-		{/if}
-		{#if canResume}
-			<button class="btn sm" onclick={() => onAct("resume", item.id)}>Resume</button>
-		{/if}
-		{#if isFailed}
-			<button class="btn sm" onclick={() => onAct("retry", item.id)}>Retry</button>
-		{/if}
-		{#if !isFinished && !isFailed}
-			<button class="btn sm" onclick={() => onAct("cancel", item.id)}>Cancel</button>
-		{:else}
-			<button class="btn sm" aria-label="Remove {item.filename}" onclick={() => onAct("remove", item.id)}>
-				Remove
-			</button>
-		{/if}
+		{#each actions as item (item.action)}
+			<IconButton
+				icon={item.icon}
+				label={item.label}
+				tone={item.action === "cancel" ? "danger" : "default"}
+				onclick={() => onAct(item.action)}
+			/>
+		{/each}
 	</div>
 </li>
 
@@ -68,10 +77,23 @@
 		display: flex;
 		align-items: center;
 		gap: 14px;
-		padding: 12px 14px;
+		padding: 14px 16px;
 		border-radius: var(--radius-md);
 		background: var(--bg-surface);
 		list-style: none;
+		animation: row-in var(--motion-base) var(--ease-out) both;
+	}
+
+	.kind {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 40px;
+		height: 40px;
+		flex-shrink: 0;
+		border-radius: var(--radius-md);
+		background: var(--bg-elevated);
+		color: var(--text-muted);
 	}
 
 	.main {
@@ -79,65 +101,68 @@
 		min-width: 0;
 		display: flex;
 		flex-direction: column;
-		gap: 6px;
+		gap: 8px;
 	}
 
-	.title {
+	.heading {
 		display: flex;
 		align-items: center;
-		gap: 10px;
+		flex-wrap: wrap;
+		gap: 4px 10px;
 		min-width: 0;
 	}
 
 	.name {
 		margin: 0;
+		min-width: 0;
 		font-weight: 700;
-		font-size: 0.9rem;
+		font-size: 0.95rem;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
-		min-width: 0;
 	}
 
-	.status {
-		flex-shrink: 0;
-		font-size: 0.72rem;
-		color: var(--text-muted);
-		text-transform: uppercase;
-		letter-spacing: 0.5px;
-	}
-
-	.bar {
-		height: 6px;
-		border-radius: var(--radius-pill);
-		background: var(--bg-elevated);
-		overflow: hidden;
-	}
-
-	.fill {
-		height: 100%;
-		background: var(--accent-primary);
-		transition: width var(--transition-normal);
-	}
-
-	.meta {
+	.game {
 		margin: 0;
-		display: flex;
-		flex-wrap: wrap;
-		gap: 10px;
-		font-size: 0.75rem;
 		color: var(--text-muted);
+		font-size: 0.85rem;
+	}
 
-		.warn {
-			color: var(--danger);
-		}
+	.done-check {
+		display: inline-flex;
+		color: var(--success);
+		animation: check-in 320ms var(--ease-out) both;
+	}
+
+	.error {
+		margin: 0;
+		color: var(--danger);
+		font-size: 0.85rem;
 	}
 
 	.actions {
 		display: flex;
-		gap: 6px;
+		gap: 4px;
 		flex-shrink: 0;
-		flex-wrap: wrap;
-		justify-content: flex-end;
+	}
+
+	@keyframes row-in {
+		from {
+			opacity: 0;
+		}
+	}
+
+	@keyframes check-in {
+		from {
+			opacity: 0;
+			transform: scale(0.4);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.row,
+		.done-check {
+			animation: none;
+		}
 	}
 </style>

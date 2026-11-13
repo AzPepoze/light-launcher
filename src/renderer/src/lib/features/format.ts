@@ -26,6 +26,19 @@ export function percent(done: number, total: number): number {
 	return Math.min(100, Math.max(0, Math.round((done / total) * 100)));
 }
 
+/** A whole-number percent label such as "42%", or a dash when unknown. */
+export function percentLabel(value: number | null): string {
+	if (value == null) return "--";
+	return `${Math.round(value)}%`;
+}
+
+/** Done of total in sizes, such as "1.5 MB / 4.0 MB". A missing side is left out. */
+export function sizeRange(done?: number | null, total?: number | null): string {
+	if (total == null) return done == null ? "" : formatBytes(done);
+	if (done == null) return formatBytes(total);
+	return `${formatBytes(done)} / ${formatBytes(total)}`;
+}
+
 export function eta(seconds: number | null): string {
 	if (seconds === null || !Number.isFinite(seconds) || seconds < 0) return "--";
 	if (seconds < 60) return `${Math.round(seconds)}s`;

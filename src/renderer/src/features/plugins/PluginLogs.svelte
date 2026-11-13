@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { onMount } from "svelte";
-	import { errorMessage } from "../../lib/features/rpc";
+	import Button from "@components/shared/Button.svelte";
+	import EmptyState from "@components/shared/EmptyState.svelte";
+	import LoadingState from "@components/shared/LoadingState.svelte";
 	import { pluginsApi } from "../../lib/features/pluginsApi";
 	import type { PluginLogLine } from "../../lib/features/types";
 
@@ -8,7 +10,7 @@
 
 	let lines = $state<PluginLogLine[]>([]);
 	let loading = $state(true);
-	let message = $state("");
+	let failed = $state(false);
 
 	onMount(() => {
 		load();
@@ -16,11 +18,11 @@
 
 	async function load() {
 		loading = true;
-		message = "";
+		failed = false;
 		try {
 			lines = await pluginsApi.logs(pluginId);
-		} catch (err) {
-			message = errorMessage(err);
+		} catch {
+			failed = true;
 		} finally {
 			loading = false;
 		}
@@ -30,13 +32,15 @@
 <section aria-labelledby="logs-title">
 	<div class="head">
 		<h3 id="logs-title">Logs</h3>
-		<button class="btn sm" disabled={loading} onclick={load}>Refresh</button>
+		<Button size="sm" disabled={loading} onclick={load}>Refresh</Button>
 	</div>
 
-	{#if message}
-		<p class="error" role="alert">{message}</p>
-	{:else if loading}
-		<p class="muted">Loading logs...</p>
+	{#if loading}
+		<LoadingState label="Loading logs..." />
+	{:else if failed}
+		<EmptyState icon="error" title="Logs could not be loaded">
+			<Button size="sm" onclick={load}>Retry</Button>
+		</EmptyState>
 	{:else if lines.length === 0}
 		<p class="muted">No log lines yet.</p>
 	{:else}
@@ -72,18 +76,10 @@
 		color: var(--text-muted);
 	}
 
-	p {
-		margin: 0;
-	}
-
 	.muted {
+		margin: 0;
 		font-size: 0.9375rem;
 		color: var(--text-muted);
-	}
-
-	.error {
-		font-size: 0.9375rem;
-		color: var(--danger);
 	}
 
 	.lines {

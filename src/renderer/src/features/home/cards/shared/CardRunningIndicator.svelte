@@ -22,19 +22,14 @@
 		display: flex;
 		align-items: center;
 		gap: 6px;
-		background: rgba(10, 10, 15, 0.85);
-		backdrop-filter: blur(8px);
-		border: 1px solid rgba(0, 230, 118, 0.4);
-		padding: 4px 8px;
-		border-radius: var(--radius-full);
 		z-index: 10;
-		box-shadow: 0 0 12px rgba(0, 230, 118, 0.3);
 
 		.indicator-text {
 			font-size: 0.65rem;
 			font-weight: 800;
 			color: var(--success);
 			letter-spacing: 0.8px;
+			text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 		}
 	}
 

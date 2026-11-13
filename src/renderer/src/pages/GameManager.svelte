@@ -6,6 +6,7 @@
 	import ActivityTabs from "@components/manager/ActivityTabs.svelte";
 	import { GetRunningSessions, KillSession, GetAppSettings, GetGameActivity, GetAllGames, GetAutoScannedGames } from "@lib/api";
 	import { notifications } from "@stores/notificationStore";
+	import { plainMessage } from "@lib/plainMessage";
 	import type { AppSettings, GameActivity, RunningSession, GameInfo, ScannedFolderGroup } from "@shared";
 	import { createLogger } from "@lib/logger";
 
@@ -132,7 +133,7 @@
 			notifications.add(`Stopping ${session.gameName}...`, "info");
 			setTimeout(() => void refresh(), 400);
 		} catch (err) {
-			notifications.add(`Failed to stop ${session.gameName}: ${err}`, "error");
+			notifications.add(`Failed to stop ${session.gameName}: ${plainMessage(err)}`, "error");
 		}
 	}
 

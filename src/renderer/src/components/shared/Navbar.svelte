@@ -1,17 +1,30 @@
 <script lang="ts">
 	import appIcon from "@icons/appicon.png";
 	import { isPageAvailable, platform } from "@stores/platformStore";
-	import { routes } from "../../app/routes";
+	import { notifications } from "@stores/notificationStore";
+	import { routes, type AppRoute } from "../../app/routes";
 
 	export let activePage: string = "home";
 	export let onNavigate: (page: string) => void = () => {};
 
 	const navItems = routes.filter((route) => !route.hidden);
+	const unreadCount = notifications.unreadCount;
 
 	$: visibleItems = navItems.filter((item) => isPageAvailable(item.id, $platform.features));
+	$: mainItems = visibleItems.filter((item) => !item.bottom);
+	$: bottomItems = visibleItems.filter((item) => item.bottom);
 
 	let navbarRef: HTMLElement;
 	let indicatorStyle = "";
+
+	function navIcon(item: AppRoute, unread: number): string {
+		if (item.id !== "notifications") return item.icon;
+		return unread > 0 ? "notifications_active" : "notifications";
+	}
+
+	function badgeLabel(unread: number): string {
+		return unread > 99 ? "99+" : String(unread);
+	}
 
 	function updateIndicator(id: string) {
 		if (!navbarRef) return;
@@ -37,6 +50,29 @@
 	}
 </script>
 
+{#snippet navItem(item: AppRoute)}
+	<button
+		class="nav-item"
+		data-id={item.id}
+		class:active={activePage === item.id}
+		on:click={() => setActive(item.id)}
+		title={item.label}
+		aria-label={item.id === "notifications" && $unreadCount > 0
+			? `${item.label}, ${$unreadCount} unread`
+			: item.label}
+		aria-current={activePage === item.id ? "page" : undefined}
+	>
+		{#if item.isCustomIcon}
+			<img src={item.icon} class="custom-icon" alt="" />
+		{:else}
+			<span class="material-icons icon">{navIcon(item, $unreadCount)}</span>
+		{/if}
+		{#if item.id === "notifications" && $unreadCount > 0}
+			<span class="nav-badge" aria-hidden="true">{badgeLabel($unreadCount)}</span>
+		{/if}
+	</button>
+{/snippet}
+
 <div class="navbar-wrapper">
 	<div class="brand-logo">
 		<img src={appIcon} alt="App Logo" />
@@ -44,21 +80,16 @@
 
 	<nav class="navbar" bind:this={navbarRef}>
 		<div class="indicator" style={indicatorStyle}></div>
-		{#each visibleItems as item}
-			<button
-				class="nav-item"
-				data-id={item.id}
-				class:active={activePage === item.id}
-				on:click={() => setActive(item.id)}
-				title={item.label}
-			>
-				{#if item.isCustomIcon}
-					<img src={item.icon} class="custom-icon" alt="" />
-				{:else}
-					<span class="material-icons icon">{item.icon}</span>
-				{/if}
-			</button>
-		{/each}
+		<div class="nav-main">
+			{#each mainItems as item (item.id)}
+				{@render navItem(item)}
+			{/each}
+		</div>
+		<div class="nav-bottom">
+			{#each bottomItems as item (item.id)}
+				{@render navItem(item)}
+			{/each}
+		</div>
 	</nav>
 </div>
 
@@ -108,10 +139,26 @@
 		align-items: center;
 		gap: 4px;
 		position: relative;
-		/* A short window must scroll the icons, not squeeze them. */
-		flex-shrink: 0;
-		/* Centres the icons in the space under the logo, and collapses to nothing when they need all of it. */
+		flex: 1;
+		min-height: 0;
+		margin-block: 0;
+	}
+
+	/* Main pages stay centred; the bottom page is pinned to the rail's bottom edge. */
+	.nav-main,
+	.nav-bottom {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 4px;
+	}
+
+	.nav-main {
 		margin-block: auto;
+	}
+
+	.nav-bottom {
+		flex-shrink: 0;
 	}
 
 	.indicator {
@@ -189,5 +236,23 @@
 				filter: grayscale(0%) opacity(1) drop-shadow(0 0 4px var(--accent-glow));
 			}
 		}
+	}
+
+	.nav-badge {
+		position: absolute;
+		top: 2px;
+		right: 0;
+		min-width: 18px;
+		height: 18px;
+		padding: 0 5px;
+		box-sizing: border-box;
+		border-radius: var(--radius-pill);
+		background: var(--accent-primary);
+		color: var(--bg-base);
+		font-size: 0.7rem;
+		font-weight: 700;
+		line-height: 18px;
+		text-align: center;
+		pointer-events: none;
 	}
 </style>

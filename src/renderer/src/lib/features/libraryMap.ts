@@ -23,8 +23,16 @@ import type {
 	SidebarGroupType,
 	SidebarOption,
 	SidebarSort,
+	SourceAction,
+	SourceBadge,
+	SourceCard,
 	SourceTile,
+	UpdateCheckEvent,
+	UpdateCheckIssue,
+	UpdateCheckOutcome,
 	UpdateHistoryEntry,
+	UpdateResult,
+	UpdateStatus,
 	UpdatesResponse
 } from "./types";
 import type {
@@ -49,8 +57,14 @@ import type {
 	WireSidebarGroup,
 	WireSidebarOption,
 	WireSortDefault,
+	WireSourceAction,
+	WireSourceCard,
 	WireSuggestion,
+	WireUpdateCheckEvent,
+	WireUpdateCheckIssue,
+	WireUpdateCheckOutcome,
 	WireUpdateHistoryEntry,
+	WireUpdateStatus,
 	WireUpdatesSummary
 } from "./wire";
 
@@ -111,7 +125,13 @@ export function toGame(wire: WireGame): Game {
 		playtimeS: wire.playtimeS,
 		lastPlayedAt: wire.lastPlayedAt,
 		addedAt: wire.addedAt,
-		updateAvailable: hasNewVersion(wire.version, wire.installedVersion)
+		updateAvailable: hasNewVersion(wire.version, wire.installedVersion),
+		origin: wire.origin,
+		sourceKind: wire.sourceKind === "local" ? "local" : "plugin",
+		folderPath: wire.folderPath ?? null,
+		scanFolder: wire.scanFolder ?? null,
+		localConfig: wire.localConfig ?? null,
+		pinned: wire.pinned === 1
 	};
 }
 
@@ -198,7 +218,13 @@ export function toBrowseGame(wire: WireGameDTO): Game {
 		playtimeS: 0,
 		lastPlayedAt: null,
 		addedAt: "",
-		updateAvailable: false
+		updateAvailable: false,
+		origin: "plugin",
+		sourceKind: "plugin",
+		folderPath: null,
+		scanFolder: null,
+		localConfig: null,
+		pinned: false
 	};
 }
 
@@ -228,13 +254,42 @@ export function toWireBrowseRequest(query: BrowseQuery): WireBrowseRequest {
 	return request;
 }
 
+/** The launcher uses library scope when a plugin names none. */
+function toActionScope(scope: string | undefined): "library" | "game" {
+	return scope === "game" ? "game" : "library";
+}
+
+export function toSourceActions(actions: WireSourceAction[] | null | undefined): SourceAction[] {
+	return (actions ?? []).map((action) => ({
+		id: action.id,
+		label: action.label,
+		icon: action.icon,
+		method: action.method,
+		scope: toActionScope(action.scope)
+	}));
+}
+
+/** The server sends only the three known badge names, so the cast is safe. */
+export function toSourceCard(card: WireSourceCard | null | undefined): SourceCard | null {
+	if (!card) return null;
+	return { ...card, badges: card.badges as SourceBadge[] | undefined };
+}
+
 export function toLibraryOverview(wire: WireLibraryOverview): LibraryOverview {
 	return {
 		sources: (wire.sources ?? []).map((source) => ({
 			source: source.id,
 			label: source.label,
+			kind: source.kind === "local" ? "local" : "plugin",
+			plugin: source.plugin ?? null,
+			capabilities: source.capabilities ?? [],
+			sync: source.sync === true,
+			updateCheck: source.updateCheck === true,
 			count: source.count,
 			tile: toSourceTile(source.tile),
+			cover: source.cover,
+			actions: toSourceActions(source.actions),
+			card: toSourceCard(source.card),
 			sidebar: toSidebarGroups(source.sidebar)
 		})),
 		tags: (wire.tags ?? []).map((tag) => ({ tag: tag.tag, count: tag.count })),
@@ -380,6 +435,11 @@ export function toUpdatesSummary(summary: WireUpdatesSummary, games: Game[]): Up
 	};
 }
 
+/** Unknown result values are treated as a check that found nothing. */
+function toUpdateResult(value: string): UpdateResult {
+	return value === "update" || value === "error" ? value : "current";
+}
+
 /** Maps the check history. Unknown result values are treated as a check that found nothing. */
 export function toUpdateHistory(entries: WireUpdateHistoryEntry[]): UpdateHistoryEntry[] {
 	return entries.map((entry) => ({
@@ -389,10 +449,64 @@ export function toUpdateHistory(entries: WireUpdateHistoryEntry[]): UpdateHistor
 		checkedAt: entry.checkedAt,
 		from: entry.from,
 		to: entry.to,
-		result:
-			entry.result === "update" || entry.result === "error" ? entry.result : ("current" as const),
-		error: entry.error
+		result: toUpdateResult(entry.result),
+		error: entry.error,
+		coverPath: entry.coverPath,
+		coverUrl: entry.coverUrl,
+		source: entry.source
 	}));
+}
+
+/** A skipped game is not a check result from the source, so it keeps its own value. */
+function toOutcomeResult(value: string): UpdateCheckOutcome["result"] {
+	return value === "skipped" ? "skipped" : toUpdateResult(value);
+}
+
+function toUpdateCheckOutcome(wire: WireUpdateCheckOutcome): UpdateCheckOutcome {
+	return {
+		gameId: wire.gameId,
+		title: wire.title,
+		from: wire.from,
+		to: wire.to,
+		result: toOutcomeResult(wire.result),
+		error: wire.error,
+		coverPath: wire.coverPath,
+		coverUrl: wire.coverUrl
+	};
+}
+
+/** Only the "auth" kind is sent today. Unknown kinds are shown as errors. */
+function toUpdateCheckIssue(wire: WireUpdateCheckIssue): UpdateCheckIssue {
+	return {
+		source: wire.source,
+		label: wire.label,
+		kind: wire.kind === "auth" ? "auth" : "error",
+		message: wire.message,
+		games: wire.games
+	};
+}
+
+export function toUpdateCheckEvent(wire: WireUpdateCheckEvent): UpdateCheckEvent {
+	return {
+		state: wire.state === "done" ? "done" : "running",
+		done: wire.done,
+		total: wire.total,
+		skipped: wire.skipped,
+		current: wire.current,
+		result: wire.result ? toUpdateCheckOutcome(wire.result) : null,
+		issues: (wire.issues ?? []).map(toUpdateCheckIssue)
+	};
+}
+
+export function toUpdateStatus(wire: WireUpdateStatus): UpdateStatus {
+	return {
+		lastCheckedAt: wire.lastCheckedAt,
+		running: wire.running,
+		progress: wire.progress,
+		count: wire.count,
+		nextRunAt: wire.nextRunAt,
+		games: (wire.games ?? []).map(toGame)
+	};
 }
 
 function toSuggestion(wire: WireSuggestion): IncomingSuggestion {

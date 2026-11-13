@@ -1,15 +1,19 @@
 <script lang="ts">
 	import { onMount } from "svelte";
-	import { errorMessage, listen } from "../../lib/features/rpc";
+	import { listen } from "../../lib/features/rpc";
 	import { LIBRARY_INCOMING_EVENT } from "../../lib/features/events";
 	import { libraryApi } from "../../lib/features/libraryApi";
 	import { ago, bytes } from "../../lib/features/format";
 	import type { IncomingItem, IncomingListResponse } from "../../lib/features/types";
+	import { notifications } from "@stores/notificationStore";
+	import Button from "@components/shared/Button.svelte";
+	import EmptyState from "@components/shared/EmptyState.svelte";
+	import Notice from "@components/shared/Notice.svelte";
+	import { libraryErrorMessage } from "./libraryError";
 
 	let { onChanged }: { onChanged: () => void } = $props();
 
 	let incoming = $state<IncomingListResponse | null>(null);
-	let message = $state("");
 	let busy = $state(false);
 
 	const visibleItems = $derived((incoming?.items ?? []).filter((item) => !item.ignored));
@@ -22,21 +26,19 @@
 	async function reload() {
 		try {
 			incoming = await libraryApi.incomingList();
-			message = "";
 		} catch (err) {
-			message = errorMessage(err);
+			notifications.error(libraryErrorMessage(err));
 		}
 	}
 
 	async function act(action: () => Promise<unknown>, changesLibrary: boolean) {
 		busy = true;
-		message = "";
 		try {
 			await action();
 			await reload();
 			if (changesLibrary) onChanged();
 		} catch (err) {
-			message = errorMessage(err);
+			notifications.error(libraryErrorMessage(err));
 		} finally {
 			busy = false;
 		}
@@ -57,17 +59,13 @@
 
 <section class="panel" aria-label="Incoming files">
 	{#if incoming && !incoming.configured}
-		<p class="notice">No incoming folder is set. Files you drop there show up here.</p>
+		<Notice>No incoming folder is set. Files you drop there show up here.</Notice>
 	{:else if incoming?.warning}
-		<p class="notice">{incoming.warning}</p>
-	{/if}
-
-	{#if message}
-		<p class="notice" role="alert">{message}</p>
+		<Notice tone="warning">{incoming.warning}</Notice>
 	{/if}
 
 	{#if incoming && visibleItems.length === 0 && incoming.configured}
-		<p class="empty">Nothing waiting. New files appear here.</p>
+		<EmptyState icon="inbox" title="Nothing waiting. New files appear here." />
 	{/if}
 
 	<ul class="list">
@@ -86,23 +84,23 @@
 					<ul class="suggestions" aria-label="Possible matches">
 						{#each item.suggestions as suggestion (suggestion.gameId)}
 							<li>
-								<button
-									class="btn sm"
+								<Button
+									size="sm"
 									disabled={busy || !item.ready}
 									onclick={() => link(item, suggestion.gameId)}
 								>
 									Link to {suggestion.title}
-								</button>
+								</Button>
 							</li>
 						{/each}
 					</ul>
 				{/if}
 
 				<div class="actions">
-					<button class="btn sm" disabled={busy || !item.ready} onclick={() => createNew(item)}>
+					<Button size="sm" disabled={busy || !item.ready} onclick={() => createNew(item)}>
 						New game
-					</button>
-					<button class="btn sm" disabled={busy} onclick={() => ignore(item)}>Ignore</button>
+					</Button>
+					<Button size="sm" disabled={busy} onclick={() => ignore(item)}>Ignore</Button>
 				</div>
 			</li>
 		{/each}
@@ -117,16 +115,6 @@
 		padding-bottom: 24px;
 	}
 
-	.notice {
-		margin: 0;
-		padding: 10px 14px;
-		border-radius: var(--radius-md);
-		background: var(--bg-surface);
-		border: 1px solid var(--glass-border);
-		font-size: 0.875rem;
-	}
-
-	.empty,
 	.muted {
 		margin: 0;
 		color: var(--text-muted);

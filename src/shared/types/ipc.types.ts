@@ -9,5 +9,7 @@ export interface IpcResponse<T = unknown> {
 	success: boolean;
 	data?: T;
 	error?: string;
+	/** Stable machine-readable reason, such as method_not_found or auth_required. */
+	code?: string;
 	fields?: IpcFieldError[];
 }

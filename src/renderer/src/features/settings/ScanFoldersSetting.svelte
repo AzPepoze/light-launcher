@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { gamesInFolder } from "@lib/features/scanFolders";
 	import { GAME_FOLDERS_SECTION } from "@lib/features/settingsSection";
+	import Notice from "@components/shared/Notice.svelte";
 	import ScanFolderRow from "@components/settings/ScanFolderRow.svelte";
 	import type { SettingsState } from "./settingsState.svelte";
 
@@ -19,9 +20,10 @@
 			shows how many games it found.
 		</p>
 
-		{#if settings.scanError}
-			<p class="error" role="alert">{settings.scanError}</p>
-		{/if}
+		<Notice tone="info" icon="info">
+			Games installed by plugins (F95, itch.io) are already in your Library. You do not need to add
+			their download folder here.
+		</Notice>
 
 		{#if settings.watched.length > 0}
 			<ul class="folder-list">

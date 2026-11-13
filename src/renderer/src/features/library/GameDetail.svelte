@@ -1,24 +1,28 @@
 <script lang="ts">
 	import { onMount } from "svelte";
+	import Button from "@components/shared/Button.svelte";
 	import CoverImage from "@components/shared/CoverImage.svelte";
+	import Icon from "@components/shared/Icon.svelte";
 	import ScreenshotImage from "@components/shared/ScreenshotImage.svelte";
-	import { errorMessage } from "../../lib/features/rpc";
+	import { notifications } from "@stores/notificationStore";
 	import { libraryApi } from "../../lib/features/libraryApi";
-	import type { Game, GameChange, GameFile } from "../../lib/features/types";
+	import type { Game, GameChange, GameFile, SourceAction } from "../../lib/features/types";
 	import { ago, playtime } from "../../lib/features/format";
+	import { libraryErrorMessage } from "./libraryError";
 	import GameFiles from "./GameFiles.svelte";
 	import GameInstall from "./GameInstall.svelte";
 
 	let {
 		game,
 		sourceName,
-		onBack,
+		actions,
 		onRemoved,
 		onChanged,
 	}: {
 		game: Game;
 		sourceName: string;
-		onBack: () => void;
+		/** The source's game-scope actions. */
+		actions: SourceAction[];
 		onRemoved: (id: number) => void;
 		onChanged: (game: Game) => void;
 	} = $props();
@@ -27,9 +31,8 @@
 	let changes = $state<GameChange[]>([]);
 	let notes = $state("");
 	let confirmingRemove = $state(false);
-	let message = $state("");
+	let runningAction = $state("");
 	let busy = $state(false);
-	let closing = $state(false);
 	let titleEl = $state<HTMLElement>();
 
 	const versionLine = $derived(
@@ -48,19 +51,37 @@
 			files = detail.files;
 			changes = detail.changes;
 		} catch (err) {
-			message = errorMessage(err);
+			notifications.error(libraryErrorMessage(err));
 		}
 	});
 
 	async function run(action: () => Promise<void>) {
 		busy = true;
-		message = "";
 		try {
 			await action();
 		} catch (err) {
-			message = errorMessage(err);
+			notifications.error(libraryErrorMessage(err));
 		} finally {
 			busy = false;
+		}
+	}
+
+	/** Runs one game-scope action. A refresh reloads the game and its files. */
+	async function runGameAction(action: SourceAction) {
+		runningAction = action.id;
+		try {
+			const result = await libraryApi.runAction(game.source, action.id, game.id);
+			if (result.message) notifications.success(result.message);
+			if (result.refresh) {
+				const detail = await libraryApi.get(game.id);
+				files = detail.files;
+				changes = detail.changes;
+				onChanged(detail.game);
+			}
+		} catch (err) {
+			notifications.error(libraryErrorMessage(err));
+		} finally {
+			runningAction = "";
 		}
 	}
 
@@ -88,27 +109,15 @@
 		});
 	}
 
-	/** Starts the slide-out. The panel is removed when the slide ends. */
-	function close() {
-		closing = true;
-	}
-
-	function onAnimationEnd(event: AnimationEvent) {
-		if (closing && event.animationName === "detail-out") onBack();
-	}
 </script>
 
-<div class="detail" class:closing onanimationend={onAnimationEnd}>
-	<button class="btn sm back" onclick={close}>
-		<span class="material-icons" aria-hidden="true">arrow_back</span> Library
-	</button>
-
+<div class="detail">
 	<header class="hero">
 		<div class="cover">
 			{#if game.cover || game.coverLocal}
 				<CoverImage {game} />
 			{:else}
-				<span class="material-icons" aria-hidden="true">videogame_asset</span>
+				<Icon name="videogame_asset" size={40} />
 			{/if}
 		</div>
 		<div class="summary">
@@ -117,22 +126,30 @@
 
 			<div class="actions">
 				{#if game.installed && game.exePath}
-					<button class="btn sm primary" disabled={busy} onclick={launch}>Play</button>
+					<Button size="sm" variant="primary" disabled={busy} onclick={launch}>Play</Button>
 				{/if}
-				<button class="btn sm" aria-pressed={game.favorite} disabled={busy} onclick={toggleFavorite}>
+				{#each actions as action (action.id)}
+					<Button
+						size="sm"
+						icon={action.icon}
+						loading={runningAction === action.id}
+						disabled={runningAction !== "" || busy}
+						onclick={() => runGameAction(action)}
+					>
+						{action.label}
+					</Button>
+				{/each}
+				<Button size="sm" aria-pressed={game.favorite} disabled={busy} onclick={toggleFavorite}>
 					{game.favorite ? "Unfavorite" : "Favorite"}
-				</button>
+				</Button>
 				<a class="btn sm" href={game.url} target="_blank" rel="noreferrer">Open page</a>
 				{#if confirmingRemove}
-					<button class="btn sm danger" disabled={busy} onclick={remove}>Confirm remove</button>
-					<button class="btn sm" onclick={() => (confirmingRemove = false)}>Cancel</button>
+					<Button size="sm" variant="danger" disabled={busy} onclick={remove}>Confirm remove</Button>
+					<Button size="sm" onclick={() => (confirmingRemove = false)}>Cancel</Button>
 				{:else}
-					<button class="btn sm" onclick={() => (confirmingRemove = true)}>Remove</button>
+					<Button size="sm" onclick={() => (confirmingRemove = true)}>Remove</Button>
 				{/if}
 			</div>
-			{#if message}
-				<p class="error" role="alert">{message}</p>
-			{/if}
 		</div>
 	</header>
 
@@ -204,44 +221,22 @@
 </div>
 
 <style lang="scss">
-	@keyframes detail-in {
-		from {
-			opacity: 0;
-			transform: translateX(24px);
-		}
-	}
-
-	@keyframes detail-out {
-		to {
-			opacity: 0;
-			transform: translateX(24px);
-		}
-	}
-
+	/* The game panel is narrow: the cover sits beside the title and the actions wrap below. */
 	.detail {
 		display: flex;
 		flex-direction: column;
 		gap: 24px;
-		padding-bottom: 24px;
-		animation: detail-in var(--motion-base) var(--ease-snap) both;
-
-		&.closing {
-			animation: detail-out var(--motion-base) var(--ease-snap) both;
-		}
-	}
-
-	.back {
-		align-self: flex-start;
+		min-width: 0;
 	}
 
 	.hero {
 		display: flex;
-		gap: 24px;
+		gap: 20px;
 		flex-wrap: wrap;
 	}
 
 	.cover {
-		width: 180px;
+		width: 128px;
 		aspect-ratio: 3 / 4;
 		flex-shrink: 0;
 		border-radius: var(--radius-md);
@@ -258,7 +253,7 @@
 		flex-direction: column;
 		gap: 10px;
 		min-width: 0;
-		flex: 1 1 260px;
+		flex: 1 1 180px;
 
 		h2 {
 			margin: 0;
@@ -312,12 +307,6 @@
 		display: flex;
 		flex-wrap: wrap;
 		gap: 8px;
-	}
-
-	.error {
-		margin: 0;
-		color: var(--danger);
-		font-size: 0.875rem;
 	}
 
 	.shots {

@@ -2,7 +2,7 @@
 	import type { CoverSource } from "../../lib/features/mediaCache";
 	import { useCover } from "../../lib/features/useMedia.svelte";
 
-	/** Shows the whole image centered over a blurred copy of itself. A skeleton holds the space until it loads. */
+	/** Fills the box with the cover. With framed, the whole image sits over a blurred copy. A skeleton holds the space until it loads. */
 	let { game, framed = false }: { game: CoverSource; framed?: boolean } = $props();
 	const cover = useCover(() => game);
 	let shown = $state(false);

@@ -13,3 +13,7 @@ export const TOAST_EVENT = "toast";
 export const PLUGIN_STATE_EVENT = "plugin-state";
 export const PLUGIN_NOTIFY_EVENT = "plugin-notify";
 export const PLUGIN_UPDATES_EVENT = "plugin-updates";
+
+export const UPDATE_CHECK_EVENT = "library.updateCheck";
+
+export const HOME_SCAN_EVENT = "home.scan";

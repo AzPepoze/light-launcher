@@ -1,6 +1,7 @@
 import { PickFile, PickFolder, SaveGameConfig } from "@lib/api";
 import * as core from "@shared";
 import { notifications } from "@stores/notificationStore";
+import { plainMessage } from "@lib/plainMessage";
 import { runState } from "@stores/runState";
 import { currentFeatures } from "@stores/platformStore";
 import { createLaunchOptions } from "@lib/formService";
@@ -139,7 +140,7 @@ export class RunPageState {
 			await SaveGameConfig(this.options);
 			notifications.add("Configuration saved!", "success");
 		} catch (err) {
-			notifications.add(`Failed to save: ${err}`, "error");
+			notifications.add(`Failed to save: ${plainMessage(err)}`, "error");
 		} finally {
 			this.isSaving = false;
 		}

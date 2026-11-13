@@ -8,6 +8,7 @@
 		validateDepth
 	} from "@lib/features/scanFolders";
 	import { createLogger } from "@lib/logger";
+	import { notifications } from "@stores/notificationStore";
 	import NumberField from "@components/shared/NumberField.svelte";
 
 	const log = createLogger("ScanFolderRow");
@@ -38,7 +39,6 @@
 	let depthDraft = $state<string | null>(null);
 	let excludeDraft = $state<string | null>(null);
 	let saving = $state(false);
-	let saveError = $state("");
 
 	const depthText = $derived(depthDraft ?? String(depth));
 	const depthCheck = $derived(validateDepth(depthText));
@@ -50,7 +50,6 @@
 	async function save() {
 		if (!depthCheck.ok) return;
 		saving = true;
-		saveError = "";
 		try {
 			const names = normalizeExcludeNames(excludeText);
 			await UpdateScanFolderConfig(folder, depthCheck.depth, names);
@@ -59,7 +58,7 @@
 			await onSaved();
 		} catch (err) {
 			log.error("Failed to save folder settings", err);
-			saveError = "Could not save these settings. Try again.";
+			notifications.error("Could not save these settings. Try again.", { source: "Settings" });
 		} finally {
 			saving = false;
 		}
@@ -110,10 +109,6 @@
 			<p class="hint">Comma-separated regex patterns or wildcards.</p>
 		</div>
 	</div>
-
-	{#if saveError}
-		<p class="error" role="alert">{saveError}</p>
-	{/if}
 
 	<div class="folder-actions">
 		<button class="btn primary" onclick={save} disabled={!dirty || saving || !depthCheck.ok}>

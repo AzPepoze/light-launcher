@@ -113,6 +113,10 @@ export const pluginsApi = {
 	call: <T = unknown>(plugin: string, method: PluginMethod, params: object) =>
 		rpc<T>("PluginCall", { plugin, method, params }),
 
+	/** Runs one command the plugin declares in its manifest. */
+	command: (plugin: string, command: string, params: object = {}) =>
+		rpc<unknown>("PluginCall", { plugin, command, params }),
+
 	authStatus: (plugin: string, source: string) =>
 		rpc<AuthState>("PluginCall", {
 			plugin,

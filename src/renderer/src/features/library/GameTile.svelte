@@ -1,29 +1,45 @@
 <script lang="ts">
+	import Badge from "@components/shared/Badge.svelte";
 	import CoverImage from "@components/shared/CoverImage.svelte";
-	import type { Game } from "../../lib/features/types";
-	import type { TileShape } from "./sourceTileShape";
+	import Icon from "@components/shared/Icon.svelte";
+	import Marquee from "@components/shared/Marquee.svelte";
+	import type { Game, SourceCard } from "../../lib/features/types";
+	import { cardView, type TileState } from "./tileCard";
+	import type { TransferKind } from "./transferState";
 
 	let {
 		game,
-		shape,
+		ratio,
+		card,
+		transfer,
+		blurUntilHover,
 		revealIndex,
 		onOpen
 	}: {
 		game: Game;
-		shape: TileShape;
+		/** Width divided by height of the cover, which is the whole tile. */
+		ratio: number;
+		card: SourceCard | null;
+		/** The download or install running for this game, if any. */
+		transfer: TransferKind | null;
+		/** Covers stay blurred until the tile is hovered or focused. The overlay is never blurred. */
+		blurUntilHover: boolean;
 		/** Position in the first reveal, or undefined when the tile does not animate in. */
 		revealIndex?: number;
 		onOpen: (game: Game) => void;
 	} = $props();
 
-	const statusLine = $derived(
-		[
-			game.version ? `Version ${game.version}` : null,
-			game.installed ? "Installed" : "Not installed"
-		]
-			.filter(Boolean)
-			.join(" · ")
-	);
+	const view = $derived(cardView(game, card, transfer));
+	const cornerStart = $derived(view.states.filter((state) => state === "favorite"));
+	const cornerEnd = $derived(view.states.filter((state) => state !== "favorite"));
+
+	const STATE_VIEW: Record<TileState, { label: string; icon: string; tone: "danger" | "accent" | "neutral" | "warning" }> = {
+		favorite: { label: "Favorite", icon: "favorite", tone: "danger" },
+		updateAvailable: { label: "Update", icon: "system_update", tone: "accent" },
+		notInstalled: { label: "Not installed", icon: "download", tone: "neutral" },
+		downloading: { label: "Downloading", icon: "downloading", tone: "warning" },
+		installing: { label: "Installing", icon: "progress_activity", tone: "warning" }
+	};
 </script>
 
 <button
@@ -32,25 +48,36 @@
 	style:--reveal-index={revealIndex}
 	data-game-id={game.id}
 	onclick={() => onOpen(game)}
-	aria-label="Open {game.title}"
+	aria-label="Open {view.title}"
 >
-	<span class="cover" style:aspect-ratio={shape.ratio}>
+	<span class="cover" class:blurred={blurUntilHover} style:aspect-ratio={ratio}>
 		{#if game.cover || game.coverLocal}
-			<CoverImage {game} framed />
+			<CoverImage {game} />
 		{:else}
-			<span class="material-icons placeholder" aria-hidden="true">videogame_asset</span>
+			<Icon name="videogame_asset" size={40} class="placeholder" />
 		{/if}
-		<span class="badges">
-			{#if game.favorite}
-				<span class="material-icons badge" title="Favorite">favorite</span>
-			{/if}
-			{#if game.updateAvailable}
-				<span class="badge update">Update</span>
-			{/if}
+
+		{#if cornerStart.length > 0}
+			<span class="corner start">
+				{#each cornerStart as state (state)}
+					<Badge icon={STATE_VIEW[state].icon} tone={STATE_VIEW[state].tone}>{STATE_VIEW[state].label}</Badge>
+				{/each}
+			</span>
+		{/if}
+		{#if cornerEnd.length > 0}
+			<span class="corner end">
+				{#each cornerEnd as state (state)}
+					<Badge icon={STATE_VIEW[state].icon} tone={STATE_VIEW[state].tone}>{STATE_VIEW[state].label}</Badge>
+				{/each}
+			</span>
+		{/if}
+
+		<span class="overlay">
+			<Marquee text={view.title} class="name" />
+			{#if view.subtitle}<span class="subtitle">{view.subtitle}</span>{/if}
+			{#if view.details.length > 0}<span class="details">{view.details.join(" · ")}</span>{/if}
 		</span>
 	</span>
-	<span class="title">{game.title}</span>
-	<span class="meta">{statusLine}</span>
 </button>
 
 <style lang="scss">
@@ -64,7 +91,9 @@
 	.tile {
 		display: flex;
 		flex-direction: column;
-		gap: 8px;
+		width: 100%;
+		min-width: 0;
+		box-sizing: border-box;
 		padding: 0;
 		border: none;
 		border-radius: var(--radius-md);
@@ -92,6 +121,12 @@
 		&:active .cover {
 			transform: scale(0.97);
 		}
+
+		&:hover .cover.blurred :global(img),
+		&:focus-visible .cover.blurred :global(img) {
+			filter: none;
+			transform: none;
+		}
 	}
 
 	.cover {
@@ -104,52 +139,118 @@
 		overflow: hidden;
 		background: var(--bg-elevated);
 		transition: transform var(--motion-quick) var(--ease-out);
-	}
 
-	.placeholder {
-		font-size: 40px;
-		color: var(--text-muted);
-	}
+		&.blurred :global(img) {
+			filter: blur(18px);
+			transform: scale(1.1);
+			transition:
+				filter var(--motion-base) var(--ease-out),
+				transform var(--motion-base) var(--ease-out),
+				opacity var(--motion-base) var(--ease-out);
+		}
 
-	.badges {
-		position: absolute;
-		top: 6px;
-		right: 6px;
-		display: flex;
-		gap: 4px;
-	}
+		:global(.frame) {
+			position: absolute;
+			inset: 0;
+		}
 
-	.badge {
-		font-size: 16px;
-		padding: 2px 6px;
-		border-radius: var(--radius-pill);
-		background: rgba(0, 0, 0, 0.7);
-		color: var(--text-main);
-
-		&.update {
-			font-size: 0.75rem;
-			font-weight: 800;
-			background: var(--accent-primary);
-			color: var(--bg-base);
+		:global(.placeholder) {
+			color: var(--text-muted);
 		}
 	}
 
-	.title,
-	.meta {
-		display: block;
+	.corner {
+		position: absolute;
+		top: 6px;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 4px;
+
+		&.start {
+			left: 6px;
+		}
+
+		&.end {
+			right: 6px;
+			justify-content: flex-end;
+		}
+	}
+
+	/* Bottom overlay: fades in with a 6px slide on hover and focus, always shown on touch. */
+	.overlay {
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		padding: 28px 10px 10px;
+		background: linear-gradient(to top, rgb(0 0 0 / 0.75), transparent);
+		color: #fff;
+		opacity: 0;
+		transform: translateY(6px);
+		transition:
+			opacity 160ms var(--ease-out),
+			transform 160ms var(--ease-out);
+		pointer-events: none;
+
+		:global(.name) {
+			display: block;
+			overflow: hidden;
+			white-space: nowrap;
+			text-overflow: ellipsis;
+			font-size: 0.95rem;
+			font-weight: 600;
+			line-height: 1.25;
+		}
+
+		:global(.name.scrolling) {
+			overflow: visible;
+			text-overflow: clip;
+			width: max-content;
+		}
+	}
+
+	.tile:hover .overlay,
+	.tile:focus-visible .overlay {
+		opacity: 1;
+		transform: none;
+	}
+
+	// Hold the slide until the tile is hovered or focused, as before.
+	.tile:not(:hover):not(:focus-visible) :global(.name.scrolling) {
+		animation-play-state: paused;
+	}
+
+	.subtitle,
+	.details {
 		overflow: hidden;
 		white-space: nowrap;
 		text-overflow: ellipsis;
+		font-size: 0.8125rem;
 	}
 
-	.title {
-		font-size: 1.05rem;
-		font-weight: 600;
-		line-height: 1.3;
+	.subtitle {
+		color: rgb(255 255 255 / 0.8);
 	}
 
-	.meta {
-		font-size: 0.875rem;
-		color: var(--text-muted);
+	.details {
+		color: rgb(255 255 255 / 0.6);
+	}
+
+	/* Touch screens have no hover, so the overlay stays on. */
+	@media (hover: none) {
+		.overlay {
+			opacity: 1;
+			transform: none;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.overlay {
+			transform: none;
+			transition: opacity 160ms linear;
+		}
 	}
 </style>

@@ -9,6 +9,7 @@ import {
 } from "@lib/api";
 import * as core from "@shared";
 import { notifications } from "@stores/notificationStore";
+import { plainMessage } from "./plainMessage";
 import { createLogger } from "./logger";
 
 const log = createLogger("prefixService");
@@ -158,7 +159,7 @@ export async function executePrefixTool(
 	try {
 		await RunPrefixTool(prefixPath, toolName, protonPath);
 	} catch (err) {
-		notifications.error(`Failed to run ${toolName}: ${err}`);
+		notifications.error(`Failed to run ${toolName}: ${plainMessage(err)}`);
 		throw err;
 	}
 }

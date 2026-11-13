@@ -13,6 +13,7 @@ import {
 import { loadExeIcon } from "@lib/iconService";
 import * as core from "@shared";
 import { notifications } from "@stores/notificationStore";
+import { plainMessage } from "@lib/plainMessage";
 import { runState } from "@stores/runState";
 import { currentFeatures } from "@stores/platformStore";
 import { get } from "svelte/store";
@@ -277,7 +278,6 @@ export async function executeLaunch(
 		}
 	} catch (error) {
 		log.error("[EXECUTE] Launch failed", error);
-		const message = (error as any)?.message || String(error);
-		notifications.add(`Launch failed: ${message}`, "error");
+		notifications.add(`Launch failed: ${plainMessage(error)}`, "error");
 	}
 }

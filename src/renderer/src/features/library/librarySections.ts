@@ -8,8 +8,16 @@ const LOCAL_LABEL = "Local games";
 const EMPTY_LOCAL: LibrarySource = {
 	source: LOCAL_SOURCE,
 	label: LOCAL_LABEL,
+	kind: "local",
+	plugin: null,
+	capabilities: ["launch", "scan"],
+	sync: false,
+	updateCheck: false,
 	count: 0,
 	tile: "square",
+	cover: "1:1",
+	actions: [],
+	card: null,
 	sidebar: []
 };
 

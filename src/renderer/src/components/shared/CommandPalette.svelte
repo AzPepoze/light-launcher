@@ -55,6 +55,8 @@
 					<span class="item-name">{item.name}</span>
 					{#if item.type === "page"}
 						<span class="type-badge page">Navigation</span>
+					{:else if item.type === "command"}
+						<span class="type-badge command">Plugin</span>
 					{:else}
 						<span class="type-badge game">Game</span>
 					{/if}

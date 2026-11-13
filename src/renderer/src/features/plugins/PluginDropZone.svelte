@@ -1,5 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from "svelte";
+	import Button from "@components/shared/Button.svelte";
+	import Icon from "@components/shared/Icon.svelte";
 	import { collectDroppedFiles, filesFromInput } from "../../lib/features/pluginEntries";
 	import type { UploadFile } from "../../lib/features/pluginUpload";
 	import {
@@ -74,12 +76,8 @@
 	<div class="bar">
 		<p class="hint">{DROP_HINT}</p>
 		<div class="actions">
-			<button class="btn sm" type="button" onclick={() => fileInput?.click()}>
-				{CHOOSE_FILE_LABEL}
-			</button>
-			<button class="btn sm" type="button" onclick={() => folderInput?.click()}>
-				{CHOOSE_FOLDER_LABEL}
-			</button>
+			<Button size="sm" onclick={() => fileInput?.click()}>{CHOOSE_FILE_LABEL}</Button>
+			<Button size="sm" onclick={() => folderInput?.click()}>{CHOOSE_FOLDER_LABEL}</Button>
 		</div>
 		<input
 			bind:this={fileInput}
@@ -102,7 +100,7 @@
 
 	{#if dragging}
 		<div class="overlay" aria-hidden="true">
-			<span class="material-icons lift">file_download</span>
+			<Icon name="file_download" size={40} class="lift" />
 			<p>{DROP_OVERLAY_TEXT}</p>
 		</div>
 	{/if}
@@ -161,8 +159,7 @@
 		}
 	}
 
-	.lift {
-		font-size: 2.5rem;
+	.overlay :global(.lift) {
 		color: var(--accent-primary);
 		animation: lift-in var(--motion-base) var(--ease-out) both;
 	}

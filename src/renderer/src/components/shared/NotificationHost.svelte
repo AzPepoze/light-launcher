@@ -1,28 +1,34 @@
 <script lang="ts">
-	import { notifications } from "@stores/notificationStore";
+	import { notifications, type NotificationType } from "@stores/notificationStore";
 	import { flip } from "svelte/animate";
 	import { fade, fly } from "svelte/transition";
+
+	const TYPE_ICONS: Record<NotificationType, string> = {
+		error: "error_outline",
+		warning: "warning_amber",
+		success: "check_circle_outline",
+		info: "info_outline"
+	};
+
+	const toasts = notifications.toasts;
 </script>
 
 <div class="notification-container">
-	{#each $notifications as n (n.id)}
+	{#each $toasts as n (n.id)}
 		<div
 			class="notification-card {n.type}"
 			animate:flip={{ duration: 300 }}
 			in:fly={{ y: 20, duration: 300 }}
 			out:fade={{ duration: 200 }}
+			on:mouseenter={() => notifications.pause(n.id)}
+			on:mouseleave={() => notifications.resume(n.id)}
 		>
-			<span class="material-icons mini-icon">
-				{#if n.type === "error"}
-					error_outline
-				{:else if n.type === "success"}
-					check_circle_outline
-				{:else}
-					info_outline
-				{/if}
-			</span>
-			<div class="message">{n.message}</div>
-			<button class="close" on:click={() => notifications.remove(n.id)}>
+			<span class="material-icons mini-icon">{TYPE_ICONS[n.type]}</span>
+			<div class="message">
+				{n.message}
+				{#if n.count > 1}<span class="count">x{n.count}</span>{/if}
+			</div>
+			<button class="close" on:click={() => notifications.dismiss(n.id)} aria-label="Dismiss">
 				<span class="material-icons">close</span>
 			</button>
 		</div>
@@ -74,6 +80,11 @@
 			box-shadow: 0 4px 20px rgba(255, 74, 122, 0.15);
 			.mini-icon { color: var(--danger); }
 		}
+		&.warning {
+			border-color: var(--warning);
+			box-shadow: 0 4px 20px rgba(var(--warning-rgb), 0.15);
+			.mini-icon { color: var(--warning); }
+		}
 		&.success {
 			border-color: var(--accent-secondary);
 			box-shadow: 0 4px 20px rgba(0, 240, 255, 0.15);
@@ -92,6 +103,11 @@
 			text-transform: uppercase;
 			letter-spacing: 0.5px;
 			line-height: 1.4;
+		}
+
+		.count {
+			margin-left: 6px;
+			opacity: 0.7;
 		}
 
 		.close {

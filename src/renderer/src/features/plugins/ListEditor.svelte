@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button from "@components/shared/Button.svelte";
 	import Dropdown, { asOptions } from "@components/shared/Dropdown.svelte";
 	import {
 		addItem,
@@ -42,26 +43,25 @@
 	{#each items as item, index (index)}
 		<div class="row">
 			<span class="name">{item}</span>
-			<button
-				class="btn sm"
-				type="button"
+			<Button
+				size="sm"
 				aria-label="Move {item} up"
 				disabled={index === 0}
-				onclick={() => onchange(moveItem(items, index, -1))}>Up</button
+				onclick={() => onchange(moveItem(items, index, -1))}
 			>
-			<button
-				class="btn sm"
-				type="button"
+				Up
+			</Button>
+			<Button
+				size="sm"
 				aria-label="Move {item} down"
 				disabled={index === items.length - 1}
-				onclick={() => onchange(moveItem(items, index, 1))}>Down</button
+				onclick={() => onchange(moveItem(items, index, 1))}
 			>
-			<button
-				class="btn sm"
-				type="button"
-				aria-label="Remove {item}"
-				onclick={() => onchange(removeItem(items, index))}>Remove</button
-			>
+				Down
+			</Button>
+			<Button size="sm" aria-label="Remove {item}" onclick={() => onchange(removeItem(items, index))}>
+				Remove
+			</Button>
 		</div>
 	{/each}
 
@@ -76,7 +76,7 @@
 						onChange={(value) => (chosen = value)}
 					/>
 				</div>
-				<button class="btn sm primary" type="button" onclick={addDraft}>Add</button>
+				<Button variant="primary" size="sm" onclick={addDraft}>Add</Button>
 			</div>
 		{/if}
 	{:else}
@@ -88,7 +88,7 @@
 				bind:value={draft}
 				onkeydown={onDraftKey}
 			/>
-			<button class="btn sm primary" type="button" onclick={addDraft}>Add</button>
+			<Button variant="primary" size="sm" onclick={addDraft}>Add</Button>
 		</div>
 	{/if}
 </div>

@@ -1,5 +1,6 @@
 import type { AppSettings, ScanFolderConfig } from "@shared";
 import { folderKey } from "@lib/features/scanFolders";
+import { LIBRARY_CARD_SIZE_DEFAULT } from "./libraryAppearance";
 
 /** The folder depth the backend uses when a folder is added without settings. */
 export const DEFAULT_SCAN_DEPTH = 2;
@@ -14,7 +15,9 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
 	CustomPrefixDir: "",
 	TrackPlaytime: true,
 	DiscordRichPresence: true,
-	DiscordClientId: ""
+	DiscordClientId: "",
+	LibraryCardSize: LIBRARY_CARD_SIZE_DEFAULT,
+	BlurCoversUntilHover: false
 };
 
 /**
@@ -32,7 +35,9 @@ export function mergeAppSettings(loaded: AppSettings | null, current: AppSetting
 		CustomPrefixDir: loaded.CustomPrefixDir ?? current.CustomPrefixDir ?? "",
 		TrackPlaytime: loaded.TrackPlaytime ?? current.TrackPlaytime ?? true,
 		DiscordRichPresence: loaded.DiscordRichPresence ?? current.DiscordRichPresence ?? true,
-		DiscordClientId: loaded.DiscordClientId ?? current.DiscordClientId ?? ""
+		DiscordClientId: loaded.DiscordClientId ?? current.DiscordClientId ?? "",
+		LibraryCardSize: loaded.LibraryCardSize ?? current.LibraryCardSize ?? LIBRARY_CARD_SIZE_DEFAULT,
+		BlurCoversUntilHover: loaded.BlurCoversUntilHover ?? current.BlurCoversUntilHover ?? false
 	};
 }
 

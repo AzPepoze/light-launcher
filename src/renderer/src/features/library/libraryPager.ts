@@ -57,7 +57,7 @@ export class LibraryPager {
 		this.reset();
 	}
 
-	/** Drops every page and loads again on the next request. */
+	/** Drops every page and loads the first one, which carries the total the grid needs to appear. */
 	reset(): void {
 		this.generation++;
 		this.pages.clear();
@@ -65,6 +65,7 @@ export class LibraryPager {
 		this.total = null;
 		this.error = null;
 		this.notify();
+		this.load(0);
 	}
 
 	/** Loads the pages that are not in the cache yet, and marks the cached ones as used. */

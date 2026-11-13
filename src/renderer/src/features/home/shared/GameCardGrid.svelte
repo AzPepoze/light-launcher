@@ -1,7 +1,10 @@
 <script lang="ts">
+	import { onDestroy, tick } from "svelte";
 	import GameCard from "../cards/GameCard.svelte";
+	import { findScrollableAncestor } from "@lib/autoscroll";
 	import { getGameId, getGamePath } from "@lib/gameUtils";
 	import type { GameInfo, RunningSession } from "@shared";
+	import { GRID_CHUNK_SIZE, nextRenderedCount } from "./gridChunk";
 
 	export let games: GameInfo[] = [];
 	export let view: "grid" | "list-grid" | "sidebar-grid" = "grid";
@@ -20,16 +23,53 @@
 
 	$: cardView = view === "sidebar-grid" ? "grid" : view;
 
+	let renderedCount = GRID_CHUNK_SIZE;
+	let sentinelElement: HTMLElement;
+	let observer: IntersectionObserver | null = null;
+
 	// Same exe can appear twice (e.g. duplicate profiles); keys must stay unique.
-	$: visibleGames = (() => {
+	function dedupeGames(list: GameInfo[]): GameInfo[] {
 		const seen = new Set<string>();
-		return games.filter((game) => {
+		return list.filter((game) => {
 			const key = getGameId(game);
 			if (seen.has(key)) return false;
 			seen.add(key);
 			return true;
 		});
-	})();
+	}
+
+	$: uniqueGames = dedupeGames(games);
+	$: visibleGames = uniqueGames.slice(0, renderedCount);
+
+	// A new list (filter or search) starts at one chunk again.
+	$: {
+		games;
+		renderedCount = GRID_CHUNK_SIZE;
+	}
+
+	function handleSentinelIntersect(entries: IntersectionObserverEntry[]): void {
+		if (!entries.some((entry) => entry.isIntersecting)) return;
+		renderedCount = nextRenderedCount(renderedCount, uniqueGames.length);
+	}
+
+	async function connectSentinel(sentinel: HTMLElement): Promise<void> {
+		// Wait for the DOM to update so the scroll root is measured on the new list.
+		await tick();
+		observer?.disconnect();
+		observer = new IntersectionObserver(handleSentinelIntersect, {
+			root: findScrollableAncestor(sentinel),
+			rootMargin: "400px"
+		});
+		observer.observe(sentinel);
+	}
+
+	// Reconnect when the list changes; the scroll container may change with it.
+	$: if (sentinelElement) {
+		games;
+		void connectSentinel(sentinelElement);
+	}
+
+	onDestroy(() => observer?.disconnect());
 </script>
 
 <div
@@ -57,15 +97,19 @@
 		</div>
 	{/each}
 </div>
+<div bind:this={sentinelElement} class="grid-sentinel" aria-hidden="true"></div>
 
 <style lang="scss">
+	.grid-sentinel {
+		height: 1px;
+	}
+
 	.games-grid {
 		display: grid;
-		// Small gap: each card carries its own 8px glow padding and 6px margin.
-		gap: 12px;
+		gap: 4px;
 		width: 100%;
 		max-width: 100%;
-		padding: 12px;
+		padding: 18px;
 		padding-bottom: 40px;
 		box-sizing: border-box;
 		min-width: 0;
@@ -82,7 +126,7 @@
 
 		&.list-view {
 			grid-template-columns: 1fr;
-			gap: 16px;
+			gap: 4px;
 			min-width: 0;
 			overflow: visible;
 		}

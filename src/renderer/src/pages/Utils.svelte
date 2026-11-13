@@ -10,6 +10,7 @@
 	} from "@lib/api";
 	import * as core from "@shared";
 	import { notifications } from "@stores/notificationStore";
+	import { plainMessage } from "@lib/plainMessage";
 	import { onDestroy, onMount } from "svelte";
 
 	import lsfgPng from "@icons/lsfg.png";
@@ -84,7 +85,7 @@
 			await loadStatus();
 			notifications.add("LSFG-VK installed successfully!", "success");
 		} catch (err) {
-			notifications.add(`Installation failed: ${err}`, "error");
+			notifications.add(`Installation failed: ${plainMessage(err)}`, "error");
 		} finally {
 			isInstalling = false;
 			progressMessage = "";
@@ -99,7 +100,7 @@
 			await loadStatus();
 			notifications.add("LSFG-VK removed successfully.", "info");
 		} catch (err) {
-			notifications.add(`Removal failed: ${err}`, "error");
+			notifications.add(`Removal failed: ${plainMessage(err)}`, "error");
 		} finally {
 			isUninstalling = false;
 		}

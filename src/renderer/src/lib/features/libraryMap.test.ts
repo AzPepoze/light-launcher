@@ -15,7 +15,9 @@ import {
 	toSearchResponse,
 	toSourceTile,
 	toSidebarGroups,
+	toUpdateCheckEvent,
 	toUpdateHistory,
+	toUpdateStatus,
 	toUpdatesSummary,
 	toWireBrowseRequest,
 	toWireListRequest
@@ -68,6 +70,12 @@ function makeWire(overrides: Partial<WireGame> = {}): WireGame {
 		addedAt: "2026-01-01T00:00:00Z",
 		updatedAt: "2026-01-02T00:00:00Z",
 		extra: null,
+		origin: "plugin",
+		sourceKind: "plugin",
+		folderPath: null,
+		scanFolder: null,
+		localConfig: null,
+		pinned: 0,
 		...overrides
 	};
 }
@@ -100,6 +108,12 @@ function makeGame(overrides: Partial<Game>): Game {
 		lastPlayedAt: null,
 		addedAt: "2026-01-01T00:00:00Z",
 		updateAvailable: false,
+		origin: "plugin",
+		sourceKind: "plugin",
+		folderPath: null,
+		scanFolder: null,
+		localConfig: null,
+		pinned: false,
 		...overrides
 	};
 }
@@ -193,15 +207,42 @@ describe("toLibraryOverview", () => {
 			makeOverview({
 				stats: { total: 3, installed: 1, updates: 1, bytes: 150, playtime: 15 },
 				sources: [
-					{ id: "manual", label: "Local games", count: 1, tile: "square" },
-					{ id: "f95", label: "F95 Zone", count: 2, tile: "wide" }
+					{ id: "manual", label: "Local games", kind: "local", capabilities: ["launch", "scan"], sync: false, updateCheck: false, count: 1, tile: "square", cover: "1:1", actions: null, card: null },
+					{
+						id: "f95",
+						label: "F95 Zone",
+						kind: "plugin",
+						plugin: "f95",
+						capabilities: ["browse", "updateCheck"],
+						sync: true,
+						updateCheck: true,
+						count: 2,
+						tile: "wide",
+						cover: "4:3",
+						actions: [{ id: "sync", label: "Sync", icon: "sync", method: "f95.sync" }],
+						card: { title: "title", badges: ["installed"] }
+					}
 				],
 				tags: [{ tag: "a", count: 2 }]
 			})
 		);
 		expect(overview.sources).toEqual([
-			{ source: "manual", label: "Local games", count: 1, tile: "square", sidebar: [] },
-			{ source: "f95", label: "F95 Zone", count: 2, tile: "wide", sidebar: [] }
+			{ source: "manual", label: "Local games", kind: "local", plugin: null, capabilities: ["launch", "scan"], sync: false, updateCheck: false, count: 1, tile: "square", cover: "1:1", actions: [], card: null, sidebar: [] },
+			{
+				source: "f95",
+				label: "F95 Zone",
+				kind: "plugin",
+				plugin: "f95",
+				capabilities: ["browse", "updateCheck"],
+				sync: true,
+				updateCheck: true,
+				count: 2,
+				tile: "wide",
+				cover: "4:3",
+				actions: [{ id: "sync", label: "Sync", icon: "sync", method: "f95.sync", scope: "library" }],
+				card: { title: "title", badges: ["installed"] },
+				sidebar: []
+			}
 		]);
 		expect(overview.tags).toEqual([{ tag: "a", count: 2 }]);
 		expect(overview.stats).toEqual({
@@ -676,7 +717,10 @@ describe("toUpdateHistory", () => {
 				from: "1.0",
 				to: "2.0",
 				result: "update",
-				error: null
+				error: null,
+				coverPath: "covers/dust.jpg",
+				coverUrl: "https://example.test/dust.jpg",
+				source: "f95"
 			},
 			{
 				id: 8,
@@ -686,11 +730,136 @@ describe("toUpdateHistory", () => {
 				from: null,
 				to: null,
 				result: "surprise",
-				error: null
+				error: null,
+				coverPath: null,
+				coverUrl: null,
+				source: "itch"
 			}
 		]);
 		expect(history[0]).toMatchObject({ id: 9, title: "Dust", result: "update" });
+		expect(history[0]).toMatchObject({ coverPath: "covers/dust.jpg", coverUrl: "https://example.test/dust.jpg" });
 		expect(history[1].result).toBe("current");
+	});
+});
+
+describe("toUpdateCheckEvent", () => {
+	it("maps a running event with its outcome and no issues", () => {
+		const event = toUpdateCheckEvent({
+			state: "running",
+			done: 1,
+			total: 4,
+			skipped: 0,
+			current: { gameId: 7, title: "Dust" },
+			result: {
+				gameId: 3,
+				title: "Aurora",
+				from: "1.0",
+				to: "2.0",
+				result: "update",
+				error: null,
+				coverPath: null,
+				coverUrl: "https://example.test/aurora.jpg"
+			},
+			issues: []
+		});
+		expect(event).toEqual({
+			state: "running",
+			done: 1,
+			total: 4,
+			skipped: 0,
+			current: { gameId: 7, title: "Dust" },
+			result: {
+				gameId: 3,
+				title: "Aurora",
+				from: "1.0",
+				to: "2.0",
+				result: "update",
+				error: null,
+				coverPath: null,
+				coverUrl: "https://example.test/aurora.jpg"
+			},
+			issues: []
+		});
+	});
+
+	it("keeps skipped outcomes and maps the issues of the final event", () => {
+		const event = toUpdateCheckEvent({
+			state: "done",
+			done: 5,
+			total: 5,
+			skipped: 2,
+			current: null,
+			result: null,
+			issues: [{ source: "itch", label: "itch.io", kind: "auth", message: "itch.io needs a sign-in", games: 3 }]
+		});
+		expect(event.state).toBe("done");
+		expect(event.skipped).toBe(2);
+		expect(event.issues).toEqual([
+			{ source: "itch", label: "itch.io", kind: "auth", message: "itch.io needs a sign-in", games: 3 }
+		]);
+	});
+
+	it("treats unknown outcome results as current and tolerates a missing issue list", () => {
+		const event = toUpdateCheckEvent({
+			state: "running",
+			done: 1,
+			total: 2,
+			skipped: 0,
+			current: null,
+			result: {
+				gameId: 3,
+				title: "Aurora",
+				from: null,
+				to: null,
+				result: "surprise",
+				error: null,
+				coverPath: null,
+				coverUrl: null
+			},
+			issues: null
+		});
+		expect(event.result?.result).toBe("current");
+		expect(event.issues).toEqual([]);
+	});
+});
+
+describe("toUpdateStatus", () => {
+	it("maps the saved run, the running progress and the games with updates", () => {
+		const status = toUpdateStatus({
+			lastCheckedAt: "2026-03-01T10:00:00Z",
+			running: true,
+			progress: { done: 2, total: 9 },
+			count: 1,
+			nextRunAt: "2026-03-02T10:00:00Z",
+			games: [{ id: 4, title: "Dust", version: "2", installedVersion: "1", favorite: 0 } as unknown as WireGame]
+		});
+		expect(status).toMatchObject({
+			lastCheckedAt: "2026-03-01T10:00:00Z",
+			running: true,
+			progress: { done: 2, total: 9 },
+			count: 1,
+			nextRunAt: "2026-03-02T10:00:00Z"
+		});
+		expect(status.games.map((game) => game.id)).toEqual([4]);
+	});
+
+	it("reads an empty status when no run was saved", () => {
+		const status = toUpdateStatus({
+			lastCheckedAt: null,
+			running: false,
+			progress: null,
+			count: 0,
+			nextRunAt: null,
+			games: null
+		});
+		expect(status).toEqual({
+			lastCheckedAt: null,
+			running: false,
+			progress: null,
+			count: 0,
+			nextRunAt: null,
+			games: []
+		});
 	});
 });
 

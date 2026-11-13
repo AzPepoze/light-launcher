@@ -15,6 +15,7 @@ import type {
 import type {
 	WirePermissions,
 	WirePluginInfo,
+	WireSource,
 	WirePluginLogLine,
 	WirePluginPreview,
 	WirePluginUpdateStatus,
@@ -93,6 +94,15 @@ export function newPermissionLines(installed: string[], next: string[]): Permiss
 	return consentLines(next.filter((entry) => !installed.includes(entry)));
 }
 
+const UPDATE_CHECK_CAPABILITY = "updateCheck";
+
+/** The source ids whose capabilities include the update check. */
+export function updateSourceIds(sources: WireSource[]): string[] {
+	return sources
+		.filter((source) => source.capabilities?.includes(UPDATE_CHECK_CAPABILITY))
+		.map((source) => source.sourceId);
+}
+
 export function toPluginInfo(wire: WirePluginInfo): PluginInfo {
 	return {
 		id: wire.id,
@@ -111,8 +121,14 @@ export function toPluginInfo(wire: WirePluginInfo): PluginInfo {
 		repository: wire.repository || null,
 		hasSettings: wire.hasSettings,
 		sources: (wire.sources ?? []).map((source) => source.sourceId),
+		updateSources: updateSourceIds(wire.sources ?? []),
 		source: wire.source || null,
-		consent: permissionSummary(wire.permissions)
+		consent: permissionSummary(wire.permissions),
+		commands: (wire.commands ?? []).map((command) => ({
+			id: command.id,
+			label: command.label,
+			method: command.method ?? null
+		}))
 	};
 }
 
@@ -147,7 +163,8 @@ export function toPluginUpdateStatus(wire: WirePluginUpdateStatus): PluginUpdate
 		sha256: optionalText(wire.sha256),
 		notes: optionalText(wire.notes),
 		publishedAt: optionalText(wire.publishedAt),
-		error: optionalText(wire.error)
+		error: optionalText(wire.error),
+		code: optionalText(wire.code)
 	};
 }
 

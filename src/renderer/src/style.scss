@@ -21,6 +21,8 @@
 	/* Utility status color variables - theme aware */
 	--color-cleanup-rgb: 255, 102, 171;
 	--color-cleanup: rgb(var(--color-cleanup-rgb));
+	--warning-rgb: 255, 191, 0;
+	--warning: rgb(var(--warning-rgb));
 	--color-cache-rgb: 0, 240, 255;
 	--color-cache: rgb(var(--color-cache-rgb));
 	--color-drop-caches-rgb: 177, 151, 252;
@@ -99,6 +101,8 @@
 	/* Light mode utility status color variables */
 	--color-cleanup-rgb: 204, 34, 119;
 	--color-cleanup: rgb(var(--color-cleanup-rgb));
+	--warning-rgb: 160, 95, 0;
+	--warning: rgb(var(--warning-rgb));
 	--color-cache-rgb: 0, 136, 204;
 	--color-cache: rgb(var(--color-cache-rgb));
 	--color-drop-caches-rgb: 106, 64, 223;

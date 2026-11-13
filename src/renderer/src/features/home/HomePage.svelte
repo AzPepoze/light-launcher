@@ -2,14 +2,19 @@
 	import { onMount, onDestroy } from "svelte";
 	import { fade } from "svelte/transition";
 	import { cubicOut } from "svelte/easing";
-	import { navigationCommand } from "@stores/navigationStore";
+	import { navigateToSettingsSection } from "@stores/navigationStore";
+	import { GAME_FOLDERS_SECTION } from "@lib/features/settingsSection";
 	import { HomePageState } from "./state/HomePageState.svelte";
 
 	import GameGrid from "./GameGrid.svelte";
+	import HomeSkeleton from "./HomeSkeleton.svelte";
 	import AddGameModal from "./addgame/AddGameModal.svelte";
 	import QuickLaunchHeader from "./shared/QuickLaunchHeader.svelte";
 	import HowItWorksModal from "./shared/HowItWorksModal.svelte";
 	import BulkRemoveModal from "./shared/BulkRemoveModal.svelte";
+	import ProgressBar from "@components/shared/ProgressBar.svelte";
+	import EmptyState from "@components/shared/EmptyState.svelte";
+	import Button from "@components/shared/Button.svelte";
 
 	const state = new HomePageState();
 
@@ -42,25 +47,27 @@
 			onShowHelpModal={() => (state.showHelpModal = true)}
 		/>
 
-		{#if state.isLoading}
-			<div class="loading-layer" out:fade={{ duration: prefersReducedMotion ? 0 : 240, easing: cubicOut }}>
-				<div class="spinner"></div>
+		{#if state.status}
+			<div class="status-line" out:fade={{ duration: prefersReducedMotion ? 0 : 240, easing: cubicOut }}>
+				<span class="status-text">{state.status.text}</span>
+				<div class="status-bar">
+					<ProgressBar value={state.status.percent} label={state.status.text} active height={4} />
+				</div>
 			</div>
-		{:else if state.games.length === 0 && state.scannedFolderGroups.length === 0}
-			<div class="empty-state">
-				<div class="empty-icon-bg">
-					<span class="material-icons empty-icon">sports_esports</span>
-				</div>
-				<h2>Your Library is Empty</h2>
-				<p>Import your existing game profiles or create custom configurations to start launching with LSFG frame generation.</p>
-				<div class="empty-actions">
-					<button class="btn primary" on:click={() => (state.showAddModal = true)}>
-						<span class="material-icons">add</span> Add Game Profile
-					</button>
-					<button class="btn secondary" on:click={() => navigationCommand.set({ page: "run" })}>
-						<span class="material-icons">settings</span> Create Custom Config
-					</button>
-				</div>
+		{/if}
+
+		{#if state.isLoading}
+			<div class="loading-area">
+				<HomeSkeleton view={state.currentView} />
+			</div>
+		{:else if state.showEmptyState}
+			<div class="empty-area">
+				<EmptyState icon="sports_esports" title="No games yet" hint="Add a game or scan a folder to see it here.">
+					<div class="empty-actions">
+						<Button variant="primary" onclick={() => (state.showAddModal = true)}>Add game</Button>
+						<Button onclick={() => navigateToSettingsSection(GAME_FOLDERS_SECTION)}>Scan folders</Button>
+					</div>
+				</EmptyState>
 			</div>
 		{:else}
 			<GameGrid
@@ -132,133 +139,52 @@
 		overflow: hidden;
 	}
 
-	.loading-layer {
-		position: absolute;
-		inset: 0;
+	.status-line {
 		display: flex;
 		align-items: center;
-		justify-content: center;
-		pointer-events: none;
+		gap: 12px;
+		flex-shrink: 0;
+		padding: 0 20px;
 	}
 
-	.spinner {
-		width: 46px;
-		height: 46px;
-		border-radius: 50%;
-		border: 3px solid rgba(255, 255, 255, 0.08);
-		border-top-color: var(--accent-primary);
-		animation: ll-spin 0.8s linear infinite;
+	.status-text {
+		font-size: 0.85rem;
+		color: var(--text-muted);
+		white-space: nowrap;
 	}
 
-	@keyframes empty-pop {
-		0% {
-			opacity: 0;
-			transform: scale(0.7);
-		}
-		60% {
-			opacity: 1;
-			transform: scale(1.05);
-		}
-		100% {
-			opacity: 1;
-			transform: scale(1);
-		}
+	.status-bar {
+		flex: 1;
+		max-width: 260px;
 	}
 
-	@keyframes empty-rise {
-		from {
-			opacity: 0;
-			transform: translateY(10px);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
+	/* Scrolls so the placeholder grid never clips in a short window. */
+	.loading-area {
+		display: flex;
+		flex: 1;
+		min-height: 0;
+		min-width: 0;
+		max-width: 100%;
+		padding-right: 8px;
+		box-sizing: border-box;
+		overflow-y: auto;
+		overflow-x: hidden;
 	}
 
-	.empty-state {
+	/* "safe" keeps the content reachable by scrolling when the window is too short to centre it. */
+	.empty-area {
 		display: flex;
 		flex-direction: column;
-		align-items: center;
-		/* "safe" keeps the content reachable by scrolling when the window is too short to centre it. */
 		justify-content: safe center;
-		text-align: center;
 		flex: 1;
 		min-height: 0;
 		overflow-y: auto;
-		padding: 48px 24px;
-		gap: 16px;
-		background: transparent;
-		border: none;
-		box-shadow: none;
-
-		/* Without this a short window squeezes the icon into an oval and the buttons into slivers. */
-		> * {
-			flex-shrink: 0;
-		}
-
-		.empty-icon-bg {
-			width: 88px;
-			height: 88px;
-			background: rgba(255, 255, 255, 0.03);
-			border: 2px solid rgba(255, 255, 255, 0.08);
-			border-radius: 50%;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			margin-bottom: 8px;
-			box-shadow: 0 0 24px rgba(255, 255, 255, 0.02);
-			animation: empty-pop 400ms var(--ease-spring) both;
-
-			.empty-icon {
-				font-size: 44px;
-				color: var(--text-main);
-			}
-		}
-
-		h2 {
-			margin: 0;
-			font-size: 1.5rem;
-			font-weight: 800;
-			color: var(--text-main);
-			text-transform: uppercase;
-			letter-spacing: 1px;
-			opacity: 0;
-			animation: empty-rise 300ms var(--ease-out) 60ms both;
-		}
-
-		p {
-			margin: 0;
-			font-size: 0.95rem;
-			color: var(--text-muted);
-			max-width: 440px;
-			line-height: 1.6;
-			opacity: 0;
-			animation: empty-rise 300ms var(--ease-out) 120ms both;
-		}
-
-		.empty-actions {
-			display: flex;
-			gap: 16px;
-			margin-top: 12px;
-			opacity: 0;
-			animation: empty-rise 300ms var(--ease-out) 180ms both;
-
-			.btn {
-				gap: 8px;
-				padding: 12px 24px;
-			}
-		}
 	}
 
-	@media (prefers-reduced-motion: reduce) {
-		.empty-state .empty-icon-bg,
-		.empty-state h2,
-		.empty-state p,
-		.empty-state .empty-actions {
-			opacity: 1;
-			animation: none;
-			transform: none;
-		}
+	.empty-actions {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 12px;
 	}
 </style>

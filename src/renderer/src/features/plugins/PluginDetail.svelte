@@ -1,20 +1,27 @@
 <script lang="ts">
+	import Badge from "@components/shared/Badge.svelte";
+	import Button from "@components/shared/Button.svelte";
+	import Notice from "@components/shared/Notice.svelte";
+	import { notifications } from "@stores/notificationStore";
 	import { errorMessage } from "../../lib/features/rpc";
 	import { ago } from "../../lib/features/format";
 	import { pluginsApi } from "../../lib/features/pluginsApi";
 	import type { PluginInfo, PluginUpdatePreview, PluginUpdateStatus } from "../../lib/features/types";
-	import Notice from "./Notice.svelte";
 	import PluginAccounts from "./PluginAccounts.svelte";
 	import PluginConsent from "./PluginConsent.svelte";
 	import PluginIdentity from "./PluginIdentity.svelte";
 	import PluginLogs from "./PluginLogs.svelte";
 	import PluginSettings from "./PluginSettings.svelte";
+	import UnsignedBadge from "./UnsignedBadge.svelte";
 	import {
 		NO_NEW_PERMISSIONS,
 		SLEEPING_BADGE,
 		UNSIGNED_WARNING,
 		UPDATE_PERMISSION_HINT
 	} from "./pluginCopy";
+	import { UNAVAILABLE_CHECK_TEXT, checkFailureHint, isCheckFailure } from "./pluginNotices";
+
+	const NO_PACKAGE_COPY = "This release has no plugin package.";
 
 	let {
 		plugin,
@@ -31,17 +38,16 @@
 	} = $props();
 
 	let busy = $state(false);
-	let message = $state("");
 	let confirmingRemove = $state(false);
 	let pendingUpdate = $state<PluginUpdatePreview | null>(null);
+	const checkFailed = $derived(update !== null && isCheckFailure(update));
 
 	async function run(action: () => Promise<void>) {
 		busy = true;
-		message = "";
 		try {
 			await action();
 		} catch (err) {
-			message = errorMessage(err);
+			notifications.error(errorMessage(err));
 		} finally {
 			busy = false;
 		}
@@ -58,7 +64,7 @@
 		run(async () => {
 			pendingUpdate = null;
 			if (!release.assetUrl) {
-				message = "This release has no plugin package.";
+				notifications.error(NO_PACKAGE_COPY);
 				return;
 			}
 			pendingUpdate = await pluginsApi.previewUpdate(plugin, release.assetUrl, release.sha256 ?? "");
@@ -96,9 +102,7 @@
 </script>
 
 <div class="detail">
-	<button class="btn sm back" onclick={onBack}>
-		<span class="material-icons" aria-hidden="true">arrow_back</span> Plugins
-	</button>
+	<Button size="sm" icon="arrow_back" class="back" onclick={onBack}>Plugins</Button>
 
 	<header>
 		<div class="title">
@@ -114,27 +118,25 @@
 			</div>
 		</div>
 		<div class="badges">
-			<span class="badge">{plugin.enabled ? "Enabled" : "Disabled"}</span>
-			{#if plugin.idle}<span class="badge">{SLEEPING_BADGE}</span>{/if}
+			<Badge>{plugin.enabled ? "Enabled" : "Disabled"}</Badge>
+			{#if plugin.idle}<Badge icon="bedtime">{SLEEPING_BADGE}</Badge>{/if}
 			{#if !plugin.signed}
-				<span class="badge warn">Unsigned</span>
+				<UnsignedBadge />
 			{/if}
 			{#if plugin.status === "broken"}
-				<span class="badge warn">Error</span>
+				<Badge tone="danger" icon="error">Error</Badge>
 			{/if}
 			{#if update?.available}
-				<span class="badge update">Update available ({update.version})</span>
+				<Badge tone="accent">Update available ({update.version})</Badge>
 			{/if}
 		</div>
 	</header>
 
 	{#if plugin.error}
-		<p class="error" role="alert">{plugin.error}</p>
+		<Notice tone="error">{plugin.error}</Notice>
 	{/if}
 	{#if !plugin.signed}
-		<Notice icon="warning">
-			<p>{UNSIGNED_WARNING}</p>
-		</Notice>
+		<Notice tone="warning" icon="warning">{UNSIGNED_WARNING}</Notice>
 	{/if}
 
 	{#if update?.available}
@@ -148,30 +150,27 @@
 			{#if update.notes}
 				<p class="notes">{update.notes}</p>
 			{/if}
-			<button class="btn sm primary" disabled={busy} onclick={() => previewUpdate(update)}>
+			<Button variant="primary" size="sm" disabled={busy} onclick={() => previewUpdate(update)}>
 				Update to v{update.version}
-			</button>
+			</Button>
 		</section>
-	{:else if update?.error}
-		<p class="error" role="alert">Update check failed: {update.error}</p>
+	{/if}
+	{#if checkFailed && update?.error}
+		<p class="muted" title={checkFailureHint(update)}>{UNAVAILABLE_CHECK_TEXT}</p>
 	{/if}
 
 	<div class="actions">
-		<button class="btn sm" aria-pressed={plugin.enabled} disabled={busy} onclick={toggleEnabled}>
+		<Button size="sm" aria-pressed={plugin.enabled} disabled={busy} onclick={toggleEnabled}>
 			{plugin.enabled ? "Disable" : "Enable"}
-		</button>
-		<button class="btn sm" disabled={busy} onclick={rollback}>Roll back</button>
+		</Button>
+		<Button size="sm" disabled={busy} onclick={rollback}>Roll back</Button>
 		{#if confirmingRemove}
-			<button class="btn sm danger" disabled={busy} onclick={remove}>Confirm remove</button>
-			<button class="btn sm" onclick={() => (confirmingRemove = false)}>Cancel</button>
+			<Button size="sm" variant="danger" disabled={busy} onclick={remove}>Confirm remove</Button>
+			<Button size="sm" onclick={() => (confirmingRemove = false)}>Cancel</Button>
 		{:else}
-			<button class="btn sm" disabled={busy} onclick={() => (confirmingRemove = true)}>Remove</button>
+			<Button size="sm" disabled={busy} onclick={() => (confirmingRemove = true)}>Remove</Button>
 		{/if}
 	</div>
-
-	{#if message}
-		<p class="error" role="alert">{message}</p>
-	{/if}
 
 	{#if pendingUpdate}
 		{@const pending = pendingUpdate}
@@ -204,7 +203,7 @@
 		padding-bottom: 24px;
 	}
 
-	.back {
+	:global(.detail .back) {
 		align-self: flex-start;
 	}
 
@@ -240,23 +239,6 @@
 		flex-wrap: wrap;
 	}
 
-	.badge {
-		font-size: 0.75rem;
-		padding: 3px 10px;
-		border-radius: var(--radius-pill);
-		border: 1px solid var(--glass-border-bright);
-
-		&.warn {
-			border-color: var(--danger);
-			color: var(--danger);
-		}
-
-		&.update {
-			border-color: var(--accent-primary);
-			color: var(--accent-primary);
-		}
-	}
-
 	.release {
 		display: flex;
 		flex-direction: column;
@@ -287,12 +269,6 @@
 		line-height: 1.5;
 		color: var(--text-muted);
 		white-space: pre-wrap;
-	}
-
-	.error {
-		margin: 0;
-		font-size: 0.9375rem;
-		color: var(--danger);
 	}
 
 	.actions {

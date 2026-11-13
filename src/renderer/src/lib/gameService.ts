@@ -1,5 +1,6 @@
 import { SearchExecutables, SaveGameConfig, DetectLosslessDll } from "@lib/api";
 import { notifications } from "@stores/notificationStore";
+import { plainMessage } from "./plainMessage";
 import { createLaunchOptions } from "./formService";
 import { createLogger } from "./logger";
 
@@ -31,7 +32,7 @@ export async function scanFolderForExecutables(
 		}
 	} catch (error) {
 		log.error("Failed to search folder", error);
-		notifications.add(`Failed to search folder: ${error}`, "error");
+		notifications.add(`Failed to search folder: ${plainMessage(error)}`, "error");
 	}
 	return [];
 }

@@ -1,5 +1,6 @@
 import { get } from "svelte/store";
 import { notifications } from "@stores/notificationStore";
+import { plainMessage } from "@lib/plainMessage";
 import { settingsStore, type UserSettings } from "@stores/settingsStore";
 import {
 	folderInputError,
@@ -9,7 +10,9 @@ import {
 import { sectionScroll } from "@lib/features/settingsSection";
 import { createLogger } from "@lib/logger";
 import type { AppSettings, ScanFolderConfig, ScannedFolderGroup } from "@shared";
+import type { WireUpdateCheckSettings } from "@lib/features/wire";
 import * as service from "@lib/settingsService";
+import { clampLibraryCardSize } from "./libraryAppearance";
 import {
 	DEFAULT_APP_SETTINGS,
 	appSettingsWith,
@@ -23,6 +26,8 @@ import {
 
 const log = createLogger("Settings");
 const RESTART_DELAY_MS = 1500;
+/** How long a slider or switch waits after the last change before it saves. */
+const SAVE_DELAY_MS = 300;
 
 /** What the Settings page shows and the actions behind its controls. */
 export class SettingsState {
@@ -32,11 +37,12 @@ export class SettingsState {
 	saving = $state(false);
 	savingDiscordId = $state(false);
 	discordClientId = $state("");
+	private cardSizeSaveTimer: ReturnType<typeof setTimeout> | undefined;
+	private updateCheckSaveTimer: ReturnType<typeof setTimeout> | undefined;
 
 	groups = $state<ScannedFolderGroup[]>([]);
 	rescanNotes = $state<Record<string, string>>({});
 	rescanningFolder = $state<string | null>(null);
-	scanError = $state("");
 	pathInput = $state("");
 	addError = $state("");
 	adding = $state(false);
@@ -109,7 +115,43 @@ export class SettingsState {
 			notifications.success(enabled ? "Playtime tracking enabled" : "Playtime tracking disabled");
 		} catch (err) {
 			log.error("Failed to save playtime setting", err);
-			notifications.error(`Failed to save settings: ${err}`);
+			notifications.error(`Failed to save settings: ${plainMessage(err)}`);
+		}
+	}
+
+	/** Shows the new card width at once and saves it after the drag settles. */
+	setLibraryCardSize(value: number): void {
+		this.appSettings = appSettingsWith(this.appSettings, {
+			LibraryCardSize: clampLibraryCardSize(value)
+		});
+		clearTimeout(this.cardSizeSaveTimer);
+		this.cardSizeSaveTimer = setTimeout(() => void this.saveLibraryCardSize(), SAVE_DELAY_MS);
+	}
+
+	/** Shows the new update check values at once and saves them after a short pause. */
+	setUpdateChecks(next: WireUpdateCheckSettings): void {
+		this.appSettings = appSettingsWith(this.appSettings, { updateChecks: next });
+		clearTimeout(this.updateCheckSaveTimer);
+		this.updateCheckSaveTimer = setTimeout(() => void this.saveUpdateChecks(), SAVE_DELAY_MS);
+	}
+
+	/** Saves a pending update check change at once, for example when the page closes. */
+	flushUpdateChecks(): void {
+		if (this.updateCheckSaveTimer === undefined) return;
+		clearTimeout(this.updateCheckSaveTimer);
+		void this.saveUpdateChecks();
+	}
+
+	async toggleBlurCoversUntilHover(enabled: boolean): Promise<void> {
+		const next = appSettingsWith(this.appSettings, { BlurCoversUntilHover: enabled });
+		try {
+			await this.persist(next);
+			notifications.success(
+				enabled ? "Covers blur until hovered" : "Covers stay sharp"
+			);
+		} catch (err) {
+			log.error("Failed to save cover blur setting", err);
+			notifications.error(`Failed to save settings: ${plainMessage(err)}`);
 		}
 	}
 
@@ -123,7 +165,7 @@ export class SettingsState {
 			);
 		} catch (err) {
 			log.error("Failed to save Discord presence setting", err);
-			notifications.error(`Failed to save settings: ${err}`);
+			notifications.error(`Failed to save settings: ${plainMessage(err)}`);
 		}
 	}
 
@@ -142,7 +184,7 @@ export class SettingsState {
 			notifications.success("Discord Application ID saved");
 		} catch (err) {
 			log.error("Failed to save Discord client id", err);
-			notifications.error(`Failed to save settings: ${err}`);
+			notifications.error(`Failed to save settings: ${plainMessage(err)}`);
 		} finally {
 			this.savingDiscordId = false;
 		}
@@ -157,7 +199,7 @@ export class SettingsState {
 			notifications.success("Updated Wine prefix storage directory");
 		} catch (err) {
 			log.error("Failed to select prefix directory", err);
-			notifications.error(`Failed to select prefix directory: ${err}`);
+			notifications.error(`Failed to select prefix directory: ${plainMessage(err)}`);
 		}
 	}
 
@@ -170,7 +212,7 @@ export class SettingsState {
 			);
 		} catch (err) {
 			log.error("Failed to reset prefix directory", err);
-			notifications.error(`Failed to reset prefix directory: ${err}`);
+			notifications.error(`Failed to reset prefix directory: ${plainMessage(err)}`);
 		}
 	}
 
@@ -184,7 +226,7 @@ export class SettingsState {
 			await this.loadSettings(false);
 		} catch (err) {
 			log.error("Failed to restore game", err);
-			notifications.error(`Failed to restore game: ${err}`);
+			notifications.error(`Failed to restore game: ${plainMessage(err)}`);
 		}
 	}
 
@@ -195,11 +237,10 @@ export class SettingsState {
 	async loadGroups(force: boolean): Promise<boolean> {
 		try {
 			this.groups = await service.loadScannedFolders(force);
-			this.scanError = "";
 			return true;
 		} catch (err) {
 			log.error("Failed to scan game folders", err);
-			this.scanError = "Could not scan the game folders. Try again.";
+			notifications.error("Could not scan the game folders. Try again.", { source: "Settings" });
 			return false;
 		}
 	}
@@ -233,7 +274,7 @@ export class SettingsState {
 			await Promise.all([this.loadSettings(false), this.loadGroups(false)]);
 		} catch (err) {
 			log.error("Failed to add game folder", err);
-			this.addError = "Could not add this folder. Try again.";
+			notifications.error("Could not add this folder. Try again.", { source: "Settings" });
 		} finally {
 			this.adding = false;
 		}
@@ -245,7 +286,7 @@ export class SettingsState {
 			if (picked) await this.addFolder(picked);
 		} catch (err) {
 			log.error("Folder picker failed", err);
-			this.addError = "Could not open the folder picker. Type the path instead.";
+			notifications.error("Could not open the folder picker. Type the path instead.", { source: "Settings" });
 		}
 	}
 
@@ -257,7 +298,7 @@ export class SettingsState {
 			await Promise.all([this.loadSettings(false), this.loadGroups(false)]);
 		} catch (err) {
 			log.error("Failed to remove game folder", err);
-			this.scanError = "Could not remove this folder. Try again.";
+			notifications.error("Could not remove this folder. Try again.", { source: "Settings" });
 		}
 	}
 
@@ -302,6 +343,25 @@ export class SettingsState {
 			this.appSettings = next;
 		} finally {
 			this.saving = false;
+		}
+	}
+
+	private async saveUpdateChecks(): Promise<void> {
+		this.updateCheckSaveTimer = undefined;
+		try {
+			await this.persist(this.appSettings);
+		} catch (err) {
+			log.error("Failed to save update checks", err);
+			notifications.error(`Failed to save update settings: ${plainMessage(err)}`);
+		}
+	}
+
+	private async saveLibraryCardSize(): Promise<void> {
+		try {
+			await this.persist(this.appSettings);
+		} catch (err) {
+			log.error("Failed to save library card size", err);
+			notifications.error(`Failed to save settings: ${plainMessage(err)}`);
 		}
 	}
 

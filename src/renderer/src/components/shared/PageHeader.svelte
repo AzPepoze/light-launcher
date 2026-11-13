@@ -1,8 +1,21 @@
 <script lang="ts">
-	export let title: string;
-	export let subtitle: string = "";
-	export let icon: string = "";
-	export let isCustomIcon: boolean = false;
+	import type { Snippet } from "svelte";
+	import Icon from "./Icon.svelte";
+
+	let {
+		title,
+		subtitle = "",
+		icon = "",
+		isCustomIcon = false,
+		children
+	}: {
+		title: string;
+		subtitle?: string;
+		icon?: string;
+		isCustomIcon?: boolean;
+		/** Buttons and other actions shown on the right. */
+		children?: Snippet;
+	} = $props();
 </script>
 
 <div class="page-header">
@@ -10,7 +23,7 @@
 		{#if icon && isCustomIcon}
 			<img src={icon} class="header-custom-icon" alt="" />
 		{:else if icon}
-			<span class="material-icons header-icon">{icon}</span>
+			<span class="header-icon"><Icon name={icon} size={32} /></span>
 		{/if}
 		<div class="header-text">
 			<h1>{title}</h1>
@@ -20,7 +33,7 @@
 		</div>
 	</div>
 	<div class="header-actions">
-		<slot />
+		{@render children?.()}
 	</div>
 </div>
 
@@ -41,7 +54,7 @@
 	}
 
 	.header-icon {
-		font-size: 2rem;
+		display: inline-flex;
 		color: var(--accent-primary);
 		opacity: 0.8;
 	}

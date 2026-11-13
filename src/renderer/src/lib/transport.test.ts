@@ -2,10 +2,30 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 type Transport = typeof import("./transport");
 
+const memoryStorage = () => {
+	const items = new Map<string, string>();
+	return {
+		getItem: (key: string) => items.get(key) ?? null,
+		setItem: (key: string, value: string) => {
+			items.set(key, value);
+		}
+	};
+};
+
+const brokenStorage = () => ({
+	getItem: () => {
+		throw new Error("storage denied");
+	},
+	setItem: () => {
+		throw new Error("storage denied");
+	}
+});
+
 const fakeWindow = () => ({
 	location: { hash: "#t=secret", pathname: "/", search: "" },
 	history: { replaceState: vi.fn() },
 	addEventListener: vi.fn(),
+	sessionStorage: memoryStorage(),
 	llShell: undefined as undefined | Record<string, unknown>
 });
 
@@ -121,6 +141,38 @@ describe("transport", () => {
 
 			expect(headersOf(vi.mocked(fetch).mock.calls[0])["X-LL-Token"]).toBe("");
 		});
+
+		it("uses the token saved earlier when the fragment is gone", async () => {
+			win.location.hash = "";
+			win.sessionStorage.setItem("ll-token", "saved");
+			vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse({ success: true, data: 1 })));
+			const { invoke } = await loadTransport();
+
+			await invoke("GetPlatform");
+
+			expect(headersOf(vi.mocked(fetch).mock.calls[0])["X-LL-Token"]).toBe("saved");
+		});
+
+		it("replaces the saved token with a new fragment token", async () => {
+			win.sessionStorage.setItem("ll-token", "old");
+			vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse({ success: true, data: 1 })));
+			const { invoke } = await loadTransport();
+
+			await invoke("GetPlatform");
+
+			expect(headersOf(vi.mocked(fetch).mock.calls[0])["X-LL-Token"]).toBe("secret");
+			expect(win.sessionStorage.getItem("ll-token")).toBe("secret");
+		});
+
+		it("uses the fragment token when session storage throws", async () => {
+			win.sessionStorage = brokenStorage();
+			vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse({ success: true, data: 1 })));
+			const { invoke } = await loadTransport();
+
+			await invoke("GetPlatform");
+
+			expect(headersOf(vi.mocked(fetch).mock.calls[0])["X-LL-Token"]).toBe("secret");
+		});
 	});
 
 	describe("invoke", () => {
@@ -160,6 +212,21 @@ describe("transport", () => {
 			const { invoke } = await loadTransport();
 
 			await expect(invoke("CreatePrefix", { name: "x" })).rejects.toThrow("prefix exists");
+		});
+
+		it("keeps the stable error code on InvokeError", async () => {
+			vi.stubGlobal(
+				"fetch",
+				vi.fn().mockResolvedValue(
+					jsonResponse({ success: false, error: "unknown method X", code: "method_not_found" })
+				)
+			);
+			const { invoke, InvokeError, isMethodNotFound } = await loadTransport();
+
+			const error = await invoke("X").catch((err: unknown) => err);
+			expect(error).toBeInstanceOf(InvokeError);
+			expect((error as InstanceType<typeof InvokeError>).code).toBe("method_not_found");
+			expect(isMethodNotFound(error)).toBe(true);
 		});
 
 		it("throws a fallback message when the failure has no error text", async () => {

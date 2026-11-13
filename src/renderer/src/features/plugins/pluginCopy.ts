@@ -28,11 +28,15 @@ export const CHECKING_UPDATES_LABEL = "Checking...";
 
 export const SLEEPING_BADGE = "Sleeping";
 
+export const UNSIGNED_BADGE = "Unsigned";
+
+export const UNSIGNED_TOOLTIP = "This plugin is not signed by its author";
+
 export const STATUS_COPY: Record<PluginStatusKind, string> = {
 	error: "Error",
 	disabled: "Disabled",
 	sleeping: SLEEPING_BADGE,
-	unsigned: "Unsigned",
+	unsigned: UNSIGNED_BADGE,
 	enabled: "Enabled"
 };
 
@@ -45,8 +49,6 @@ export const CHOOSE_FILE_LABEL = "Choose files";
 export const CHOOSE_FOLDER_LABEL = "Choose folder";
 
 export const UPLOADING_TEXT = "Uploading plugin...";
-
-export const DISMISS_LABEL = "Dismiss";
 
 export const SKIPPED_HEADING = "These items were skipped:";
 

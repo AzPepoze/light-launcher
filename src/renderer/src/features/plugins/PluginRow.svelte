@@ -1,8 +1,12 @@
 <script lang="ts">
+	import Badge from "@components/shared/Badge.svelte";
+	import Icon from "@components/shared/Icon.svelte";
 	import { pluginStatusKind } from "../../lib/features/pluginStatus";
 	import type { PluginInfo, PluginUpdateStatus } from "../../lib/features/types";
 	import PluginIdentity from "./PluginIdentity.svelte";
+	import UnsignedBadge from "./UnsignedBadge.svelte";
 	import { STATUS_COPY } from "./pluginCopy";
+	import { UNAVAILABLE_CHECK_TEXT, checkFailureHint, isCheckFailure } from "./pluginNotices";
 
 	let {
 		plugin,
@@ -15,9 +19,8 @@
 	} = $props();
 
 	const status = $derived(pluginStatusKind(plugin));
-	const alarming = $derived(status === "error" || status === "unsigned");
 	const dimmed = $derived(status === "sleeping" || status === "disabled");
-	const statusIcon = $derived(status === "sleeping" ? "bedtime" : "");
+	const checkFailed = $derived(update !== null && isCheckFailure(update));
 </script>
 
 <button class="row" onclick={onOpen}>
@@ -27,12 +30,21 @@
 			<span class="name">{plugin.name}</span>
 			<span class="version">v{plugin.version}</span>
 		</span>
-		<span class="status" class:alarming class:dimmed>
-			{#if statusIcon}
-				<span class="material-icons" aria-hidden="true">{statusIcon}</span>
+		<span class="status" class:dimmed>
+			{#if status === "unsigned"}
+				<UnsignedBadge />
+			{:else if status === "error"}
+				<Badge tone="danger" icon="error">{STATUS_COPY[status]}</Badge>
+			{:else}
+				{#if status === "sleeping"}
+					<Icon name="bedtime" size={16} />
+				{/if}
+				{STATUS_COPY[status]}
 			{/if}
-			{STATUS_COPY[status]}
 		</span>
+		{#if checkFailed && update?.error}
+			<span class="unavailable" title={checkFailureHint(update.error)}>{UNAVAILABLE_CHECK_TEXT}</span>
+		{/if}
 	</span>
 	{#if update?.available}
 		<span class="update">Update {update.version}</span>
@@ -100,17 +112,14 @@
 		font-size: 0.875rem;
 		color: var(--text-muted);
 
-		.material-icons {
-			font-size: 1rem;
-		}
-
-		&.alarming {
-			color: var(--danger);
-		}
-
 		&.dimmed {
 			opacity: 0.8;
 		}
+	}
+
+	.unavailable {
+		font-size: 0.8125rem;
+		color: var(--text-dim);
 	}
 
 	.update {

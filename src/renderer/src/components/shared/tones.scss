@@ -1,0 +1,20 @@
+// Tone colors for Notice, Badge and ProgressBar.
+$tones: (
+	neutral: var(--text-muted),
+	accent: var(--accent-primary),
+	info: var(--accent-primary),
+	success: var(--success),
+	warning: var(--warning),
+	danger: var(--danger),
+	error: var(--danger),
+	muted: var(--text-dim)
+);
+
+// Sets --tone on an element with a tone class, such as .notice.warning.
+@mixin tone-classes {
+	@each $name, $color in $tones {
+		&.#{$name} {
+			--tone: #{$color};
+		}
+	}
+}

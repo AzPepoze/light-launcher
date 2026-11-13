@@ -14,6 +14,9 @@
 	import { loadLsfgResources, createLaunchOptions } from "@lib/formService";
 	import { createLogger } from "@lib/logger";
 	import { notifications } from "@stores/notificationStore";
+	import { plainMessage } from "@lib/plainMessage";
+	import Button from "@components/shared/Button.svelte";
+	import Notice from "@components/shared/Notice.svelte";
 
 	const log = createLogger("EditLsfg");
 
@@ -27,7 +30,9 @@
 	let saving = false;
 	let disabling = false;
 
-	onMount(async () => {
+	async function load() {
+		loading = true;
+		error = "";
 		try {
 			const currentGamePath = gamePath || (await GetInitialGamePath());
 
@@ -65,10 +70,13 @@
 
 			loading = false;
 		} catch (err) {
-			error = String(err);
+			log.error("Failed to load LSFG profile", err);
+			error = plainMessage(err, "Could not load the LSFG profile.");
 			loading = false;
 		}
-	});
+	}
+
+	onMount(load);
 
 	async function handleApply() {
 		saving = true;
@@ -87,7 +95,7 @@
 			);
 			notifications.success("Configuration saved successfully!");
 		} catch (err) {
-			notifications.error(`Failed to save configuration: ${err}`);
+			notifications.error(`Failed to save configuration: ${plainMessage(err)}`);
 		} finally {
 			saving = false;
 		}
@@ -99,7 +107,7 @@
 			await DisableLsfgProfile(options.Name, options.GamePath);
 			notifications.success("LSFG profile disabled in global config.");
 		} catch (err) {
-			notifications.error(`Failed to disable profile: ${err}`);
+			notifications.error(`Failed to disable profile: ${plainMessage(err)}`);
 		} finally {
 			disabling = false;
 		}
@@ -142,7 +150,10 @@
 		showDone={false}
 	>
 		<div class="error-container">
-			<p>Error loading profile: {error}</p>
+			<Notice tone="error" icon="error">
+				<p>{error}</p>
+			</Notice>
+			<Button variant="secondary" icon="refresh" onclick={load}>Try again</Button>
 		</div>
 		<div slot="footer">
 			<button class="btn secondary" on:click={handleClose}
@@ -194,8 +205,7 @@
 {/if}
 
 <style lang="scss">
-	.loading-container,
-	.error-container {
+	.loading-container {
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -209,8 +219,19 @@
 		}
 	}
 
-	.error-container p {
-		color: var(--danger);
+	.error-container {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 16px;
+		min-height: 400px;
+		max-width: 480px;
+		margin: 0 auto;
+
+		p {
+			margin: 0;
+		}
 	}
 
 	.modal-content {

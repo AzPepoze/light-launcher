@@ -1,35 +1,32 @@
 <script lang="ts">
-	import { errorMessage } from "../../lib/features/rpc";
+	import Button from "@components/shared/Button.svelte";
+	import { notifications } from "@stores/notificationStore";
 	import { libraryApi } from "../../lib/features/libraryApi";
 	import type { Game } from "../../lib/features/types";
+	import { libraryErrorMessage } from "./libraryError";
 
 	let { game, onChanged }: { game: Game; onChanged: (game: Game) => void } = $props();
 
 	let sourceUrl = $state("");
-	let message = $state("");
 	let linking = $state(false);
 	let folderPath = $state("");
 	let showFolderField = $state(false);
 	let linkingFolder = $state(false);
-	let folderMessage = $state("");
-	let folderError = $state("");
 
 	async function linkFolder(path: string) {
 		const folder = path.trim();
 		if (!folder) {
-			folderError = "Enter a folder path.";
+			notifications.error("Enter a folder path.");
 			return;
 		}
 		linkingFolder = true;
-		folderError = "";
-		folderMessage = "";
 		try {
 			onChanged(await libraryApi.linkFolder(game.id, folder));
-			folderMessage = "Linked folder.";
+			notifications.success("Linked folder.");
 			folderPath = "";
 			showFolderField = false;
 		} catch (err) {
-			folderError = errorMessage(err);
+			notifications.error(libraryErrorMessage(err));
 		} finally {
 			linkingFolder = false;
 		}
@@ -41,13 +38,11 @@
 			showFolderField = true;
 			return;
 		}
-		folderError = "";
-		folderMessage = "";
 		try {
 			const picked = await shell.pickFolder();
 			if (picked) await linkFolder(picked);
 		} catch (err) {
-			folderError = errorMessage(err);
+			notifications.error(libraryErrorMessage(err));
 		}
 	}
 
@@ -55,13 +50,12 @@
 		const url = sourceUrl.trim();
 		if (!url) return;
 		linking = true;
-		message = "";
 		try {
 			onChanged(await libraryApi.linkSource(game.id, url));
-			message = "Linked to the source page.";
+			notifications.success("Linked to the source page.");
 			sourceUrl = "";
 		} catch (err) {
-			message = errorMessage(err);
+			notifications.error(libraryErrorMessage(err));
 		} finally {
 			linking = false;
 		}
@@ -78,7 +72,7 @@
 	{/if}
 
 	<div class="link">
-		<button class="btn sm" disabled={linkingFolder} onclick={pickFolder}>Link folder</button>
+		<Button size="sm" disabled={linkingFolder} onclick={pickFolder}>Link folder</Button>
 		{#if showFolderField}
 			<input
 				class="input"
@@ -87,30 +81,18 @@
 				aria-label="Game folder"
 				onkeydown={(event) => event.key === "Enter" && linkFolder(folderPath)}
 			/>
-			<button class="btn sm" disabled={linkingFolder} onclick={() => linkFolder(folderPath)}>
-				Link
-			</button>
-			<button class="btn sm" onclick={() => (showFolderField = false)}>Cancel</button>
+			<Button size="sm" disabled={linkingFolder} onclick={() => linkFolder(folderPath)}>Link</Button>
+			<Button size="sm" onclick={() => (showFolderField = false)}>Cancel</Button>
 		{/if}
 	</div>
-
-	{#if folderError}
-		<p class="error" role="alert">{folderError}</p>
-	{:else if folderMessage}
-		<p class="muted" role="status">{folderMessage}</p>
-	{/if}
 
 	<div class="link">
 		<label class="source-field">
 			<span>Link a source page</span>
 			<input class="input" type="url" bind:value={sourceUrl} placeholder="https://..." />
 		</label>
-		<button class="btn sm" disabled={!sourceUrl.trim() || linking} onclick={linkSource}>Link</button>
+		<Button size="sm" disabled={!sourceUrl.trim() || linking} onclick={linkSource}>Link</Button>
 	</div>
-
-	{#if message}
-		<p class="muted" role="status">{message}</p>
-	{/if}
 </section>
 
 <style lang="scss">
@@ -140,11 +122,6 @@
 
 	.muted {
 		color: var(--text-muted);
-		font-size: 0.875rem;
-	}
-
-	.error {
-		color: var(--danger);
 		font-size: 0.875rem;
 	}
 

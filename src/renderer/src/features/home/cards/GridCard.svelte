@@ -2,6 +2,7 @@
 	import CardRunningIndicator from "./shared/CardRunningIndicator.svelte";
 	import CardSelectionCheckbox from "./shared/CardSelectionCheckbox.svelte";
 	import AnimatedPlayIcon from "./shared/AnimatedPlayIcon.svelte";
+	import Marquee from "@components/shared/Marquee.svelte";
 	import LauncherMenu from "../shared/LauncherMenu.svelte";
 	import { getDominantColor } from "@lib/dominantColor";
 	import { iconFade } from "@lib/iconReveal";
@@ -51,6 +52,11 @@
 
 	function handleConfigure() {
 		onConfigure(game);
+	}
+
+	// Keeps clicks and keys on the card actions from reaching the icon's launch handler.
+	function stopPropagation(event: Event) {
+		event.stopPropagation();
 	}
 
 	function scheduleFrame() {
@@ -131,6 +137,7 @@
 					src={icon}
 					alt=""
 					class="game-icon"
+					loading="lazy"
 					decoding="async"
 					draggable="false"
 				/>
@@ -147,23 +154,31 @@
 				</span>
 			{/if}
 		</div>
-	</div>
 
-	<!-- svelte-ignore a11y_click_events_have_key_events -->
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div class="card-info" on:click={handleLaunch}>
-		<span class="game-name" title={game.name}>{game.name}</span>
-		<div class="card-actions">
-			<LauncherMenu {game} onChoose={onChooseLauncher} placement="top" />
-			<button
-				class="config-btn"
-				type="button"
-				title="Configure"
-				aria-label="Configure {game.name}"
-				on:click|stopPropagation={handleConfigure}
-			>
-				<span class="material-icons">settings</span>
-			</button>
+		<div class="card-overlay">
+			<Marquee
+				text={game.name}
+				title={game.name}
+				class="game-name"
+				viewportClass="name-viewport"
+			/>
+			<div class="card-actions">
+				<button
+					class="config-btn"
+					type="button"
+					title="Configure"
+					aria-label="Configure {game.name}"
+					on:click|stopPropagation={handleConfigure}
+				>
+					<span class="material-icons">settings</span>
+				</button>
+			</div>
+		</div>
+
+		<!-- svelte-ignore a11y_click_events_have_key_events -->
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div class="launcher-slot" on:click={stopPropagation} on:keydown={stopPropagation}>
+			<LauncherMenu {game} onChoose={onChooseLauncher} />
 		</div>
 	</div>
 </div>
@@ -171,34 +186,14 @@
 <style lang="scss">
 	.game-card {
 		--card-pad: 8px;
-		--glow-spread: 6px;
 		position: relative;
-		// 6px margins plus the glow must fit the grid cell, or the paint containment clips them.
-		width: calc(100% - 12px);
+		width: 100%;
 		max-width: 190px;
-		margin: 6px;
 		padding: var(--card-pad);
 		--mx: 50%;
 		--my: 50%;
 		--spotlight-rgb: 255, 255, 255;
 		transition: transform var(--motion-base) var(--ease-out);
-
-		// Inside the card box: content-visibility clips paint outside it.
-		&::before {
-			content: "";
-			position: absolute;
-			inset: calc(var(--glow-spread) * -1);
-			border-radius: calc(var(--radius-lg) + var(--glow-spread));
-			background: radial-gradient(
-				circle closest-side,
-				rgba(var(--spotlight-rgb), 0.32) 86%,
-				rgba(var(--spotlight-rgb), 0.14) 94%,
-				rgba(var(--spotlight-rgb), 0) 100%
-			);
-			opacity: 0.55;
-			transition: opacity var(--motion-base) var(--ease-out);
-			pointer-events: none;
-		}
 
 		&.selected {
 			.game-icon-container {
@@ -211,16 +206,9 @@
 		&:focus-within {
 			transform: translateY(-4px) scale(1.015);
 
-			&::before {
-				opacity: 1;
-			}
-
 			.game-icon-container {
 				border-color: rgba(var(--spotlight-rgb), 0.32);
-
-				&::before {
-					opacity: 1;
-				}
+				box-shadow: 0 0 16px rgba(var(--spotlight-rgb), 0.35);
 
 				.play-overlay {
 					opacity: 1;
@@ -232,7 +220,8 @@
 				}
 			}
 
-			.card-info {
+			.card-overlay,
+			.launcher-slot {
 				opacity: 1;
 				transform: none;
 				pointer-events: auto;
@@ -248,16 +237,8 @@
 		&.selection-mode:focus-within {
 			transform: none;
 
-			&::before {
-				opacity: 0.55;
-			}
-
 			.game-icon-container {
 				border-color: var(--accent-primary);
-
-				&::before {
-					opacity: 0 !important;
-				}
 
 				.play-overlay {
 					opacity: 0 !important;
@@ -289,18 +270,8 @@
 		&.running {
 			.game-icon-container {
 				border-color: var(--success, #44ffaa);
-				box-shadow:
-					0 0 10px rgba(68, 255, 170, 0.3),
-					0 2px 8px rgba(0, 0, 0, 0.35);
-
-				&::before {
-					opacity: 0.06;
-				}
+				animation: running-breathe 2.4s ease-in-out infinite;
 			}
-		}
-
-		&.running:hover .game-icon-container::before {
-			opacity: 0.06;
 		}
 	}
 
@@ -314,7 +285,6 @@
 		justify-content: center;
 		position: relative;
 		cursor: pointer;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 		transition: border-color var(--motion-base) var(--ease-out);
 		z-index: 1;
 		overflow: hidden;
@@ -324,21 +294,6 @@
 			outline-offset: 3px;
 		}
 
-		&::before {
-			content: "";
-			position: absolute;
-			inset: 0;
-			background: radial-gradient(
-				420px circle at var(--mx) var(--my),
-				rgba(var(--spotlight-rgb), 0.15),
-				transparent 42%
-			);
-			opacity: 0;
-			transition: opacity var(--transition-fast);
-			z-index: 4;
-			pointer-events: none;
-			border-radius: inherit;
-		}
 	}
 
 	.icon-wrapper {
@@ -409,6 +364,16 @@
 		}
 	}
 
+	@keyframes running-breathe {
+		0%,
+		100% {
+			box-shadow: 0 0 6px rgba(68, 255, 170, 0.15);
+		}
+		50% {
+			box-shadow: 0 0 16px rgba(68, 255, 170, 0.4);
+		}
+	}
+
 	.play-overlay {
 		position: absolute;
 		inset: 0;
@@ -461,51 +426,47 @@
 		transform: scale(0.92);
 	}
 
-	.card-info {
+	// Name and settings bar over the icon's bottom edge. Shown on hover.
+	.card-overlay {
 		position: absolute;
-		left: var(--card-pad);
-		right: var(--card-pad);
-		bottom: var(--card-pad);
-		z-index: 5;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		z-index: 4;
 		display: flex;
-		flex-direction: column;
+		align-items: center;
 		gap: 6px;
-		padding: 22px 8px 8px;
-		border-radius: 0 0 calc(var(--radius-lg) - 2px) calc(var(--radius-lg) - 2px);
-		background: linear-gradient(
-			to top,
-			rgba(var(--bg-base-rgb), 0.92) 0%,
-			rgba(var(--bg-base-rgb), 0.7) 55%,
-			rgba(var(--bg-base-rgb), 0) 100%
-		);
+		padding: 18px 8px 8px 10px;
+		background: linear-gradient(to top, rgba(0, 0, 0, 0.75), transparent);
 		opacity: 0;
 		transform: translateY(8px);
 		transition:
-			opacity var(--motion-base) var(--ease-out),
-			transform var(--motion-base) var(--ease-out);
+			opacity var(--motion-quick) var(--ease-out),
+			transform var(--motion-quick) var(--ease-out);
 		pointer-events: none;
 
-		.game-name {
+		:global(.name-viewport) {
+			flex: 1;
+		}
+
+		:global(.game-name) {
+			display: inline-block;
 			font-size: 0.9rem;
 			font-weight: 800;
 			letter-spacing: -0.2px;
 			line-height: 1.2;
 			color: var(--text-main);
-			white-space: nowrap;
-			overflow: hidden;
-			text-overflow: ellipsis;
 		}
 	}
 
 	.card-actions {
 		display: flex;
 		align-items: center;
-		gap: 8px;
+		justify-content: flex-end;
 		min-width: 0;
 	}
 
 	.config-btn {
-		margin-left: auto;
 		flex-shrink: 0;
 		width: 28px;
 		height: 28px;
@@ -539,9 +500,21 @@
 		}
 	}
 
-	// No hover: the overlay is the only place the name and settings live.
+	// Launcher pill at the icon's top right. Shown on hover or touch.
+	.launcher-slot {
+		position: absolute;
+		top: 6px;
+		right: 6px;
+		z-index: 5;
+		opacity: 0;
+		transition: opacity var(--motion-base) var(--ease-out);
+		pointer-events: none;
+	}
+
+	// No hover: show the settings button without hover.
 	@media (hover: none) {
-		.card-info {
+		.card-overlay,
+		.launcher-slot {
 			opacity: 1;
 			transform: none;
 			pointer-events: auto;
@@ -556,12 +529,15 @@
 				transform: none;
 			}
 
-			&::before {
-				transition: none;
-			}
 		}
 
-		.card-info {
+		.game-card.running .game-icon-container {
+			animation: none;
+			box-shadow: 0 0 10px rgba(68, 255, 170, 0.3);
+		}
+
+		.card-overlay,
+		.launcher-slot {
 			transform: none;
 			transition: none;
 		}

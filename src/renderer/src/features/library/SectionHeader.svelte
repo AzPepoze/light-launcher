@@ -6,32 +6,21 @@
 		label,
 		count,
 		isPlugin,
-		syncing,
-		progress,
-		onSync
+		progress
 	}: {
 		label: string;
 		count: number;
-		/** Plugin sections can be synced from their source. */
+		/** Plugin sections report their sync progress here. */
 		isPlugin: boolean;
-		syncing: boolean;
 		progress: LibrarySyncProgress | undefined;
-		onSync: () => void;
 	} = $props();
 
 	const countText = $derived(count === 1 ? "1 game" : `${count} games`);
 </script>
 
 <header class="header">
-	<div class="title">
-		<h2>{label}</h2>
-		<p class="count">{countText}</p>
-	</div>
-	{#if isPlugin}
-		<button class="btn sm" disabled={syncing} onclick={onSync}>
-			{syncing ? "Syncing..." : "Sync now"}
-		</button>
-	{/if}
+	<h2>{label}</h2>
+	<p class="count">{countText}</p>
 </header>
 <p class="sync" class:failed={progress?.phase === "error"} role="status">
 	{#if isPlugin && progress}{syncMessage(progress)}{/if}
@@ -41,17 +30,9 @@
 	.header {
 		display: flex;
 		flex-wrap: wrap;
-		align-items: center;
-		justify-content: space-between;
-		gap: 12px;
-		margin-bottom: 4px;
-	}
-
-	.title {
-		display: flex;
 		align-items: baseline;
 		gap: 12px;
-		min-width: 0;
+		margin-bottom: 4px;
 	}
 
 	h2 {

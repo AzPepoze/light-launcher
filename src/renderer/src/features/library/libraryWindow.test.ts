@@ -1,6 +1,4 @@
 import { describe, expect, it } from "vitest";
-import type { TileShape } from "./sourceTileShape";
-import { tileShapeFor } from "./sourceTileShape";
 import {
 	MAX_RENDERED_TILES,
 	PAGE_SIZE,
@@ -12,10 +10,13 @@ import {
 	type GridLayout
 } from "./libraryWindow";
 
-const POSTER: TileShape = tileShapeFor("poster");
+/** A 3:4 cover with 140 px columns, the same as the default card size before the setting. */
+const POSTER = { ratio: 3 / 4, minColumnPx: 140 };
+const WIDE = { ratio: 16 / 9, minColumnPx: 240 };
+const SQUARE = { ratio: 1, minColumnPx: 140 };
 
 /** A 1000 px wide poster grid: six columns of 155 px. */
-const WIDE_POSTER = gridLayout(1000, POSTER);
+const WIDE_POSTER = gridLayout(1000, POSTER.ratio, POSTER.minColumnPx);
 
 function windowAt(total: number, layout: GridLayout, scrollTop: number, viewportHeight: number) {
 	return gridWindow({ total, layout, scrollTop, viewportHeight });
@@ -24,23 +25,29 @@ function windowAt(total: number, layout: GridLayout, scrollTop: number, viewport
 describe("gridLayout", () => {
 	it("fits as many columns as the minimum width allows", () => {
 		expect(WIDE_POSTER.columns).toBe(6);
-		expect(WIDE_POSTER.tileWidth).toBeCloseTo(155);
+		// Six columns share the width minus five 12 px gaps.
+		expect(WIDE_POSTER.tileWidth).toBeCloseTo(940 / 6);
 	});
 
 	it("uses one column on a narrow grid", () => {
-		expect(gridLayout(100, POSTER).columns).toBe(1);
+		expect(gridLayout(100, POSTER.ratio, POSTER.minColumnPx).columns).toBe(1);
 	});
 
-	it("uses the tile ratio for the row height", () => {
-		const wide = gridLayout(1000, tileShapeFor("wide"));
-		expect(wide.columns).toBe(3);
-		// Cover 324 px wide at 16:9 is 182.25 px high; 56 px of text and 18 px of gap follow.
-		expect(wide.rowHeight).toBeCloseTo(256.25);
+	it("uses the cover ratio for the row height", () => {
+		const wide = gridLayout(1000, WIDE.ratio, WIDE.minColumnPx);
+		expect(wide.columns).toBe(4);
+		// Four 241 px covers at 16:9 are 135.6 px high; the tile is the cover, then 12 px of gap.
+		expect(wide.rowHeight).toBeCloseTo(147.5625);
+	});
+
+	it("uses the minimum column width from the card size setting", () => {
+		expect(gridLayout(1000, SQUARE.ratio, 260).columns).toBe(3);
+		expect(gridLayout(1000, SQUARE.ratio, 100).columns).toBe(9);
 	});
 
 	it("changes the layout when the width changes", () => {
-		expect(gridLayout(400, POSTER).columns).toBe(2);
-		expect(gridLayout(1400, POSTER).columns).toBe(9);
+		expect(gridLayout(400, POSTER.ratio, POSTER.minColumnPx).columns).toBe(2);
+		expect(gridLayout(1400, POSTER.ratio, POSTER.minColumnPx).columns).toBe(9);
 	});
 });
 
@@ -86,7 +93,7 @@ describe("gridWindow", () => {
 	});
 
 	it("re-lays out a narrower grid with fewer columns and starts on a row edge", () => {
-		const narrow = gridLayout(400, POSTER);
+		const narrow = gridLayout(400, POSTER.ratio, POSTER.minColumnPx);
 		const result = windowAt(50_000, narrow, 2000, 900);
 		expect(result.start % narrow.columns).toBe(0);
 	});
@@ -99,7 +106,7 @@ describe("gridWindow", () => {
 	});
 
 	it("ends a partly filled last row at the last item, not at the row edge", () => {
-		const layout = gridLayout(1000, POSTER);
+		const layout = gridLayout(1000, POSTER.ratio, POSTER.minColumnPx);
 		const result = windowAt(7, { ...layout, columns: 3 }, 0, 2000);
 		expect(result.end).toBe(7);
 	});
@@ -118,8 +125,8 @@ describe("gridWindow", () => {
 		const viewports = [0, 900, 3000];
 		const scrolls = [0, 1000, 250_000, 2_000_000, 9_000_000];
 		for (const width of widths) {
-			for (const shape of ["poster", "wide", "square"] as const) {
-				const layout = gridLayout(width, tileShapeFor(shape));
+			for (const card of [POSTER, WIDE, SQUARE]) {
+				const layout = gridLayout(width, card.ratio, card.minColumnPx);
 				for (const viewportHeight of viewports) {
 					for (const scrollTop of scrolls) {
 						const result = gridWindow({

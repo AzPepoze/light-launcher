@@ -33,15 +33,32 @@ function makeWire(overrides: Partial<WirePluginInfo> = {}): WirePluginInfo {
 		unsigned: false,
 		permissions: NO_PERMISSIONS,
 		sources: [
-			{ plugin: "com.example.store", sourceId: "example", label: "Example", capabilities: [] }
+			{ plugin: "com.example.store", sourceId: "example", label: "Example", capabilities: [], cover: "3:4" }
 		],
 		author: "Ada",
 		description: "Finds games.",
 		homepage: "https://example.test",
 		hasSettings: false,
+		commands: [],
 		...overrides
 	};
 }
+describe("toPluginInfo update sources", () => {
+	it("lists only the sources with the update check capability", () => {
+		const info = toPluginInfo(
+			makeWire({
+				sources: [
+					{ plugin: "com.example.store", sourceId: "sample", label: "Sample", capabilities: ["browse", "updateCheck"], cover: "3:4" },
+					{ plugin: "com.example.store", sourceId: "example", label: "Example", capabilities: ["browse"], cover: "3:4" },
+					{ plugin: "com.example.store", sourceId: "empty", label: "Empty", capabilities: null, cover: "3:4" }
+				]
+			})
+		);
+		expect(info.sources).toEqual(["sample", "example", "empty"]);
+		expect(info.updateSources).toEqual(["sample"]);
+	});
+});
+
 describe("consentLines", () => {
 	it("groups the network entries into site lines and keeps the other lines", () => {
 		expect(
@@ -151,8 +168,10 @@ describe("toPluginInfo", () => {
 			repository: null,
 			hasSettings: false,
 			sources: ["example"],
+			updateSources: [],
 			source: null,
-			consent: []
+			consent: [],
+			commands: []
 		});
 	});
 
@@ -312,7 +331,8 @@ describe("toPluginUpdatesStatus", () => {
 			sha256: "abc",
 			notes: "<b>Fixes</b> a bug.",
 			publishedAt: "2026-02-01T10:00:00Z",
-			error: null
+			error: null,
+			code: null
 		});
 	});
 

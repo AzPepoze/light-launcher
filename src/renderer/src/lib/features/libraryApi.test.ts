@@ -8,6 +8,7 @@ import type {
 	WireGame,
 	WireLibraryList,
 	WireLibraryOverview,
+	WireUpdateStatus,
 	WireUpdatesSummary
 } from "./wire";
 
@@ -89,7 +90,7 @@ describe("libraryApi.overview", () => {
 	it("reads the overview once, with the source tile shapes", async () => {
 		answerWith({
 			LibraryOverview: {
-				sources: [{ id: "f95", label: "F95 Zone", count: 5, tile: "wide" }],
+				sources: [{ id: "f95", label: "F95 Zone", kind: "plugin", plugin: "f95", capabilities: ["updateCheck"], sync: false, updateCheck: true, count: 5, tile: "wide", cover: "16:9", actions: [], card: null }],
 				tags: [],
 				stats: { total: 5, installed: 0, updates: 0, bytes: 0, playtime: 0 }
 			} satisfies WireLibraryOverview
@@ -100,7 +101,7 @@ describe("libraryApi.overview", () => {
 		expect(rpcMock).toHaveBeenCalledTimes(1);
 		expect(rpcMock).toHaveBeenCalledWith("LibraryOverview");
 		expect(overview.sources).toEqual([
-			{ source: "f95", label: "F95 Zone", count: 5, tile: "wide", sidebar: [] }
+			{ source: "f95", label: "F95 Zone", kind: "plugin", plugin: "f95", capabilities: ["updateCheck"], sync: false, updateCheck: true, count: 5, tile: "wide", cover: "16:9", actions: [], card: null, sidebar: [] }
 		]);
 	});
 });
@@ -203,6 +204,107 @@ describe("libraryApi.syncSource", () => {
 		rpcMock.mockRejectedValue(new Error("sync already running"));
 
 		await expect(libraryApi.syncSource("f95")).rejects.toThrow("sync already running");
+	});
+});
+
+describe("libraryApi.runAction", () => {
+	beforeEach(() => {
+		rpcMock.mockReset();
+	});
+
+	it("sends a library action with a null game", async () => {
+		answerWith({ LibraryRunAction: { message: "Synced", refresh: true } });
+
+		const result = await libraryApi.runAction("f95", "sync");
+
+		expect(rpcMock).toHaveBeenCalledWith("LibraryRunAction", { source: "f95", action: "sync", gameId: null });
+		expect(result).toEqual({ message: "Synced", refresh: true });
+	});
+
+	it("sends the game id for a game action", async () => {
+		answerWith({ LibraryRunAction: { message: "Opened", refresh: false } });
+
+		await libraryApi.runAction("f95", "open", 7);
+
+		expect(rpcMock).toHaveBeenCalledWith("LibraryRunAction", { source: "f95", action: "open", gameId: 7 });
+	});
+
+	it("passes the plugin error on", async () => {
+		rpcMock.mockRejectedValue(new Error("login expired"));
+
+		await expect(libraryApi.runAction("f95", "sync")).rejects.toThrow("login expired");
+	});
+});
+
+describe("libraryApi.updateHistory", () => {
+	beforeEach(() => {
+		rpcMock.mockReset();
+	});
+
+	it("sends no result filter unless one is asked for", async () => {
+		answerWith({ LibraryUpdateHistory: [] });
+
+		await libraryApi.updateHistory();
+
+		expect(rpcMock).toHaveBeenCalledWith("LibraryUpdateHistory", {
+			gameId: 0,
+			limit: 50,
+			before: 0,
+			result: "",
+			source: ""
+		});
+	});
+
+	it("sends the result filter and maps the cover of each entry", async () => {
+		answerWith({
+			LibraryUpdateHistory: [
+				{
+					id: 12,
+					gameId: 4,
+					title: "Dust",
+					checkedAt: "2026-03-01T10:00:00Z",
+					from: "1",
+					to: "2",
+					result: "update",
+					error: null,
+					coverPath: "covers/dust.jpg",
+					coverUrl: "https://example.test/dust.jpg"
+				}
+			]
+		});
+
+		const entries = await libraryApi.updateHistory({ result: "update", limit: 10 });
+
+		expect(rpcMock).toHaveBeenCalledWith(
+			"LibraryUpdateHistory",
+			expect.objectContaining({ limit: 10, result: "update" })
+		);
+		expect(entries[0]).toMatchObject({ coverPath: "covers/dust.jpg", coverUrl: "https://example.test/dust.jpg" });
+	});
+});
+
+describe("libraryApi.updateStatus", () => {
+	beforeEach(() => {
+		rpcMock.mockReset();
+	});
+
+	it("reads the status once and never starts a check", async () => {
+		answerWith({
+			LibraryUpdateStatus: {
+				lastCheckedAt: "2026-03-01T10:00:00Z",
+				running: false,
+				progress: null,
+				count: 1,
+				nextRunAt: "2026-03-02T10:00:00Z",
+				games: [wireGame(3, true)]
+			} satisfies WireUpdateStatus
+		});
+
+		const status = await libraryApi.updateStatus();
+
+		expect(rpcMock.mock.calls.map((call) => call[0])).toEqual(["LibraryUpdateStatus"]);
+		expect(status.count).toBe(1);
+		expect(status.games[0]).toMatchObject({ id: 3, updateAvailable: true });
 	});
 });
 

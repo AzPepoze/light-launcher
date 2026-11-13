@@ -46,7 +46,13 @@ function makeGame(id: number): Game {
 		playtimeS: 0,
 		lastPlayedAt: null,
 		addedAt: "",
-		updateAvailable: false
+		updateAvailable: false,
+		origin: "plugin",
+		sourceKind: "plugin",
+		folderPath: null,
+		scanFolder: null,
+		localConfig: null,
+		pinned: false
 	};
 }
 
@@ -195,7 +201,11 @@ describe("LibraryPager", () => {
 
 	it("ignores an answer that arrives after the query changed", async () => {
 		const answer = deferred<LibraryListPage>();
-		const { pager, last } = makePager(() => answer.promise);
+		// Only the first request waits for the answer; later loads never finish in this test.
+		let calls = 0;
+		const { pager, last } = makePager(() =>
+			calls++ === 0 ? answer.promise : new Promise<LibraryListPage>(() => {})
+		);
 		pager.requestPages([0], 0);
 
 		pager.setQuery({ ...QUERY, favorite: true });
@@ -214,7 +224,8 @@ describe("LibraryPager", () => {
 		pager.requestPages([0], 0);
 		await settle();
 
-		expect(list).not.toHaveBeenCalled();
+		// Only the reset's own first-page load runs; the stale request adds nothing.
+		expect(list).toHaveBeenCalledTimes(1);
 	});
 
 	it("reports a failed page and loads it again after a reset", async () => {

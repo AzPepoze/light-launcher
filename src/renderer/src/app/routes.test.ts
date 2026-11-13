@@ -18,4 +18,8 @@ describe("route registry", () => {
 		const hidden = routes.filter((route) => route.hidden).map((route) => route.id);
 		expect(hidden).toEqual(["editlsfg"]);
 	});
+
+	it("pins notifications to the bottom of the rail", () => {
+		expect(getRoute("notifications")?.bottom).toBe(true);
+	});
 });

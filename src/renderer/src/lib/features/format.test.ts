@@ -1,5 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { ago, bytes, eta, formatBytes, percent, playtime, speed } from "./format";
+import { ago, bytes, eta, formatBytes, percent, percentLabel, playtime, sizeRange, speed } from "./format";
+
+describe("percentLabel", () => {
+	it("rounds to a whole percent and shows a dash when unknown", () => {
+		expect(percentLabel(null)).toBe("--");
+		expect(percentLabel(0)).toBe("0%");
+		expect(percentLabel(41.6)).toBe("42%");
+	});
+});
+
+describe("sizeRange", () => {
+	it("joins done and total and leaves out missing sides", () => {
+		expect(sizeRange(1536, 4 * 1024 ** 2)).toBe("1.5 KB / 4.0 MB");
+		expect(sizeRange(undefined, 2 * 1024 ** 3)).toBe("2.0 GB");
+		expect(sizeRange(1024, null)).toBe("1.0 KB");
+		expect(sizeRange(undefined, undefined)).toBe("");
+	});
+});
 
 describe("bytes", () => {
 	it("formats sizes with the right unit", () => {

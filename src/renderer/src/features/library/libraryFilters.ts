@@ -1,4 +1,13 @@
 import type { LibraryQuery, LibrarySort } from "../../lib/features/types";
+import type { BrowseFilters } from "./browseFilters";
+
+/** Ids of the built-in sidebar groups, used for local games and sources with no sidebar. */
+export const SORT_GROUP = "sort";
+export const STATUS_GROUP = "status";
+export const TAG_GROUP = "tags";
+export const INSTALLED_OPTION = "installed";
+export const UPDATES_OPTION = "updates";
+export const FAVORITE_OPTION = "favorite";
 
 export interface LibraryFilters {
 	search: string;
@@ -39,6 +48,39 @@ export function hasActiveFilters(filters: LibraryFilters): boolean {
 		filters.updates ||
 		filters.favorite
 	);
+}
+
+function tagsOf(filters: BrowseFilters): string[] {
+	const tags = filters.values[TAG_GROUP];
+	return Array.isArray(tags) ? [...tags] : [];
+}
+
+/** The local list filters that the shared sidebar state holds. */
+export function toLibraryFilters(filters: BrowseFilters): LibraryFilters {
+	return {
+		search: filters.query,
+		tags: tagsOf(filters),
+		installed: filters.values[INSTALLED_OPTION] === true,
+		updates: filters.values[UPDATES_OPTION] === true,
+		favorite: filters.values[FAVORITE_OPTION] === true,
+		sort: sortOf(filters.sort)
+	};
+}
+
+/** Writes saved local filters into the shared sidebar state. */
+export function withLibraryFilters(filters: BrowseFilters, saved: LibraryFilters): BrowseFilters {
+	return {
+		...filters,
+		query: saved.search,
+		sort: saved.sort,
+		values: {
+			...filters.values,
+			[INSTALLED_OPTION]: saved.installed,
+			[UPDATES_OPTION]: saved.updates,
+			[FAVORITE_OPTION]: saved.favorite,
+			[TAG_GROUP]: [...saved.tags]
+		}
+	};
 }
 
 /** The list request for one source with the current filters. An empty source means every source. */

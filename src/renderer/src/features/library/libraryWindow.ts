@@ -1,14 +1,11 @@
-import type { TileShape } from "./sourceTileShape";
-
 /** Games per list page. Keep in step with the page size the library asks for. */
 export const PAGE_SIZE = 60;
 /** Most tiles in the DOM at once. The rest of the list is spacer height. */
 export const MAX_RENDERED_TILES = 80;
 
-const COLUMN_GAP_PX = 14;
-const ROW_GAP_PX = 18;
-/** Room under the cover for the title and the status lines. */
-const TEXT_BLOCK_PX = 56;
+/** Gap between covers, both ways. Covers form a dense wall. */
+const COLUMN_GAP_PX = 12;
+const ROW_GAP_PX = 12;
 const OVERSCAN_ROWS = 1;
 const PREFETCH_PAGES = 1;
 
@@ -42,14 +39,11 @@ function clamp(value: number, low: number, high: number): number {
 	return Math.min(Math.max(value, low), high);
 }
 
-/** Columns and row height for a grid of this width and tile shape. */
-export function gridLayout(width: number, shape: TileShape): GridLayout {
-	const columns = Math.max(
-		1,
-		Math.floor((width + COLUMN_GAP_PX) / (shape.minColumnPx + COLUMN_GAP_PX))
-	);
+/** Columns and row height for a grid of this width, cover ratio (width / height) and minimum column width. */
+export function gridLayout(width: number, ratio: number, minColumnPx: number): GridLayout {
+	const columns = Math.max(1, Math.floor((width + COLUMN_GAP_PX) / (minColumnPx + COLUMN_GAP_PX)));
 	const tileWidth = Math.max(0, (width - (columns - 1) * COLUMN_GAP_PX) / columns);
-	const rowHeight = tileWidth / shape.ratio + TEXT_BLOCK_PX + ROW_GAP_PX;
+	const rowHeight = tileWidth / ratio + ROW_GAP_PX;
 	return { columns, tileWidth, rowHeight };
 }
 

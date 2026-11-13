@@ -8,6 +8,7 @@ const EVENTS_PATH = "/api/events";
 const READY_PATH = "/api/ready";
 const TOKEN_HEADER = "X-LL-Token";
 const TOKEN_FRAGMENT_KEY = "t";
+const TOKEN_STORAGE_KEY = "ll-token";
 
 const MIN_RECONNECT_MS = 500;
 const MAX_RECONNECT_MS = 10_000;
@@ -43,9 +44,33 @@ function readTokenFromFragment(): string {
 	return value;
 }
 
+/** Returns the token saved by an earlier page load, or "" when there is none. */
+function readSavedToken(): string {
+	try {
+		return window.sessionStorage.getItem(TOKEN_STORAGE_KEY) ?? "";
+	} catch {
+		return "";
+	}
+}
+
+/** Keeps the token for reloads. Storage can be unavailable, so failures are ignored. */
+function saveToken(value: string): void {
+	try {
+		window.sessionStorage.setItem(TOKEN_STORAGE_KEY, value);
+	} catch {
+		// Storage is unavailable; the token stays in memory for this load.
+	}
+}
+
 function getToken(): string {
 	if (token === undefined) {
-		token = readTokenFromFragment();
+		const fragmentToken = readTokenFromFragment();
+		if (fragmentToken) {
+			saveToken(fragmentToken);
+			token = fragmentToken;
+		} else {
+			token = readSavedToken();
+		}
 	}
 	return token;
 }
@@ -65,18 +90,31 @@ async function readEnvelope<T>(response: Response, method: string): Promise<IpcR
 /** A call the server refused. fields lists the inputs it rejected, when it said which ones. */
 export class InvokeError extends Error {
 	readonly fields: IpcFieldError[];
+	/** Stable server reason, or an empty string when the server sent none. */
+	readonly code: string;
 
-	constructor(message: string, fields: IpcFieldError[] = []) {
+	constructor(message: string, fields: IpcFieldError[] = [], code = "") {
 		super(message);
 		this.name = "InvokeError";
 		this.fields = fields;
+		this.code = code;
 	}
+}
+
+/** True when a failed call was refused because the method does not exist. */
+export function isMethodNotFound(err: unknown): boolean {
+	return err instanceof InvokeError && err.code === "method_not_found";
+}
+
+/** True when a failed call needs the user to sign in or add a key. */
+export function isAuthRequired(err: unknown): boolean {
+	return err instanceof InvokeError && err.code === "auth_required";
 }
 
 async function unwrapEnvelope<T>(response: Response, label: string): Promise<T> {
 	const body = await readEnvelope<T>(response, label);
 	if (!body.success) {
-		throw new InvokeError(body.error || `IPC error calling ${label}`, body.fields);
+		throw new InvokeError(body.error || `IPC error calling ${label}`, body.fields, body.code ?? "");
 	}
 	return body.data as T;
 }

@@ -102,12 +102,6 @@
 			max-width: 100%;
 			overflow: visible;
 		}
-
-		// Skip layout and paint of cards outside the viewport; 202px is the grid card height.
-		&.grid {
-			content-visibility: auto;
-			contain-intrinsic-size: auto 202px;
-		}
 	}
 
 	.card-enter {

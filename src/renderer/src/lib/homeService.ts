@@ -11,6 +11,7 @@ import {
 	AddScanFolder
 } from "@lib/api";
 import { notifications } from "@stores/notificationStore";
+import { plainMessage } from "./plainMessage";
 import { createLaunchOptions } from "./formService";
 import { createLogger } from "./logger";
 import { launchGame } from "./gameLaunchService";
@@ -70,7 +71,7 @@ export async function terminateSession(processId: number, gameName: string): Pro
 		await KillSession(processId);
 		notifications.add(`Terminated session: ${gameName}`, "success");
 	} catch (error) {
-		notifications.add(`Failed to kill session: ${error}`, "error");
+		notifications.add(`Failed to kill session: ${plainMessage(error)}`, "error");
 		throw error;
 	}
 }
@@ -87,7 +88,7 @@ export async function removeGamesBulk(gamePaths: Set<string>): Promise<number> {
 		}
 		notifications.add(`Successfully removed ${removedCount} games`, "success");
 	} catch (error) {
-		notifications.add(`Failed to remove some games: ${error}`, "error");
+		notifications.add(`Failed to remove some games: ${plainMessage(error)}`, "error");
 	}
 	return removedCount;
 }

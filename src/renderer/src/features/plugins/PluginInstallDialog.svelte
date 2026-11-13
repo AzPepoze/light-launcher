@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { onMount } from "svelte";
+	import Button from "@components/shared/Button.svelte";
 	import Modal from "@components/shared/Modal.svelte";
+	import { notifications } from "@stores/notificationStore";
 	import { errorMessage } from "../../lib/features/rpc";
 	import { pluginsApi } from "../../lib/features/pluginsApi";
 	import type { PluginInfo, PluginPreview } from "../../lib/features/types";
@@ -23,27 +25,24 @@
 
 	const title = $derived(queue ? pluginProgress(queue.position, queue.total) : "Install plugin");
 	let source = $state("");
+	let preview = $state<PluginPreview | null>(null);
+	let busy = $state(false);
 
 	onMount(() => {
 		if (!initialSource) return;
 		source = initialSource;
 		void check();
 	});
-	let preview = $state<PluginPreview | null>(null);
-	let busy = $state(false);
-	let message = $state("");
 
 	async function check() {
 		const link = source.trim();
 		if (!link) return;
 		busy = true;
-		message = "";
 		preview = null;
 		try {
 			preview = await pluginsApi.previewPermissions(link);
 		} catch (err) {
-			preview = null;
-			message = errorMessage(err);
+			notifications.error(errorMessage(err));
 		} finally {
 			busy = false;
 		}
@@ -57,11 +56,10 @@
 
 	async function install(shown: PluginPreview) {
 		busy = true;
-		message = "";
 		try {
 			onInstalled(await pluginsApi.install(shown.source, !shown.signed, shown.consent));
 		} catch (err) {
-			message = errorMessage(err);
+			notifications.error(errorMessage(err));
 		} finally {
 			busy = false;
 		}
@@ -84,12 +82,8 @@
 			<span>Plugin link or file</span>
 			<input class="input" type="text" bind:value={source} placeholder="https://... or a file path" />
 		</label>
-		<button class="btn sm" type="submit" disabled={busy || !source.trim()}>Check</button>
+		<Button type="submit" size="sm" disabled={busy || !source.trim()}>Check</Button>
 	</form>
-
-	{#if message}
-		<p class="error" role="alert">{message}</p>
-	{/if}
 
 	{#if preview}
 		{@const shown = preview}
@@ -126,11 +120,5 @@
 		.input {
 			width: 100%;
 		}
-	}
-
-	.error {
-		margin: 12px 0 0;
-		font-size: 0.9375rem;
-		color: var(--danger);
 	}
 </style>

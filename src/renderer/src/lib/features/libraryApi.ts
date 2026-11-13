@@ -10,6 +10,7 @@ import {
 	toPreview,
 	toSearchResponse,
 	toUpdateHistory,
+	toUpdateStatus,
 	toUpdatesSummary,
 	toWireBrowseRequest,
 	toWireListRequest
@@ -29,9 +30,12 @@ import type {
 	LibraryPageRequest,
 	LibraryQuery,
 	SearchResponse,
+	UpdateResult,
+	UpdateStatus,
 	UpdatesResponse
 } from "./types";
 import type {
+	WireActionResult,
 	WireBrowsePage,
 	WireCheckResult,
 	WireFiltersPage,
@@ -44,23 +48,24 @@ import type {
 	WireSearchResult,
 	WireUpdateCheckRequest,
 	WireUpdateHistoryEntry,
+	WireUpdateStatus,
 	WireUpdatesSummary
 } from "./wire";
 
-/** Games per update page. The server caps one list at 1000. */
-const UPDATES_PAGE_SIZE = 200;
+/** Games per list page. The server caps one list at 1000. */
+const GAMES_PAGE_SIZE = 200;
 
 /** The host caps a filter list at 200. */
 const FILTERS_LIMIT = 200;
 
-/** Every game, with the updates filter on. */
-const UPDATES_QUERY: LibraryQuery = {
+/** Every game, with no filter. */
+const ALL_GAMES_QUERY: LibraryQuery = {
 	source: "",
 	search: "",
 	tags: [],
 	favorite: false,
 	installed: false,
-	updates: true,
+	updates: false,
 	sort: "added"
 };
 
@@ -69,18 +74,23 @@ async function listPage(query: LibraryQuery, page: LibraryPageRequest): Promise<
 	return toLibraryListPage(wire);
 }
 
-/** Reads every game with a newer version, one page at a time. */
-async function fetchUpdateGames(): Promise<Game[]> {
+/** Reads every game the query matches, one page at a time. */
+async function fetchAllGames(query: LibraryQuery): Promise<Game[]> {
 	const games: Game[] = [];
-	for (let offset = 0; ; offset += UPDATES_PAGE_SIZE) {
-		const page = await listPage(UPDATES_QUERY, {
+	for (let offset = 0; ; offset += GAMES_PAGE_SIZE) {
+		const page = await listPage(query, {
 			offset,
-			limit: UPDATES_PAGE_SIZE,
+			limit: GAMES_PAGE_SIZE,
 			wantTotal: false
 		});
 		games.push(...page.items);
-		if (page.items.length < UPDATES_PAGE_SIZE) return games;
+		if (page.items.length < GAMES_PAGE_SIZE) return games;
 	}
+}
+
+/** Reads every game with a newer version. */
+function fetchUpdateGames(): Promise<Game[]> {
+	return fetchAllGames({ ...ALL_GAMES_QUERY, updates: true });
 }
 
 async function fetchUpdates(): Promise<UpdatesResponse> {
@@ -91,6 +101,9 @@ async function fetchUpdates(): Promise<UpdatesResponse> {
 export const libraryApi = {
 	/** One page of games for a source, search and filters. Ask for the total on the first page. */
 	list: listPage,
+
+	/** Every game of one source, read one page at a time. */
+	sourceGames: (source: string): Promise<Game[]> => fetchAllGames({ ...ALL_GAMES_QUERY, source }),
 
 	/** Counts, tags and stats for the whole library. Not sent per page. */
 	overview: async (): Promise<LibraryOverview> =>
@@ -115,6 +128,10 @@ export const libraryApi = {
 	syncSource: async (source: string): Promise<void> => {
 		await rpc<{ started: boolean }>("LibrarySyncSource", { source });
 	},
+
+	/** Runs one action a source declares. Omit gameId for a library action. Refresh the list when refresh is true. */
+	runAction: (source: string, action: string, gameId: number | null = null): Promise<WireActionResult> =>
+		rpc<WireActionResult>("LibraryRunAction", { source, action, gameId }),
 
 	get: async (id: number): Promise<LibraryGetResponse> =>
 		toGameDetail(await rpc<WireGameDetail>("LibraryGet", { id })),
@@ -152,15 +169,29 @@ export const libraryApi = {
 	/** The unseen update count, the games with a newer version, and the last check. */
 	updates: fetchUpdates,
 
-	/** Recent checks, newest first. Pass before as the last seen id to get the next page. */
-	updateHistory: async (params: { gameId?: number; limit?: number; before?: number } = {}) =>
+	/** Recent checks, newest first. Pass before as the last seen id to get the next page. Pass result to keep one result. */
+	updateHistory: async (
+		params: {
+			gameId?: number;
+			limit?: number;
+			before?: number;
+			result?: UpdateResult | "";
+			source?: string;
+		} = {}
+	) =>
 		toUpdateHistory(
 			await rpc<WireUpdateHistoryEntry[]>("LibraryUpdateHistory", {
 				gameId: params.gameId ?? 0,
 				limit: params.limit ?? 50,
-				before: params.before ?? 0
+				before: params.before ?? 0,
+				result: params.result ?? "",
+				source: params.source ?? ""
 			})
 		),
+
+	/** The Updates page state. Starts no check: the last run, whether one runs, and the games with updates. */
+	updateStatus: async (): Promise<UpdateStatus> =>
+		toUpdateStatus(await rpc<WireUpdateStatus>("LibraryUpdateStatus")),
 
 	setFavorite: async (id: number, favorite: boolean): Promise<Game> =>
 		toGame(await rpc<WireGame>("LibrarySetFavorite", { id, favorite })),

@@ -1,20 +1,31 @@
 <script lang="ts">
 	import { onMount } from "svelte";
-	import type { Game } from "../../lib/features/types";
+	import type { Game, SourceCard } from "../../lib/features/types";
 	import GameTile from "./GameTile.svelte";
 	import type { LibraryState } from "./libraryState.svelte";
+	import type { TransferKind } from "./transferState";
 	import { revealIndex } from "./libraryMotion";
 	import { gridLayout, gridWindow, indexesIn, PAGE_SIZE } from "./libraryWindow";
-	import type { TileShape } from "./sourceTileShape";
 
 	let {
 		library,
-		shape,
+		ratio,
+		minColumnPx,
+		card,
+		transfers,
+		blurUntilHover,
 		revealed,
 		onOpen
 	}: {
 		library: LibraryState;
-		shape: TileShape;
+		/** Width divided by height of each cover. */
+		ratio: number;
+		/** Smallest width of one column, from the card size setting. */
+		minColumnPx: number;
+		card: SourceCard | null;
+		/** The download or install running for each game id. */
+		transfers: Map<number, TransferKind>;
+		blurUntilHover: boolean;
 		/** True once the first reveal has run. Later renders do not animate tiles in. */
 		revealed: boolean;
 		onOpen: (game: Game) => void;
@@ -27,7 +38,7 @@
 	let scrolledPast = $state(0);
 	let frame = 0;
 
-	const layout = $derived(gridLayout(width, shape));
+	const layout = $derived(gridLayout(width, ratio, minColumnPx));
 	const total = $derived(library.total ?? PAGE_SIZE);
 	const range = $derived(
 		gridWindow({ total, layout, scrollTop: scrolledPast, viewportHeight })
@@ -111,15 +122,15 @@
 				{#if game}
 					<GameTile
 						{game}
-						{shape}
+						{ratio}
+						{card}
+						transfer={transfers.get(game.id) ?? null}
+						{blurUntilHover}
 						revealIndex={revealIndex(index, revealed)}
 						{onOpen}
 					/>
 				{:else}
-					<span class="placeholder" aria-hidden="true">
-						<span class="skeleton cover" style:aspect-ratio={shape.ratio}></span>
-						<span class="skeleton line"></span>
-					</span>
+					<span class="skeleton cover" style:aspect-ratio={ratio} aria-hidden="true"></span>
 				{/if}
 			</li>
 		{/each}
@@ -130,7 +141,8 @@
 <style lang="scss">
 	.grid {
 		display: grid;
-		gap: 0 14px;
+		/* Covers form a dense wall: 12px between them both ways. */
+		gap: 12px;
 		margin: 0;
 		padding: 0;
 		list-style: none;
@@ -141,11 +153,6 @@
 		min-width: 0;
 	}
 
-	.placeholder {
-		display: flex;
-		flex-direction: column;
-		gap: 8px;
-	}
 
 	.cover {
 		display: block;
@@ -153,10 +160,4 @@
 		border-radius: var(--radius-md);
 	}
 
-	.line {
-		display: block;
-		width: 70%;
-		height: 14px;
-		border-radius: var(--radius-sm);
-	}
 </style>

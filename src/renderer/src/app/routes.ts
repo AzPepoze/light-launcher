@@ -15,6 +15,8 @@ export interface AppRoute {
 	isCustomIcon?: boolean;
 	/** Reachable route that is never listed in navigation or the command palette. */
 	hidden?: boolean;
+	/** Listed in navigation at the bottom of the rail, below the other pages. */
+	bottom?: boolean;
 }
 
 type RouteDefinition = Omit<AppRoute, "order">;
@@ -23,8 +25,6 @@ type RouteDefinition = Omit<AppRoute, "order">;
 const routeDefinitions: RouteDefinition[] = [
 	{ id: "home", label: "Home", icon: "home" },
 	{ id: "library", label: "Library", icon: "collections_bookmark" },
-	{ id: "downloads", label: "Downloads", icon: "downloading" },
-	{ id: "updates", label: "Updates", icon: "system_update_alt" },
 	{ id: "manager", label: "Game Manager", icon: "monitor_heart" },
 	{
 		id: "run",
@@ -66,7 +66,8 @@ const routeDefinitions: RouteDefinition[] = [
 		icon: "tune",
 		feature: "lsfg",
 		hidden: true
-	}
+	},
+	{ id: "notifications", label: "Notifications", icon: "notifications", bottom: true }
 ];
 
 /** Ordered registry of every page in the app. */
