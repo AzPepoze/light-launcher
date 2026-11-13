@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onDestroy, onMount } from "svelte";
 	import Dropdown from "@components/shared/Dropdown.svelte";
-	import Icon from "@components/shared/Icon.svelte";
 	import LoadingState from "@components/shared/LoadingState.svelte";
 	import Notice from "@components/shared/Notice.svelte";
 	import Section from "@components/shared/Section.svelte";
@@ -56,14 +55,7 @@
 {#snippet sourceRow(source: UpdateSource)}
 	{@const view = sourceView(checks, source.id)}
 	{@const sourceRecheckOptions = optionsWithHours(RECHECK_OPTIONS, view.recheckHours)}
-	<div class="source-row">
-		<div class="source-text">
-			<span class="source-name">
-				<span class="source-icon"><Icon name={source.icon} size={18} /></span>
-				{source.label}
-			</span>
-			<span class="source-help">{sourceHelp(view.mode)}</span>
-		</div>
+	<SettingRow title={source.label} help={sourceHelp(view.mode)} icon={source.icon}>
 		<div class="source-controls">
 			<Dropdown
 				options={SOURCE_MODE_OPTIONS}
@@ -84,7 +76,7 @@
 				/>
 			{/if}
 		</div>
-	</div>
+	</SettingRow>
 {/snippet}
 
 <Section
@@ -164,45 +156,6 @@
 			font-size: 0.95rem;
 			font-weight: 700;
 		}
-	}
-
-	.source-row {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 24px;
-		padding: 16px 0;
-
-		& + .source-row {
-			border-top: 2px solid rgba(255, 255, 255, 0.05);
-		}
-	}
-
-	.source-text {
-		display: flex;
-		flex: 1;
-		flex-direction: column;
-		gap: 4px;
-		min-width: 0;
-	}
-
-	.source-name {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		color: var(--text-main);
-		font-size: 0.95rem;
-		font-weight: 600;
-	}
-
-	.source-icon {
-		display: inline-flex;
-		color: var(--text-muted);
-	}
-
-	.source-help {
-		color: var(--text-muted);
-		font-size: 0.8rem;
 	}
 
 	.source-controls {

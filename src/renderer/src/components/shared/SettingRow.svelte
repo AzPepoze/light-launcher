@@ -1,13 +1,17 @@
 <script lang="ts">
 	import type { Snippet } from "svelte";
+	import Icon from "./Icon.svelte";
 
 	let {
 		title,
 		help,
+		icon,
 		children
 	}: {
 		title: string;
 		help?: string;
+		/** Optional Material icon shown before the title. */
+		icon?: string;
 		/** The control, such as a switch or a number field. */
 		children?: Snippet;
 	} = $props();
@@ -15,7 +19,10 @@
 
 <div class="setting-row">
 	<div class="text">
-		<span class="title">{title}</span>
+		<span class="title">
+			{#if icon}<span class="title-icon"><Icon name={icon} size={18} /></span>{/if}
+			{title}
+		</span>
 		{#if help}<span class="help">{help}</span>{/if}
 	</div>
 	<div class="control">
@@ -45,9 +52,17 @@
 	}
 
 	.title {
+		display: flex;
+		align-items: center;
+		gap: 8px;
 		color: var(--text-main);
 		font-size: 0.95rem;
 		font-weight: 600;
+	}
+
+	.title-icon {
+		display: inline-flex;
+		color: var(--text-muted);
 	}
 
 	.help {

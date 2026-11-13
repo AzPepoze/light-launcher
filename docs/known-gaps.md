@@ -140,7 +140,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [x] | `AuthRequired` error code: a missing API key gives one notice instead of hundreds of errors. |
 | [x] | The API token is kept in `sessionStorage`, so it survives a reload. |
 | [ ] | Nothing has been seen in a running window for the latest UI work: Library tabs, right side game panel, grouped Files, choice rows, notification center and Updates settings. |
-| [ ] | Updates and Downloads moved into Library as top tabs, and the game detail as a right sidebar (in progress). |
+| [x] | Updates and Downloads are top tabs in Library, and the game detail is a right sidebar. |
 | [x] | Home loading and scan status: status line, skeleton tiles, folder name in the scan line, empty state instead of endless rocket tiles. Built and tested, not seen in a window. |
 | [x] | Game detail is a right sidebar panel (about 420 px, overlay with backdrop on narrow windows). Built and tested, not seen in a window. |
 | [x] | Game files are grouped by platform with icons. Built and tested, not seen in a window. |
@@ -176,8 +176,8 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [x] | A test scans every renderer `.svelte` file and fails on new `class="btn` or `material-icons` spans; the one external-link anchor is explicitly allowed. |
 | [x] | The remaining `material-icons` spans and `.btn` controls moved to `Icon`/`Button`/`IconButton`; only the GameDetail external-link anchor stays raw. |
 | [x] | The Updates settings source list no longer calls `PluginsList`; it reads one local library overview and shows each source icon and label. |
-| [ ] | `SettingRow` has no icon slot, so the Updates settings source rows use a small local row for icon + label. Add an optional icon prop if that markup should be shared. |
-| [ ] | Checkbox is kept for PluginConsent only. |
+| [x] | `SettingRow` has an optional icon slot; the Updates settings source rows use it instead of local row markup. |
+| [x] | `Checkbox` is intentionally kept for `PluginConsent` only. |
 
 ## Migration
 
