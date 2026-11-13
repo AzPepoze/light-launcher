@@ -2,6 +2,7 @@
 # Builds the Linux release: launcher, instance, GTK shell, and dist/light-launcher-<version>-linux-x64.tar.gz.
 set -euo pipefail
 
+# shellcheck source=scripts/common.sh
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
 require go

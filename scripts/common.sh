@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+# shellcheck shell=bash
 # Shared helpers for the build scripts. Source this file, do not run it.
 
 SCRIPTS_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -5,6 +7,8 @@ ROOT=$(cd "$SCRIPTS_DIR/.." && pwd)
 DIST="$ROOT/dist"
 # The launcher package embeds the UI with the embedui tag. Set LAUNCHER_PKG to test with another package.
 LAUNCHER_PKG="${LAUNCHER_PKG:-./core/cmd/launcher}"
+# Used by the sourcing build scripts.
+# shellcheck disable=SC2034
 INSTANCE_PKG="./core/cmd/instance"
 LAUNCHER_DIR="$ROOT/${LAUNCHER_PKG#./}"
 UI_COPY="$LAUNCHER_DIR/ui"
@@ -46,7 +50,7 @@ clean_ui() {
 write_checksums() {
 	step "write SHA256SUMS"
 	(
-		cd "$DIST"
+		cd "$DIST" || return 1
 		shopt -s nullglob
 		local files=(*.tar.gz *.zip *-setup.exe)
 		if (( ${#files[@]} > 0 )); then

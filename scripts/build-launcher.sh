@@ -2,6 +2,7 @@
 # Builds the launcher with the UI copied into the package and embedded.
 set -euo pipefail
 
+# shellcheck source=scripts/common.sh
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
 OUTPUT="${1:-$ROOT/bin/light-launcher}"

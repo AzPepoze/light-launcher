@@ -3,6 +3,7 @@
 # dist/light-launcher-<version>-windows-x64.zip, and the NSIS installer when makensis is installed.
 set -euo pipefail
 
+# shellcheck source=scripts/common.sh
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
 require go
