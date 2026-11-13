@@ -18,7 +18,7 @@ This page gives an overview of how a plugin works. The full guide, with code, is
 | Program         | One program per platform, such as `bin/linux-x64/my-plugin`.                      |
 | Settings schema | Optional. A JSON Schema file. The launcher builds a settings form from it.        |
 | Checksums       | A `SHA256SUMS` file with a checksum for each file in the package.                 |
-| Signature       | Optional. A `SIGNATURE` file. See [Plugins](plugins.md#trust-levels).             |
+| Signature       | Optional. A `SIGNATURE` file. See [Plugins](plugins.md#trust-levels). The SDK's `llp keygen` and `llp sign` create the key and signature. |
 | Repository      | Optional. `github:owner/repo` enables update checks on the Plugins page.          |
 
 The package is a zip file with the `.llplugin` extension.
