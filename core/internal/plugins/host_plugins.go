@@ -124,6 +124,37 @@ func (h *Host) Install(ctx context.Context, req InstallRequest) (PluginInfo, err
 	return h.info(id), nil
 }
 
+// InstallOrUpdate adds a plugin, or updates the installed plugin with the same id in place.
+// A local package the user dropped or picked is trusted as the update source; an https package
+// still needs a checked release, as Update requires. A package for the version that is already
+// installed returns ErrNoUpdate instead of replacing it. Updating keeps the plugin data folder
+// and its secrets.
+func (h *Host) InstallOrUpdate(ctx context.Context, req InstallRequest) (PluginInfo, error) {
+	// The consent screen has previewed the package in the usual flow. Reuse that verified copy
+	// so the package is unpacked once and the installed bytes are the ones the user consented to.
+	id, previewed := h.install.previewedID(req.Source, "")
+	if !previewed {
+		preview, err := h.install.Preview(ctx, req.Source, "")
+		if err != nil {
+			return PluginInfo{}, err
+		}
+		id = preview.Manifest.ID
+	}
+	if !exists(h.layout.PluginDir(id)) {
+		return h.Install(ctx, req)
+	}
+	if isURL(req.Source) {
+		// An https package is an update only when it is the release the last check found.
+		return h.Update(ctx, UpdateRequest{
+			ID:                  id,
+			Source:              req.Source,
+			AllowUnsigned:       req.AllowUnsigned,
+			AcceptedPermissions: req.AcceptedPermissions,
+		})
+	}
+	return h.applyUpdate(ctx, id, req.Source, "", req.AllowUnsigned, req.AcceptedPermissions)
+}
+
 // Update installs a newer version. A version that asks for new permissions needs the request to list
 // all of them. A version that fails to start is rolled back to the previous one.
 func (h *Host) Update(ctx context.Context, req UpdateRequest) (PluginInfo, error) {
@@ -134,23 +165,30 @@ func (h *Host) Update(ctx context.Context, req UpdateRequest) (PluginInfo, error
 	if err != nil {
 		return PluginInfo{}, err
 	}
+	return h.applyUpdate(ctx, req.ID, source, sha256, req.AllowUnsigned, req.AcceptedPermissions)
+}
+
+// applyUpdate installs the package prepared from source over the current version, starts the plugin
+// when it was running, and rolls back when the new version fails to start. The caller has already
+// decided that the source may be used, either a checked release or a package the user chose.
+func (h *Host) applyUpdate(ctx context.Context, id, source, sha256 string, allowUnsigned bool, accepted []string) (PluginInfo, error) {
 	// Checks run first, so a refused update leaves the running plugin alone.
-	prepared, source, err := h.install.prepareUpdate(ctx, req.ID, source, sha256, req.AllowUnsigned, req.AcceptedPermissions)
+	prepared, source, err := h.install.prepareUpdate(ctx, id, source, sha256, allowUnsigned, accepted)
 	if err != nil {
 		return PluginInfo{}, err
 	}
 	defer prepared.discard()
-	wasRunning := h.running(req.ID)
-	h.stopPlugin(req.ID)
+	wasRunning := h.running(id)
+	h.stopPlugin(id)
 	if err := h.install.commitUpdate(prepared, source); err != nil {
 		return PluginInfo{}, err
 	}
-	if err := h.startUpdateTarget(ctx, req.ID, wasRunning); err != nil {
-		return PluginInfo{}, h.rollbackFailedUpdate(ctx, req.ID, wasRunning, err)
+	if err := h.startUpdateTarget(ctx, id, wasRunning); err != nil {
+		return PluginInfo{}, h.rollbackFailedUpdate(ctx, id, wasRunning, err)
 	}
-	h.forgetUpdate(req.ID)
-	h.emitState(req.ID)
-	return h.info(req.ID), nil
+	h.forgetUpdate(id)
+	h.emitState(id)
+	return h.info(id), nil
 }
 
 // Rollback makes the previous version current again.

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -143,6 +144,33 @@ func TestPreviewReturnsManifestWithoutInstalling(t *testing.T) {
 	}
 }
 
+func TestPreviewedIDOnlyMatchesTheKeptPackage(t *testing.T) {
+	in, _ := newTestInstaller(t)
+	source := filepath.Join(t.TempDir(), "demo.llplugin")
+	writePackageFile(t, source, withChecksums(testPackageFiles("demo", "1.0.0")))
+
+	if _, ok := in.previewedID(source, ""); ok {
+		t.Fatalf("previewedID found a package before any preview")
+	}
+	if _, err := in.Preview(context.Background(), source, ""); err != nil {
+		t.Fatal(err)
+	}
+	if id, ok := in.previewedID(source, ""); !ok || id != "demo" {
+		t.Fatalf("previewedID = %q, %v, want demo", id, ok)
+	}
+	if _, ok := in.previewedID(filepath.Join(t.TempDir(), "other.llplugin"), ""); ok {
+		t.Fatalf("previewedID matched another source")
+	}
+	if _, ok := in.previewedID(source, strings.Repeat("a", 64)); ok {
+		t.Fatalf("previewedID matched another checksum")
+	}
+
+	in.discardPreview()
+	if _, ok := in.previewedID(source, ""); ok {
+		t.Fatalf("previewedID matched a discarded preview")
+	}
+}
+
 func TestUpdateAndRollback(t *testing.T) {
 	in, layout := newTestInstaller(t)
 	ctx := context.Background()
@@ -152,8 +180,10 @@ func TestUpdateAndRollback(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := in.Update(ctx, "demo", true, testConsent); err != ErrNoUpdate {
+	if err := in.Update(ctx, "demo", true, testConsent); !errors.Is(err, ErrNoUpdate) {
 		t.Fatalf("update to the same version: err = %v, want ErrNoUpdate", err)
+	} else if !strings.Contains(err.Error(), "demo 1.0.0") {
+		t.Fatalf("same-version error = %v, want the plugin id and version", err)
 	}
 
 	writePackageFile(t, source, withChecksums(testPackageFiles("demo", "1.1.0")))

@@ -74,7 +74,7 @@ func pluginCall(ctx context.Context, host *plugins.Host, in callInput) (any, err
 }
 
 // Register adds the plugin methods to r. Host events such as "plugin-state" go to ev.
-// Installs from an upload remove that upload whether or not the install succeeded.
+// Installs and updates from an upload remove that upload whether or not the call succeeded.
 func Register(r *api.Router, ev api.Events, host *plugins.Host, uploads *uploads.Store) {
 	host.SetEvents(ev)
 
@@ -83,6 +83,13 @@ func Register(r *api.Router, ev api.Events, host *plugins.Host, uploads *uploads
 	}))
 	r.Handle("PluginInstall", api.Typed(func(ctx context.Context, in plugins.InstallRequest) (any, error) {
 		info, err := host.Install(ctx, in)
+		removeUpload(uploads, in.Source)
+		return info, err
+	}))
+	// PluginInstallOrUpdate installs a new plugin, or updates the installed one with the same id.
+	// The drop and pick flows use it so a newer package replaces the old version in place.
+	r.Handle("PluginInstallOrUpdate", api.Typed(func(ctx context.Context, in plugins.InstallRequest) (any, error) {
+		info, err := host.InstallOrUpdate(ctx, in)
 		removeUpload(uploads, in.Source)
 		return info, err
 	}))

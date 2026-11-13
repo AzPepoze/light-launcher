@@ -102,6 +102,18 @@ func (in *installer) discardPreview() {
 	}
 }
 
+// previewedID returns the manifest id of the package Preview kept, when it came from source.
+// It does not take the package, so the install or update that follows still reuses it.
+func (in *installer) previewedID(source, expectedSHA string) (string, bool) {
+	in.previewMu.Lock()
+	defer in.previewMu.Unlock()
+	pending := in.preview
+	if pending == nil || pending.source != source || (expectedSHA != "" && pending.sha256 != expectedSHA) {
+		return "", false
+	}
+	return pending.prepared.Manifest.ID, true
+}
+
 // Install adds a new plugin. It fails when the plugin id is already installed, or when accepted
 // does not list the permissions the plugin asks for.
 func (in *installer) Install(ctx context.Context, source string, allowUnsigned bool, accepted []string) (string, error) {
@@ -177,7 +189,7 @@ func (in *installer) checkUpdate(id string, prepared preparedPackage, allowUnsig
 		return err
 	}
 	if current == prepared.Manifest.Version {
-		return ErrNoUpdate
+		return fmt.Errorf("%w: %s %s", ErrNoUpdate, id, current)
 	}
 	if prepared.Unsigned && !allowUnsigned {
 		return ErrUnsigned

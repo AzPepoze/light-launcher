@@ -43,6 +43,7 @@ export const pluginsApi = {
 	/**
 	 * Pass the consent list the user saw in the preview. The server rejects any other list.
 	 * Unsigned packages also need allowUnsigned.
+	 * This is a strict new install; use installOrUpdate for a dropped or picked package.
 	 */
 	install: async (
 		source: string,
@@ -51,6 +52,24 @@ export const pluginsApi = {
 	): Promise<PluginInfo> =>
 		toPluginInfo(
 			await rpc<WirePluginInfo>("PluginInstall", {
+				source,
+				allowUnsigned,
+				acceptedPermissions
+			})
+		),
+
+	/**
+	 * Installs a package, or updates the installed plugin with the same id in place, keeping its
+	 * data folder and secrets. A package for the version already installed fails with ErrNoUpdate
+	 * instead of replacing it.
+	 */
+	installOrUpdate: async (
+		source: string,
+		allowUnsigned: boolean,
+		acceptedPermissions: string[]
+	): Promise<PluginInfo> =>
+		toPluginInfo(
+			await rpc<WirePluginInfo>("PluginInstallOrUpdate", {
 				source,
 				allowUnsigned,
 				acceptedPermissions

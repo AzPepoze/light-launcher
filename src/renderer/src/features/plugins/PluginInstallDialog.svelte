@@ -57,7 +57,7 @@
 	async function install(shown: PluginPreview) {
 		busy = true;
 		try {
-			onInstalled(await pluginsApi.install(shown.source, !shown.signed, shown.consent));
+			onInstalled(await pluginsApi.installOrUpdate(shown.source, !shown.signed, shown.consent));
 		} catch (err) {
 			notifications.error(errorMessage(err));
 		} finally {

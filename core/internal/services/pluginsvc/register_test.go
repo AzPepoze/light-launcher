@@ -2,11 +2,15 @@ package pluginsvc
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"testing"
 
 	"light-launcher/core/internal/api"
@@ -43,9 +47,9 @@ func TestRegisterAddsEveryPluginMethod(t *testing.T) {
 	methods := newRouter(t).Methods()
 	sort.Strings(methods)
 	want := []string{
-		"PluginCall", "PluginInstall", "PluginLogs", "PluginPermissionsPreview", "PluginRemove",
-		"PluginRollback", "PluginSetEnabled", "PluginSettingsGet", "PluginSettingsSet", "PluginUpdate",
-		"PluginUpdatesCheck", "PluginUpdatesStatus", "PluginsList",
+		"PluginCall", "PluginInstall", "PluginInstallOrUpdate", "PluginLogs", "PluginPermissionsPreview",
+		"PluginRemove", "PluginRollback", "PluginSetEnabled", "PluginSettingsGet", "PluginSettingsSet",
+		"PluginUpdate", "PluginUpdatesCheck", "PluginUpdatesStatus", "PluginsList",
 	}
 	if len(methods) != len(want) {
 		t.Fatalf("methods = %v, want %v", methods, want)
@@ -94,37 +98,107 @@ func TestBadPayloadIsRejected(t *testing.T) {
 }
 
 func TestFailedInstallRemovesItsUploadFolder(t *testing.T) {
-	base := t.TempDir()
-	layout := plugins.Layout{Root: filepath.Join(base, "plugins"), Data: filepath.Join(base, "data")}
-	host, err := plugins.NewHost(plugins.HostOptions{Layout: layout, HostVersion: "2.0.0"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(host.Shutdown)
-	store, err := uploads.Open(filepath.Join(base, "uploads"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	router := api.NewRouter()
-	Register(router, silentEvents{}, host, store)
+	for _, method := range []string{"PluginInstall", "PluginInstallOrUpdate"} {
+		t.Run(method, func(t *testing.T) {
+			base := t.TempDir()
+			layout := plugins.Layout{Root: filepath.Join(base, "plugins"), Data: filepath.Join(base, "data")}
+			host, err := plugins.NewHost(plugins.HostOptions{Layout: layout, HostVersion: "2.0.0"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(host.Shutdown)
+			store, err := uploads.Open(filepath.Join(base, "uploads"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			router := api.NewRouter()
+			Register(router, silentEvents{}, host, store)
 
-	folder, err := store.NewFolder()
+			folder, err := store.NewFolder()
+			if err != nil {
+				t.Fatal(err)
+			}
+			source := filepath.Join(folder, "broken")
+			if err := os.MkdirAll(source, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			payload, err := json.Marshal(map[string]string{"source": source})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := router.Dispatch(context.Background(), method, payload); err == nil {
+				t.Fatalf("an install without plugin.json must fail")
+			}
+			if _, err := os.Stat(folder); !os.IsNotExist(err) {
+				t.Fatalf("upload folder still exists after a failed install: %v", err)
+			}
+		})
+	}
+}
+
+// writeLocalPluginPackage writes a folder package that installs without a running plugin.
+func writeLocalPluginPackage(t *testing.T, dir, id, version string) string {
+	t.Helper()
+	source := filepath.Join(dir, id+"-"+version)
+	entry := "bin/plugin-" + plugins.PlatformKey()
+	manifest := fmt.Sprintf(`{
+		"id": %q, "name": "Test", "version": %q, "apiVersion": "1", "minHost": "2.0.0",
+		"entry": { %q: %q },
+		"contributes": { "sources": [] },
+		"permissions": { "network": [], "fs": [] }
+	}`, id, version, plugins.PlatformKey(), entry)
+	files := map[string][]byte{
+		"plugin.json": []byte(manifest),
+		entry:         []byte("test entry"),
+	}
+	names := make([]string, 0, len(files))
+	for name := range files {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	var sums strings.Builder
+	for _, name := range names {
+		sum := sha256.Sum256(files[name])
+		fmt.Fprintf(&sums, "%s  %s\n", hex.EncodeToString(sum[:]), name)
+	}
+	files["SHA256SUMS"] = []byte(sums.String())
+	for name, data := range files {
+		path := filepath.Join(source, filepath.FromSlash(name))
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, data, 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return source
+}
+
+func TestPluginInstallOrUpdateInstallsThenRefusesSameVersion(t *testing.T) {
+	router := newRouter(t)
+	ctx := context.Background()
+	source := writeLocalPluginPackage(t, t.TempDir(), "demo", "1.0.0")
+	payload, err := json.Marshal(map[string]any{"source": source, "allowUnsigned": true})
 	if err != nil {
 		t.Fatal(err)
 	}
-	source := filepath.Join(folder, "broken")
-	if err := os.MkdirAll(source, 0o755); err != nil {
-		t.Fatal(err)
-	}
-	payload, err := json.Marshal(map[string]string{"source": source})
+
+	out, err := router.Dispatch(ctx, "PluginInstallOrUpdate", payload)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("PluginInstallOrUpdate: %v", err)
 	}
-	if _, err := router.Dispatch(context.Background(), "PluginInstall", payload); err == nil {
-		t.Fatalf("an install without plugin.json must fail")
+	info, ok := out.(plugins.PluginInfo)
+	if !ok || info.ID != "demo" || info.Version != "1.0.0" {
+		t.Fatalf("PluginInstallOrUpdate = %#v", out)
 	}
-	if _, err := os.Stat(folder); !os.IsNotExist(err) {
-		t.Fatalf("upload folder still exists after a failed install: %v", err)
+
+	_, err = router.Dispatch(ctx, "PluginInstallOrUpdate", payload)
+	if !errors.Is(err, plugins.ErrNoUpdate) || !strings.Contains(err.Error(), "demo 1.0.0") {
+		t.Fatalf("same version: err = %v, want ErrNoUpdate with the id and version", err)
+	}
+
+	if _, err := router.Dispatch(ctx, "PluginInstall", payload); !errors.Is(err, plugins.ErrAlreadyInstalled) {
+		t.Fatalf("PluginInstall on an installed id: err = %v, want ErrAlreadyInstalled", err)
 	}
 }
 
