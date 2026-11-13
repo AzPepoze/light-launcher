@@ -124,7 +124,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [x] | The Library sidebar for plugin sources: the overview carries each source's `sidebar`, and the page browses it through `LibraryBrowse` and `LibraryFilters`. Fixed groups, dynamic choices and a sort with direction are drawn. |
 | [ ] | Check the plugin Library sidebar by eye in the real window with the fixture plugin (only typecheck, tests and build so far). |
 | [x] | The plugin SDK docs describe `sidebar`, the `browse:filters` capability, `source.browse` and `source.listFilters`. |
-| [ ] | The itch plugin does not implement `source.browse` or `source.listFilters`. It now reports `browse:false` instead of advertising the missing method. F95 has browse. |
+| [x] | itch implements `source.browse`/`source.listFilters` with a search sidebar. It scrapes itch.io's public search HTML; there is no stable search API or pager, and sort is best-effort. |
 
 ## Library, Updates and Downloads UI
 
