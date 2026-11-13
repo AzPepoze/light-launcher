@@ -15,6 +15,7 @@
 	import BlacklistSetting from "./BlacklistSetting.svelte";
 	import DownloadsSettings from "./DownloadsSettings.svelte";
 	import GamingIntegrationsSetting from "./GamingIntegrationsSetting.svelte";
+	import PluginRegistrySetting from "./PluginRegistrySetting.svelte";
 	import PrefixStorageSetting from "./PrefixStorageSetting.svelte";
 	import ScanFoldersSetting from "./ScanFoldersSetting.svelte";
 	import TrustedKeysSetting from "./TrustedKeysSetting.svelte";
@@ -139,6 +140,8 @@
 		<UpdatesSettings {settings} />
 
 		<TrustedKeysSetting />
+
+		<PluginRegistrySetting {settings} />
 
 		{#if platformInfo.os === "linux"}
 			<Section title="Display & window platform" icon="desktop_windows">

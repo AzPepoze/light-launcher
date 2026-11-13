@@ -44,6 +44,8 @@ The launcher reads the latest release. A release with no `.llplugin` asset does 
 
 The installed manifest must keep naming the same repository. An update that names another repository still installs, but the consent screen shows a warning.
 
+To offer the plugin in a community catalog, see [Community plugin index](plugin-registry.md).
+
 ## How the messages flow
 
 Plugins use JSON-RPC 2.0. Each message is one line of JSON. The launcher writes to the plugin's standard input. The plugin writes to its standard output.

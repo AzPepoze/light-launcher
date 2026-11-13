@@ -15,6 +15,7 @@ import type { LibrarySource } from "@lib/features/types";
 import type { WireUpdateCheckSettings } from "@lib/features/wire";
 import * as service from "@lib/settingsService";
 import { clampLibraryCardSize } from "./libraryAppearance";
+import { normalizePluginRegistryUrl } from "./pluginRegistry";
 import {
 	DEFAULT_APP_SETTINGS,
 	appSettingsWith,
@@ -39,6 +40,8 @@ export class SettingsState {
 	saving = $state(false);
 	savingDiscordId = $state(false);
 	discordClientId = $state("");
+	pluginRegistryUrl = $state("");
+	savingRegistryUrl = $state(false);
 	private cardSizeSaveTimer: ReturnType<typeof setTimeout> | undefined;
 	private updateCheckSaveTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -192,6 +195,36 @@ export class SettingsState {
 		} finally {
 			this.savingDiscordId = false;
 		}
+	}
+
+	setPluginRegistryUrl(value: string): void {
+		this.pluginRegistryUrl = value;
+	}
+
+	/** Saves the trimmed community plugin index URL. An empty URL disables the community list. */
+	async savePluginRegistryUrl(): Promise<void> {
+		const url = normalizePluginRegistryUrl(this.pluginRegistryUrl);
+		this.pluginRegistryUrl = url;
+		if (this.savingRegistryUrl || url === (this.appSettings.pluginRegistryURL ?? "")) return;
+
+		this.savingRegistryUrl = true;
+		try {
+			const next = appSettingsWith(this.appSettings, { pluginRegistryURL: url });
+			await this.persist(next);
+			notifications.success(
+				url ? "Community plugin index saved" : "Community plugin index disabled"
+			);
+		} catch (err) {
+			log.error("Failed to save community plugin index", err);
+			notifications.error(`Failed to save settings: ${plainMessage(err)}`);
+		} finally {
+			this.savingRegistryUrl = false;
+		}
+	}
+
+	async clearPluginRegistryUrl(): Promise<void> {
+		this.pluginRegistryUrl = "";
+		await this.savePluginRegistryUrl();
 	}
 
 	async browsePrefixDirectory(): Promise<void> {
@@ -352,6 +385,7 @@ export class SettingsState {
 			const loaded = await service.loadAppSettings();
 			this.appSettings = mergeAppSettings(loaded, this.appSettings);
 			this.discordClientId = this.appSettings.DiscordClientId ?? "";
+			this.pluginRegistryUrl = this.appSettings.pluginRegistryURL ?? "";
 		} finally {
 			if (showLoading) this.loading = false;
 		}

@@ -16,6 +16,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
 	TrackPlaytime: true,
 	DiscordRichPresence: true,
 	DiscordClientId: "",
+	pluginRegistryURL: "",
 	LibraryCardSize: LIBRARY_CARD_SIZE_DEFAULT,
 	BlurCoversUntilHover: false
 };
@@ -36,6 +37,7 @@ export function mergeAppSettings(loaded: AppSettings | null, current: AppSetting
 		TrackPlaytime: loaded.TrackPlaytime ?? current.TrackPlaytime ?? true,
 		DiscordRichPresence: loaded.DiscordRichPresence ?? current.DiscordRichPresence ?? true,
 		DiscordClientId: loaded.DiscordClientId ?? current.DiscordClientId ?? "",
+		pluginRegistryURL: loaded.pluginRegistryURL ?? current.pluginRegistryURL ?? "",
 		LibraryCardSize: loaded.LibraryCardSize ?? current.LibraryCardSize ?? LIBRARY_CARD_SIZE_DEFAULT,
 		BlurCoversUntilHover: loaded.BlurCoversUntilHover ?? current.BlurCoversUntilHover ?? false
 	};
