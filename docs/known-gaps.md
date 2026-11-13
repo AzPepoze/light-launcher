@@ -24,7 +24,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | Status | Item |
 |---|---|
 | [ ] | Publish the plugin SDK. The plugins use a local `file:` link, so a fresh clone cannot install. |
-| [ ] | Run `actionlint` and `shellcheck` on the workflows and scripts (not installed yet). |
+| [x] | `actionlint` and `shellcheck -x` run clean on the workflows and `scripts/*.sh`; the few shellcheck findings were fixed. |
 | [x] | Make the plugin SDK and plugin repos public and push them. |
 | [x] | The launcher reads a versioned HTTPS `plugins.json` index and shows installable entries in the Community dialog; the URL is a setting. |
 | [ ] | Host and publish a real `plugins.json` and its package URLs/digests; until then the Community dialog says the list is not configured. |
