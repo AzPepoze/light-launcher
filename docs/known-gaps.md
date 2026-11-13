@@ -23,7 +23,8 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 
 | Status | Item |
 |---|---|
-| [ ] | Publish the plugin SDK. The plugins use a local `file:` link, so a fresh clone cannot install. |
+| [x] | The SDK package is publishable: public metadata, `prepublishOnly`, and a tag-driven npm workflow with provenance. |
+| [ ] | Publish the SDK to npm (needs the `@light-launcher` scope/token), then switch the plugin repos from the local `file:` dependency to the published version. |
 | [x] | `actionlint` and `shellcheck -x` run clean on the workflows and `scripts/*.sh`; the few shellcheck findings were fixed. |
 | [x] | Make the plugin SDK and plugin repos public and push them. |
 | [x] | The launcher reads a versioned HTTPS `plugins.json` index and shows installable entries in the Community dialog; the URL is a setting. |
