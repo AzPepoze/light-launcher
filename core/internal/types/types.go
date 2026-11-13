@@ -200,6 +200,8 @@ type AppSettings struct {
 	DiscordClientId     string             `json:"DiscordClientId,omitempty"`
 	// PluginIdleTimeoutMinutes stops unused plugins after this many minutes. Zero disables it.
 	PluginIdleTimeoutMinutes *int `json:"pluginIdleTimeoutMinutes,omitempty"`
+	// PluginRegistryURL is the https URL of the community plugin index. Empty hides the community list.
+	PluginRegistryURL string `json:"pluginRegistryURL,omitempty"`
 	// BrowserAssistEnabled opens the embedded browser window for plugins. Nil means on.
 	BrowserAssistEnabled *bool `json:"browserAssistEnabled,omitempty"`
 	// LibraryCardSize is the minimum Library card width in px. Nil means the default.

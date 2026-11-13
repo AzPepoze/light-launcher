@@ -751,6 +751,27 @@ export interface WireTrustedKey {
 	fingerprint: string;
 }
 
+/** plugins.RegistryIndexEntry, from core/internal/plugins/registry_index.go. */
+export interface WireRegistryIndexEntry {
+	id: string;
+	name: string;
+	description: string;
+	author: string;
+	repository: string;
+	version: string;
+	downloadUrl: string;
+	sha256: string;
+	homepage: string;
+}
+
+/** plugins.RegistryIndexResult, from core/internal/plugins/registry_index.go. */
+export interface WirePluginRegistry {
+	configured: boolean;
+	url: string;
+	entries: WireRegistryIndexEntry[] | null;
+	error?: string;
+}
+
 // core/internal/types
 
 /** types.AppSettings, from core/internal/types/types.go. */
@@ -765,6 +786,7 @@ export interface WireAppSettings {
 	DiscordRichPresence?: boolean;
 	DiscordClientId?: string;
 	pluginIdleTimeoutMinutes?: number;
+	pluginRegistryURL?: string;
 	browserAssistEnabled?: boolean;
 	LibraryCardSize?: number;
 	BlurCoversUntilHover?: boolean;

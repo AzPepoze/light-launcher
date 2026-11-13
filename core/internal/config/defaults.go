@@ -112,6 +112,7 @@ func DefaultSettings() types.AppSettings {
 		ScanFolderConfigs:        []types.ScanFolderConfig{},
 		Blacklist:                []string{},
 		PluginIdleTimeoutMinutes: defaultPluginIdleTimeout(),
+		PluginRegistryURL:        "",
 		LibraryCardSize:          defaultLibraryCardSize(),
 		UpdateChecks:             defaultUpdateChecks(),
 	}

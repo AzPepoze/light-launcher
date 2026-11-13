@@ -119,6 +119,8 @@ var structTypes = []typeRef{
 	{modulePath + "/core/internal/plugins", "PluginUpdateStatus", "WirePluginUpdateStatus"},
 	{modulePath + "/core/internal/plugins", "PluginUpdatesStatus", "WirePluginUpdatesStatus"},
 	{modulePath + "/core/internal/plugins", "TrustedKey", "WireTrustedKey"},
+	{modulePath + "/core/internal/plugins", "RegistryIndexEntry", "WireRegistryIndexEntry"},
+	{modulePath + "/core/internal/plugins", "RegistryIndexResult", "WirePluginRegistry"},
 
 	// Shared app, game, system and prefix types still declared in src/shared/types.
 	{modulePath + "/core/internal/types", "AppSettings", "WireAppSettings"},

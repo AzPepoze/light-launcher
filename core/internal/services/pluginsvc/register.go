@@ -4,10 +4,13 @@ package pluginsvc
 import (
 	"context"
 	"encoding/json"
+	"strings"
 
 	"light-launcher/core/internal/api"
+	"light-launcher/core/internal/config"
 	"light-launcher/core/internal/logger"
 	"light-launcher/core/internal/plugins"
+	"light-launcher/core/internal/types"
 	"light-launcher/core/internal/uploads"
 )
 
@@ -78,13 +81,32 @@ func pluginCall(ctx context.Context, host *plugins.Host, in callInput) (any, err
 	return host.CallPlugin(ctx, in.Plugin, in.Method, in.Params)
 }
 
+// registrySettings is the settings view the community registry method reads.
+type registrySettings interface {
+	Load() types.AppSettings
+}
+
+// registryFetch loads a community index from its https URL. Tests replace it with a fixture.
+type registryFetch func(ctx context.Context, url string) (plugins.RegistryIndex, error)
+
 // Register adds the plugin methods to r. Host events such as "plugin-state" go to ev.
 // Installs and updates from an upload remove that upload whether or not the call succeeded.
 func Register(r *api.Router, ev api.Events, host *plugins.Host, uploads *uploads.Store) {
+	register(r, ev, host, uploads, config.NewSettingsStore(config.SettingsFilePath()), plugins.FetchRegistryIndex)
+}
+
+// register is Register with the settings and the index fetch passed in, so tests do not read the
+// real settings file or touch the network.
+func register(r *api.Router, ev api.Events, host *plugins.Host, uploads *uploads.Store, settings registrySettings, fetch registryFetch) {
 	host.SetEvents(ev)
 
 	r.Handle("PluginsList", api.NoInput(func(context.Context) (any, error) {
 		return host.List(), nil
+	}))
+	// PluginRegistry returns the configured community index. A missing URL makes no request, and a
+	// failed fetch comes back in the result's error field so the UI can retry without a failed call.
+	r.Handle("PluginRegistry", api.NoInput(func(ctx context.Context) (plugins.RegistryIndexResult, error) {
+		return communityRegistry(ctx, settings, fetch), nil
 	}))
 	// Trusted keys are the ed25519 public keys a SIGNATURE must match. Add and remove return the
 	// refreshed list, so the UI never shows a stale key after a change.
@@ -152,4 +174,27 @@ func Register(r *api.Router, ev api.Events, host *plugins.Host, uploads *uploads
 	r.Handle("PluginUpdatesStatus", api.NoInput(func(context.Context) (any, error) {
 		return host.UpdatesStatus(), nil
 	}))
+}
+
+// communityRegistry returns the configured community plugin index. It reads the URL on every call,
+// so a settings change applies without a restart, and an empty URL never starts a request.
+func communityRegistry(ctx context.Context, settings registrySettings, fetch registryFetch) plugins.RegistryIndexResult {
+	rawURL := strings.TrimSpace(settings.Load().PluginRegistryURL)
+	result := plugins.RegistryIndexResult{Entries: []plugins.RegistryIndexEntry{}}
+	if rawURL == "" {
+		return result
+	}
+	result.Configured = true
+	result.URL = rawURL
+
+	index, err := fetch(ctx, rawURL)
+	if err != nil {
+		logger.Warn("plugins", "could not load the community plugin index: %v", err)
+		result.Error = err.Error()
+		return result
+	}
+	if index.Plugins != nil {
+		result.Entries = index.Plugins
+	}
+	return result
 }

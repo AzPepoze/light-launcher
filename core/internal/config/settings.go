@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"slices"
 	"strings"
 	"sync"
@@ -53,19 +54,33 @@ func (s *SettingsStore) Save(settings types.AppSettings) error {
 // validateAppSettings checks the settings that the UI can change.
 func validateAppSettings(settings types.AppSettings) error {
 	minutes := settings.PluginIdleTimeoutMinutes
-	if minutes == nil {
+	if minutes != nil {
+		if *minutes < 0 {
+			return &api.FieldsError{Fields: []api.FieldError{{
+				Field:   "pluginIdleTimeoutMinutes",
+				Message: "must be at least 0",
+			}}}
+		}
+		if *minutes > maxPluginIdleMinutes {
+			return &api.FieldsError{Fields: []api.FieldError{{
+				Field:   "pluginIdleTimeoutMinutes",
+				Message: fmt.Sprintf("must be at most %d", maxPluginIdleMinutes),
+			}}}
+		}
+	}
+	return validatePluginRegistryURL(settings.PluginRegistryURL)
+}
+
+// validatePluginRegistryURL accepts an empty setting, which means no community list, or an https URL.
+func validatePluginRegistryURL(raw string) error {
+	if raw == "" {
 		return nil
 	}
-	if *minutes < 0 {
+	parsed, err := url.Parse(raw)
+	if err != nil || parsed.Scheme != "https" || parsed.Host == "" {
 		return &api.FieldsError{Fields: []api.FieldError{{
-			Field:   "pluginIdleTimeoutMinutes",
-			Message: "must be at least 0",
-		}}}
-	}
-	if *minutes > maxPluginIdleMinutes {
-		return &api.FieldsError{Fields: []api.FieldError{{
-			Field:   "pluginIdleTimeoutMinutes",
-			Message: fmt.Sprintf("must be at most %d", maxPluginIdleMinutes),
+			Field:   "pluginRegistryURL",
+			Message: "must be an https URL",
 		}}}
 	}
 	return nil
@@ -130,7 +145,20 @@ func NormalizeSettings(settings *types.AppSettings) bool {
 	if normalizeUpdateChecks(settings) {
 		modified = true
 	}
+	if normalizePluginRegistryURL(settings) {
+		modified = true
+	}
 	return modified
+}
+
+// normalizePluginRegistryURL trims the community plugin index URL. An empty URL means no community list.
+func normalizePluginRegistryURL(settings *types.AppSettings) bool {
+	trimmed := strings.TrimSpace(settings.PluginRegistryURL)
+	if trimmed == settings.PluginRegistryURL {
+		return false
+	}
+	settings.PluginRegistryURL = trimmed
+	return true
 }
 
 // normalizeUpdateChecks fills missing update check defaults, clamps hours and fixes unknown source modes.

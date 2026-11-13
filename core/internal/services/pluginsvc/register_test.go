@@ -50,7 +50,7 @@ func newRouterAndLayout(t *testing.T) (*api.Router, plugins.Layout) {
 		t.Fatal(err)
 	}
 	router := api.NewRouter()
-	Register(router, silentEvents{}, host, store)
+	register(router, silentEvents{}, host, store, staticSettings{}, plugins.FetchRegistryIndex)
 	return router, layout
 }
 
@@ -59,8 +59,8 @@ func TestRegisterAddsEveryPluginMethod(t *testing.T) {
 	sort.Strings(methods)
 	want := []string{
 		"PluginCall", "PluginInstall", "PluginInstallOrUpdate", "PluginLogs", "PluginPermissionsPreview",
-		"PluginRemove", "PluginRollback", "PluginSetEnabled", "PluginSettingsGet", "PluginSettingsSet",
-		"PluginTrustedKeyAdd", "PluginTrustedKeyRemove", "PluginTrustedKeys",
+		"PluginRegistry", "PluginRemove", "PluginRollback", "PluginSetEnabled", "PluginSettingsGet",
+		"PluginSettingsSet", "PluginTrustedKeyAdd", "PluginTrustedKeyRemove", "PluginTrustedKeys",
 		"PluginUpdate", "PluginUpdatesCheck", "PluginUpdatesStatus", "PluginsList",
 	}
 	if len(methods) != len(want) {
@@ -247,7 +247,7 @@ func TestFailedInstallRemovesItsUploadFolder(t *testing.T) {
 				t.Fatal(err)
 			}
 			router := api.NewRouter()
-			Register(router, silentEvents{}, host, store)
+			register(router, silentEvents{}, host, store, staticSettings{}, plugins.FetchRegistryIndex)
 
 			folder, err := store.NewFolder()
 			if err != nil {
@@ -364,7 +364,7 @@ func newRouterWithChecker(t *testing.T, checker plugins.UpdateChecker) (*api.Rou
 		t.Fatal(err)
 	}
 	router := api.NewRouter()
-	Register(router, silentEvents{}, host, store)
+	register(router, silentEvents{}, host, store, staticSettings{}, plugins.FetchRegistryIndex)
 	return router, layout
 }
 
