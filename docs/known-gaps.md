@@ -148,7 +148,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [x] | Updates (with one sub-tab per source) and Downloads are Library tabs and gone from the nav. Built and tested, not seen in a window. |
 | [x] | Update history rows carry `source`; the source tab filters and pages on the server, so its pages stay full. |
 | [x] | Downloads sampling is owned by the long-lived library state; it continues while the Downloads tab is closed and stops when no transfer is active. |
-| [ ] | Confirm the real plugin `kind` values for files; the Full and Patch badges only handle "full" and "patch". |
+| [x] | F95 file kinds are `full`, `patch`, `mirror` and `attachment`; Full/Patch badges are intentional and other kinds stay unbadged. |
 | [x] | The Library overview carries `kind`, `capabilities`, `sync` and `updateCheck`; the Updates page reads them from the overview instead of `PluginsList`. |
 | [x] | Updates, Downloads and Incoming mount lazily on first visit and then stay mounted but hidden; in-flight and expanded state survives tab switches. Per-tab scroll still uses the shared page scroller. |
 | [x] | Library sidebar and rail have no background or divider; choices are rows with a tinted selected state, no checkbox. |
