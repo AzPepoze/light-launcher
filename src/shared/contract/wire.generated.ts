@@ -745,6 +745,12 @@ export interface WirePluginUpdatesStatus {
 	plugins: WirePluginUpdateStatus[] | null;
 }
 
+/** plugins.TrustedKey, from core/internal/plugins/signature.go. */
+export interface WireTrustedKey {
+	base64: string;
+	fingerprint: string;
+}
+
 // core/internal/types
 
 /** types.AppSettings, from core/internal/types/types.go. */

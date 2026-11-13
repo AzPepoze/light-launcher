@@ -22,17 +22,46 @@ import type {
 	WirePluginLogLine,
 	WirePluginPreview,
 	WirePluginUpdatesStatus,
-	WireSettingsView
+	WireSettingsView,
+	WireTrustedKey
 } from "./wire";
 
 /** How many recent log lines to ask for. */
 const LOG_LINE_LIMIT = 200;
+
+/** One ed25519 public key that plugin signatures are verified against. */
+export interface TrustedKey {
+	/** Standard base64 of the 32-byte public key. */
+	base64: string;
+	/** Short SHA256 fingerprint, 16 hex characters. */
+	fingerprint: string;
+}
+
+function toTrustedKey(wire: WireTrustedKey): TrustedKey {
+	return { base64: wire.base64, fingerprint: wire.fingerprint };
+}
+
+function toTrustedKeys(keys: WireTrustedKey[] | null): TrustedKey[] {
+	return (keys ?? []).map(toTrustedKey);
+}
 
 export const pluginsApi = {
 	list: async (): Promise<PluginInfo[]> => {
 		const plugins = await rpc<WirePluginInfo[] | null>("PluginsList");
 		return (plugins ?? []).map(toPluginInfo);
 	},
+
+	/** The keys a plugin SIGNATURE may match. Empty when no key is trusted. */
+	trustedKeys: async (): Promise<TrustedKey[]> =>
+		toTrustedKeys(await rpc<WireTrustedKey[] | null>("PluginTrustedKeys")),
+
+	/** Adds one base64 ed25519 public key and returns the refreshed list. */
+	addTrustedKey: async (key: string): Promise<TrustedKey[]> =>
+		toTrustedKeys(await rpc<WireTrustedKey[]>("PluginTrustedKeyAdd", { key })),
+
+	/** Removes one base64 ed25519 public key and returns the refreshed list. */
+	removeTrustedKey: async (key: string): Promise<TrustedKey[]> =>
+		toTrustedKeys(await rpc<WireTrustedKey[]>("PluginTrustedKeyRemove", { key })),
 
 	previewPermissions: async (source: string, sha256 = ""): Promise<PluginPreview> =>
 		toPluginPreview(

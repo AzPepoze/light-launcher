@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { pluginsApi } from "./pluginsApi";
 import { rpc } from "./rpc";
-import type { WirePermissions, WirePluginInfo } from "./wire";
+import type { WirePermissions, WirePluginInfo, WireTrustedKey } from "./wire";
 
 vi.mock("./rpc", () => ({ rpc: vi.fn() }));
 
@@ -87,5 +87,49 @@ describe("pluginsApi.install", () => {
 			allowUnsigned: true,
 			acceptedPermissions: CONSENT
 		});
+	});
+});
+
+const TRUSTED_KEY: WireTrustedKey = {
+	base64: "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=",
+	fingerprint: "0123456789abcdef"
+};
+
+describe("pluginsApi trusted keys", () => {
+	beforeEach(() => {
+		rpcMock.mockReset();
+	});
+
+	it("lists trusted keys through PluginTrustedKeys", async () => {
+		rpcMock.mockResolvedValue([TRUSTED_KEY]);
+
+		const keys = await pluginsApi.trustedKeys();
+
+		expect(rpcMock).toHaveBeenCalledWith("PluginTrustedKeys");
+		expect(keys).toEqual([{ base64: TRUSTED_KEY.base64, fingerprint: TRUSTED_KEY.fingerprint }]);
+	});
+
+	it("treats a missing key list as empty", async () => {
+		rpcMock.mockResolvedValue(null);
+
+		await expect(pluginsApi.trustedKeys()).resolves.toEqual([]);
+	});
+
+	it("adds a key with PluginTrustedKeyAdd and returns the refreshed list", async () => {
+		rpcMock.mockResolvedValue([TRUSTED_KEY]);
+
+		const keys = await pluginsApi.addTrustedKey(TRUSTED_KEY.base64);
+
+		expect(rpcMock).toHaveBeenCalledWith("PluginTrustedKeyAdd", { key: TRUSTED_KEY.base64 });
+		expect(keys).toEqual([{ base64: TRUSTED_KEY.base64, fingerprint: TRUSTED_KEY.fingerprint }]);
+	});
+
+	it("removes a key with PluginTrustedKeyRemove and returns the refreshed list", async () => {
+		rpcMock.mockResolvedValue([]);
+
+		const keys = await pluginsApi.removeTrustedKey(TRUSTED_KEY.base64);
+
+		expect(rpcMock).toHaveBeenCalledWith("PluginTrustedKeyRemove", { key: TRUSTED_KEY.base64 });
+		expect(keys).toEqual([]);
 	});
 });

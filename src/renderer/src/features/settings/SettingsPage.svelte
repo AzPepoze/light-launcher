@@ -17,6 +17,7 @@
 	import GamingIntegrationsSetting from "./GamingIntegrationsSetting.svelte";
 	import PrefixStorageSetting from "./PrefixStorageSetting.svelte";
 	import ScanFoldersSetting from "./ScanFoldersSetting.svelte";
+	import TrustedKeysSetting from "./TrustedKeysSetting.svelte";
 	import UpdatesSettings from "./UpdatesSettings.svelte";
 	import {
 		LIBRARY_CARD_SIZE_MAX,
@@ -136,6 +137,8 @@
 		<DownloadsSettings />
 
 		<UpdatesSettings {settings} />
+
+		<TrustedKeysSetting />
 
 		{#if platformInfo.os === "linux"}
 			<Section title="Display & window platform" icon="desktop_windows">

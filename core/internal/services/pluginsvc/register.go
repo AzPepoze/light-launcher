@@ -58,6 +58,11 @@ type logsInput struct {
 	Lines int    `json:"lines"`
 }
 
+// trustedKeyInput names one base64 ed25519 public key to add to or remove from trusted_keys.
+type trustedKeyInput struct {
+	Key string `json:"key"`
+}
+
 // removeUpload deletes the upload that source is in. A failure only logs, since the next start clears leftovers.
 func removeUpload(store *uploads.Store, source string) {
 	if err := store.Remove(source); err != nil {
@@ -80,6 +85,17 @@ func Register(r *api.Router, ev api.Events, host *plugins.Host, uploads *uploads
 
 	r.Handle("PluginsList", api.NoInput(func(context.Context) (any, error) {
 		return host.List(), nil
+	}))
+	// Trusted keys are the ed25519 public keys a SIGNATURE must match. Add and remove return the
+	// refreshed list, so the UI never shows a stale key after a change.
+	r.Handle("PluginTrustedKeys", api.NoInput(func(context.Context) (any, error) {
+		return host.TrustedKeys()
+	}))
+	r.Handle("PluginTrustedKeyAdd", api.Typed(func(_ context.Context, in trustedKeyInput) (any, error) {
+		return host.AddTrustedKey(in.Key)
+	}))
+	r.Handle("PluginTrustedKeyRemove", api.Typed(func(_ context.Context, in trustedKeyInput) (any, error) {
+		return host.RemoveTrustedKey(in.Key)
 	}))
 	r.Handle("PluginInstall", api.Typed(func(ctx context.Context, in plugins.InstallRequest) (any, error) {
 		info, err := host.Install(ctx, in)

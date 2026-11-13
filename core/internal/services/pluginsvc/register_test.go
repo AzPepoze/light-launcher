@@ -2,7 +2,10 @@ package pluginsvc
 
 import (
 	"context"
+	"crypto/ed25519"
+	"crypto/rand"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -25,9 +28,17 @@ func (silentEvents) Emit(string, any) {}
 
 func newRouter(t *testing.T) *api.Router {
 	t.Helper()
+	router, _ := newRouterAndLayout(t)
+	return router
+}
+
+// newRouterAndLayout returns the router and its plugin layout, so a test can inspect trusted_keys.
+func newRouterAndLayout(t *testing.T) (*api.Router, plugins.Layout) {
+	t.Helper()
 	base := t.TempDir()
+	layout := plugins.Layout{Root: filepath.Join(base, "plugins"), Data: filepath.Join(base, "data")}
 	host, err := plugins.NewHost(plugins.HostOptions{
-		Layout:      plugins.Layout{Root: filepath.Join(base, "plugins"), Data: filepath.Join(base, "data")},
+		Layout:      layout,
 		HostVersion: "2.0.0",
 	})
 	if err != nil {
@@ -40,7 +51,7 @@ func newRouter(t *testing.T) *api.Router {
 	}
 	router := api.NewRouter()
 	Register(router, silentEvents{}, host, store)
-	return router
+	return router, layout
 }
 
 func TestRegisterAddsEveryPluginMethod(t *testing.T) {
@@ -49,6 +60,7 @@ func TestRegisterAddsEveryPluginMethod(t *testing.T) {
 	want := []string{
 		"PluginCall", "PluginInstall", "PluginInstallOrUpdate", "PluginLogs", "PluginPermissionsPreview",
 		"PluginRemove", "PluginRollback", "PluginSetEnabled", "PluginSettingsGet", "PluginSettingsSet",
+		"PluginTrustedKeyAdd", "PluginTrustedKeyRemove", "PluginTrustedKeys",
 		"PluginUpdate", "PluginUpdatesCheck", "PluginUpdatesStatus", "PluginsList",
 	}
 	if len(methods) != len(want) {
@@ -69,6 +81,129 @@ func TestPluginsListIsEmptyOnFreshInstall(t *testing.T) {
 	}
 	if list, ok := out.([]plugins.PluginInfo); !ok || len(list) != 0 {
 		t.Fatalf("PluginsList = %#v", out)
+	}
+}
+
+// trustedKeyPayload builds the add/remove payload for one public key.
+func trustedKeyPayload(t *testing.T, key ed25519.PublicKey) json.RawMessage {
+	t.Helper()
+	payload, err := json.Marshal(map[string]string{"key": base64.StdEncoding.EncodeToString(key)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return payload
+}
+
+func TestPluginTrustedKeysIsEmptyOnFreshInstall(t *testing.T) {
+	router := newRouter(t)
+	out, err := router.Dispatch(context.Background(), "PluginTrustedKeys", nil)
+	if err != nil {
+		t.Fatalf("PluginTrustedKeys: %v", err)
+	}
+	keys, ok := out.([]plugins.TrustedKey)
+	if !ok || len(keys) != 0 {
+		t.Fatalf("PluginTrustedKeys = %#v", out)
+	}
+	encoded, err := json.Marshal(out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(encoded) != "[]" {
+		t.Fatalf("PluginTrustedKeys = %s, want []", encoded)
+	}
+}
+
+func TestPluginTrustedKeyAddListAndRemove(t *testing.T) {
+	router, layout := newRouterAndLayout(t)
+	public, _, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(layout.Root, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(layout.TrustedKeysPath(), []byte("# keep this comment\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	payload := trustedKeyPayload(t, public)
+	encodedKey := base64.StdEncoding.EncodeToString(public)
+
+	out, err := router.Dispatch(ctx, "PluginTrustedKeyAdd", payload)
+	if err != nil {
+		t.Fatalf("PluginTrustedKeyAdd: %v", err)
+	}
+	keys, ok := out.([]plugins.TrustedKey)
+	if !ok || len(keys) != 1 || keys[0].Base64 != encodedKey || len(keys[0].Fingerprint) != 16 {
+		t.Fatalf("PluginTrustedKeyAdd = %#v", out)
+	}
+	data, err := os.ReadFile(layout.TrustedKeysPath())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data) != "# keep this comment\n"+encodedKey+"\n" {
+		t.Fatalf("trusted_keys = %q, want the comment and the new key", data)
+	}
+	info, err := os.Stat(layout.TrustedKeysPath())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if perm := info.Mode().Perm(); perm != 0o644 {
+		t.Fatalf("trusted_keys mode = %o, want 644", perm)
+	}
+
+	out, err = router.Dispatch(ctx, "PluginTrustedKeys", nil)
+	if err != nil {
+		t.Fatalf("PluginTrustedKeys: %v", err)
+	}
+	if listed, ok := out.([]plugins.TrustedKey); !ok || len(listed) != 1 || listed[0].Base64 != encodedKey {
+		t.Fatalf("PluginTrustedKeys = %#v", out)
+	}
+
+	if _, err := router.Dispatch(ctx, "PluginTrustedKeyAdd", payload); !errors.Is(err, plugins.ErrTrustedKeyDuplicate) {
+		t.Fatalf("duplicate add: err = %v, want ErrTrustedKeyDuplicate", err)
+	}
+
+	out, err = router.Dispatch(ctx, "PluginTrustedKeyRemove", payload)
+	if err != nil {
+		t.Fatalf("PluginTrustedKeyRemove: %v", err)
+	}
+	if remaining, ok := out.([]plugins.TrustedKey); !ok || len(remaining) != 0 {
+		t.Fatalf("PluginTrustedKeyRemove = %#v", out)
+	}
+	data, err = os.ReadFile(layout.TrustedKeysPath())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data) != "# keep this comment\n" {
+		t.Fatalf("trusted_keys = %q, want the comment kept", data)
+	}
+
+	if _, err := router.Dispatch(ctx, "PluginTrustedKeyRemove", payload); !errors.Is(err, plugins.ErrTrustedKeyNotFound) {
+		t.Fatalf("removing a missing key: err = %v, want ErrTrustedKeyNotFound", err)
+	}
+}
+
+func TestPluginTrustedKeyMethodsReportValidationErrors(t *testing.T) {
+	router := newRouter(t)
+	ctx := context.Background()
+	for _, method := range []string{"PluginTrustedKeyAdd", "PluginTrustedKeyRemove"} {
+		payload, err := json.Marshal(map[string]string{"key": "not a key!"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = router.Dispatch(ctx, method, payload)
+		if !errors.Is(err, plugins.ErrTrustedKeyInvalid) {
+			t.Fatalf("%s: err = %v, want ErrTrustedKeyInvalid", method, err)
+		}
+		if !strings.Contains(err.Error(), "32-byte ed25519 public key") {
+			t.Fatalf("%s: err = %q, want the key size in the message", method, err)
+		}
+	}
+
+	_, err := router.Dispatch(ctx, "PluginTrustedKeyAdd", json.RawMessage(`{}`))
+	if !errors.Is(err, plugins.ErrTrustedKeyInvalid) || !strings.Contains(err.Error(), "empty") {
+		t.Fatalf("missing key field: err = %v, want an empty key error", err)
 	}
 }
 
