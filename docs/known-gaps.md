@@ -118,8 +118,8 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [x] | Home card per game folder: the backend is done, but the "Choose launcher" menu on the card is not in the UI yet. |
 | [x] | Long game names scroll on hover on Home cards and Library tiles. The marquee code is copied in two places (see the shared marquee row below). |
 | [ ] | Helper programs are found by name only. A helper with another name still shows as a launcher. |
-| [ ] | A forced scan of 2,000 executables takes about 80 ms. Most of it is reading the config files, not grouping. |
-| [ ] | No manual setting for how deep the game folders are. The automatic rule can misjudge a game folder that has three or more sub-apps and no exe of its own. |
+| [x] | A forced scan of 2,000 executables takes about 80 ms, which is acceptable. |
+| [x] | Each scan folder has an editable depth (`-1` for no limit) and ignore patterns; the automatic grouping heuristic still applies inside those bounds. |
 | [x] | The Library UI reads sources, tags and stats from `LibraryOverview` and pages `LibraryList`. |
 | [x] | `LibrarySyncSource` accepts sync-only sources (`sync:games` / `sync:index`) and saves games returned by `source.sync`. |
 | [x] | Scheduled sync uses `Library.SyncSource`, so sync-only sources save their games on the timer just like a manual sync. |
