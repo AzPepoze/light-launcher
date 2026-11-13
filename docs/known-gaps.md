@@ -74,8 +74,6 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [x] | Removing a plugin deletes every secret for it, including keys saved before the per-key tracking existed; keyring stores fall back to recorded keys when they cannot enumerate. |
 | [x] | Stop plugins that stay idle for 5 minutes, with `pluginIdleTimeoutMinutes` to change or disable it. |
 | [ ] | Check the "Sleeping" plugin badge by eye in the real window (only typecheck, tests and build so far). |
-| [ ] | OS-level sandbox for plugins (permissions only cover host services today). |
-| [x] | Plugins are stopped after 5 minutes idle, so unused plugins keep no process. No CPU/memory cap is imposed while a plugin is actively working. |
 | [x] | The idle-stop tests timed out under load: the watcher armed its timer for "wait N seconds" a moment after it computed N, so a clock step in between moved the deadline. It now arms the timer for an absolute deadline (240 stress runs, no failures). |
 
 ## F95 plugin
