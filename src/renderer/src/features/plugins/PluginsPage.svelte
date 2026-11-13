@@ -25,13 +25,14 @@
 		uploadPlugin,
 		type UploadFile
 	} from "../../lib/features/pluginUpload";
-	import type { PluginInfo, PluginUpdateStatus, PluginUpdatesStatus } from "../../lib/features/types";
+	import type { PluginInfo, PluginRegistryEntry, PluginUpdateStatus, PluginUpdatesStatus } from "../../lib/features/types";
 	import type {
 		WirePluginInfo,
 		WirePluginNotify,
 		WirePluginUpdatesStatus,
 		WireRemovedPlugin
 	} from "../../lib/features/wire";
+	import CommunityPlugins from "./CommunityPlugins.svelte";
 	import PluginDetail from "./PluginDetail.svelte";
 	import PluginDropZone from "./PluginDropZone.svelte";
 	import PluginInstallDialog from "./PluginInstallDialog.svelte";
@@ -39,7 +40,8 @@
 	import {
 		CHECKING_UPDATES_LABEL,
 		CHECK_UPDATES_LABEL,
-		COMMUNITY_PLUGINS_URL,
+		COMMUNITY_BROWSE_LABEL,
+		COMMUNITY_OPEN_LABEL,
 		NOTHING_TO_INSTALL_COPY,
 		QUEUE_BUSY_COPY,
 		UPLOADING_TEXT,
@@ -53,6 +55,10 @@
 	let selectedId = $state<string | null>(null);
 	/** The Install button, which opens the dialog with an empty link box. */
 	let installOpen = $state(false);
+	/** The Community dialog. It is mounted only after the person opens it, so it never polls. */
+	let communityOpen = $state(false);
+	/** The community entry whose Install button opened the usual consent dialog. */
+	let communityInstall = $state<PluginRegistryEntry | null>(null);
 	const queue = new PluginInstallQueue(uploadPlugin);
 	let batch = $state<QueueView>(queue.view);
 	let updates = $state<PluginUpdatesStatus>({ checkedAt: null, plugins: [] });
@@ -60,6 +66,7 @@
 
 	const queued = $derived(batch.total > 1);
 	const selected = $derived(plugins.find((plugin) => plugin.id === selectedId));
+	const installedIds = $derived(plugins.map((plugin) => plugin.id));
 	const updateCount = $derived(updates.plugins.filter((item) => item.available).length);
 	const subtitle = $derived(
 		loading
@@ -184,6 +191,21 @@
 		installOpen = false;
 	}
 
+	function openCommunity() {
+		communityOpen = true;
+	}
+
+	/** Closes the community list and opens the usual consent dialog with the entry's package. */
+	function installFromCommunity(entry: PluginRegistryEntry) {
+		communityOpen = false;
+		communityInstall = entry;
+	}
+
+	function installedFromCommunity(plugin: PluginInfo) {
+		communityInstall = null;
+		installedManually(plugin);
+	}
+
 	function uploadDropped(files: UploadFile[]) {
 		if (queue.busy) {
 			notifications.info(QUEUE_BUSY_COPY);
@@ -206,6 +228,7 @@
 	<Button size="sm" disabled={checkingUpdates} onclick={checkUpdates}>
 		{checkingUpdates ? CHECKING_UPDATES_LABEL : CHECK_UPDATES_LABEL}
 	</Button>
+	<Button size="sm" icon="public" onclick={openCommunity}>{COMMUNITY_OPEN_LABEL}</Button>
 	<Button variant="primary" size="sm" onclick={() => openInstall()}>Install</Button>
 </PageHeader>
 
@@ -229,14 +252,10 @@
 		{/key}
 	{:else if plugins.length === 0}
 		<EmptyState icon="extension" title="No plugins installed">
-			<Button variant="primary" size="sm" onclick={() => openInstall()}>Install a plugin</Button>
-			<p class="community">
-				{#if COMMUNITY_PLUGINS_URL}
-					<a href={COMMUNITY_PLUGINS_URL} target="_blank" rel="noreferrer">Community plugins</a>
-				{:else}
-					<span>Community plugins</span>
-				{/if}
-			</p>
+			<div class="empty-actions">
+				<Button variant="primary" size="sm" onclick={() => openInstall()}>Install a plugin</Button>
+				<Button size="sm" icon="public" onclick={openCommunity}>{COMMUNITY_BROWSE_LABEL}</Button>
+			</div>
 		</EmptyState>
 	{:else}
 		<ul class="list" aria-label="Installed plugins">
@@ -258,8 +277,23 @@
 			onClose={() => queue.skip()}
 		/>
 	{/key}
+{:else if communityInstall}
+	<PluginInstallDialog
+		initialSource={communityInstall.downloadUrl}
+		initialSha256={communityInstall.sha256}
+		onInstalled={installedFromCommunity}
+		onClose={() => (communityInstall = null)}
+	/>
 {:else if installOpen}
 	<PluginInstallDialog onInstalled={installedManually} onClose={closeInstall} />
+{/if}
+
+{#if communityOpen}
+	<CommunityPlugins
+		{installedIds}
+		onInstall={installFromCommunity}
+		onClose={() => (communityOpen = false)}
+	/>
 {/if}
 
 <style lang="scss">
@@ -277,9 +311,11 @@
 		color: var(--text-muted);
 	}
 
-	.community {
-		margin: 0;
-		font-size: 0.875rem;
-		text-decoration: underline;
+	.empty-actions {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+		flex-wrap: wrap;
 	}
 </style>

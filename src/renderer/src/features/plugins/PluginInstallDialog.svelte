@@ -12,11 +12,14 @@
 
 	let {
 		initialSource = "",
+		initialSha256 = "",
 		queue = null,
 		onInstalled,
 		onClose,
 	}: {
 		initialSource?: string;
+		/** SHA256 the package must match, from a community index entry. Empty skips the check. */
+		initialSha256?: string;
 		/** Set when the plugin is one of several queued. */
 		queue?: { position: number; total: number } | null;
 		onInstalled: (plugin: PluginInfo) => void;
@@ -25,12 +28,17 @@
 
 	const title = $derived(queue ? pluginProgress(queue.position, queue.total) : "Install plugin");
 	let source = $state("");
+	let expectedSha256 = $state("");
 	let preview = $state<PluginPreview | null>(null);
 	let busy = $state(false);
+
+	/** The pinned digest applies only while the box still holds the link it came with. */
+	const pinnedSha256 = $derived(source.trim() === initialSource.trim() ? expectedSha256 : "");
 
 	onMount(() => {
 		if (!initialSource) return;
 		source = initialSource;
+		expectedSha256 = initialSha256;
 		void check();
 	});
 
@@ -40,7 +48,7 @@
 		busy = true;
 		preview = null;
 		try {
-			preview = await pluginsApi.previewPermissions(link);
+			preview = await pluginsApi.previewPermissions(link, pinnedSha256);
 		} catch (err) {
 			notifications.error(errorMessage(err));
 		} finally {

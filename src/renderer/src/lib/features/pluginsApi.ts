@@ -13,6 +13,8 @@ import type {
 	PluginLogLine,
 	PluginMethod,
 	PluginPreview,
+	PluginRegistry,
+	PluginRegistryEntry,
 	PluginSettingsResponse,
 	PluginUpdatePreview,
 	PluginUpdatesStatus
@@ -21,13 +23,18 @@ import type {
 	WirePluginInfo,
 	WirePluginLogLine,
 	WirePluginPreview,
+	WirePluginRegistry,
 	WirePluginUpdatesStatus,
+	WireRegistryIndexEntry,
 	WireSettingsView,
 	WireTrustedKey
 } from "./wire";
 
 /** How many recent log lines to ask for. */
 const LOG_LINE_LIMIT = 200;
+
+/** A full SHA256 digest, lowercase as the server sends it. */
+const REGISTRY_SHA256 = /^[0-9a-f]{64}$/;
 
 /** One ed25519 public key that plugin signatures are verified against. */
 export interface TrustedKey {
@@ -45,11 +52,56 @@ function toTrustedKeys(keys: WireTrustedKey[] | null): TrustedKey[] {
 	return (keys ?? []).map(toTrustedKey);
 }
 
+function toRegistryEntry(wire: WireRegistryIndexEntry): PluginRegistryEntry {
+	return {
+		id: wire.id,
+		name: wire.name,
+		description: wire.description,
+		author: wire.author,
+		repository: wire.repository || null,
+		version: wire.version,
+		downloadUrl: wire.downloadUrl,
+		sha256: wire.sha256,
+		homepage: wire.homepage || null
+	};
+}
+
+/** Reads the PluginRegistry reply. A failed load stays in error so the dialog can offer a retry. */
+export function toPluginRegistry(wire: WirePluginRegistry): PluginRegistry {
+	return {
+		configured: wire.configured,
+		url: wire.url ?? "",
+		entries: (wire.entries ?? []).map(toRegistryEntry),
+		error: wire.error || null
+	};
+}
+
+/** A community entry can be installed only from an https package with a full SHA256. */
+export function isInstallableRegistryEntry(entry: PluginRegistryEntry): boolean {
+	return entry.downloadUrl.startsWith("https://") && REGISTRY_SHA256.test(entry.sha256);
+}
+
+/** The community entries to list: installable ones that are not installed already. */
+export function communityEntries(
+	entries: PluginRegistryEntry[],
+	installedIds: readonly string[]
+): PluginRegistryEntry[] {
+	const installed = new Set(installedIds);
+	return entries.filter((entry) => !installed.has(entry.id) && isInstallableRegistryEntry(entry));
+}
+
 export const pluginsApi = {
 	list: async (): Promise<PluginInfo[]> => {
 		const plugins = await rpc<WirePluginInfo[] | null>("PluginsList");
 		return (plugins ?? []).map(toPluginInfo);
 	},
+
+	/**
+	 * The community index from PluginRegistry. An unconfigured URL returns an empty list and the
+	 * server makes no request. A load failure is in error, not a rejected call.
+	 */
+	registry: async (): Promise<PluginRegistry> =>
+		toPluginRegistry(await rpc<WirePluginRegistry>("PluginRegistry")),
 
 	/** The keys a plugin SIGNATURE may match. Empty when no key is trusted. */
 	trustedKeys: async (): Promise<TrustedKey[]> =>

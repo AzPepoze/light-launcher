@@ -5,15 +5,39 @@ export const LEGAL_NOTICE = "Use only accounts you own and content you are allow
 
 export const UNSIGNED_WARNING = "This plugin is not signed. Only install code you trust.";
 
-/** Empty until a community plugin list exists. The link shows as plain text while empty. */
-export const COMMUNITY_PLUGINS_URL = "";
+export const COMMUNITY_TITLE = "Community plugins";
+
+export const COMMUNITY_OPEN_LABEL = "Community";
+
+export const COMMUNITY_BROWSE_LABEL = "Browse community plugins";
+
+export const COMMUNITY_LOADING_LABEL = "Loading community plugins...";
+
+export const COMMUNITY_NOT_CONFIGURED_COPY = "Community list is not configured.";
+
+export const COMMUNITY_NOT_CONFIGURED_HINT =
+	"Set pluginRegistryURL in settings.json to the https address of a community index.";
+
+export const COMMUNITY_LOAD_FAILED_COPY = "Community list could not be loaded.";
+
+export const COMMUNITY_RETRY_LABEL = "Retry";
+
+export const COMMUNITY_NOTHING_AVAILABLE_COPY = "No community plugins are available to install.";
+
+export const COMMUNITY_INSTALL_LABEL = "Install";
+
+export const COMMUNITY_INSTALL_HINT =
+	"Installing opens the usual permission check before anything is added.";
+
+export const COMMUNITY_UNKNOWN_AUTHOR = "Unknown author";
+
+export const COMMUNITY_HOMEPAGE_LABEL = "Homepage";
 
 export const PERMISSION_HINT = "The plugin will be able to:";
 
 export function sitesTitle(count: number): string {
 	return count === 1 ? "Connects to 1 site" : `Connects to ${count} sites`;
 }
-
 
 export const UPDATE_PERMISSION_HINT = "This update asks for new permissions:";
 

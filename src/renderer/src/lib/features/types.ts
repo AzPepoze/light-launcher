@@ -551,6 +551,30 @@ export interface PluginUpdatesStatus {
 	plugins: PluginUpdateStatus[];
 }
 
+/** One plugin offered by the community registry index. */
+export interface PluginRegistryEntry {
+	id: string;
+	name: string;
+	description: string;
+	author: string;
+	/** github:owner/repo or an https URL, or null when the entry names no repository. */
+	repository: string | null;
+	version: string;
+	downloadUrl: string;
+	/** Lowercase SHA256 of the package. An install is refused without it. */
+	sha256: string;
+	homepage: string | null;
+}
+
+/** The PluginRegistry reply. An empty url means no community list is configured. */
+export interface PluginRegistry {
+	configured: boolean;
+	url: string;
+	entries: PluginRegistryEntry[];
+	/** Set when a configured list could not be loaded. The list is empty then. */
+	error: string | null;
+}
+
 /** The JSON Schema keywords the settings form reads, plus the x-ll-* extensions. See docs/writing-plugins.md. */
 export interface JsonSchemaProperty {
 	type?: "string" | "number" | "integer" | "boolean" | "object" | "array";
