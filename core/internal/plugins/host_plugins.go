@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 	"sort"
@@ -183,9 +184,17 @@ func (h *Host) Remove(id string, deleteData bool) error {
 	return nil
 }
 
-// deleteSecrets removes every secret the plugin stored. It runs before the state is dropped.
+// deleteSecrets removes every secret the plugin stored, including keys saved before the state
+// recorded them. A store that cannot list keys falls back to deleting the keys the state knows.
 func (h *Host) deleteSecrets(id string) error {
 	ctx := context.Background()
+	err := h.deps.secrets.DeleteAll(ctx, id)
+	if err == nil {
+		return nil
+	}
+	if !errors.Is(err, contract.ErrSecretsNotListable) {
+		return fmt.Errorf("delete secrets of %s: %w", id, err)
+	}
 	keys := slices.Clone(h.install.state.get(id).SecretKeys)
 	for _, key := range keys {
 		if err := h.deps.secrets.Delete(ctx, id, key); err != nil {
@@ -250,7 +259,7 @@ func (h *Host) info(id string) PluginInfo {
 	info.Repository = inst.manifest.Repository
 	info.HasSettings = inst.manifest.Contributes.Settings != nil
 	info.Commands = inst.manifest.Contributes.Commands
-	info.Sources = sourceInfos(id, inst.manifest)
+	info.Sources = sourceInfosWithFolders(id, inst.manifest, h.deps.folders)
 	sup := h.supervisor(id)
 	info.Running = sup != nil && sup.Running()
 	if sup != nil {
@@ -287,7 +296,16 @@ func (h *Host) emitRemoved(id string) {
 	}
 }
 
+// sourceInfos builds the source view without resolved folders. Tests and callers that only read the
+// manifest use it; the host uses sourceInfosWithFolders so the UI knows the plugin's games folder.
 func sourceInfos(id string, manifest Manifest) []contract.SourceInfo {
+	return sourceInfosWithFolders(id, manifest, nil)
+}
+
+// sourceInfosWithFolders builds the source view and resolves the $GAMES grant, when the plugin holds
+// it, to the folder the host handed the plugin. A plugin without the grant gets an empty folder.
+func sourceInfosWithFolders(id string, manifest Manifest, folders map[string]string) []contract.SourceInfo {
+	gamesFolder := gamesFolderFor(manifest.Permissions, folders)
 	var sources []contract.SourceInfo
 	for _, source := range manifest.Contributes.Sources {
 		sources = append(sources, contract.SourceInfo{
@@ -300,9 +318,18 @@ func sourceInfos(id string, manifest Manifest) []contract.SourceInfo {
 			Actions:      actionsWithScope(source.Actions),
 			Card:         source.Card,
 			Sidebar:      source.Sidebar,
+			GamesFolder:  gamesFolder,
 		})
 	}
 	return sources
+}
+
+// gamesFolderFor returns the resolved games folder when the manifest asks for the $GAMES grant.
+func gamesFolderFor(permissions Permissions, folders map[string]string) string {
+	if !slices.Contains(permissions.FS, "$GAMES") {
+		return ""
+	}
+	return folders["$GAMES"]
 }
 
 // tileOrDefault returns the card shape of a source, poster when the manifest names none.

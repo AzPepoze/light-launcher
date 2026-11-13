@@ -200,6 +200,7 @@ export interface WireLibrarySource {
 	actions: WireSourceAction[] | null;
 	card: WireSourceCard | null;
 	sidebar?: WireSidebarGroup[];
+	gamesFolder?: string;
 }
 
 /** library.UpdatesSummary, from core/internal/library/updates.go. */
@@ -420,6 +421,7 @@ export interface WireSource {
 	actions?: WireSourceAction[];
 	card?: WireSourceCard;
 	sidebar?: WireSidebarGroup[];
+	gamesFolder?: string;
 }
 
 /** contract.BrowseRequest, from core/internal/contract/browse.go. */

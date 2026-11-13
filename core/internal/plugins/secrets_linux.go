@@ -39,8 +39,7 @@ func (keyringSecrets) Get(ctx context.Context, plugin, key string) (string, bool
 	if err == nil {
 		return stdout.String(), true, nil
 	}
-	var exitErr *exec.ExitError
-	if errors.As(err, &exitErr) && exitErr.ExitCode() == 1 && strings.TrimSpace(stderr.String()) == "" {
+	if isKeyringNoMatch(err, stderr.String()) {
 		return "", false, nil
 	}
 	return "", false, fmt.Errorf("keyring lookup: %s", strings.TrimSpace(stderr.String()))
@@ -58,9 +57,32 @@ func (keyringSecrets) Set(ctx context.Context, plugin, key, value string) error 
 }
 
 func (keyringSecrets) Delete(ctx context.Context, plugin, key string) error {
-	args := append([]string{"clear"}, keyringAttributes(plugin, key)...)
-	if output, err := exec.CommandContext(ctx, "secret-tool", args...).CombinedOutput(); err != nil {
-		return fmt.Errorf("keyring clear: %s", strings.TrimSpace(string(output)))
+	return clearKeyring(ctx, keyringAttributes(plugin, key)...)
+}
+
+// DeleteAll removes every key of one plugin. secret-tool clears all unlocked items that match the
+// attributes it is given, so passing the service and plugin (without a key) scopes the delete to
+// this plugin and leaves other plugins alone.
+func (keyringSecrets) DeleteAll(ctx context.Context, plugin string) error {
+	if err := clearKeyring(ctx, "service", keyringService, "plugin", plugin); err != nil {
+		return err
 	}
 	return nil
+}
+
+// clearKeyring deletes every item that matches these attribute pairs. secret-tool exits with
+// status 1 and no message when nothing matched, which is not an error here.
+func clearKeyring(ctx context.Context, attributes ...string) error {
+	args := append([]string{"clear"}, attributes...)
+	output, err := exec.CommandContext(ctx, "secret-tool", args...).CombinedOutput()
+	if err == nil || isKeyringNoMatch(err, string(output)) {
+		return nil
+	}
+	return fmt.Errorf("keyring clear: %s", strings.TrimSpace(string(output)))
+}
+
+// isKeyringNoMatch reports the secret-tool result for "nothing matched": status 1 with no message.
+func isKeyringNoMatch(err error, message string) bool {
+	var exitErr *exec.ExitError
+	return errors.As(err, &exitErr) && exitErr.ExitCode() == 1 && strings.TrimSpace(message) == ""
 }

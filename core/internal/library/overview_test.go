@@ -121,6 +121,32 @@ func TestOverviewCarriesTheSourceSidebar(t *testing.T) {
 	}
 }
 
+func TestOverviewCarriesThePluginsGamesFolder(t *testing.T) {
+	sources := &fakeSources{infos: []contract.SourceInfo{
+		{Plugin: "f95", SourceID: "f95", Label: "F95 Zone", GamesFolder: "/home/me/Games"},
+		{Plugin: "plain", SourceID: "plain", Label: "Plain"},
+	}}
+	lib := openTestLibrary(t, Options{Sources: sources})
+
+	overview, err := lib.Overview(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	byID := map[string]SourceCount{}
+	for _, source := range overview.Sources {
+		byID[source.ID] = source
+	}
+	if got := byID["f95"].GamesFolder; got != "/home/me/Games" {
+		t.Errorf("f95 games folder = %q, want the resolved $GAMES folder", got)
+	}
+	if got := byID["plain"].GamesFolder; got != "" {
+		t.Errorf("plain games folder = %q, want empty without the $GAMES grant", got)
+	}
+	if got := byID["manual"].GamesFolder; got != "" {
+		t.Errorf("local games folder = %q, want empty", got)
+	}
+}
+
 func TestOverviewSeesWritesAfterTheThrottleWindow(t *testing.T) {
 	lib := openTestLibrary(t, Options{})
 	ctx := context.Background()

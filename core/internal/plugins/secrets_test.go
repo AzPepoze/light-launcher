@@ -3,10 +3,14 @@ package plugins
 import (
 	"bytes"
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"testing"
+
+	"light-launcher/core/internal/contract"
 )
 
 func TestFileSecretsRoundTrip(t *testing.T) {
@@ -70,6 +74,99 @@ func TestFileSecretsWrongKeyFails(t *testing.T) {
 	}
 	if _, _, err := newFileSecrets(dir).Get(ctx, "demo", "token"); err == nil {
 		t.Fatalf("a new key must not open the old file")
+	}
+}
+
+func TestFileSecretsDeleteAllKeepsOtherPlugins(t *testing.T) {
+	ctx := context.Background()
+	dir := t.TempDir()
+	store := newFileSecrets(dir)
+	for _, secret := range []struct{ plugin, key, value string }{
+		{"demo", "token", "one"},
+		{"demo", "apiKey", "two"},
+		{"other", "token", "keep"},
+	} {
+		if err := store.Set(ctx, secret.plugin, secret.key, secret.value); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := store.DeleteAll(ctx, "demo"); err != nil {
+		t.Fatalf("DeleteAll: %v", err)
+	}
+	for _, key := range []string{"token", "apiKey"} {
+		if _, found, err := store.Get(ctx, "demo", key); err != nil || found {
+			t.Fatalf("secret %q after DeleteAll: found = %v, err = %v; want it deleted", key, found, err)
+		}
+	}
+	if value, found, err := store.Get(ctx, "other", "token"); err != nil || !found || value != "keep" {
+		t.Fatalf("another plugin's secret = %q, %v, %v; want it kept", value, found, err)
+	}
+
+	reopened := newFileSecrets(dir)
+	if _, found, _ := reopened.Get(ctx, "demo", "token"); found {
+		t.Fatalf("deleted secret came back after reopening the file")
+	}
+	if value, found, err := reopened.Get(ctx, "other", "token"); err != nil || !found || value != "keep" {
+		t.Fatalf("reopened another plugin's secret = %q, %v, %v; want it kept", value, found, err)
+	}
+}
+
+func TestFileSecretsDeleteAllWithoutSecretsIsNoOp(t *testing.T) {
+	dir := t.TempDir()
+	if err := newFileSecrets(dir).DeleteAll(context.Background(), "demo"); err != nil {
+		t.Fatalf("DeleteAll on an empty store: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, secretsKeyName)); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("DeleteAll created the key file: %v", err)
+	}
+}
+
+func TestTrackedSecretsDeleteAllClearsTrackedKeys(t *testing.T) {
+	ctx := context.Background()
+	state, err := loadState(filepath.Join(t.TempDir(), "state.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	inner := newFakeSecrets(nil)
+	tracked := trackedSecrets{inner: inner, state: state}
+	for _, key := range []string{"token", "apiKey"} {
+		if err := tracked.Set(ctx, "demo", key, "value"); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := tracked.DeleteAll(ctx, "demo"); err != nil {
+		t.Fatalf("DeleteAll: %v", err)
+	}
+	if keys := state.get("demo").SecretKeys; len(keys) != 0 {
+		t.Fatalf("tracked keys after DeleteAll = %v, want none", keys)
+	}
+	if keys := inner.keys("demo"); len(keys) != 0 {
+		t.Fatalf("stored keys after DeleteAll = %v, want none", keys)
+	}
+}
+
+func TestTrackedSecretsDeleteAllKeepsKeysWhenStoreCannotList(t *testing.T) {
+	ctx := context.Background()
+	state, err := loadState(filepath.Join(t.TempDir(), "state.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	inner := newFakeSecrets(nil)
+	inner.notListable = true
+	tracked := trackedSecrets{inner: inner, state: state}
+	for _, key := range []string{"token", "apiKey"} {
+		if err := tracked.Set(ctx, "demo", key, "value"); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := tracked.DeleteAll(ctx, "demo"); !errors.Is(err, contract.ErrSecretsNotListable) {
+		t.Fatalf("DeleteAll error = %v, want ErrSecretsNotListable", err)
+	}
+	if keys := state.get("demo").SecretKeys; !slices.Equal(keys, []string{"token", "apiKey"}) {
+		t.Fatalf("tracked keys = %v, want [token apiKey] kept for the fallback", keys)
 	}
 }
 

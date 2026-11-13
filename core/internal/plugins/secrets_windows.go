@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"unsafe"
 
 	"golang.org/x/sys/windows"
@@ -14,11 +15,12 @@ import (
 )
 
 var (
-	advapi32        = windows.NewLazySystemDLL("advapi32.dll")
-	procCredWriteW  = advapi32.NewProc("CredWriteW")
-	procCredReadW   = advapi32.NewProc("CredReadW")
-	procCredDeleteW = advapi32.NewProc("CredDeleteW")
-	procCredFree    = advapi32.NewProc("CredFree")
+	advapi32           = windows.NewLazySystemDLL("advapi32.dll")
+	procCredWriteW     = advapi32.NewProc("CredWriteW")
+	procCredReadW      = advapi32.NewProc("CredReadW")
+	procCredDeleteW    = advapi32.NewProc("CredDeleteW")
+	procCredEnumerateW = advapi32.NewProc("CredEnumerateW")
+	procCredFree       = advapi32.NewProc("CredFree")
 )
 
 const (
@@ -111,6 +113,50 @@ func (windowsCredentials) Delete(_ context.Context, plugin, key string) error {
 	result, _, callErr := procCredDeleteW.Call(uintptr(unsafe.Pointer(target)), credTypeGeneric, 0)
 	if result == 0 && !errors.Is(callErr, windows.ERROR_NOT_FOUND) {
 		return fmt.Errorf("credential delete: %w", callErr)
+	}
+	return nil
+}
+
+// DeleteAll removes every credential whose target belongs to this plugin. The Credential Manager
+// cannot look a key up without its full name, so it enumerates the plugin's target prefix and
+// deletes each match; a lookalike plugin id is checked again so it is never touched.
+func (windowsCredentials) DeleteAll(_ context.Context, plugin string) error {
+	prefix := "light-launcher/" + plugin + "/"
+	filter, err := windows.UTF16PtrFromString(prefix + "*")
+	if err != nil {
+		return err
+	}
+	var count uint32
+	var list **credential
+	result, _, callErr := procCredEnumerateW.Call(
+		uintptr(unsafe.Pointer(filter)),
+		0,
+		uintptr(unsafe.Pointer(&count)),
+		uintptr(unsafe.Pointer(&list)),
+	)
+	if result == 0 {
+		if errors.Is(callErr, windows.ERROR_NOT_FOUND) {
+			return nil
+		}
+		return fmt.Errorf("credential enumerate: %w", callErr)
+	}
+	defer procCredFree.Call(uintptr(unsafe.Pointer(list)))
+	for _, entry := range unsafe.Slice(list, int(count)) {
+		if entry == nil || entry.TargetName == nil {
+			continue
+		}
+		target := windows.UTF16PtrToString(entry.TargetName)
+		if !strings.HasPrefix(target, prefix) {
+			continue
+		}
+		name, err := windows.UTF16PtrFromString(target)
+		if err != nil {
+			return err
+		}
+		result, _, callErr := procCredDeleteW.Call(uintptr(unsafe.Pointer(name)), credTypeGeneric, 0)
+		if result == 0 && !errors.Is(callErr, windows.ERROR_NOT_FOUND) {
+			return fmt.Errorf("credential delete: %w", callErr)
+		}
 	}
 	return nil
 }

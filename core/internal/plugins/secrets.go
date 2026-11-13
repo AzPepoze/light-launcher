@@ -58,6 +58,16 @@ func (s trackedSecrets) Delete(ctx context.Context, plugin, key string) error {
 	})
 }
 
+// DeleteAll removes every secret of the plugin, including keys saved before this state tracked them.
+func (s trackedSecrets) DeleteAll(ctx context.Context, plugin string) error {
+	if err := s.inner.DeleteAll(ctx, plugin); err != nil {
+		return err
+	}
+	return s.state.update(plugin, func(state *PluginState) {
+		state.SecretKeys = nil
+	})
+}
+
 // fileSecrets keeps secrets in an AES-256-GCM encrypted file. The key sits in a 0600 file beside it.
 // It is the fallback when no OS keyring is available.
 type fileSecrets struct {
@@ -106,6 +116,21 @@ func (s *fileSecrets) Delete(_ context.Context, plugin, key string) error {
 		return err
 	}
 	delete(book[plugin], key)
+	return s.save(book)
+}
+
+// DeleteAll drops one plugin's entry. Other plugins in the book are written back unchanged.
+func (s *fileSecrets) DeleteAll(_ context.Context, plugin string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	book, err := s.load()
+	if err != nil {
+		return err
+	}
+	if _, ok := book[plugin]; !ok {
+		return nil
+	}
+	delete(book, plugin)
 	return s.save(book)
 }
 

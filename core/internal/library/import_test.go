@@ -232,7 +232,7 @@ func TestStartImportRunsInTheBackgroundOneAtATime(t *testing.T) {
 	}
 }
 
-func TestStartImportNeedsTheListGamesCapability(t *testing.T) {
+func TestStartImportNeedsAListOrSyncCapability(t *testing.T) {
 	sources := &fakeSources{infos: []contract.SourceInfo{{Plugin: "f95", SourceID: "f95", Capabilities: []string{CapabilityBrowse}}}}
 	lib := openTestLibrary(t, Options{Sources: sources})
 	if err := lib.StartImport("f95", nil, nil); !errors.Is(err, ErrNoListGames) {
@@ -241,6 +241,190 @@ func TestStartImportNeedsTheListGamesCapability(t *testing.T) {
 	if err := lib.StartImport("missing", nil, nil); !errors.Is(err, ErrNoListGames) {
 		t.Errorf("unknown source err = %v, want ErrNoListGames", err)
 	}
+}
+
+// syncOnlySources is a fake host whose source syncs itself instead of listing games.
+func syncOnlyImportSources(capability string, reply any) *fakeSources {
+	return &fakeSources{
+		infos: []contract.SourceInfo{{Plugin: "itch", SourceID: "itch", Label: "itch.io",
+			Capabilities: []string{capability}}},
+		replies: map[string]func(any) (any, error){
+			methodSourceSync: func(any) (any, error) { return reply, nil },
+		},
+	}
+}
+
+// startImport waits for the background import of one source and returns its outcome.
+func runStartImport(t *testing.T, lib *Library, source string) (ImportResult, error) {
+	t.Helper()
+	type outcome struct {
+		result ImportResult
+		err    error
+	}
+	done := make(chan outcome, 1)
+	if err := lib.StartImport(source, nil, func(result ImportResult, err error) {
+		done <- outcome{result: result, err: err}
+	}); err != nil {
+		t.Fatalf("start import of %s: %v", source, err)
+	}
+	select {
+	case got := <-done:
+		return got.result, got.err
+	case <-time.After(5 * time.Second):
+		t.Fatalf("the import of %s never reported done", source)
+		return ImportResult{}, nil
+	}
+}
+
+func TestStartImportUsesSourceSyncForSyncOnlySources(t *testing.T) {
+	games := []contract.GameDTO{
+		{Source: "itch", SourceID: "1", URL: "https://itch/1", Title: "First", Version: "1", UpdatedAt: batchStamp},
+		{Source: "itch", SourceID: "2", URL: "https://itch/2", Title: "Second", Version: "1", UpdatedAt: batchStamp},
+	}
+	lib := openTestLibrary(t, Options{Sources: syncOnlyImportSources(capabilitySyncGames, games)})
+
+	result, err := runStartImport(t, lib, "itch")
+	if err != nil {
+		t.Fatalf("sync: %v", err)
+	}
+	if result != (ImportResult{Imported: 2}) {
+		t.Errorf("result = %+v, want 2 imported from source.sync", result)
+	}
+	if got := storedCount(t, lib); got != 2 {
+		t.Errorf("stored = %d, want the two games source.sync returned", got)
+	}
+}
+
+func TestStartImportAcceptsSyncStatusWithoutGames(t *testing.T) {
+	status := map[string]any{"count": 1250, "syncedAt": "2026-11-10T08:00:00Z", "running": false}
+	lib := openTestLibrary(t, Options{Sources: syncOnlyImportSources(capabilitySyncIndex, status)})
+
+	result, err := runStartImport(t, lib, "itch")
+	if err != nil {
+		t.Fatalf("sync: %v", err)
+	}
+	if result != (ImportResult{}) {
+		t.Errorf("result = %+v, want a successful sync that imported nothing", result)
+	}
+	if got := storedCount(t, lib); got != 0 {
+		t.Errorf("stored = %d, want a status-only sync not to invent games", got)
+	}
+}
+
+func TestSyncSourceImportsListedGames(t *testing.T) {
+	lib := openTestLibrary(t, Options{Sources: feedSources(listGamesOnly(250))})
+
+	result, err := lib.SyncSource(context.Background(), "feed", feedSource)
+	if err != nil {
+		t.Fatalf("sync: %v", err)
+	}
+	if result != (ImportResult{Imported: 250}) {
+		t.Errorf("result = %+v, want 250 imported", result)
+	}
+	if got := storedCount(t, lib); got != 250 {
+		t.Errorf("stored = %d, want the listed games", got)
+	}
+}
+
+func TestSyncSourceSavesSyncOnlyGames(t *testing.T) {
+	games := []contract.GameDTO{
+		{Source: "itch", SourceID: "1", URL: "https://itch/1", Title: "First", Version: "1", UpdatedAt: batchStamp},
+		{Source: "itch", SourceID: "2", URL: "https://itch/2", Title: "Second", Version: "1", UpdatedAt: batchStamp},
+	}
+	lib := openTestLibrary(t, Options{Sources: syncOnlyImportSources(capabilitySyncGames, games)})
+
+	result, err := lib.SyncSource(context.Background(), "itch", "itch")
+	if err != nil {
+		t.Fatalf("sync: %v", err)
+	}
+	if result != (ImportResult{Imported: 2}) {
+		t.Errorf("result = %+v, want 2 imported from source.sync", result)
+	}
+	if got := storedCount(t, lib); got != 2 {
+		t.Errorf("stored = %d, want the two games source.sync returned", got)
+	}
+}
+
+func TestSyncSourceAcceptsSyncStatusWithoutGames(t *testing.T) {
+	status := map[string]any{"count": 1250, "syncedAt": "2026-11-10T08:00:00Z", "running": false}
+	lib := openTestLibrary(t, Options{Sources: syncOnlyImportSources(capabilitySyncIndex, status)})
+
+	result, err := lib.SyncSource(context.Background(), "itch", "itch")
+	if err != nil {
+		t.Fatalf("sync: %v", err)
+	}
+	if result != (ImportResult{}) {
+		t.Errorf("result = %+v, want a successful sync that imported nothing", result)
+	}
+	if got := storedCount(t, lib); got != 0 {
+		t.Errorf("stored = %d, want a status-only sync not to invent games", got)
+	}
+}
+
+func TestSyncSourceNeedsAMatchingImportableSource(t *testing.T) {
+	sources := &fakeSources{infos: []contract.SourceInfo{
+		{Plugin: "browse", SourceID: "browse", Capabilities: []string{CapabilityBrowse}},
+		{Plugin: "feed", SourceID: feedSource, Capabilities: []string{CapabilityListGames}},
+	}}
+	lib := openTestLibrary(t, Options{Sources: sources})
+	cases := []struct {
+		name           string
+		plugin, source string
+	}{
+		{"unknown source", "feed", "missing"},
+		{"other plugin", "other", feedSource},
+		{"no import capability", "browse", "browse"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if _, err := lib.SyncSource(context.Background(), tc.plugin, tc.source); !errors.Is(err, ErrNoListGames) {
+				t.Errorf("err = %v, want ErrNoListGames", err)
+			}
+		})
+	}
+}
+
+func TestSyncSourceRefusesWhileAnImportRuns(t *testing.T) {
+	started := make(chan struct{})
+	release := make(chan struct{})
+	sources := &fakeSources{
+		infos: []contract.SourceInfo{{Plugin: "itch", SourceID: "itch", Capabilities: []string{capabilitySyncGames}}},
+		replies: map[string]func(any) (any, error){
+			methodSourceSync: func(any) (any, error) {
+				close(started)
+				<-release
+				return gamesOf("itch"), nil
+			},
+		},
+	}
+	lib := openTestLibrary(t, Options{Sources: sources})
+	done := make(chan error, 1)
+	if err := lib.StartImport("itch", nil, func(_ ImportResult, err error) { done <- err }); err != nil {
+		t.Fatalf("start import: %v", err)
+	}
+	select {
+	case <-started:
+	case <-time.After(5 * time.Second):
+		close(release)
+		t.Fatal("the background import never reached the plugin")
+	}
+	if _, err := lib.SyncSource(context.Background(), "itch", "itch"); !errors.Is(err, ErrImportRunning) {
+		t.Errorf("sync during an import err = %v, want ErrImportRunning", err)
+	}
+	close(release)
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Errorf("background import: %v", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("the background import never finished")
+	}
+}
+
+// gamesOf returns one game from a source, which is enough to test the claim around an import.
+func gamesOf(source string) []contract.GameDTO {
+	return []contract.GameDTO{{Source: source, SourceID: "1", URL: "https://" + source + "/1", Title: "One", Version: "1", UpdatedAt: batchStamp}}
 }
 
 func TestStoppingTheImporterCancelsARunningImport(t *testing.T) {

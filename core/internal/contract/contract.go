@@ -91,11 +91,18 @@ type Library interface {
 	UpsertMany(ctx context.Context, games []GameDTO) (gameIDs []int64, err error)
 }
 
+// ErrSecretsNotListable is returned by a Secrets store that cannot enumerate a plugin's keys.
+// Callers fall back to deleting the keys they have recorded.
+var ErrSecretsNotListable = errors.New("secret store cannot list keys")
+
 // Secrets is implemented by the host secret store (OS keyring with an encrypted-file fallback).
 type Secrets interface {
 	Get(ctx context.Context, plugin, key string) (value string, found bool, err error)
 	Set(ctx context.Context, plugin, key, value string) error
 	Delete(ctx context.Context, plugin, key string) error
+	// DeleteAll removes every secret stored for plugin, including keys the caller never named.
+	// A store that cannot list a plugin's keys returns ErrSecretsNotListable and changes nothing.
+	DeleteAll(ctx context.Context, plugin string) error
 }
 
 // SourceInfo describes one game source contributed by a plugin.
@@ -114,6 +121,9 @@ type SourceInfo struct {
 	Card *SourceCard `json:"card,omitempty"`
 	// Sidebar is the filter groups the source declares. Empty when it declares none.
 	Sidebar []SidebarGroup `json:"sidebar,omitempty"`
+	// GamesFolder is the resolved folder the plugin may scan or install into. Empty when the plugin
+	// does not hold the $GAMES grant.
+	GamesFolder string `json:"gamesFolder,omitempty"`
 }
 
 // PrepareDownloadTimeout is the longest source.prepareDownload may take. A person can finish a browser

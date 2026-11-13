@@ -9,6 +9,8 @@ import (
 	"slices"
 	"testing"
 	"time"
+
+	"light-launcher/core/internal/contract"
 )
 
 // newTestHost returns a host whose files live in a temp folder and whose restarts are fast.
@@ -19,14 +21,25 @@ func newTestHost(t *testing.T) *Host {
 
 func newTestHostWithChecker(t *testing.T, checker UpdateChecker) *Host {
 	t.Helper()
-	base := t.TempDir()
-	layout := Layout{Root: filepath.Join(base, "plugins"), Data: filepath.Join(base, "plugin-data")}
-	host, err := NewHost(HostOptions{
-		Layout:        layout,
-		HostVersion:   "2.0.0",
-		Secrets:       newFileSecrets(filepath.Join(base, "secrets")),
+	return newTestHostWithOptions(t, HostOptions{
+		Secrets:       newFileSecrets(filepath.Join(t.TempDir(), "secrets")),
 		UpdateChecker: checker,
 	})
+}
+
+// newTestHostWithSecrets is newTestHost with a secret store the test can inspect.
+func newTestHostWithSecrets(t *testing.T, secrets contract.Secrets) *Host {
+	t.Helper()
+	return newTestHostWithOptions(t, HostOptions{Secrets: secrets})
+}
+
+// newTestHostWithOptions fills the temp layout and the host version, then starts a fast host.
+func newTestHostWithOptions(t *testing.T, opts HostOptions) *Host {
+	t.Helper()
+	base := t.TempDir()
+	opts.Layout = Layout{Root: filepath.Join(base, "plugins"), Data: filepath.Join(base, "plugin-data")}
+	opts.HostVersion = "2.0.0"
+	host, err := NewHost(opts)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -242,37 +255,122 @@ func TestHostRefusedUpdateKeepsPluginRunning(t *testing.T) {
 	}
 }
 
-func TestHostRemoveDeletesPluginSecrets(t *testing.T) {
-	host := newTestHost(t)
+func TestHostRemoveDeletesTrackedAndUntrackedSecrets(t *testing.T) {
+	store := newFakeSecrets(map[string]map[string]string{
+		// This key predates per-key tracking, so the plugin state never named it.
+		"fixture": {"legacyToken": "old"},
+		"other":   {"token": "keep"},
+	})
+	host := newTestHostWithSecrets(t, store)
 	ctx := context.Background()
 	source := filepath.Join(t.TempDir(), "fixture.llplugin")
 	writeFixturePackage(t, source, "0.1.0")
 	if _, err := host.Install(ctx, InstallRequest{Source: source, AllowUnsigned: true, AcceptedPermissions: testConsent}); err != nil {
 		t.Fatal(err)
 	}
-	if err := host.deps.secrets.Set(ctx, "fixture", "token", "abc"); err != nil {
-		t.Fatal(err)
-	}
-	if err := host.deps.secrets.Set(ctx, "fixture", "apiKey", "def"); err != nil {
-		t.Fatal(err)
-	}
-	if err := host.deps.secrets.Set(ctx, "other", "token", "keep"); err != nil {
-		t.Fatal(err)
+	for _, secret := range []struct{ key, value string }{{"token", "abc"}, {"apiKey", "def"}} {
+		if err := host.deps.secrets.Set(ctx, "fixture", secret.key, secret.value); err != nil {
+			t.Fatal(err)
+		}
 	}
 	if keys := host.install.state.get("fixture").SecretKeys; !slices.Equal(keys, []string{"token", "apiKey"}) {
 		t.Fatalf("tracked secret keys = %v, want [token apiKey]", keys)
+	}
+	if keys := store.keys("fixture"); !slices.Equal(keys, []string{"apiKey", "legacyToken", "token"}) {
+		t.Fatalf("secrets before Remove = %v, want [apiKey legacyToken token]", keys)
 	}
 
 	if err := host.Remove("fixture", false); err != nil {
 		t.Fatalf("Remove: %v", err)
 	}
+	if keys := store.keys("fixture"); len(keys) != 0 {
+		t.Fatalf("secrets after Remove = %v, want none", keys)
+	}
+	if keys := store.keys("other"); !slices.Equal(keys, []string{"token"}) {
+		t.Fatalf("another plugin's secrets = %v, want [token]", keys)
+	}
+	if store.deleteAllCalls != 1 {
+		t.Fatalf("DeleteAll calls = %d, want 1", store.deleteAllCalls)
+	}
+}
+
+func TestHostRemoveFallsBackWhenStoreCannotListKeys(t *testing.T) {
+	store := newFakeSecrets(map[string]map[string]string{"other": {"token": "keep"}})
+	store.notListable = true
+	host := newTestHostWithSecrets(t, store)
+	ctx := context.Background()
+	source := filepath.Join(t.TempDir(), "fixture.llplugin")
+	writeFixturePackage(t, source, "0.1.0")
+	if _, err := host.Install(ctx, InstallRequest{Source: source, AllowUnsigned: true, AcceptedPermissions: testConsent}); err != nil {
+		t.Fatal(err)
+	}
 	for _, key := range []string{"token", "apiKey"} {
-		if _, found, err := host.deps.secrets.Get(ctx, "fixture", key); err != nil || found {
-			t.Fatalf("secret %q after Remove: found = %v, err = %v; want it deleted", key, found, err)
+		if err := host.deps.secrets.Set(ctx, "fixture", key, "value"); err != nil {
+			t.Fatal(err)
 		}
 	}
-	if value, found, err := host.deps.secrets.Get(ctx, "other", "token"); err != nil || !found || value != "keep" {
-		t.Fatalf("another plugin's secret = %q, %v, %v; want it kept", value, found, err)
+
+	if err := host.Remove("fixture", false); err != nil {
+		t.Fatalf("Remove: %v", err)
+	}
+	if keys := store.keys("fixture"); len(keys) != 0 {
+		t.Fatalf("tracked secrets after Remove = %v, want none", keys)
+	}
+	if store.deleteAllCalls != 1 || store.deleteCalls != 2 {
+		t.Fatalf("DeleteAll calls = %d, per-key deletes = %d; want 1 and 2", store.deleteAllCalls, store.deleteCalls)
+	}
+	if keys := store.keys("other"); !slices.Equal(keys, []string{"token"}) {
+		t.Fatalf("another plugin's secrets = %v, want [token]", keys)
+	}
+}
+
+func TestHostRemoveReportsSecretDeleteFailure(t *testing.T) {
+	failure := errors.New("keyring is locked")
+	store := newFakeSecrets(map[string]map[string]string{"other": {"token": "keep"}})
+	store.deleteAllErr = failure
+	host := newTestHostWithSecrets(t, store)
+	ctx := context.Background()
+	source := filepath.Join(t.TempDir(), "fixture.llplugin")
+	writeFixturePackage(t, source, "0.1.0")
+	if _, err := host.Install(ctx, InstallRequest{Source: source, AllowUnsigned: true, AcceptedPermissions: testConsent}); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := host.Remove("fixture", false); !errors.Is(err, failure) {
+		t.Fatalf("Remove error = %v, want %v", err, failure)
+	}
+	if _, err := host.loadInstalled("fixture"); err != nil {
+		t.Fatalf("plugin was removed even though its secrets could not be deleted: %v", err)
+	}
+	if store.deleteCalls != 0 {
+		t.Fatalf("per-key deletes = %d, want none after a DeleteAll error", store.deleteCalls)
+	}
+	if keys := store.keys("other"); !slices.Equal(keys, []string{"token"}) {
+		t.Fatalf("another plugin's secrets = %v, want [token]", keys)
+	}
+}
+
+func TestHostRemoveReportsFallbackDeleteFailure(t *testing.T) {
+	failure := errors.New("keyring is locked")
+	store := newFakeSecrets(nil)
+	store.notListable = true
+	store.deleteErr = failure
+	host := newTestHostWithSecrets(t, store)
+	ctx := context.Background()
+	source := filepath.Join(t.TempDir(), "fixture.llplugin")
+	writeFixturePackage(t, source, "0.1.0")
+	if _, err := host.Install(ctx, InstallRequest{Source: source, AllowUnsigned: true, AcceptedPermissions: testConsent}); err != nil {
+		t.Fatal(err)
+	}
+	if err := host.deps.secrets.Set(ctx, "fixture", "token", "value"); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := host.Remove("fixture", false); !errors.Is(err, failure) {
+		t.Fatalf("Remove error = %v, want %v", err, failure)
+	}
+	if store.deleteAllCalls != 1 || store.deleteCalls != 1 {
+		t.Fatalf("DeleteAll calls = %d, per-key deletes = %d; want 1 and 1", store.deleteAllCalls, store.deleteCalls)
 	}
 }
 

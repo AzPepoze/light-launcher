@@ -18,17 +18,39 @@ const (
 	syncJobTimeout      = 10 * time.Minute
 	syncJobJitter       = 5 * time.Minute
 	updateCheckTimeout  = 10 * time.Minute
+
+	pluginUpdateCheckJobName  = "plugins.update-check"
+	pluginUpdateCheckInterval = 24 * time.Hour
+	pluginUpdateCheckTimeout  = 10 * time.Minute
+	pluginUpdateCheckJitter   = 5 * time.Minute
+
 	capabilitySyncGames = "sync:games"
 	capabilitySyncIndex = "sync:index"
 	capabilityListGames = "listGames"
-	methodSourceSync    = "source.sync"
 )
 
-// newScheduler builds the plugin sync jobs and the library update check. The scheduler itself
-// knows nothing about plugins or the library. importSource imports the games of a source that lists them.
-func newScheduler(ctx context.Context, lib *library.Library, host *plugins.Host, sources contract.Sources, importSource func(ctx context.Context, plugin, source string) error, notify func(string, any)) (*scheduler.Scheduler, func() error, error) {
+// schedulerHost is the part of the plugin host the schedule needs.
+type schedulerHost interface {
+	List() []plugins.PluginInfo
+	SettingsGet(id string) (plugins.SettingsView, error)
+	CheckUpdates(ctx context.Context, id string) (plugins.PluginUpdatesStatus, error)
+}
+
+// schedulerLibrary is the part of the library the schedule needs. The library also keeps the last
+// run times, so the scheduler does not check GitHub or the sources again after a restart too early.
+type schedulerLibrary interface {
+	scheduler.MetaStore
+	ScheduledCheck(ctx context.Context, startup bool) (bool, error)
+}
+
+// newScheduler builds the plugin sync jobs, the daily plugin release check and the library update
+// check. Every source goes through importSource, so the library owns the plugin calls and a source
+// that syncs its own games is stored like a manual sync. The sources argument is unused: the library
+// already holds the source list, but the launcher wiring still passes it.
+func newScheduler(ctx context.Context, lib schedulerLibrary, host schedulerHost, _ contract.Sources, importSource func(ctx context.Context, plugin, source string) error, notify func(string, any)) (*scheduler.Scheduler, func() error, error) {
 	build := func() []scheduler.Job {
-		jobs := pluginSyncJobs(host, sources, importSource)
+		jobs := pluginSyncJobs(host, importSource)
+		jobs = append(jobs, pluginUpdateCheckJob(host))
 		jobs = append(jobs, scheduler.Job{
 			Name:     "library.update-check",
 			Interval: library.UpdateTick,
@@ -48,9 +70,26 @@ func newScheduler(ctx context.Context, lib *library.Library, host *plugins.Host,
 	return sched, func() error { return sched.SetJobs(build()) }, nil
 }
 
+// pluginUpdateCheckJob checks the GitHub releases of every installed plugin once a day. The startup
+// check and "Check now" stay as they are. A failed check is logged and retried on the next run.
+func pluginUpdateCheckJob(host schedulerHost) scheduler.Job {
+	return scheduler.Job{
+		Name:     pluginUpdateCheckJobName,
+		Interval: pluginUpdateCheckInterval,
+		Timeout:  pluginUpdateCheckTimeout,
+		Jitter:   pluginUpdateCheckJitter,
+		Run: func(ctx context.Context) error {
+			if _, err := host.CheckUpdates(ctx, ""); err != nil {
+				return fmt.Errorf("check plugin updates: %w", err)
+			}
+			return nil
+		},
+	}
+}
+
 // updateCheckRun returns the run function of the background update check. The first call is the
 // run after launch. Later calls run when the schedule allows it, and the scheduler skips the rest.
-func updateCheckRun(lib *library.Library) func(ctx context.Context) error {
+func updateCheckRun(lib schedulerLibrary) func(ctx context.Context) error {
 	first := true
 	return func(ctx context.Context) error {
 		startup := first
@@ -66,7 +105,7 @@ func updateCheckRun(lib *library.Library) func(ctx context.Context) error {
 	}
 }
 
-func pluginSyncJobs(host *plugins.Host, sources contract.Sources, importSource func(ctx context.Context, plugin, source string) error) []scheduler.Job {
+func pluginSyncJobs(host schedulerHost, importSource func(ctx context.Context, plugin, source string) error) []scheduler.Job {
 	var jobs []scheduler.Job
 	for _, info := range host.List() {
 		if !pluginRunnable(info) {
@@ -77,13 +116,13 @@ func pluginSyncJobs(host *plugins.Host, sources contract.Sources, importSource f
 			if !syncCapable(source) {
 				continue
 			}
-			jobs = append(jobs, pluginSyncJob(host, sources, importSource, info.ID, source, interval))
+			jobs = append(jobs, pluginSyncJob(host, importSource, info.ID, source, interval))
 		}
 	}
 	return jobs
 }
 
-func pluginSyncJob(host *plugins.Host, sources contract.Sources, importSource func(ctx context.Context, plugin, source string) error, pluginID string, source contract.SourceInfo, interval time.Duration) scheduler.Job {
+func pluginSyncJob(host schedulerHost, importSource func(ctx context.Context, plugin, source string) error, pluginID string, source contract.SourceInfo, interval time.Duration) scheduler.Job {
 	return scheduler.Job{
 		Name:           fmt.Sprintf("plugin-sync:%s:%s", pluginID, source.SourceID),
 		PluginID:       pluginID,
@@ -95,39 +134,35 @@ func pluginSyncJob(host *plugins.Host, sources contract.Sources, importSource fu
 			if !pluginRunnable(findPlugin(host, pluginID)) {
 				return scheduler.ErrSkipped
 			}
-			return runSourceSync(ctx, sources, importSource, pluginID, source)
+			return runSourceSync(ctx, importSource, pluginID, source)
 		},
 	}
 }
 
-// runSourceSync imports the games of a source that lists them. Other sources run their own source.sync.
-func runSourceSync(ctx context.Context, sources contract.Sources, importSource func(ctx context.Context, plugin, source string) error, pluginID string, source contract.SourceInfo) error {
+// runSourceSync fills the library from one source. Both routes go through the library: it imports a
+// source that lists games page by page, and saves the games that a sync-only source returns from
+// source.sync. Only the error text differs, so an operator can tell the two apart.
+func runSourceSync(ctx context.Context, importSource func(ctx context.Context, plugin, source string) error, pluginID string, source contract.SourceInfo) error {
+	err := importSource(ctx, pluginID, source.SourceID)
+	if err == nil {
+		return nil
+	}
 	if listsGames(source) {
-		return importListedGames(ctx, importSource, pluginID, source.SourceID)
+		return fmt.Errorf("import games of source %s: %w", source.SourceID, err)
 	}
-	if err := sources.Call(ctx, pluginID, methodSourceSync, map[string]string{"source": source.SourceID}, nil); err != nil {
-		return fmt.Errorf("sync source %s: %w", source.SourceID, err)
-	}
-	return nil
+	return fmt.Errorf("sync source %s: %w", source.SourceID, err)
 }
 
-// libraryImporter adapts the library import to the scheduler's job signature. A progress callback is not
+// libraryImporter adapts the library sync to the scheduler's job signature. A progress callback is not
 // needed for a scheduled run: the library still sends its throttled change events.
 func libraryImporter(lib *library.Library) func(ctx context.Context, plugin, source string) error {
 	return func(ctx context.Context, plugin, source string) error {
-		_, err := lib.ImportSource(ctx, plugin, source, nil)
+		_, err := lib.SyncSource(ctx, plugin, source)
 		return err
 	}
 }
 
-func importListedGames(ctx context.Context, importSource func(ctx context.Context, plugin, source string) error, pluginID, sourceID string) error {
-	if err := importSource(ctx, pluginID, sourceID); err != nil {
-		return fmt.Errorf("import games of source %s: %w", sourceID, err)
-	}
-	return nil
-}
-
-func pluginSyncInterval(host *plugins.Host, id string) time.Duration {
+func pluginSyncInterval(host schedulerHost, id string) time.Duration {
 	view, err := host.SettingsGet(id)
 	if err != nil {
 		logger.Warn("scheduler", "settings of %s: %v", id, err)
@@ -148,7 +183,7 @@ func syncIntervalFromSettings(view plugins.SettingsView) time.Duration {
 	return time.Duration(hours * float64(time.Hour))
 }
 
-func findPlugin(host *plugins.Host, id string) plugins.PluginInfo {
+func findPlugin(host schedulerHost, id string) plugins.PluginInfo {
 	for _, info := range host.List() {
 		if info.ID == id {
 			return info

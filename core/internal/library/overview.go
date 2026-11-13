@@ -49,6 +49,9 @@ type SourceCount struct {
 	Card *contract.SourceCard `json:"card"`
 	// Sidebar holds the filter groups the source declares for the Library sidebar. Empty for local games.
 	Sidebar []contract.SidebarGroup `json:"sidebar,omitempty"`
+	// GamesFolder is the resolved folder the plugin keeps games in. Empty for local games and
+	// plugins without the $GAMES grant.
+	GamesFolder string `json:"gamesFolder,omitempty"`
 }
 
 // Overview is the summary the library shows beside its list. It covers the whole visible library, not a filter.
@@ -199,6 +202,7 @@ func sourceCountOf(id string, count int, info contract.SourceInfo) SourceCount {
 		Actions:      actionList(info.Actions),
 		Card:         info.Card,
 		Sidebar:      info.Sidebar,
+		GamesFolder:  info.GamesFolder,
 	}
 }
 

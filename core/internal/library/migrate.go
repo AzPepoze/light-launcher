@@ -138,6 +138,11 @@ func migrate(ctx context.Context, db *sql.DB) error {
 			return fmt.Errorf("migration %d: %w", m.version, err)
 		}
 	}
+	// One-time data cleanups run after the schema is current. Each is guarded by its own meta key,
+	// so it can be added without a schema version and only ever runs once.
+	if err := cleanupStaleItchChecks(ctx, db); err != nil {
+		return fmt.Errorf("cleanup stale update history: %w", err)
+	}
 	return nil
 }
 
