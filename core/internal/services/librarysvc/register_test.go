@@ -88,7 +88,7 @@ func call(t *testing.T, router *api.Router, method string, payload string) any {
 func TestRegisterAddsEveryLibraryMethod(t *testing.T) {
 	router, _ := setup(t)
 	want := []string{
-		"LibraryList", "LibraryGet", "LibraryUpdate", "LibraryRemove", "LibrarySearch", "LibraryBrowse", "LibraryFilters", "LibraryPreview",
+		"LibraryList", "LibraryGet", "LibraryRefreshFiles", "LibraryUpdate", "LibraryRemove", "LibrarySearch", "LibraryBrowse", "LibraryFilters", "LibraryPreview",
 		"LibraryAddFromUrl", "LibraryLinkLocal", "LibraryCheckUpdates", "LibrarySetFavorite",
 		"LibraryOverview", "LibrarySyncSource",
 		"LibraryLaunch", "LibraryLinkFolder", "LibraryUpdatesSummary",

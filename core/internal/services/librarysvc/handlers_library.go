@@ -84,6 +84,17 @@ func (s *service) get(ctx context.Context, in idPayload) (library.GameDetail, er
 	return s.lib.Detail(ctx, in.ID)
 }
 
+// refreshFiles asks the game's source for fresh metadata and plugin file ids, then returns the
+// updated game page. It is the repair path for games saved before plugin file ids existed.
+func (s *service) refreshFiles(ctx context.Context, in idPayload) (library.GameDetail, error) {
+	detail, err := s.lib.RefreshGameFiles(ctx, in.ID)
+	if err != nil {
+		return library.GameDetail{}, err
+	}
+	s.changed(in.ID)
+	return detail, nil
+}
+
 func (s *service) update(ctx context.Context, in updatePayload) (library.Game, error) {
 	if in.Title != nil && strings.TrimSpace(*in.Title) == "" {
 		return library.Game{}, errors.New("title cannot be empty")

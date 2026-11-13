@@ -27,6 +27,7 @@ func Register(r *api.Router, ev api.Events, lib *library.Library, sources contra
 	r.Handle("LibraryOverview", api.NoInput(s.overview))
 	r.Handle("LibrarySyncSource", api.Typed(s.syncSource))
 	r.Handle("LibraryGet", api.Typed(s.get))
+	r.Handle("LibraryRefreshFiles", api.Typed(s.refreshFiles))
 	r.Handle("LibraryUpdate", api.Typed(s.update))
 	r.Handle("LibraryRemove", api.Typed(s.remove))
 	r.Handle("LibrarySearch", api.Typed(s.search))
