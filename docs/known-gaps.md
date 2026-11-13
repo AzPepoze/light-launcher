@@ -27,7 +27,8 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | Run `actionlint` and `shellcheck` on the workflows and scripts (not installed yet). |
 | [x] | Make the plugin SDK and plugin repos public and push them. |
 | [ ] | Plugin registry index (`plugins.json`) for community installs. |
-| [ ] | Sign plugin packages and publish the public key. |
+| [x] | Plugin packages can be signed (`llp keygen` / `llp sign`); the app lists trusted key fingerprints and can add/remove keys. |
+| [ ] | Publish the project's public signing key and a community registry host; no release URL or key is published yet. |
 
 ## Home page
 
