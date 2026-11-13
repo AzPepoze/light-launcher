@@ -58,7 +58,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | Check the settings form by eye in the real window (only typecheck, tests and build so far). |
 | [x] | Host options for a download folder, a subfolder per game, install after download and delete archive, including the optional `source.prepareDownload` result hints. |
 | [ ] | The game file download button is wired to `source.prepareDownload` but only tested with fakes and the fixture plugin. Click it in the real window with a plugin that opens the browser step. |
-| [ ] | A file saved before this version has no plugin file id, so its `source.prepareDownload` call gets an empty `id`. Adding the game again from its link saves the ids. There is no button that only refreshes files. |
+| [x] | A plugin game's detail has a "Refresh files" action that calls `LibraryRefreshFiles`, replaces old file rows/plugin ids, and updates the displayed detail. RPC/mapping tested; button visibility is typechecked only. |
 | [ ] | Closing the browser window during a file download is covered by a unit test only. Check the error text in the real window. |
 | [ ] | The Download button's busy text ("Finish the step in the browser window") is checked by typecheck and build only. Look at it in the real window. |
 | [x] | The launcher never calls `source.sync` and never schedules update checks. Plugin sync and interval settings have no effect until a scheduler exists. |
@@ -173,8 +173,8 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [x] | IPC errors carry a stable `code`; `method_not_found`, `auth_required` and the plugin RPC codes reach `InvokeError`. |
 | [x] | No `.btn` buttons remain in the plugin screens. PluginRow's full-row button and the sites disclosure stay raw on purpose: Button cannot express their layout/aria structure without neutralizing the kit. |
 | [x] | The text marquee is one shared component used by GameTile and GridCard. |
-| [ ] | Add a lint test that stops new `class="btn` and `material-icons` spans in features. |
-| [ ] | Migrate the remaining `material-icons` spans and `btn` classes. |
+| [x] | A test scans every renderer `.svelte` file and fails on new `class="btn` or `material-icons` spans; the one external-link anchor is explicitly allowed. |
+| [x] | The remaining `material-icons` spans and `.btn` controls moved to `Icon`/`Button`/`IconButton`; only the GameDetail external-link anchor stays raw. |
 | [x] | The Updates settings source list no longer calls `PluginsList`; it reads one local library overview and shows each source icon and label. |
 | [ ] | `SettingRow` has no icon slot, so the Updates settings source rows use a small local row for icon + label. Add an optional icon prop if that markup should be shared. |
 | [ ] | Checkbox is kept for PluginConsent only. |
