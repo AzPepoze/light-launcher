@@ -80,7 +80,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 
 | Status | Item |
 |---|---|
-| [ ] | MEGA downloads need the AES file key, but `source.prepareDownload` has no field for it, so MEGA links fail with a clear error. Needs an SDK change. |
+| [x] | MEGA downloads work: F95 1.0.2 returns an `aes-128-ctr` key/nonce and the host decrypts the finished file before install. Limitations: AES-CTR has no MAC (a wrong key on a non-install download is undetected), and the key is stored in plaintext in the downloads row. |
 | [ ] | Ask F95 Zone staff for written permission. Until then the README says it is not approved. |
 | [x] | Contact line in the README (an issue on the now public repo). |
 | [ ] | Cannot set: patch-over-full, skip extras, include pre-releases (the parser does not keep that information). |
