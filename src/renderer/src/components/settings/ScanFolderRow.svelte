@@ -10,6 +10,7 @@
 	import { createLogger } from "@lib/logger";
 	import { notifications } from "@stores/notificationStore";
 	import NumberField from "@components/shared/NumberField.svelte";
+	import Notice from "@components/shared/Notice.svelte";
 
 	const log = createLogger("ScanFolderRow");
 
@@ -18,6 +19,7 @@
 		depth,
 		excludeNames,
 		gamesFound,
+		pluginWarnings,
 		rescanNote,
 		rescanning,
 		onRescan,
@@ -28,6 +30,8 @@
 		depth: number;
 		excludeNames: string[];
 		gamesFound: number | null;
+		/** Warnings for plugin games folders this folder overlaps. They never block saving. */
+		pluginWarnings: string[];
 		rescanNote: string;
 		rescanning: boolean;
 		onRescan: () => void;
@@ -77,6 +81,10 @@
 		</button>
 		<button class="btn danger" onclick={onRemove}>Remove</button>
 	</div>
+
+	{#each pluginWarnings as warning (warning)}
+		<Notice tone="warning" icon="warning">{warning}</Notice>
+	{/each}
 
 	<p class="rescan-note" role="status">{rescanNote}</p>
 

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, tick } from "svelte";
+	import { get } from "svelte/store";
 	import Button from "@components/shared/Button.svelte";
 	import EmptyState from "@components/shared/EmptyState.svelte";
 	import IconButton from "@components/shared/IconButton.svelte";
@@ -48,7 +49,21 @@
 			(row) => row.transfer.state === "active"
 		)
 	);
-	let tab = $state<LibraryTab>("games");
+	/** Tabs whose page stays mounted once opened. The Games grid is cheap to rebuild from the pager. */
+	type PanelTab = Exclude<LibraryTab, "games">;
+
+	/** The tab the store opens on, used to mount its panel on the first render. */
+	const startingTab = get(libraryTab);
+	let tab = $state<LibraryTab>(startingTab);
+	/**
+	 * Panels mount on their first visit and are only hidden afterwards, never thrown away, so
+	 * scroll position, expanded rows and running checks survive a switch to another tab.
+	 */
+	let mountedTabs = $state<Record<PanelTab, boolean>>({
+		updates: startingTab === "updates",
+		downloads: startingTab === "downloads",
+		incoming: startingTab === "incoming"
+	});
 	let updateCount = $state(0);
 	let selected = $state<Game | null>(null);
 	let addOpen = $state(false);
@@ -81,10 +96,15 @@
 	const revealCount = $derived(Math.min(library.total ?? 0, REVEAL_MAX_TILES));
 
 	onMount(() => {
-		const stopTab = libraryTab.subscribe((next) => (tab = next));
+		const stopTab = libraryTab.subscribe((next) => {
+			tab = next;
+			// Opening a tab mounts its page; it stays mounted from then on.
+			if (next !== "games") mountedTabs[next] = true;
+		});
 		void library.start();
 		void loadAppearance();
-		void loadUpdateCount();
+		// The Updates page reads its own status and reports it back, so start it only off that tab.
+		if (tab !== "updates") void loadUpdateCount();
 		void downloads.load();
 		const stopDownloads = downloads.subscribe();
 		const stopLibrary = library.subscribe();
@@ -196,116 +216,149 @@
 		<Tabs tabs={topTabs} value={tab} onChange={selectTab} aria-label="Library sections" />
 	</div>
 
-	{#if tab === "updates"}
-		<UpdatesPage sources={library.overview.sources} onStatus={(next) => (updateCount = next.count)} />
-	{:else if tab === "downloads"}
-		<DownloadsPage {downloads} />
-	{:else if tab === "incoming"}
-		<IncomingPanel onChanged={() => library.refresh()} />
-	{:else if !library.overviewLoaded}
-		<LoadingState label="Loading library..." />
-	{:else if library.overviewError}
-		<Notice tone="error">
-			{library.overviewError}
-			<Button size="sm" onclick={() => library.refresh()}>Retry</Button>
-		</Notice>
-	{:else if current}
-		<div class="layout" class:with-detail={selected !== null}>
-			<div class="rail-col">
-				<SourceRail
-					sections={library.sections}
-					selected={library.section}
-					onSelect={(source) => library.selectSection(source)}
-				/>
-			</div>
+	<!--
+		Updates, Downloads and Incoming mount on their first visit, then stay mounted and hidden,
+		so their scroll position, expanded rows and running transfers survive a tab switch.
+	-->
+	{#if mountedTabs.updates}
+		<div
+			role="tabpanel"
+			aria-label="Updates"
+			hidden={tab !== "updates"}
+			aria-hidden={tab !== "updates"}
+		>
+			<UpdatesPage sources={library.overview.sources} onStatus={(next) => (updateCount = next.count)} />
+		</div>
+	{/if}
 
-			<div class="side-col" class:open={filtersOpen}>
-				<LibrarySidebar
-					{library}
-					canSync={canSyncGames(current)}
-					syncing={library.isSyncing(library.section)}
-					onSync={syncNow}
-				/>
-			</div>
+	{#if mountedTabs.downloads}
+		<div
+			role="tabpanel"
+			aria-label="Downloads"
+			hidden={tab !== "downloads"}
+			aria-hidden={tab !== "downloads"}
+		>
+			<DownloadsPage {downloads} />
+		</div>
+	{/if}
 
-			<div class="main">
-				<div class="filters-toggle">
-					<Button size="sm" icon="tune" onclick={() => (filtersOpen = !filtersOpen)}>Filters</Button>
+	{#if mountedTabs.incoming}
+		<div
+			role="tabpanel"
+			aria-label="Incoming"
+			hidden={tab !== "incoming"}
+			aria-hidden={tab !== "incoming"}
+		>
+			<IncomingPanel onChanged={() => library.refresh()} />
+		</div>
+	{/if}
+
+	{#if tab === "games"}
+		{#if !library.overviewLoaded}
+			<LoadingState label="Loading library..." />
+		{:else if library.overviewError}
+			<Notice tone="error">
+				{library.overviewError}
+				<Button size="sm" onclick={() => library.refresh()}>Retry</Button>
+			</Notice>
+		{:else if current}
+			<div class="layout" class:with-detail={selected !== null}>
+				<div class="rail-col">
+					<SourceRail
+						sections={library.sections}
+						selected={library.section}
+						onSelect={(source) => library.selectSection(source)}
+					/>
 				</div>
 
-				<SectionHeader
-					label={current.label}
-					count={current.count}
-					{isPlugin}
-					progress={library.syncs[library.section]}
-				/>
+				<div class="side-col" class:open={filtersOpen}>
+					<LibrarySidebar
+						{library}
+						canSync={canSyncGames(current)}
+						syncing={library.isSyncing(library.section)}
+						onSync={syncNow}
+					/>
+				</div>
 
-				{#if library.error}
-					<Notice tone="error">
-						{library.error}
-						<Button size="sm" onclick={() => library.retry()}>Retry</Button>
-					</Notice>
-				{/if}
+				<div class="main">
+					<div class="filters-toggle">
+						<Button size="sm" icon="tune" onclick={() => (filtersOpen = !filtersOpen)}>Filters</Button>
+					</div>
 
-				{#if library.total === null}
-					{#if !library.error}<LoadingState label="Loading games..." />{/if}
-				{:else if library.total === 0}
-					{#if !library.error}
-						{#if library.filtersActive}
-							<EmptyState icon="search_off" title="No games match these filters.">
-								<Button size="sm" onclick={() => library.clearFilters()}>Clear filters</Button>
-							</EmptyState>
-						{:else if isPlugin}
-							<EmptyState
-								icon="store"
-								title="No games yet."
-								hint="Install the plugin, sign in, then press Sync now."
-							/>
-						{:else}
-							<EmptyState
-								icon="videogame_asset"
-								title="No games yet."
-								hint="Add a link or scan your folders."
-							>
-								<Button size="sm" variant="primary" onclick={() => (addOpen = true)}>Add game</Button>
-							</EmptyState>
-						{/if}
+					<SectionHeader
+						label={current.label}
+						count={current.count}
+						{isPlugin}
+						progress={library.syncs[library.section]}
+					/>
+
+					{#if library.error}
+						<Notice tone="error">
+							{library.error}
+							<Button size="sm" onclick={() => library.retry()}>Retry</Button>
+						</Notice>
 					{/if}
-				{:else}
-					{#key library.section}
-						<LibraryGrid
-							{library}
-							{ratio}
-							minColumnPx={cardSize}
-							card={current.card}
-							{transfers}
-							blurUntilHover={blurCovers}
-							{revealed}
-							onOpen={openTile}
-						/>
-					{/key}
+
+					{#if library.total === null}
+						{#if !library.error}<LoadingState label="Loading games..." />{/if}
+					{:else if library.total === 0}
+						{#if !library.error}
+							{#if library.filtersActive}
+								<EmptyState icon="search_off" title="No games match these filters.">
+									<Button size="sm" onclick={() => library.clearFilters()}>Clear filters</Button>
+								</EmptyState>
+							{:else if isPlugin}
+								<EmptyState
+									icon="store"
+									title="No games yet."
+									hint="Install the plugin, sign in, then press Sync now."
+								/>
+							{:else}
+								<EmptyState
+									icon="videogame_asset"
+									title="No games yet."
+									hint="Add a link or scan your folders."
+								>
+									<Button size="sm" variant="primary" onclick={() => (addOpen = true)}>Add game</Button>
+								</EmptyState>
+							{/if}
+						{/if}
+					{:else}
+						{#key library.section}
+							<LibraryGrid
+								{library}
+								{ratio}
+								minColumnPx={cardSize}
+								card={current.card}
+								{transfers}
+								blurUntilHover={blurCovers}
+								{revealed}
+								onOpen={openTile}
+							/>
+						{/key}
+					{/if}
+				</div>
+
+				{#if selected}
+					<div class="detail-backdrop" role="presentation" onclick={closeGame}></div>
+					<aside class="detail-col" aria-label="Game details">
+						<!-- Keyed by id so switching tiles loads the new game's files and notes. -->
+						{#key selected.id}
+							<div class="detail-top">
+								<IconButton icon="close" label="Close" onclick={closeGame} />
+							</div>
+							<GameDetail
+								game={selected}
+								sourceName={sourceLabel(library.overview.sources, selected.source)}
+								actions={gameActions}
+								onRemoved={gameRemoved}
+								onChanged={gameChanged}
+							/>
+						{/key}
+					</aside>
 				{/if}
 			</div>
-
-			{#if selected}
-				<div class="detail-backdrop" role="presentation" onclick={closeGame}></div>
-				<aside class="detail-col" aria-label="Game details">
-					<!-- Keyed by id so switching tiles loads the new game's files and notes. -->
-					{#key selected.id}
-						<div class="detail-top">
-							<IconButton icon="close" label="Close" onclick={closeGame} />
-						</div>
-						<GameDetail
-							game={selected}
-							sourceName={sourceLabel(library.overview.sources, selected.source)}
-							actions={gameActions}
-							onRemoved={gameRemoved}
-							onChanged={gameChanged}
-						/>
-					{/key}
-				</aside>
-			{/if}
-		</div>
+		{/if}
 	{/if}
 
 	{#if addOpen}

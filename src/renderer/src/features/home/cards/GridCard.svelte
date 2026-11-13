@@ -6,9 +6,11 @@
 	import LauncherMenu from "../shared/LauncherMenu.svelte";
 	import { getDominantColor } from "@lib/dominantColor";
 	import { iconFade } from "@lib/iconReveal";
+	import { cardIconState, type CardIconState } from "../shared/cardIconState";
 
 	export let game: any;
 	export let icon: string = "";
+	export let iconPending: boolean = false;
 	export let isRunning: boolean = false;
 	export let isSelectionMode: boolean = false;
 	export let isSelected: boolean = false;
@@ -30,12 +32,17 @@
 	let iconImgEl: HTMLImageElement | undefined;
 	let colorNonce = 0;
 	let lastIcon = "";
+	let imageFailed = false;
+	let displayState: CardIconState = "missing";
+
+	$: displayState = cardIconState({ icon, pending: iconPending, failed: imageFailed });
 
 	$: if (icon !== lastIcon) {
 		lastIcon = icon;
 		colorFetched = false;
 		dominantRGB = "255,255,255";
 		iconImgEl = undefined;
+		imageFailed = false;
 	}
 
 	function handleLaunch(event?: MouseEvent) {
@@ -59,6 +66,10 @@
 		event.stopPropagation();
 	}
 
+	function handleIconError() {
+		imageFailed = true;
+	}
+
 	function scheduleFrame() {
 		if (rafId !== null) return;
 		rafId = requestAnimationFrame(() => {
@@ -80,7 +91,7 @@
 
 	function handleMouseEnter() {
 		isHovering = true;
-		if (icon && !colorFetched) {
+		if (icon && !imageFailed && !colorFetched) {
 			colorFetched = true;
 			const nonce = ++colorNonce;
 			getDominantColor(icon, iconImgEl).then((c) => {
@@ -130,7 +141,7 @@
 		{/if}
 
 		<div class="icon-wrapper">
-			{#if icon}
+			{#if displayState === "ready"}
 				<img
 					bind:this={iconImgEl}
 					use:iconFade={icon}
@@ -140,7 +151,10 @@
 					loading="lazy"
 					decoding="async"
 					draggable="false"
+					on:error={handleIconError}
 				/>
+			{:else if displayState === "pending"}
+				<div class="icon-skeleton" aria-hidden="true"></div>
 			{:else}
 				<span class="material-icons system-icon">rocket_launch</span>
 			{/if}
@@ -326,6 +340,29 @@
 		font-size: 64px;
 		color: var(--text-muted);
 		opacity: 0.3;
+	}
+
+	// Neutral placeholder while the icon cache is still resolving this game.
+	.icon-skeleton {
+		width: 100%;
+		height: 100%;
+		background: linear-gradient(
+			90deg,
+			rgba(255, 255, 255, 0.03) 25%,
+			rgba(255, 255, 255, 0.07) 37%,
+			rgba(255, 255, 255, 0.03) 63%
+		);
+		background-size: 400% 100%;
+		animation: icon-skeleton-sweep 1.6s infinite linear;
+	}
+
+	@keyframes icon-skeleton-sweep {
+		0% {
+			background-position: 200% 0;
+		}
+		100% {
+			background-position: -200% 0;
+		}
 	}
 
 	@keyframes play-bounce {
@@ -550,6 +587,11 @@
 			transition: none;
 			transform: none;
 			opacity: 1;
+		}
+
+		.icon-skeleton {
+			animation: none;
+			background: rgba(255, 255, 255, 0.04);
 		}
 
 		.play-ripple {

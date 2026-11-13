@@ -9,7 +9,9 @@ import {
 } from "@lib/features/scanFolders";
 import { sectionScroll } from "@lib/features/settingsSection";
 import { createLogger } from "@lib/logger";
+import { libraryApi } from "@lib/features/libraryApi";
 import type { AppSettings, ScanFolderConfig, ScannedFolderGroup } from "@shared";
+import type { LibrarySource } from "@lib/features/types";
 import type { WireUpdateCheckSettings } from "@lib/features/wire";
 import * as service from "@lib/settingsService";
 import { clampLibraryCardSize } from "./libraryAppearance";
@@ -41,6 +43,8 @@ export class SettingsState {
 	private updateCheckSaveTimer: ReturnType<typeof setTimeout> | undefined;
 
 	groups = $state<ScannedFolderGroup[]>([]);
+	/** The library sources the Updates section lists. Loaded from the overview, never PluginsList. */
+	sources = $state<LibrarySource[]>([]);
 	rescanNotes = $state<Record<string, string>>({});
 	rescanningFolder = $state<string | null>(null);
 	pathInput = $state("");
@@ -241,6 +245,23 @@ export class SettingsState {
 		} catch (err) {
 			log.error("Failed to scan game folders", err);
 			notifications.error("Could not scan the game folders. Try again.", { source: "Settings" });
+			return false;
+		}
+	}
+
+	/**
+	 * Loads the sources the Updates section lists, from the same overview the Library reads.
+	 * A page that already has the overview should pass its sources to UpdatesSettings instead.
+	 */
+	async loadSources(): Promise<boolean> {
+		try {
+			this.sources = (await libraryApi.overview()).sources;
+			return true;
+		} catch (err) {
+			log.error("Failed to load the library sources", err);
+			notifications.error("Could not load the update sources. Try again.", {
+				source: "Settings"
+			});
 			return false;
 		}
 	}

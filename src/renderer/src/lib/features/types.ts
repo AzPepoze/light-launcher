@@ -134,6 +134,8 @@ export interface LibrarySource {
 	card: SourceCard | null;
 	/** Empty for local games and sources that declare no filters. */
 	sidebar: SidebarGroup[];
+	/** The games folder the plugin saves into. Missing or null for local games and plugins without it. */
+	gamesFolder?: string | null;
 }
 
 /** Counts and the tag list for the whole library. Loaded once, not per page. */

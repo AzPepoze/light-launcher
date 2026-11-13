@@ -10,7 +10,6 @@ import {
 	sourceHelp,
 	sourceModeFromOption,
 	sourceView,
-	updateCheckSources,
 	withGlobalUpdateChecks,
 	withSourceMode,
 	withSourceRecheck
@@ -126,39 +125,5 @@ describe("settings patches", () => {
 		const settings = { sources: { f95: { mode: "custom" as const } } };
 		const next = withSourceRecheck(settings, "f95", 1000);
 		expect(next.sources?.f95).toEqual({ mode: "custom", recheckHours: 720 });
-	});
-});
-
-describe("updateCheckSources", () => {
-	it("keeps only enabled plugins whose sources can check for updates", () => {
-		const sources = updateCheckSources([
-			{
-				enabled: true,
-				sources: [
-					{ sourceId: "sample-a", label: "Sample A", capabilities: ["browse", "updateCheck"] },
-					{ sourceId: "sample-b", label: "Sample B", capabilities: ["browse"] }
-				]
-			},
-			{
-				enabled: false,
-				sources: [{ sourceId: "sample-c", label: "Sample C", capabilities: ["updateCheck"] }]
-			}
-		]);
-		expect(sources).toEqual([{ id: "sample-a", label: "Sample A" }]);
-	});
-
-	it("lists each source once, sorted by label", () => {
-		const plugin = {
-			enabled: true,
-			sources: [
-				{ sourceId: "sample-z", label: "Zeta", capabilities: ["updateCheck"] },
-				{ sourceId: "sample-a", label: "Alpha", capabilities: ["updateCheck"] }
-			]
-		};
-		expect(updateCheckSources([plugin, plugin]).map((source) => source.label)).toEqual(["Alpha", "Zeta"]);
-	});
-
-	it("handles plugins with no sources list", () => {
-		expect(updateCheckSources([{ enabled: true, sources: null }])).toEqual([]);
 	});
 });

@@ -17,16 +17,10 @@ export interface SourceUpdateView {
 	recheckHours: number;
 }
 
-export interface UpdateSource {
-	id: string;
-	label: string;
-}
-
 /** Limits and defaults from core/internal/types/types.go. */
 export const UPDATE_HOURS_MAX = 720;
 export const DEFAULT_UPDATE_INTERVAL_HOURS = 24;
 export const DEFAULT_UPDATE_RECHECK_HOURS = 24;
-const UPDATE_CAPABILITY = "updateCheck";
 
 export const INTERVAL_OPTIONS: DropdownOption[] = [
 	{ value: "0", label: "Never" },
@@ -155,26 +149,4 @@ export function withSourceRecheck(
 	return withSource(settings, sourceId, {
 		recheckHours: clampHours(hours, DEFAULT_UPDATE_RECHECK_HOURS)
 	});
-}
-
-interface PluginSourceLike {
-	sourceId: string;
-	label: string;
-	capabilities: string[] | null;
-}
-
-interface PluginLike {
-	enabled: boolean;
-	sources: PluginSourceLike[] | null;
-}
-
-/** The sources of enabled plugins that can check for updates, one per source id, sorted by label. */
-export function updateCheckSources(plugins: PluginLike[]): UpdateSource[] {
-	const sources = plugins
-		.filter((plugin) => plugin.enabled)
-		.flatMap((plugin) => plugin.sources ?? [])
-		.filter((source) => source.capabilities?.includes(UPDATE_CAPABILITY) ?? false);
-	const byId = new Map<string, UpdateSource>();
-	for (const source of sources) byId.set(source.sourceId, { id: source.sourceId, label: source.label });
-	return [...byId.values()].sort((a, b) => a.label.localeCompare(b.label));
 }

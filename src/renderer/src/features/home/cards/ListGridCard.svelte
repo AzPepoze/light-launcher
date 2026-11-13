@@ -4,9 +4,11 @@
 	import { getGamePath } from "@lib/gameUtils";
 	import LauncherMenu from "../shared/LauncherMenu.svelte";
 	import { iconFade } from "@lib/iconReveal";
+	import { cardIconState, type CardIconState } from "../shared/cardIconState";
 
 	export let game: any;
 	export let icon: string = "";
+	export let iconPending: boolean = false;
 	export let isRunning: boolean = false;
 	export let isSelectionMode: boolean = false;
 	export let isSelected: boolean = false;
@@ -14,6 +16,17 @@
 	export let onConfigure: (game: any) => void = () => {};
 	export let onChooseLauncher: (launcherPath: string | null) => void = () => {};
 	export let onSelect: (game: any, shiftKey: boolean, ctrlKey?: boolean) => void = () => {};
+
+	let imageFailed = false;
+	let lastIcon = icon;
+	let displayState: CardIconState = "missing";
+
+	$: displayState = cardIconState({ icon, pending: iconPending, failed: imageFailed });
+
+	$: if (icon !== lastIcon) {
+		lastIcon = icon;
+		imageFailed = false;
+	}
 
 	function handleLaunch(event?: MouseEvent) {
 		if (isSelectionMode) {
@@ -25,6 +38,10 @@
 
 	function handleConfigure() {
 		onConfigure(game);
+	}
+
+	function handleIconError() {
+		imageFailed = true;
 	}
 </script>
 
@@ -43,7 +60,7 @@
 	{/if}
 
 	<div class="icon-section">
-		{#if icon}
+		{#if displayState === "ready"}
 			<img
 				use:iconFade={icon}
 				src={icon}
@@ -51,7 +68,10 @@
 				class="game-icon"
 				decoding="async"
 				draggable="false"
+				on:error={handleIconError}
 			/>
+		{:else if displayState === "pending"}
+			<div class="icon-skeleton" aria-hidden="true"></div>
 		{:else}
 			<div class="fallback-wrapper">
 				<span
@@ -172,6 +192,20 @@
 			}
 		}
 
+		// Neutral placeholder while the icon cache is still resolving this game.
+		.icon-skeleton {
+			width: 100%;
+			height: 100%;
+			background: linear-gradient(
+				90deg,
+				rgba(255, 255, 255, 0.03) 25%,
+				rgba(255, 255, 255, 0.07) 37%,
+				rgba(255, 255, 255, 0.03) 63%
+			);
+			background-size: 400% 100%;
+			animation: icon-skeleton-sweep 1.6s infinite linear;
+		}
+
 		.fallback-wrapper {
 			width: 100%;
 			height: 100%;
@@ -273,6 +307,20 @@
 			transition: none;
 			transform: none;
 			opacity: 1;
+		}
+
+		.icon-section .icon-skeleton {
+			animation: none;
+			background: rgba(255, 255, 255, 0.04);
+		}
+	}
+
+	@keyframes icon-skeleton-sweep {
+		0% {
+			background-position: 200% 0;
+		}
+		100% {
+			background-position: -200% 0;
 		}
 	}
 </style>

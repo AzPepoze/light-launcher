@@ -1,11 +1,19 @@
 <script lang="ts">
+	import { onMount } from "svelte";
 	import { gamesInFolder } from "@lib/features/scanFolders";
 	import { GAME_FOLDERS_SECTION } from "@lib/features/settingsSection";
 	import Notice from "@components/shared/Notice.svelte";
 	import ScanFolderRow from "@components/settings/ScanFolderRow.svelte";
+	import { pluginFolderMatches, pluginFolderWarning } from "./pluginFolders";
 	import type { SettingsState } from "./settingsState.svelte";
 
 	let { settings } = $props<{ settings: SettingsState }>();
+
+	onMount(() => {
+		// The rows warn when a folder is one a plugin uses. UpdatesSettings usually loads the same
+		// overview first; this covers a page that renders this section on its own.
+		if (settings.sources.length === 0) void settings.loadSources();
+	});
 </script>
 
 <div class="zone-card" id={GAME_FOLDERS_SECTION}>
@@ -29,11 +37,15 @@
 			<ul class="folder-list">
 				{#each settings.watched as folder (folder)}
 					{@const config = settings.configFor(folder)}
+					{@const pluginWarnings = [
+						...new Set(pluginFolderMatches(folder, settings.sources).map(pluginFolderWarning))
+					]}
 					<ScanFolderRow
 						{folder}
 						depth={config.Depth}
 						excludeNames={config.ExcludeNames ?? []}
 						gamesFound={gamesInFolder(settings.groups, folder)}
+						{pluginWarnings}
 						rescanNote={settings.rescanNotes[folder] ?? ""}
 						rescanning={settings.rescanningFolder === folder}
 						onRescan={() => settings.rescanFolder(folder)}

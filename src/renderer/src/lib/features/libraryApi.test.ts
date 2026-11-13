@@ -90,7 +90,22 @@ describe("libraryApi.overview", () => {
 	it("reads the overview once, with the source tile shapes", async () => {
 		answerWith({
 			LibraryOverview: {
-				sources: [{ id: "f95", label: "F95 Zone", kind: "plugin", plugin: "f95", capabilities: ["updateCheck"], sync: false, updateCheck: true, count: 5, tile: "wide", cover: "16:9", actions: [], card: null }],
+				sources: [
+					{
+						id: "f95",
+						label: "F95 Zone",
+						kind: "plugin",
+						plugin: "f95",
+						capabilities: ["updateCheck"],
+						sync: false,
+						updateCheck: true,
+						count: 5,
+						tile: "wide",
+						cover: "16:9",
+						actions: [],
+						card: null
+					}
+				],
 				tags: [],
 				stats: { total: 5, installed: 0, updates: 0, bytes: 0, playtime: 0 }
 			} satisfies WireLibraryOverview
@@ -101,7 +116,22 @@ describe("libraryApi.overview", () => {
 		expect(rpcMock).toHaveBeenCalledTimes(1);
 		expect(rpcMock).toHaveBeenCalledWith("LibraryOverview");
 		expect(overview.sources).toEqual([
-			{ source: "f95", label: "F95 Zone", kind: "plugin", plugin: "f95", capabilities: ["updateCheck"], sync: false, updateCheck: true, count: 5, tile: "wide", cover: "16:9", actions: [], card: null, sidebar: [] }
+			{
+				source: "f95",
+				label: "F95 Zone",
+				kind: "plugin",
+				plugin: "f95",
+				capabilities: ["updateCheck"],
+				sync: false,
+				updateCheck: true,
+				count: 5,
+				tile: "wide",
+				cover: "16:9",
+				actions: [],
+				card: null,
+				sidebar: [],
+				gamesFolder: null
+			}
 		]);
 	});
 });
@@ -217,7 +247,11 @@ describe("libraryApi.runAction", () => {
 
 		const result = await libraryApi.runAction("f95", "sync");
 
-		expect(rpcMock).toHaveBeenCalledWith("LibraryRunAction", { source: "f95", action: "sync", gameId: null });
+		expect(rpcMock).toHaveBeenCalledWith("LibraryRunAction", {
+			source: "f95",
+			action: "sync",
+			gameId: null
+		});
 		expect(result).toEqual({ message: "Synced", refresh: true });
 	});
 
@@ -226,7 +260,11 @@ describe("libraryApi.runAction", () => {
 
 		await libraryApi.runAction("f95", "open", 7);
 
-		expect(rpcMock).toHaveBeenCalledWith("LibraryRunAction", { source: "f95", action: "open", gameId: 7 });
+		expect(rpcMock).toHaveBeenCalledWith("LibraryRunAction", {
+			source: "f95",
+			action: "open",
+			gameId: 7
+		});
 	});
 
 	it("passes the plugin error on", async () => {
@@ -279,7 +317,10 @@ describe("libraryApi.updateHistory", () => {
 			"LibraryUpdateHistory",
 			expect.objectContaining({ limit: 10, result: "update" })
 		);
-		expect(entries[0]).toMatchObject({ coverPath: "covers/dust.jpg", coverUrl: "https://example.test/dust.jpg" });
+		expect(entries[0]).toMatchObject({
+			coverPath: "covers/dust.jpg",
+			coverUrl: "https://example.test/dust.jpg"
+		});
 	});
 });
 

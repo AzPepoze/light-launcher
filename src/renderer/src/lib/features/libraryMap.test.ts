@@ -207,7 +207,19 @@ describe("toLibraryOverview", () => {
 			makeOverview({
 				stats: { total: 3, installed: 1, updates: 1, bytes: 150, playtime: 15 },
 				sources: [
-					{ id: "manual", label: "Local games", kind: "local", capabilities: ["launch", "scan"], sync: false, updateCheck: false, count: 1, tile: "square", cover: "1:1", actions: null, card: null },
+					{
+						id: "manual",
+						label: "Local games",
+						kind: "local",
+						capabilities: ["launch", "scan"],
+						sync: false,
+						updateCheck: false,
+						count: 1,
+						tile: "square",
+						cover: "1:1",
+						actions: null,
+						card: null
+					},
 					{
 						id: "f95",
 						label: "F95 Zone",
@@ -220,14 +232,30 @@ describe("toLibraryOverview", () => {
 						tile: "wide",
 						cover: "4:3",
 						actions: [{ id: "sync", label: "Sync", icon: "sync", method: "f95.sync" }],
-						card: { title: "title", badges: ["installed"] }
+						card: { title: "title", badges: ["installed"] },
+						gamesFolder: "/home/me/Games"
 					}
 				],
 				tags: [{ tag: "a", count: 2 }]
 			})
 		);
 		expect(overview.sources).toEqual([
-			{ source: "manual", label: "Local games", kind: "local", plugin: null, capabilities: ["launch", "scan"], sync: false, updateCheck: false, count: 1, tile: "square", cover: "1:1", actions: [], card: null, sidebar: [] },
+			{
+				source: "manual",
+				label: "Local games",
+				kind: "local",
+				plugin: null,
+				capabilities: ["launch", "scan"],
+				sync: false,
+				updateCheck: false,
+				count: 1,
+				tile: "square",
+				cover: "1:1",
+				actions: [],
+				card: null,
+				sidebar: [],
+				gamesFolder: null
+			},
 			{
 				source: "f95",
 				label: "F95 Zone",
@@ -239,9 +267,12 @@ describe("toLibraryOverview", () => {
 				count: 2,
 				tile: "wide",
 				cover: "4:3",
-				actions: [{ id: "sync", label: "Sync", icon: "sync", method: "f95.sync", scope: "library" }],
+				actions: [
+					{ id: "sync", label: "Sync", icon: "sync", method: "f95.sync", scope: "library" }
+				],
 				card: { title: "title", badges: ["installed"] },
-				sidebar: []
+				sidebar: [],
+				gamesFolder: "/home/me/Games"
 			}
 		]);
 		expect(overview.tags).toEqual([{ tag: "a", count: 2 }]);
@@ -737,7 +768,10 @@ describe("toUpdateHistory", () => {
 			}
 		]);
 		expect(history[0]).toMatchObject({ id: 9, title: "Dust", result: "update" });
-		expect(history[0]).toMatchObject({ coverPath: "covers/dust.jpg", coverUrl: "https://example.test/dust.jpg" });
+		expect(history[0]).toMatchObject({
+			coverPath: "covers/dust.jpg",
+			coverUrl: "https://example.test/dust.jpg"
+		});
 		expect(history[1].result).toBe("current");
 	});
 });
@@ -790,12 +824,26 @@ describe("toUpdateCheckEvent", () => {
 			skipped: 2,
 			current: null,
 			result: null,
-			issues: [{ source: "itch", label: "itch.io", kind: "auth", message: "itch.io needs a sign-in", games: 3 }]
+			issues: [
+				{
+					source: "itch",
+					label: "itch.io",
+					kind: "auth",
+					message: "itch.io needs a sign-in",
+					games: 3
+				}
+			]
 		});
 		expect(event.state).toBe("done");
 		expect(event.skipped).toBe(2);
 		expect(event.issues).toEqual([
-			{ source: "itch", label: "itch.io", kind: "auth", message: "itch.io needs a sign-in", games: 3 }
+			{
+				source: "itch",
+				label: "itch.io",
+				kind: "auth",
+				message: "itch.io needs a sign-in",
+				games: 3
+			}
 		]);
 	});
 
@@ -831,7 +879,15 @@ describe("toUpdateStatus", () => {
 			progress: { done: 2, total: 9 },
 			count: 1,
 			nextRunAt: "2026-03-02T10:00:00Z",
-			games: [{ id: 4, title: "Dust", version: "2", installedVersion: "1", favorite: 0 } as unknown as WireGame]
+			games: [
+				{
+					id: 4,
+					title: "Dust",
+					version: "2",
+					installedVersion: "1",
+					favorite: 0
+				} as unknown as WireGame
+			]
 		});
 		expect(status).toMatchObject({
 			lastCheckedAt: "2026-03-01T10:00:00Z",

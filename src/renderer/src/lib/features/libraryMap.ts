@@ -290,7 +290,8 @@ export function toLibraryOverview(wire: WireLibraryOverview): LibraryOverview {
 			cover: source.cover,
 			actions: toSourceActions(source.actions),
 			card: toSourceCard(source.card),
-			sidebar: toSidebarGroups(source.sidebar)
+			sidebar: toSidebarGroups(source.sidebar),
+			gamesFolder: orNull(source.gamesFolder)
 		})),
 		tags: (wire.tags ?? []).map((tag) => ({ tag: tag.tag, count: tag.count })),
 		stats: toStats(wire.stats)

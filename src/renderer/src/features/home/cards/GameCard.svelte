@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from "svelte";
+	import { onMount, tick } from "svelte";
 	import { fade } from "svelte/transition";
 	import { cubicOut } from "svelte/easing";
 	import { observeOnce } from "@lib/lazyObserver";
@@ -16,10 +16,16 @@
 	export let onConfigure: (game: any) => void = () => {};
 	export let onChooseLauncher: (launcherPath: string | null) => void = () => {};
 	export let onSelect: (game: any, shiftKey: boolean, ctrlKey?: boolean) => void = () => {};
-	export let loadIcon: (path: string, customIconPath?: string | null) => void = () => {};
+	export let loadIcon: (
+		path: string,
+		customIconPath?: string | null
+	) => void | Promise<unknown> = () => {};
 
 	let containerElement: HTMLElement;
 	let isIntersecting = false;
+	/** True while the icon request started by this card has not settled. */
+	let iconPending = false;
+	let iconRequestId = 0;
 	const prefersReducedMotion =
 		typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -31,8 +37,28 @@
 	});
 
 	$: if (isIntersecting) {
-		const path = game.path || game.config.LauncherPath;
-		if (path) loadIcon(path, game.config?.CustomIconPath ?? null);
+		const path = game.path || game.config?.LauncherPath;
+		if (path) {
+			void requestIcon(path, game.config?.CustomIconPath ?? null);
+		} else {
+			// Nothing to load from: the card goes straight to the rocket fallback.
+			iconPending = false;
+		}
+	}
+
+	async function requestIcon(path: string, customIconPath: string | null): Promise<void> {
+		const request = ++iconRequestId;
+		iconPending = true;
+		try {
+			// The shared loader resolves once the icon cache has an answer, including "no icon".
+			await Promise.resolve(loadIcon(path, customIconPath));
+		} catch {
+			// A failed load ends in the same fallback as a game without an icon.
+		}
+		// Let the card's `icon` prop catch up with the cache before declaring the icon missing.
+		await tick();
+		if (request !== iconRequestId) return;
+		iconPending = false;
 	}
 </script>
 
@@ -46,6 +72,7 @@
 				<GridCard
 					{game}
 					{icon}
+					{iconPending}
 					{isRunning}
 					{isSelectionMode}
 					{isSelected}
@@ -58,6 +85,7 @@
 				<ListGridCard
 					{game}
 					{icon}
+					{iconPending}
 					{isRunning}
 					{isSelectionMode}
 					{isSelected}

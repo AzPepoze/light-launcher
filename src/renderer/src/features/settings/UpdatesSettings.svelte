@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { onDestroy, onMount } from "svelte";
 	import Dropdown from "@components/shared/Dropdown.svelte";
+	import Icon from "@components/shared/Icon.svelte";
+	import LoadingState from "@components/shared/LoadingState.svelte";
 	import Notice from "@components/shared/Notice.svelte";
 	import Section from "@components/shared/Section.svelte";
 	import SettingRow from "@components/shared/SettingRow.svelte";
 	import SlideButton from "@components/shared/SlideButton.svelte";
-	import { notifications } from "@stores/notificationStore";
-	import { plainMessage } from "@lib/plainMessage";
+	import type { LibrarySource } from "@lib/features/types";
 	import type { SettingsState } from "./settingsState.svelte";
 	import {
 		INTERVAL_OPTIONS,
@@ -20,41 +21,49 @@
 		sourceView,
 		withGlobalUpdateChecks,
 		withSourceMode,
-		withSourceRecheck,
-		type UpdateSource
+		withSourceRecheck
 	} from "./updateChecks";
-	import { loadUpdateSources } from "./updateSources";
+	import { updateCheckSources, type UpdateSource } from "./updateSources";
 
-	let { settings } = $props<{ settings: SettingsState }>();
+	let {
+		settings,
+		sources
+	}: {
+		settings: SettingsState;
+		/** The library sources, already loaded by the page. Missing means load the overview here. */
+		sources?: LibrarySource[];
+	} = $props();
 
 	const checks = $derived(settings.appSettings.updateChecks);
 	const global = $derived(globalUpdateChecks(checks));
 	const intervalOptions = $derived(optionsWithHours(INTERVAL_OPTIONS, global.intervalHours));
 	const recheckOptions = $derived(optionsWithHours(RECHECK_OPTIONS, global.recheckHours));
+	const rows = $derived(updateCheckSources(sources ?? settings.sources));
 
-	let sources = $state<UpdateSource[]>([]);
+	let loadingSources = $state(false);
 
 	onMount(() => {
-		void loadSources();
+		if (sources) return;
+		loadingSources = true;
+		void settings.loadSources().finally(() => (loadingSources = false));
 	});
 
 	onDestroy(() => {
 		settings.flushUpdateChecks();
 	});
-
-	async function loadSources(): Promise<void> {
-		try {
-			sources = await loadUpdateSources();
-		} catch (err) {
-			notifications.error(`Could not load the sources: ${plainMessage(err)}`);
-		}
-	}
 </script>
 
 {#snippet sourceRow(source: UpdateSource)}
 	{@const view = sourceView(checks, source.id)}
 	{@const sourceRecheckOptions = optionsWithHours(RECHECK_OPTIONS, view.recheckHours)}
-	<SettingRow title={source.label} help={sourceHelp(view.mode)}>
+	<div class="source-row">
+		<div class="source-text">
+			<span class="source-name">
+				<span class="source-icon"><Icon name={source.icon} size={18} /></span>
+				{source.label}
+			</span>
+			<span class="source-help">{sourceHelp(view.mode)}</span>
+		</div>
 		<div class="source-controls">
 			<Dropdown
 				options={SOURCE_MODE_OPTIONS}
@@ -75,7 +84,7 @@
 				/>
 			{/if}
 		</div>
-	</SettingRow>
+	</div>
 {/snippet}
 
 <Section
@@ -126,10 +135,14 @@
 			<p class="note">Background checks are off, so no source checks in the background.</p>
 		{/if}
 
-		{#each sources as source (source.id)}
+		{#each rows as source (source.id)}
 			{@render sourceRow(source)}
 		{:else}
-			<p class="note">No installed source can check for updates.</p>
+			{#if loadingSources}
+				<LoadingState label="Loading sources..." />
+			{:else}
+				<p class="note">No plugin source can check for updates.</p>
+			{/if}
 		{/each}
 
 		<Notice tone="info" icon="info">
@@ -151,6 +164,45 @@
 			font-size: 0.95rem;
 			font-weight: 700;
 		}
+	}
+
+	.source-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 24px;
+		padding: 16px 0;
+
+		& + .source-row {
+			border-top: 2px solid rgba(255, 255, 255, 0.05);
+		}
+	}
+
+	.source-text {
+		display: flex;
+		flex: 1;
+		flex-direction: column;
+		gap: 4px;
+		min-width: 0;
+	}
+
+	.source-name {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		color: var(--text-main);
+		font-size: 0.95rem;
+		font-weight: 600;
+	}
+
+	.source-icon {
+		display: inline-flex;
+		color: var(--text-muted);
+	}
+
+	.source-help {
+		color: var(--text-muted);
+		font-size: 0.8rem;
 	}
 
 	.source-controls {
