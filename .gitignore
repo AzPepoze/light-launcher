@@ -18,6 +18,7 @@ vendor/
 # Frontend
 node_modules/
 src/renderer/dist/
+src/renderer/.svelte-check/
 
 # IDEs
 .vscode/

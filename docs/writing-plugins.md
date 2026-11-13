@@ -176,6 +176,7 @@ The launcher sends `source.listGames` with these params.
 | Make each cursor an opaque string that works on its own.          | The launcher does not read it.                       |
 | Keep a cursor valid while the whole import runs, which can take minutes. | The launcher asks for the next page only after the last one. |
 | Answer a bad cursor with an invalid params error (code `-32602`). | The import stops and reports the error.              |
+| Answer a missing key or sign-in with auth required (code `-32008`). | The launcher can tell this apart from a real failure. |
 | Do not return the same `sourceId` twice in one import.            | Repeated games are counted more than once.           |
 
 > [!IMPORTANT]
@@ -191,15 +192,65 @@ The launcher sends `source.listGames` with these params.
 
 ### Card shape
 
-The `tile` field of the source sets the shape of its cards in the Library:
+The `cover` field of the source sets the box of its cards in the Library:
 
-| `tile`   | Shape         | Use it for                  |
+| Field                | Meaning                                                              |
+| :------------------- | :------------------------------------------------------------------- |
+| `cover: { "ratio" }` | Width to height, such as `"4:3"`. Whole numbers from 1 to 32.        |
+| Width to height      | From 0.25 to 4. A ratio outside this range fails the manifest check. |
+
+`tile` is the older way and still works. Use it only when `cover` is missing:
+
+| `tile`   | Cover ratio   | Use it for                  |
 | :------- | :------------ | :-------------------------- |
 | `poster` | 3:4 (default) | Tall cover art.             |
 | `wide`   | 16:9          | Banner-style cover art.     |
 | `square` | 1:1           | Icons and square covers.    |
 
-A value other than these three fails the manifest check.
+If a source sets both, `cover` wins.
+
+### Card fields
+
+The `card` field picks the game fields a card shows:
+
+| Field      | Default   | Allowed values                                                                            |
+| :--------- | :-------- | :---------------------------------------------------------------------------------------- |
+| `title`    | `title`   | `sourceId`, `title`, `version`, `developer`, `engine`, `status`, `updatedAt`              |
+| `subtitle` | `version` | Same list as `title`.                                                                     |
+| `badges`   | none      | Any of `favorite`, `updateAvailable`, `installed`. Each one at most once.                 |
+
+Any other name fails the manifest check.
+
+## Library actions
+
+An action is a button the Library shows for a source. Declare them in the `actions` list:
+
+| Field    | Required | Meaning                                                                          |
+| :------- | :------- | :------------------------------------------------------------------------------- |
+| `id`     | Yes      | Unique inside the source. Lowercase letters, digits and dashes.                  |
+| `label`  | Yes      | The text on the button.                                                          |
+| `icon`   | No       | A Material icon name, such as `sync`.                                            |
+| `method` | Yes      | The plugin method to call, such as `demo-site.sync`.                             |
+| `scope`  | No       | `library` (default): shown in the sidebar. `game`: shown in the game detail.     |
+
+A source can have up to 8 actions. A duplicate `id` or an unknown field fails the manifest check.
+
+The launcher calls `method` with:
+
+```json
+{ "source": "demo", "action": "sync", "gameId": null }
+```
+
+`gameId` is the game id for a `game` action, and `null` for a `library` action.
+
+The plugin answers with:
+
+| Field     | Meaning                                                        |
+| :-------- | :------------------------------------------------------------- |
+| `message` | Short text the launcher shows in a toast.                      |
+| `refresh` | `true` makes the launcher reload the Library list.             |
+
+The launcher waits 30 seconds for an action. After that it stops waiting and shows an error.
 
 ## Browse with a sidebar
 
