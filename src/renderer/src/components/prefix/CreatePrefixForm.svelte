@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { tick } from "svelte";
+	import Icon from "@components/shared/Icon.svelte";
 
 	export let availablePrefixes: string[] = [];
 	export let onCreate: (name: string) => void;
@@ -60,7 +61,7 @@
 </script>
 
 <div class="list-row create-row" role="form" aria-label="Create new prefix">
-	<span class="material-icons row-icon">create_new_folder</span>
+	<Icon name="create_new_folder" size={20} class="row-icon" />
 	<div class="create-fields">
 		<input
 			bind:this={nameInput}
@@ -86,7 +87,7 @@
 			aria-label="Cancel"
 			on:click={onCancel}
 		>
-			<span class="material-icons">close</span>
+			<Icon name="close" size={18} />
 		</button>
 		<button
 			type="button"
@@ -96,7 +97,7 @@
 			disabled={!canCreate}
 			on:click={submitCreate}
 		>
-			<span class="material-icons">check</span>
+			<Icon name="check" size={18} />
 		</button>
 	</div>
 </div>
@@ -117,8 +118,7 @@
 		border: 2px solid var(--accent-primary);
 		align-items: flex-start;
 
-		.row-icon {
-			font-size: 20px;
+		:global(.row-icon) {
 			color: var(--accent-primary);
 			margin-top: 8px;
 			flex-shrink: 0;
@@ -191,10 +191,6 @@
 			background var(--transition-fast),
 			color var(--transition-fast),
 			transform var(--transition-spring);
-
-		.material-icons {
-			font-size: 18px;
-		}
 
 		&:hover {
 			background: var(--bg-surface);

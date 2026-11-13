@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Dropdown, { asOptions } from "@components/shared/Dropdown.svelte";
+	import Icon from "@components/shared/Icon.svelte";
 
 	$: prefixItems = asOptions(prefixes);
 	import SelectionActions from "./SelectionActions.svelte";
@@ -25,7 +26,7 @@
 		<SelectionActions {selectedCount} {onBulkRemove} {onToggleSelectionMode} {onSelectAll} />
 	{:else}
 		<button class="add-btn" on:click={onShowAddModal} title="Add Game">
-			<span class="material-icons" style="font-size: 20px;">add</span>
+			<Icon name="add" size={20} />
 		</button>
 
 		<button
@@ -34,9 +35,7 @@
 			title="Bulk Remove"
 			class:active={isSelectionMode}
 		>
-			<span class="material-icons" style="font-size: 20px;"
-				>checklist</span
-			>
+			<Icon name="checklist" size={20} />
 		</button>
 
 		<button
@@ -44,9 +43,7 @@
 			on:click={onShowHelpModal}
 			title="How it works"
 		>
-			<span class="material-icons" style="font-size: 24px;"
-				>help_outline</span
-			>
+			<Icon name="help_outline" size={24} />
 		</button>
 	{/if}
 
@@ -59,7 +56,7 @@
 	</div>
 
 	<div class="search-container">
-		<span class="material-icons search-icon">search</span>
+		<Icon name="search" size={20} class="search-icon" />
 		<input
 			type="text"
 			placeholder="Search games..."
@@ -72,9 +69,7 @@
 				on:click={() => (searchQuery = "")}
 				aria-label="Clear search"
 			>
-				<span class="material-icons" style="font-size: 14px;"
-					>close</span
-				>
+				<Icon name="close" size={14} />
 			</button>
 		{/if}
 	</div>
@@ -86,9 +81,7 @@
 			on:click={() => (currentView = "grid")}
 			title="Grid View"
 		>
-			<span class="material-icons" style="font-size: 18px;"
-				>grid_view</span
-			>
+			<Icon name="grid_view" size={18} />
 		</button>
 		<button
 			class="view-btn"
@@ -96,9 +89,7 @@
 			on:click={() => (currentView = "list-grid")}
 			title="List View"
 		>
-			<span class="material-icons" style="font-size: 18px;"
-				>view_list</span
-			>
+			<Icon name="view_list" size={18} />
 		</button>
 		<button
 			class="view-btn"
@@ -106,9 +97,7 @@
 			on:click={() => (currentView = "sidebar-grid")}
 			title="Sidebar View"
 		>
-			<span class="material-icons" style="font-size: 18px;"
-				>view_sidebar</span
-			>
+			<Icon name="view_sidebar" size={18} />
 		</button>
 	</div>
 </div>
@@ -267,7 +256,7 @@
 			transform: scale(1.01);
 		}
 
-		.search-icon {
+		:global(.search-icon) {
 			color: var(--text-muted);
 			font-size: 20px;
 		}

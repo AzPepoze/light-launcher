@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Icon from "@components/shared/Icon.svelte";
 	import { fade } from "svelte/transition";
 
 	export let foundExecutables: {
@@ -37,18 +38,14 @@
 							/>
 						{:else}
 							<div class="icon-placeholder">
-								<span
-									class="material-icons"
-									style="font-size: 24px;"
-									>rocket_launch</span
-								>
+								<Icon name="rocket_launch" size={24} />
 							</div>
 						{/if}
 					</div>
 					<div class="name" title={exe.path}>{exe.name}</div>
 				</div>
 				<div class="discard-overlay">
-					<span class="material-icons">delete</span>
+					<Icon name="delete" size={24} />
 				</div>
 			</div>
 		{/each}

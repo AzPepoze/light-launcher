@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Icon from "./Icon.svelte";
 
 	export let value: number = 4;
 	export let min: number = 0.1;
@@ -140,7 +141,7 @@
 
 	{#if isWarning}
 		<div class="warning-text">
-			<span class="material-icons warning-icon">warning</span>
+			<Icon name="warning" size={16} class="warning-icon" />
 			High value may affect system stability
 		</div>
 	{/if}
@@ -291,8 +292,7 @@
 		justify-content: flex-end;
 		gap: 6px;
 
-		.warning-icon {
-			font-size: 16px;
+		:global(.warning-icon) {
 			color: var(--danger);
 		}
 	}

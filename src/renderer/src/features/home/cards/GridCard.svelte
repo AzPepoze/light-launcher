@@ -2,6 +2,7 @@
 	import CardRunningIndicator from "./shared/CardRunningIndicator.svelte";
 	import CardSelectionCheckbox from "./shared/CardSelectionCheckbox.svelte";
 	import AnimatedPlayIcon from "./shared/AnimatedPlayIcon.svelte";
+	import Icon from "@components/shared/Icon.svelte";
 	import Marquee from "@components/shared/Marquee.svelte";
 	import LauncherMenu from "../shared/LauncherMenu.svelte";
 	import { getDominantColor } from "@lib/dominantColor";
@@ -156,7 +157,7 @@
 			{:else if displayState === "pending"}
 				<div class="icon-skeleton" aria-hidden="true"></div>
 			{:else}
-				<span class="material-icons system-icon">rocket_launch</span>
+				<Icon name="rocket_launch" size={64} class="system-icon" />
 			{/if}
 		</div>
 
@@ -184,7 +185,7 @@
 					aria-label="Configure {game.name}"
 					on:click|stopPropagation={handleConfigure}
 				>
-					<span class="material-icons">settings</span>
+					<Icon name="settings" size={16} />
 				</button>
 			</div>
 		</div>
@@ -336,7 +337,7 @@
 		}
 	}
 
-	.system-icon {
+	:global(.system-icon) {
 		font-size: 64px;
 		color: var(--text-muted);
 		opacity: 0.3;
@@ -520,10 +521,6 @@
 			transform var(--motion-quick) var(--ease-spring),
 			background var(--motion-quick) var(--ease-out),
 			border-color var(--motion-quick) var(--ease-out);
-
-		.material-icons {
-			font-size: 16px;
-		}
 
 		&:hover {
 			background: var(--bg-elevated);

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Icon from "@components/shared/Icon.svelte";
+
 	export let systemStatus: {
 		hasGamescope: boolean;
 		hasMangoHud: boolean;
@@ -69,7 +71,7 @@
 
 	{#if !systemStatus.hasVulkanInfo}
 		<p class="warning-text important">
-			<span class="material-icons icon">warning</span>
+			<Icon name="warning" size={21} />
 			Vulkan-Tools (vulkaninfo) is missing. This is highly recommended for accurate GPU detection and LSFG compatibility.
 		</p>
 	{/if}
@@ -179,10 +181,6 @@
 			display: flex;
 			align-items: center;
 			gap: 10px;
-
-			.icon {
-				font-size: 1.3rem;
-			}
 		}
 	}
 </style>

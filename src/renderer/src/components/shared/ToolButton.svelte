@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Icon from "./Icon.svelte";
+
 	export let icon: string;
 	export let title: string;
 	export let subtitle: string;
@@ -14,7 +16,7 @@
 			{#if icon.includes("/") || icon.includes(".svg") || icon.startsWith("data:")}
 				<img src={icon} alt={title} class="svg-icon" />
 			{:else}
-				<span class="material-icons">{icon}</span>
+				<Icon name={icon} size={24} />
 			{/if}
 		</div>
 	{/if}

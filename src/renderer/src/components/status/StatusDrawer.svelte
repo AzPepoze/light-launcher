@@ -2,6 +2,7 @@
 	import { onMount, onDestroy } from "svelte";
 	import SystemResources from "./SystemResources.svelte";
 	import CleanupActions from "./CleanupActions.svelte";
+	import Icon from "@components/shared/Icon.svelte";
 	import { StatusDrawerState } from "./StatusDrawerState.svelte";
 
 	let { embedded = false }: { embedded?: boolean } = $props();
@@ -19,15 +20,16 @@
 <div class="status-drawer-wrapper" class:expanded={state.isExpanded} class:embedded>
 	{#if !embedded}
 		<button class="toggle-btn" onclick={() => (state.isExpanded = !state.isExpanded)}>
-			<span class="material-icons">tune</span>
+			<Icon name="tune" size={20} />
 			<span class="trigger-text"
 				>{state.isExpanded
 					? "CLOSE DRAWER"
 					: "SYSTEM STATUS & UTILITIES"}</span
 			>
-			<span class="material-icons">
-				{state.isExpanded ? "keyboard_arrow_down" : "keyboard_arrow_up"}
-			</span>
+			<Icon
+				name={state.isExpanded ? "keyboard_arrow_down" : "keyboard_arrow_up"}
+				size={20}
+			/>
 		</button>
 	{/if}
 
@@ -120,11 +122,6 @@
 			color: inherit;
 			letter-spacing: 1.5px;
 			text-transform: uppercase;
-		}
-
-		.material-icons {
-			font-size: 20px;
-			color: inherit;
 		}
 
 		&:hover {

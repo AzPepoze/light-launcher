@@ -1,5 +1,6 @@
 <script lang="ts">
 	import PageHeader from "@components/shared/PageHeader.svelte";
+	import Button from "@components/shared/Button.svelte";
 	import { ScanProtonVersions, OpenURL } from "@lib/api";
 	import * as core from "@shared";
 	import { notifications } from "@stores/notificationStore";
@@ -37,28 +38,28 @@
 
 <div class="versions-container">
 	<PageHeader title="Proton Versions" icon={externalIcon} isCustomIcon={true} subtitle="{protonVersions.length} installed">
-		<button
-			class="btn secondary"
-			on:click={() => openExternal("https://protondb.com")}
+		<Button
+			variant="secondary"
+			onclick={() => openExternal("https://protondb.com")}
 		>
 			ProtonDB
-		</button>
-		<button
-			class="btn secondary"
-			on:click={() =>
+		</Button>
+		<Button
+			variant="secondary"
+			onclick={() =>
 				openExternal("https://github.com/Vysp3r/ProtonPlus")}
 		>
 			ProtonPlus
-		</button>
-		<button
-			class="btn secondary"
-			on:click={() =>
+		</Button>
+		<Button
+			variant="secondary"
+			onclick={() =>
 				openExternal(
 					"https://github.com/DavidoTek/ProtonUp-Qt",
 				)}
 		>
 			ProtonUp
-		</button>
+		</Button>
 	</PageHeader>
 
 	<div class="versions-list">

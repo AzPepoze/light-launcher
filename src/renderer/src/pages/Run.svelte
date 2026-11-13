@@ -7,6 +7,8 @@
 	import ConfigForm from "@components/shared/ConfigForm.svelte";
 	import PageHeader from "@components/shared/PageHeader.svelte";
 	import SlideButton from "@components/shared/SlideButton.svelte";
+	import Button from "@components/shared/Button.svelte";
+	import Icon from "@components/shared/Icon.svelte";
 	import { RunPageState } from "@components/run/RunPageState.svelte";
 	import { platform } from "@stores/platformStore";
 	import { onMount } from "svelte";
@@ -25,7 +27,7 @@
 		<!-- Zone 1: General & Paths -->
 		<div class="zone-card">
 			<div class="zone-header">
-				<span class="material-icons">folder</span>
+				<Icon name="folder" size={24} class="zone-icon" />
 				<h2>General & Paths</h2>
 			</div>
 
@@ -55,7 +57,7 @@
 			<!-- Zone 2: Environment & Compatibility (Linux only) -->
 			<div class="zone-card">
 				<div class="zone-header">
-					<span class="material-icons">layers</span>
+					<Icon name="layers" size={24} class="zone-icon" />
 					<h2>Environment & Compatibility</h2>
 				</div>
 
@@ -94,7 +96,7 @@
 		<!-- Zone 3: Advanced Integrations -->
 		<div class="zone-card">
 			<div class="zone-header">
-				<span class="material-icons">tune</span>
+				<Icon name="tune" size={24} class="zone-icon" />
 				<h2>Advanced Integrations</h2>
 			</div>
 			<ConfigForm
@@ -112,26 +114,32 @@
 	/>
 
 	<div class="actions-row">
-		<button
-			class="btn secondary bg-launch-btn"
-			on:click={() => state.handleLaunch(false)}
+		<Button
+			variant="secondary"
+			style="width: 60px; height: 60px; padding: 0; flex-shrink: 0; pointer-events: auto;"
+			onclick={() => state.handleLaunch(false)}
 			title="Run in Background (Keep Launcher Open)"
+			aria-label="Run in Background (Keep Launcher Open)"
 		>
-			<span class="material-icons">play_arrow</span>
-		</button>
+			<Icon name="play_arrow" size={24} />
+		</Button>
 		<div class="launch-wrapper">
 			<LaunchButton onLaunch={() => state.handleLaunch(true)} />
 		</div>
-		<button
-			class="btn secondary save-btn"
-			on:click={() => state.handleSave()}
+		<Button
+			variant="secondary"
+			style="width: 60px; height: 60px; padding: 0; flex-shrink: 0; pointer-events: auto;"
+			onclick={() => state.handleSave()}
 			disabled={state.isSaving}
 			title="Save Configuration"
+			aria-label="Save Configuration"
 		>
-			<span class="material-icons"
-				>{state.isSaving ? "sync" : "save"}</span
-			>
-		</button>
+			<Icon
+				name={state.isSaving ? "sync" : "save"}
+				size={24}
+				class={state.isSaving ? "spin" : ""}
+			/>
+		</Button>
 	</div>
 </div>
 
@@ -139,6 +147,10 @@
 	.run-container {
 		display: flex;
 		flex-direction: column;
+	}
+
+	.zone-header :global(.zone-icon) {
+		color: var(--accent-primary);
 	}
 
 	.zones-stack {
@@ -200,55 +212,7 @@
 		pointer-events: auto;
 	}
 
-	.bg-launch-btn {
-		pointer-events: auto;
-		width: 60px;
-		height: 60px;
-		padding: 0;
-		flex-shrink: 0;
-		transform: none !important;
-		transition: color var(--transition-fast), border-color var(--transition-fast) !important;
-
-		&:hover:not(:disabled) {
-			color: var(--accent-primary);
-			border-color: var(--accent-primary);
-			transform: none !important;
-		}
-
-		&:active:not(:disabled) {
-			transform: none !important;
-		}
-
-		.material-icons {
-			font-size: 24px;
-		}
-	}
-
-	.save-btn {
-		pointer-events: auto;
-		width: 60px;
-		height: 60px;
-		padding: 0;
-		flex-shrink: 0;
-
-		&:hover:not(:disabled) {
-			transform: scale(1.1);
-		}
-
-		&:active:not(:disabled) {
-			transform: scale(0.95);
-		}
-
-		&:disabled {
-			opacity: 0.5;
-			cursor: not-allowed;
-			.material-icons {
-				animation: ll-spin 2s linear infinite;
-			}
-		}
-
-		.material-icons {
-			font-size: 24px;
-		}
+	.actions-row :global(.spin) {
+		animation: ll-spin 2s linear infinite;
 	}
 </style>

@@ -156,9 +156,7 @@
 			<Button variant="secondary" icon="refresh" onclick={load}>Try again</Button>
 		</div>
 		<div slot="footer">
-			<button class="btn secondary" on:click={handleClose}
-				>Close</button
-			>
+			<Button variant="secondary" onclick={handleClose}>Close</Button>
 		</div>
 	</Modal>
 {:else}
@@ -183,23 +181,21 @@
 		</div>
 
 		<div slot="footer" class="actions">
-			<button class="btn secondary" on:click={handleClose}
-				>Close</button
-			>
-			<button 
-				class="btn danger" 
-				on:click={handleDisable}
+			<Button variant="secondary" onclick={handleClose}>Close</Button>
+			<Button
+				variant="danger"
+				onclick={handleDisable}
 				disabled={disabling || saving}
 			>
 				{disabling ? "Disabling..." : "Disable Profile"}
-			</button>
-			<button
-				class="btn primary"
-				on:click={handleApply}
+			</Button>
+			<Button
+				variant="primary"
+				onclick={handleApply}
 				disabled={saving || disabling}
 			>
 				{saving ? "Saving..." : "Apply"}
-			</button>
+			</Button>
 		</div>
 	</Modal>
 {/if}

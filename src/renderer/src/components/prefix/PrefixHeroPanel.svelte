@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Dropdown, { asOptions } from "@components/shared/Dropdown.svelte";
+	import Icon from "@components/shared/Icon.svelte";
 
 	$: protonItems = asOptions(protonDisplayNames);
 	import BrowseInput from "@components/shared/BrowseInput.svelte";
@@ -16,7 +17,7 @@
 <section class="panel hero-panel">
 	<div class="hero-top">
 		<div class="hero-title">
-			<span class="material-icons hero-icon">folder</span>
+			<Icon name="folder" size={36} class="hero-icon" />
 			<div>
 				<p class="hero-label">Active prefix</p>
 				<h2 class="hero-name">{currentPrefixName}</h2>
@@ -24,7 +25,7 @@
 		</div>
 		<div class="runtime-field">
 			<label class="field-label" for="prefix-runtime">
-				<span class="material-icons">science</span>
+				<Icon name="science" size={16} />
 				Runtime
 			</label>
 			<div class="runtime-dropdown" id="prefix-runtime">
@@ -79,8 +80,7 @@
 		gap: 14px;
 		min-width: 0;
 
-		.hero-icon {
-			font-size: 36px;
+		:global(.hero-icon) {
 			color: var(--accent-primary);
 			flex-shrink: 0;
 		}
@@ -127,10 +127,6 @@
 		text-transform: uppercase;
 		letter-spacing: 0.5px;
 		color: var(--accent-primary);
-
-		.material-icons {
-			font-size: 16px;
-		}
 	}
 
 	.runtime-dropdown {

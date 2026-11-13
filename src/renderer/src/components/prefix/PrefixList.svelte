@@ -1,6 +1,7 @@
 <script lang="ts">
 	import CreatePrefixForm from "./CreatePrefixForm.svelte";
 	import PrefixListItem from "./PrefixListItem.svelte";
+	import Icon from "@components/shared/Icon.svelte";
 	import { formatBytes } from "@lib/features/format";
 
 	export let availablePrefixes: string[] = [];
@@ -69,7 +70,7 @@
 				class="list-row add-row"
 				on:click={openCreateForm}
 			>
-				<span class="material-icons row-icon">add</span>
+				<Icon name="add" size={20} class="row-icon" />
 				<span class="add-label">New prefix</span>
 			</button>
 		{/if}
@@ -173,8 +174,7 @@
 			background var(--transition-fast),
 			color var(--transition-fast);
 
-		.row-icon {
-			font-size: 20px;
+		:global(.row-icon) {
 			color: var(--accent-primary);
 		}
 

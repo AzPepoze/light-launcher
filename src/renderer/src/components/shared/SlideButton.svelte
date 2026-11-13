@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Icon from "./Icon.svelte";
+
 	export let checked = false;
 	export let label = "";
 	export let subtitle = "";
@@ -38,9 +40,7 @@
 				on:click={openConfig}
 				title="Configure"
 			>
-				<span class="material-icons" style="font-size: 16px;"
-					>settings</span
-				>
+				<Icon name="settings" size={16} />
 			</button>
 		{/if}
 		<div class="switch-container">

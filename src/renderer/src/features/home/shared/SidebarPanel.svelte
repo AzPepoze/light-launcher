@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Icon from "@components/shared/Icon.svelte";
+
 	export let filteredGames: any[] = [];
 	export let scannedFolderGroups: any[] = [];
 	export let selectedGroupKey = "no-folder";
@@ -11,7 +13,7 @@
 		class:active={selectedGroupKey === "no-folder"}
 		on:click={() => selectedGroupKey = "no-folder"}
 	>
-		<span class="material-icons item-icon">sports_esports</span>
+		<Icon name="sports_esports" size={20} class="item-icon" />
 		<div class="item-meta">
 			<span class="item-name">No Folder</span>
 			<span class="item-path">Manually registered profiles</span>
@@ -26,7 +28,7 @@
 			class:active={selectedGroupKey === group.folderPath}
 			on:click={() => selectedGroupKey = group.folderPath}
 		>
-			<span class="material-icons item-icon">folder</span>
+			<Icon name="folder" size={20} class="item-icon" />
 			<div class="item-meta">
 				<span class="item-name">{group.folderName}</span>
 				<span class="item-path" title={group.folderPath}>{group.folderPath}</span>
@@ -66,7 +68,7 @@
 		transition: all var(--transition-fast);
 		width: 100%;
 
-		.item-icon {
+		:global(.item-icon) {
 			font-size: 20px;
 			color: var(--text-dim);
 			transition: color var(--transition-fast);
@@ -112,7 +114,7 @@
 			border-color: rgba(255, 255, 255, 0.1);
 			color: var(--text-main);
 
-			.item-icon {
+			:global(.item-icon) {
 				color: var(--text-muted);
 			}
 		}
@@ -122,7 +124,7 @@
 			border-color: var(--accent-primary);
 			color: var(--text-main);
 
-			.item-icon {
+			:global(.item-icon) {
 				color: var(--text-main);
 			}
 

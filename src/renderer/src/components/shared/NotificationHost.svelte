@@ -2,6 +2,7 @@
 	import { notifications, type NotificationType } from "@stores/notificationStore";
 	import { flip } from "svelte/animate";
 	import { fade, fly } from "svelte/transition";
+	import Icon from "./Icon.svelte";
 
 	const TYPE_ICONS: Record<NotificationType, string> = {
 		error: "error_outline",
@@ -23,13 +24,13 @@
 			on:mouseenter={() => notifications.pause(n.id)}
 			on:mouseleave={() => notifications.resume(n.id)}
 		>
-			<span class="material-icons mini-icon">{TYPE_ICONS[n.type]}</span>
+			<Icon name={TYPE_ICONS[n.type]} size={22} class="mini-icon" />
 			<div class="message">
 				{n.message}
 				{#if n.count > 1}<span class="count">x{n.count}</span>{/if}
 			</div>
 			<button class="close" on:click={() => notifications.dismiss(n.id)} aria-label="Dismiss">
-				<span class="material-icons">close</span>
+				<Icon name="close" size={16} />
 			</button>
 		</div>
 	{/each}
@@ -70,30 +71,29 @@
 			transform: scale(1.02);
 		}
 
-		.mini-icon {
-			font-size: 1.35rem;
+		:global(.mini-icon) {
 			flex-shrink: 0;
 		}
 
 		&.error {
 			border-color: var(--danger);
 			box-shadow: 0 4px 20px rgba(255, 74, 122, 0.15);
-			.mini-icon { color: var(--danger); }
+			:global(.mini-icon) { color: var(--danger); }
 		}
 		&.warning {
 			border-color: var(--warning);
 			box-shadow: 0 4px 20px rgba(var(--warning-rgb), 0.15);
-			.mini-icon { color: var(--warning); }
+			:global(.mini-icon) { color: var(--warning); }
 		}
 		&.success {
 			border-color: var(--accent-secondary);
 			box-shadow: 0 4px 20px rgba(0, 240, 255, 0.15);
-			.mini-icon { color: var(--accent-secondary); }
+			:global(.mini-icon) { color: var(--accent-secondary); }
 		}
 		&.info {
 			border-color: var(--accent-primary);
 			box-shadow: 0 4px 20px rgba(255, 102, 171, 0.15);
-			.mini-icon { color: var(--accent-primary); }
+			:global(.mini-icon) { color: var(--accent-primary); }
 		}
 
 		.message {
@@ -122,10 +122,6 @@
 			height: 28px;
 			border-radius: var(--radius-pill);
 			transition: transform var(--transition-spring), background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
-
-			.material-icons {
-				font-size: 16px;
-			}
 
 			&:hover {
 				color: var(--text-main);

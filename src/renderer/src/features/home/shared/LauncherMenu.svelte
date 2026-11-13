@@ -1,5 +1,6 @@
 <script lang="ts">
 	import AppMenu from "@components/shared/AppMenu.svelte";
+	import Icon from "@components/shared/Icon.svelte";
 	import { launcherCountLabel } from "@lib/features/launcher";
 	import type { GameInfo } from "@shared";
 	import { tick } from "svelte";
@@ -151,7 +152,7 @@
 			aria-expanded={isOpen}
 			onclick={toggleMenu}
 		>
-			<span class="material-icons">tune</span>
+			<Icon name="tune" size={14} />
 			<span>{launcherCountLabel(game.launcherCount)}</span>
 		</button>
 	</div>
@@ -160,7 +161,7 @@
 		<AppMenu visible={isOpen} mode="cursor" x={menuX} y={menuY} onClose={() => (isOpen = false)}>
 			{#each choices as choice (choice.path ?? "automatic")}
 				<button type="button" class="menu-item" onclick={(event) => choose(event, choice.path)}>
-					<span class="material-icons">{choice.icon}</span>
+					<Icon name={choice.icon} size={18} />
 					<span class="launcher-text">
 						<span class="launcher-name">{choice.label}</span>
 						{#if choice.detail}
@@ -203,10 +204,6 @@
 			color var(--motion-quick),
 			border-color var(--motion-quick),
 			background var(--motion-quick);
-
-		.material-icons {
-			font-size: 14px;
-		}
 
 		&:hover,
 		&.open {

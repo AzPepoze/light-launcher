@@ -1,55 +1,39 @@
 <script lang="ts">
+	import Button from "@components/shared/Button.svelte";
+	import Icon from "@components/shared/Icon.svelte";
+
 	export let onLaunch: () => void;
 </script>
 
-<button class="btn primary launch-btn" on:click={onLaunch}>
-	<span class="material-icons run-icon">rocket_launch</span>
-	<span>LAUNCH GAME</span>
-</button>
+<div class="launch-btn">
+	<Button
+		variant="primary"
+		style="width: 100%; height: 60px; padding: 0 32px; gap: 12px; font-size: 1.15rem; letter-spacing: 2px;"
+		onclick={onLaunch}
+	>
+		<Icon name="rocket_launch" size={28} class="run-icon" />
+		<span>LAUNCH GAME</span>
+	</Button>
+</div>
 
 <style lang="scss">
 	.launch-btn {
 		width: 100%;
-		height: 60px;
-		padding: 0 32px;
-		border-radius: var(--radius-pill);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 12px;
-		background: var(--accent-primary) !important;
-		color: var(--bg-base) !important;
-		border: none;
-		box-shadow: 0 4px 14px var(--accent-glow);
-		cursor: pointer;
-		transition: background var(--transition-fast), box-shadow var(--transition-fast) !important;
-		transform: none !important;
-		font-weight: 800;
-		font-size: 1.15rem;
-		text-transform: uppercase;
-		letter-spacing: 2px;
 
-		span {
-			display: block;
+		:global(.button) {
+			box-shadow: 0 4px 14px var(--accent-glow);
 		}
 
-		&:hover {
-			background: var(--accent-hover) !important;
+		&:hover :global(.button) {
 			box-shadow: 0 8px 24px var(--accent-glow);
-			transform: none !important;
-
-			.run-icon {
-				transform: rotate(-15deg);
-			}
 		}
 
-		&:active {
-			transform: none !important;
-		}
-
-		.run-icon {
-			font-size: 28px;
+		:global(.run-icon) {
 			transition: transform var(--transition-spring);
+		}
+
+		&:hover :global(.run-icon) {
+			transform: rotate(-15deg);
 		}
 	}
 </style>

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onDestroy, onMount, tick } from "svelte";
 	import ContextMenu from "@components/shared/ContextMenu.svelte";
+	import Icon from "@components/shared/Icon.svelte";
 	import SidebarPanel from "./shared/SidebarPanel.svelte";
 	import FolderGroup from "./shared/FolderGroup.svelte";
 	import SidebarProfilesSection from "./shared/SidebarProfilesSection.svelte";
@@ -535,7 +536,7 @@
 		{#if showCustomProfiles}
 			{#if currentView !== "sidebar-grid" && scannedFolderGroups.length > 0}
 				<h2 bind:this={scanHeaderEl} class="scan-section-title" class:is-stuck={isScanStuck}>
-					<span class="material-icons">library_books</span>
+					<Icon name="library_books" size={20} class="section-icon" />
 					Custom Profiles <span class="badge">{filteredGames.length}</span>
 				</h2>
 			{/if}
@@ -701,7 +702,7 @@
 			border-radius: var(--radius-md);
 		}
 
-		.material-icons {
+		:global(.section-icon) {
 			font-size: 20px;
 			color: var(--accent-secondary);
 		}

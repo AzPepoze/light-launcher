@@ -2,6 +2,7 @@
 	import { getDominantColor } from "@lib/dominantColor";
 	import { GetImageBase64, GetExeIcon } from "@lib/api";
 	import type { GameActivity } from "@shared";
+	import Icon from "@components/shared/Icon.svelte";
 
 	export let recent: GameActivity[] = [];
 	export let mostPlayed: GameActivity[] = [];
@@ -93,10 +94,10 @@
 			{/if}
 			<div class="mode-switch" role="group" aria-label="View mode">
 				<button class:active={mode==="tabs"} on:click={()=>mode="tabs"} title="Tabs view">
-					<span class="material-icons">tab</span>
+					<Icon name="tab" size={16} />
 				</button>
 				<button class:active={mode==="scroll"} on:click={()=>mode="scroll"} title="Scroll view">
-					<span class="material-icons">view_headline</span>
+					<Icon name="view_headline" size={16} />
 				</button>
 			</div>
 		</div>
@@ -113,7 +114,7 @@
 							{#if icon}
 								<img src={icon} alt="" />
 							{:else}
-								<span class="material-icons">sports_esports</span>
+								<Icon name="sports_esports" size={18} class="row-icon-glyph" />
 							{/if}
 						</div>
 						<div class="row-main">
@@ -121,7 +122,7 @@
 							<span>{subtitleFor(activity, tab)}</span>
 						</div>
 						<div class="row-meta">
-							<span class="material-icons">schedule</span>
+							<Icon name="schedule" size={16} />
 							{formatDuration(totalSeconds(activity))}
 						</div>
 					</div>
@@ -129,7 +130,7 @@
 			</div>
 		{:else}
 			<div class="empty">
-				<span class="material-icons">{tab==="stale" ? "history_toggle_off" : "history"}</span>
+				<Icon name={tab==="stale" ? "history_toggle_off" : "history"} size={26} class="empty-icon" />
 				<div><strong>No {title.toLowerCase()} games</strong><p>{tab==="stale" ? "All library games were played recently." : "Play some games to build history."}</p></div>
 			</div>
 		{/if}
@@ -152,7 +153,7 @@
 										{#if icon}
 											<img src={icon} alt="" />
 										{:else}
-											<span class="material-icons">sports_esports</span>
+											<Icon name="sports_esports" size={18} class="row-icon-glyph" />
 										{/if}
 									</div>
 									<div class="row-main">
@@ -160,7 +161,7 @@
 										<span>{subtitleFor(activity, section.key)}</span>
 									</div>
 									<div class="row-meta">
-										<span class="material-icons">schedule</span>
+										<Icon name="schedule" size={16} />
 										{formatDuration(totalSeconds(activity))}
 									</div>
 								</div>
@@ -198,7 +199,6 @@
 		button{
 			border:0; background:transparent; color:var(--text-dim); cursor:pointer;
 			padding:4px 8px; border-radius:var(--radius-sm); display:grid; place-items:center;
-			.material-icons{ font-size:16px; }
 			&.active{ background:var(--accent-primary); color:var(--bg-base); }
 		}
 	}
@@ -217,10 +217,10 @@
 		display:grid; place-items:center; flex-shrink:0;
 		.compact &{ width:32px; height:32px; border-radius:8px; }
 		img{ width:100%; height:100%; object-fit:cover; }
-		.material-icons{ font-size:18px; color:var(--text-dim); }
+		:global(.row-icon-glyph){ color:var(--text-dim); }
 	}
 	.row-main{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; strong{ font-size:0.88rem; color:var(--text-main); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } span{ font-size:0.74rem; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } }
-	.row-meta{ display:flex; align-items:center; gap:6px; font-weight:800; font-size:0.8rem; color:var(--text-muted); white-space:nowrap; .material-icons{ font-size:16px; } }
+	.row-meta{ display:flex; align-items:center; gap:6px; font-weight:800; font-size:0.8rem; color:var(--text-muted); white-space:nowrap; }
 
 	.scroll-sections{ display:flex; flex-direction:column; gap:16px; flex:1; min-height:0; overflow-y:auto; padding-right:4px; }
 	.scroll-section{
@@ -244,6 +244,6 @@
 	.empty{
 		display:flex; align-items:center; justify-content:center; gap:12px; min-height:120px;
 		border:1px dashed var(--glass-border); border-radius:var(--radius-md); color:var(--text-muted); padding:16px;
-		.material-icons{ font-size:26px; color:var(--text-dim); } strong{ color:var(--text-main);} p{ margin:4px 0 0; font-size:0.8rem; }
+		:global(.empty-icon){ color:var(--text-dim); } strong{ color:var(--text-main);} p{ margin:4px 0 0; font-size:0.8rem; }
 	}
 </style>

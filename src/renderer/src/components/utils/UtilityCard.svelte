@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Button from "@components/shared/Button.svelte";
+
 	export let name: string;
 	export let isInstalled: boolean;
 	export let isInstalling: boolean = false;
@@ -36,22 +38,22 @@
 
 	<div class="action-area">
 		{#if isInstalled}
-			<button
-				class="btn danger"
-				on:click={onUninstall}
+			<Button
+				variant="danger"
+				onclick={onUninstall}
 				disabled={isUninstalling}
 			>
 				{isUninstalling ? "Removing..." : "Remove Utility"}
-			</button>
+			</Button>
 		{:else}
 			<div class="install-controls">
-				<button
-					class="btn primary"
-					on:click={onInstall}
+				<Button
+					variant="primary"
+					onclick={onInstall}
 					disabled={isInstalling}
 				>
 					{isInstalling ? "Installing..." : `Install ${name}`}
-				</button>
+				</Button>
 				{#if isInstalling}
 					<div class="install-progress-area">
 						<div class="progress-header">
@@ -219,7 +221,7 @@
 	.action-area {
 		margin-top: 8px;
 
-		.btn {
+		:global(.button) {
 			width: 100%;
 		}
 	}

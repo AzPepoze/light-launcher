@@ -1,5 +1,6 @@
 <script lang="ts">
 	import MiniResourceGraph from "./MiniResourceGraph.svelte";
+	import Icon from "@components/shared/Icon.svelte";
 	import type { SystemInfo, SystemUsage } from "@shared";
 
 	interface Props {
@@ -41,7 +42,7 @@
 	<div class="status-box">
 		<div class="box-header">
 			<div class="header-left">
-				<span class="material-icons mini-icon">memory</span>
+				<Icon name="memory" size={16} class="mini-icon" />
 				<span class="label">CPU</span>
 			</div>
 			<span class="usage">{sysUsage.cpu.toFixed(1)}%</span>
@@ -54,7 +55,7 @@
 	<div class="status-box">
 		<div class="box-header">
 			<div class="header-left">
-				<span class="material-icons mini-icon">storage</span>
+				<Icon name="storage" size={16} class="mini-icon" />
 				<span class="label">RAM</span>
 			</div>
 			<span class="usage">{sysUsage.ram}%</span>
@@ -67,7 +68,7 @@
 	<div class="status-box">
 		<div class="box-header">
 			<div class="header-left">
-				<span class="material-icons mini-icon">videogame_asset</span>
+				<Icon name="videogame_asset" size={16} class="mini-icon" />
 				<span class="label">GPU</span>
 			</div>
 			<span class="usage">{currentGpuUsage}%</span>
@@ -77,7 +78,7 @@
 		<div class="gpu-slider">
 			{#if gpuList.length > 1}
 				<button class="gpu-arrow left" onclick={prevGpu} aria-label="Previous GPU">
-					<span class="material-icons">chevron_left</span>
+					<Icon name="chevron_left" size={16} />
 				</button>
 			{/if}
 			<div class="gpu-name-wrap">
@@ -93,7 +94,7 @@
 			</div>
 			{#if gpuList.length > 1}
 				<button class="gpu-arrow right" onclick={nextGpu} aria-label="Next GPU">
-					<span class="material-icons">chevron_right</span>
+					<Icon name="chevron_right" size={16} />
 				</button>
 			{/if}
 		</div>
@@ -141,8 +142,7 @@
 				gap: 8px;
 			}
 
-			.mini-icon {
-				font-size: 16px;
+			:global(.mini-icon) {
 				color: var(--text-muted);
 			}
 
@@ -195,10 +195,6 @@
 				&:hover {
 					color: var(--text-main);
 					background: rgba(255, 255, 255, 0.08);
-				}
-
-				.material-icons {
-					font-size: 16px;
 				}
 			}
 

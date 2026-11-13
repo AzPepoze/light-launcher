@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Icon from "@components/shared/Icon.svelte";
 	import { fade } from "svelte/transition";
 
 	export let onAddFile: () => void;
@@ -9,11 +10,9 @@
 	<div class="mode-buttons">
 		<button class="mode-btn" on:click={onAddFile}>
 			<div class="icon-box">
-				<span class="material-icons" style="font-size: 28px;"
-					>add_box</span
-				>
+				<Icon name="add_box" size={28} />
 			</div>
-			<div class="btn-text">
+			<div class="mode-text">
 				<span class="title">Single File</span>
 				<span class="desc">Add a specific .exe game file</span>
 			</div>
@@ -21,11 +20,9 @@
 
 		<button class="mode-btn" on:click={onAddFolder}>
 			<div class="icon-box">
-				<span class="material-icons" style="font-size: 28px;"
-					>create_new_folder</span
-				>
+				<Icon name="create_new_folder" size={28} />
 			</div>
-			<div class="btn-text">
+			<div class="mode-text">
 				<span class="title">Scan Folder</span>
 				<span class="desc">Batch add games from directory</span>
 			</div>
@@ -105,7 +102,7 @@
 			border: 1px solid var(--glass-border);
 		}
 
-		.btn-text {
+		.mode-text {
 			.title {
 				display: block;
 				font-size: 1.25rem;

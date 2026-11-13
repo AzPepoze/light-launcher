@@ -6,6 +6,7 @@ import type {
 	WireBrowsePage,
 	WireFiltersPage,
 	WireGame,
+	WireGameDetail,
 	WireLibraryList,
 	WireLibraryOverview,
 	WireUpdateStatus,
@@ -271,6 +272,87 @@ describe("libraryApi.runAction", () => {
 		rpcMock.mockRejectedValue(new Error("login expired"));
 
 		await expect(libraryApi.runAction("f95", "sync")).rejects.toThrow("login expired");
+	});
+});
+
+describe("libraryApi.refreshFiles", () => {
+	beforeEach(() => {
+		rpcMock.mockReset();
+	});
+
+	it("asks for the game's fresh detail and maps it like LibraryGet", async () => {
+		const wire = {
+			...wireGame(7),
+			sourceId: "dust",
+			notes: "keep me",
+			favorite: 1,
+			tags: ["rpg"],
+			files: [
+				{
+					id: 21,
+					gameId: 7,
+					label: "Windows build",
+					url: "https://example.test/dust.zip",
+					filename: "dust.zip",
+					size: 2048,
+					host: "mega",
+					kind: "direct",
+					platform: "windows",
+					rangeHint: null,
+					requiresAuth: 1
+				}
+			],
+			changes: [
+				{
+					id: 3,
+					gameId: 7,
+					checkedAt: "2026-03-01T00:00:00Z",
+					oldVersion: "1",
+					newVersion: "2",
+					changelog: null,
+					seen: 1,
+					applied: 0
+				}
+			]
+		} as unknown as WireGameDetail;
+		answerWith({ LibraryRefreshFiles: wire });
+
+		const detail = await libraryApi.refreshFiles(7);
+
+		expect(rpcMock).toHaveBeenCalledTimes(1);
+		expect(rpcMock).toHaveBeenCalledWith("LibraryRefreshFiles", { id: 7 });
+		expect(detail.game).toMatchObject({
+			id: 7,
+			sourceKind: "plugin",
+			favorite: true,
+			notes: "keep me",
+			tags: ["rpg"]
+		});
+		expect(detail.files).toEqual([
+			{
+				id: 21,
+				label: "Windows build",
+				url: "https://example.test/dust.zip",
+				filename: "dust.zip",
+				size: 2048,
+				host: "mega",
+				kind: "direct",
+				platform: "windows",
+				requiresAuth: true
+			}
+		]);
+		expect(detail.changes[0]).toMatchObject({
+			from: "1",
+			to: "2",
+			seen: true,
+			applied: false
+		});
+	});
+
+	it("passes the server error on", async () => {
+		rpcMock.mockRejectedValue(new Error("the source could not fetch the game"));
+
+		await expect(libraryApi.refreshFiles(7)).rejects.toThrow("could not fetch");
 	});
 });
 

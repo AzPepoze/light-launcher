@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Button from "@components/shared/Button.svelte";
+	import Icon from "@components/shared/Icon.svelte";
 	import type { SettingsState } from "./settingsState.svelte";
 
 	let { settings } = $props<{ settings: SettingsState }>();
@@ -15,7 +17,7 @@
 
 <div class="zone-card">
 	<div class="zone-header">
-		<span class="material-icons">folder_special</span>
+		<Icon name="folder_special" size={24} class="zone-icon" />
 		<h2>Wine Prefix Storage Location</h2>
 	</div>
 
@@ -33,15 +35,13 @@
 			</div>
 
 			<div class="actions">
-				<button class="btn primary" onclick={handleBrowsePrefixDir}>
-					<span class="material-icons mini-icon">folder_open</span>
+				<Button variant="primary" icon="folder_open" onclick={handleBrowsePrefixDir}>
 					Change Location
-				</button>
+				</Button>
 				{#if appSettings.CustomPrefixDir}
-					<button class="btn secondary" onclick={handleResetDefault}>
-						<span class="material-icons mini-icon">restore</span>
+					<Button variant="secondary" icon="restore" onclick={handleResetDefault}>
 						Reset to Default
-					</button>
+					</Button>
 				{/if}
 			</div>
 		</div>
@@ -60,6 +60,10 @@
 			font-weight: 600;
 			color: var(--text-muted);
 		}
+	}
+
+	:global(.zone-icon) {
+		color: var(--accent-primary);
 	}
 
 	.path-box {
@@ -97,11 +101,6 @@
 			display: flex;
 			gap: 12px;
 			align-items: center;
-
-			.mini-icon {
-				font-size: 18px;
-				margin-right: 6px;
-			}
 		}
 	}
 </style>

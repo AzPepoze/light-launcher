@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { notifications } from "@stores/notificationStore";
+	import Button from "@components/shared/Button.svelte";
 	import SelectionView from "./SelectionView.svelte";
 	import FolderConfiguration from "@components/shared/FolderConfiguration.svelte";
 	import ReviewView from "./ReviewView.svelte";
@@ -86,31 +87,22 @@
 			</p>
 		{:else}
 			{#if state.addMode === "folder-config"}
-				<button
-					class="btn secondary"
-					onclick={() => (state.addMode = "select")}>Back</button
-				>
-				<button
-					class="btn primary"
+				<Button variant="secondary" onclick={() => (state.addMode = "select")}>Back</Button>
+				<Button
+					variant="primary"
+					loading={state.isSearching}
 					onclick={() => state.startFolderScan()}
-					disabled={state.isSearching}
 				>
-					{#if state.isSearching}
-						<div class="spinner small"></div>
-						Scanning...
-					{:else}
-						Start Search
-					{/if}
-				</button>
+					{state.isSearching ? "Scanning..." : "Start Search"}
+				</Button>
 			{:else}
 				{#if state.addMode === "folder-review"}
-					<button
-						class="btn secondary"
-						onclick={() => (state.addMode = "folder-config")}>Back</button
-					>
-					<button class="btn primary" onclick={() => state.confirmAddFolder(onRefresh, onClose)}>
+					<Button variant="secondary" onclick={() => (state.addMode = "folder-config")}>
+						Back
+					</Button>
+					<Button variant="primary" onclick={() => state.confirmAddFolder(onRefresh, onClose)}>
 						Add {state.foundExecutables.length - state.discardedExecutables.size} Games
-					</button>
+					</Button>
 				{/if}
 			{/if}
 		{/if}
@@ -201,14 +193,5 @@
 	.add-container {
 		display: flex;
 		flex-direction: column;
-	}
-
-	.spinner {
-		width: 18px;
-		height: 18px;
-		border: 2px solid var(--glass-border);
-		border-top-color: var(--accent-primary);
-		border-radius: 50%;
-		animation: ll-spin 0.8s linear infinite;
 	}
 </style>

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Icon from "@components/shared/Icon.svelte";
+
 	export let name: string;
 	export let currentPrefixName: string = "";
 	export let onSelectPrefix: (name: string) => void;
@@ -23,9 +25,11 @@
 		on:click={() => onSelectPrefix(name)}
 	>
 		<span class="folder-icon">
-			<span class="material-icons">
-				{isActive ? "folder_open" : "folder"}
-			</span>
+			<Icon
+				name={isActive ? "folder_open" : "folder"}
+				size={20}
+				class="folder-glyph"
+			/>
 		</span>
 		<span class="info">
 			<span class="name">{name}</span>
@@ -56,7 +60,7 @@
 			aria-label="Delete {name}"
 			on:click|stopPropagation={() => onRemovePrefix(name)}
 		>
-			<span class="material-icons">delete_outline</span>
+			<Icon name="delete_outline" size={18} />
 		</button>
 	{/if}
 </div>
@@ -80,7 +84,7 @@
 			background: var(--accent-primary);
 			color: var(--bg-base);
 
-			.folder-icon .material-icons {
+			.folder-icon :global(.folder-glyph) {
 				color: var(--bg-base);
 			}
 
@@ -110,8 +114,7 @@
 		text-align: left;
 		font-weight: inherit;
 
-		.folder-icon .material-icons {
-			font-size: 20px;
+		.folder-icon :global(.folder-glyph) {
 			color: var(--accent-primary);
 		}
 
@@ -269,10 +272,6 @@
 			opacity var(--transition-fast),
 			background var(--transition-fast),
 			color var(--transition-fast);
-
-		.material-icons {
-			font-size: 18px;
-		}
 
 		&:hover {
 			background: rgba(255, 59, 48, 0.15);

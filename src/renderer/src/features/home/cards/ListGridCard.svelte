@@ -1,6 +1,7 @@
 <script lang="ts">
 	import CardRunningIndicator from "./shared/CardRunningIndicator.svelte";
 	import CardSelectionCheckbox from "./shared/CardSelectionCheckbox.svelte";
+	import Icon from "@components/shared/Icon.svelte";
 	import { getGamePath } from "@lib/gameUtils";
 	import LauncherMenu from "../shared/LauncherMenu.svelte";
 	import { iconFade } from "@lib/iconReveal";
@@ -74,11 +75,7 @@
 			<div class="icon-skeleton" aria-hidden="true"></div>
 		{:else}
 			<div class="fallback-wrapper">
-				<span
-					class="material-icons"
-					style="font-size: 32px; color: var(--text-dim); opacity: 0.5;"
-					>rocket_launch</span
-				>
+				<Icon name="rocket_launch" size={32} />
 			</div>
 		{/if}
 
@@ -100,14 +97,14 @@
 				title="Play Now"
 				on:click|stopPropagation={(e) => handleLaunch(e)}
 			>
-				<span class="material-icons">play_arrow</span>
+				<Icon name="play_arrow" size={20} class="play-icon" />
 			</button>
 			<button
 				class="action-btn config"
 				title="Configure"
 				on:click|stopPropagation={handleConfigure}
 			>
-				<span class="material-icons">settings</span>
+				<Icon name="settings" size={20} />
 			</button>
 		</div>
 	</div>
@@ -138,7 +135,7 @@
 				transform: scale(1.1);
 			}
 
-			.play .material-icons {
+			.play :global(.play-icon) {
 				transform: scale(1.15);
 			}
 		}
@@ -212,7 +209,8 @@
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			opacity: 1;
+			color: var(--text-dim);
+			opacity: 0.5;
 			border-radius: var(--radius-lg);
 			overflow: hidden;
 		}
@@ -276,13 +274,6 @@
 		align-items: center;
 		justify-content: center;
 		transition: transform var(--transition-spring), background var(--transition-fast), border-color var(--transition-fast);
-
-		.material-icons {
-			font-size: 20px;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-		}
 
 		&:hover {
 			background: var(--bg-surface);

@@ -3,6 +3,7 @@
 	import { isPageAvailable, platform } from "@stores/platformStore";
 	import { notifications } from "@stores/notificationStore";
 	import { routes, type AppRoute } from "../../app/routes";
+	import Icon from "./Icon.svelte";
 
 	export let activePage: string = "home";
 	export let onNavigate: (page: string) => void = () => {};
@@ -65,7 +66,7 @@
 		{#if item.isCustomIcon}
 			<img src={item.icon} class="custom-icon" alt="" />
 		{:else}
-			<span class="material-icons icon">{navIcon(item, $unreadCount)}</span>
+			<Icon name={navIcon(item, $unreadCount)} size={22} class="icon" />
 		{/if}
 		{#if item.id === "notifications" && $unreadCount > 0}
 			<span class="nav-badge" aria-hidden="true">{badgeLabel($unreadCount)}</span>
@@ -195,8 +196,7 @@
 		position: relative;
 		z-index: 3;
 
-		.icon {
-			font-size: 22px;
+		:global(.icon) {
 			color: inherit;
 			transition:
 				color var(--transition-fast),
@@ -228,7 +228,7 @@
 		&.active {
 			color: var(--accent-primary);
 
-			.icon {
+			:global(.icon) {
 				color: var(--accent-primary);
 			}
 

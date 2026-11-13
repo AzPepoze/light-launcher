@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { fade, scale } from "svelte/transition";
 	import { backOut } from "svelte/easing";
+	import Button from "./Button.svelte";
+	import Icon from "./Icon.svelte";
 
 	export let show = false;
 	export let title = "Settings";
@@ -47,7 +49,7 @@
 					on:click={close}
 					aria-label="Close modal"
 				>
-					<span class="material-icons">close</span>
+					<Icon name="close" size={24} />
 				</button>
 			</div>
 			<div class="modal-body">
@@ -56,9 +58,7 @@
 			{#if $$slots.footer || showDone}
 				<div class="modal-footer">
 					<slot name="footer">
-						<button class="btn primary" on:click={close}
-							>Done</button
-						>
+						<Button variant="primary" onclick={close}>Done</Button>
 					</slot>
 				</div>
 			{/if}

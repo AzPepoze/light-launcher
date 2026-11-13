@@ -6,6 +6,8 @@
 	import PrefixHeroPanel from "@components/prefix/PrefixHeroPanel.svelte";
 	import ConfigForm from "@components/shared/ConfigForm.svelte";
 	import PageHeader from "@components/shared/PageHeader.svelte";
+	import Button from "@components/shared/Button.svelte";
+	import Icon from "@components/shared/Icon.svelte";
 	import { createLaunchOptions } from "@lib/formService";
 	import { formatBytes } from "@lib/features/format";
 	import { createLogger } from "@lib/logger";
@@ -242,7 +244,7 @@
 
 		{#if isPageLoading}
 		<div class="loading-state">
-			<span class="material-icons spin">progress_activity</span>
+			<Icon name="progress_activity" size={28} class="spin" />
 			<span>Loading prefixes…</span>
 		</div>
 	{:else}
@@ -281,7 +283,7 @@
 							role="tab"
 							aria-selected={activeTab === 'tools'}
 						>
-							<span class="material-icons">build</span>
+							<Icon name="build" size={18} />
 							Wine Tools
 						</button>
 						<button
@@ -292,7 +294,7 @@
 							role="tab"
 							aria-selected={activeTab === 'config'}
 						>
-							<span class="material-icons">tune</span>
+							<Icon name="tune" size={18} />
 							Defaults
 						</button>
 						<button
@@ -303,7 +305,7 @@
 							role="tab"
 							aria-selected={activeTab === 'advanced'}
 						>
-							<span class="material-icons">settings</span>
+							<Icon name="settings" size={18} />
 							Advanced
 						</button>
 						<span class="tabs-meta">6 tools · 5 toggles</span>
@@ -317,7 +319,7 @@
 					{:else if activeTab === 'config'}
 						<div class="tab-content" role="tabpanel">
 							<header class="panel-header" style="margin-bottom: 16px">
-								<span class="material-icons panel-icon">tune</span>
+								<Icon name="tune" size={22} class="panel-icon" />
 								<div>
 									<h3>Default configuration</h3>
 									<p>Applied when launching games with this prefix</p>
@@ -325,17 +327,19 @@
 							</header>
 							<ConfigForm bind:options={prefixOptions} />
 							<div class="save-bar">
-								<button
-									class="btn primary save-btn"
-									type="button"
-									on:click={handleSaveConfig}
+								<Button
+									variant="primary"
+									class="save-btn"
+									onclick={handleSaveConfig}
 									disabled={isSaving}
 								>
-									<span class="material-icons btn-icon" class:spin={isSaving}
-										>{isSaving ? "sync" : "save"}</span
-									>
+									<Icon
+										name={isSaving ? "sync" : "save"}
+										size={18}
+										class={isSaving ? "spin" : ""}
+									/>
 									{isSaving ? "Saving…" : "Save Defaults"}
-								</button>
+								</Button>
 							</div>
 						</div>
 					{:else}
@@ -344,16 +348,16 @@
 								<div class="advanced-card">
 									<h4>Symlinks</h4>
 									<p>Repair broken prefix symlinks after moving storage.</p>
-									<button class="btn sm" type="button">Repair</button>
+									<Button size="sm">Repair</Button>
 								</div>
 								<div class="advanced-card">
 									<h4>Duplicate Prefix</h4>
 									<p>Clone config + Wine bottle into a new prefix.</p>
-									<button class="btn sm" type="button" on:click={() => {
+									<Button size="sm" onclick={() => {
 										const base = currentPrefixName.replace(/[^a-zA-Z0-9_-]/g, '') || 'Default';
 										newPrefixName = `${base}-copy`;
 										handleCreatePrefix();
-									}}>Duplicate "{currentPrefixName}"</button>
+									}}>Duplicate "{currentPrefixName}"</Button>
 								</div>
 							</div>
 						</div>
@@ -375,18 +379,8 @@
 		max-height: 100%;
 	}
 
-	.btn-icon {
-		font-size: 18px;
-		margin-right: 6px;
-		vertical-align: middle;
-	}
-
-	.btn.primary .btn-icon {
-		margin-right: 8px;
-	}
-
-	.btn.primary:disabled .material-icons.spin,
-	.loading-state .spin {
+	.loading-state :global(.spin),
+	.save-bar :global(.spin) {
 		animation: ll-spin 1.2s linear infinite;
 	}
 
@@ -405,8 +399,7 @@
 		font-size: 0.95rem;
 		font-weight: 700;
 
-		.material-icons {
-			font-size: 28px;
+		:global(.spin) {
 			color: var(--accent-primary);
 		}
 	}
@@ -478,8 +471,7 @@
 		gap: 14px;
 		margin-bottom: 20px;
 
-		.panel-icon {
-			font-size: 22px;
+		:global(.panel-icon) {
 			color: var(--accent-primary);
 			margin-top: 2px;
 		}
@@ -531,10 +523,6 @@
 		text-transform: uppercase;
 		cursor: pointer;
 		transition: all var(--transition-fast);
-
-		.material-icons {
-			font-size: 18px;
-		}
 
 		&:hover {
 			color: var(--text-main);
@@ -619,7 +607,7 @@
 		z-index: 1;
 	}
 
-	.save-btn {
+	.save-bar :global(.save-btn) {
 		min-width: 180px;
 	}
 

@@ -11,6 +11,8 @@
 	import { notifications } from "@stores/notificationStore";
 	import NumberField from "@components/shared/NumberField.svelte";
 	import Notice from "@components/shared/Notice.svelte";
+	import Button from "@components/shared/Button.svelte";
+	import Icon from "@components/shared/Icon.svelte";
 
 	const log = createLogger("ScanFolderRow");
 
@@ -71,15 +73,15 @@
 
 <li class="folder-row">
 	<div class="folder-head">
-		<span class="material-icons folder-icon" aria-hidden="true">folder</span>
+		<Icon name="folder" size={22} class="folder-icon" />
 		<div class="folder-text">
 			<span class="folder-path">{folder}</span>
 			<span class="games-count">{countText}</span>
 		</div>
-		<button class="btn secondary" onclick={onRescan} disabled={rescanning}>
+		<Button variant="secondary" onclick={onRescan} disabled={rescanning}>
 			{rescanning ? "Scanning..." : "Rescan"}
-		</button>
-		<button class="btn danger" onclick={onRemove}>Remove</button>
+		</Button>
+		<Button variant="danger" onclick={onRemove}>Remove</Button>
 	</div>
 
 	{#each pluginWarnings as warning (warning)}
@@ -119,9 +121,9 @@
 	</div>
 
 	<div class="folder-actions">
-		<button class="btn primary" onclick={save} disabled={!dirty || saving || !depthCheck.ok}>
+		<Button variant="primary" onclick={save} disabled={!dirty || saving || !depthCheck.ok}>
 			{saving ? "Saving..." : "Save settings"}
-		</button>
+		</Button>
 	</div>
 </li>
 
@@ -144,9 +146,8 @@
 		flex-wrap: wrap;
 	}
 
-	.folder-icon {
+	.folder-head :global(.folder-icon) {
 		color: var(--accent-secondary);
-		font-size: 22px;
 	}
 
 	.folder-text {
@@ -224,10 +225,5 @@
 	.folder-actions {
 		display: flex;
 		justify-content: flex-end;
-	}
-
-	.btn:focus-visible {
-		outline: 2px solid var(--accent-primary);
-		outline-offset: 2px;
 	}
 </style>

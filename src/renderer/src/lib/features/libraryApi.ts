@@ -136,6 +136,10 @@ export const libraryApi = {
 	get: async (id: number): Promise<LibraryGetResponse> =>
 		toGameDetail(await rpc<WireGameDetail>("LibraryGet", { id })),
 
+	/** Re-reads the source metadata and plugin file ids. The user's fields are kept. */
+	refreshFiles: async (id: number): Promise<LibraryGetResponse> =>
+		toGameDetail(await rpc<WireGameDetail>("LibraryRefreshFiles", { id })),
+
 	update: async (id: number, fields: LibraryEditableFields): Promise<Game> =>
 		toGame(await rpc<WireGame>("LibraryUpdate", toGameUpdate(id, fields))),
 

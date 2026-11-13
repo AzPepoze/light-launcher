@@ -1,5 +1,6 @@
 <script lang="ts">
 	import AppMenu from "@components/shared/AppMenu.svelte";
+	import Icon from "./Icon.svelte";
 
 	export let x: number;
 	export let y: number;
@@ -22,40 +23,40 @@
 <AppMenu bind:x bind:y bind:visible mode="cursor" {onClose}>
 	{#if isRunning}
 		<button class="menu-item danger-soft" on:click={() => { onKill(); onClose(); }}>
-			<span class="material-icons">stop_circle</span>
+			<Icon name="stop_circle" size={18} />
 			<span>Stop Game</span>
 		</button>
 	{:else}
 		<button class="menu-item" on:click={() => { onLaunch(); onClose(); }}>
-			<span class="material-icons">play_arrow</span>
+			<Icon name="play_arrow" size={18} />
 			<span>Launch Game</span>
 		</button>
 
 		<button class="menu-item" on:click={() => { onLaunchWithLogs(); onClose(); }}>
-			<span class="material-icons">terminal</span>
+			<Icon name="terminal" size={18} />
 			<span>Run with Logs</span>
 		</button>
 	{/if}
 
 	<button class="menu-item" on:click={() => { onConfigure(); onClose(); }}>
-		<span class="material-icons">settings</span>
+		<Icon name="settings" size={18} />
 		<span>Configure Profile</span>
 	</button>
 
 	<button class="menu-item" on:click={() => { onOpenLocation(); onClose(); }}>
-		<span class="material-icons">folder_open</span>
+		<Icon name="folder_open" size={18} />
 		<span>Open File Location</span>
 	</button>
 
 	{#if !isAutoScanned}
 		<div class="menu-divider"></div>
 		<button class="menu-item" on:click={() => { onSetCustomIcon(); onClose(); }}>
-			<span class="material-icons">image</span>
+			<Icon name="image" size={18} />
 			<span>{hasCustomIcon ? 'Replace Custom Icon' : 'Set Custom Icon'}</span>
 		</button>
 		{#if hasCustomIcon}
 			<button class="menu-item" on:click={() => { onClearCustomIcon(); onClose(); }}>
-				<span class="material-icons">hide_image</span>
+				<Icon name="hide_image" size={18} />
 				<span>Use Executable Icon</span>
 			</button>
 		{/if}
@@ -65,12 +66,12 @@
 
 	{#if isAutoScanned}
 		<button class="menu-item danger" on:click={() => { onAction(); onClose(); }}>
-			<span class="material-icons">block</span>
+			<Icon name="block" size={18} />
 			<span>Hide / Blacklist</span>
 		</button>
 	{:else}
 		<button class="menu-item danger" on:click={() => { onAction(); onClose(); }}>
-			<span class="material-icons">delete</span>
+			<Icon name="delete" size={18} />
 			<span>Remove Profile</span>
 		</button>
 	{/if}

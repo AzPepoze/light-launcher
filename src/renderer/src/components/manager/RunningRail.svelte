@@ -3,6 +3,7 @@
 	import { GetImageBase64, GetExeIcon, GetConfig } from "@lib/api";
 	import type { GameActivity, RunningSession } from "@shared";
 	import type { LaunchOptions } from "@shared";
+	import Icon from "@components/shared/Icon.svelte";
 
 	export let sessions: RunningSession[] = [];
 	export let activities: GameActivity[] = [];
@@ -185,7 +186,7 @@
 								{#if icons[runningSession.pid]}
 									<img src={icons[runningSession.pid]} alt="" />
 								{:else}
-									<span class="material-icons fallback">sports_esports</span>
+									<Icon name="sports_esports" size={64} class="fallback" />
 								{/if}
 							</div>
 						</div>
@@ -210,7 +211,7 @@
 							title="Stop {runningSession.gameName}"
 							aria-label={`Stop ${runningSession.gameName}`}
 						>
-							<span class="material-icons">close</span>
+							<Icon name="close" size={18} />
 						</button>
 					</div>
 				</div>
@@ -218,7 +219,7 @@
 		</div>
 	{:else}
 		<div class="empty">
-			<span class="material-icons">bedtime</span>
+			<Icon name="bedtime" size={28} class="empty-icon" />
 			<div><strong>No managed games are running</strong><p>Launch from LightLauncher to appear here.</p></div>
 		</div>
 	{/if}
@@ -266,7 +267,7 @@
 		display:grid; place-items:center;
 		transition: transform var(--transition-spring);
 		img{ width:100%; height:100%; object-fit:cover; }
-		.fallback{ color:var(--text-dim); font-size:64px; }
+		:global(.fallback){ color:var(--text-dim); }
 		.running-card:hover &{ transform: rotateY(4deg) rotateX(0deg) scale(1.02); }
 	}
 
@@ -292,13 +293,12 @@
 		transition: background var(--transition-fast), transform var(--transition-fast);
 		&:hover{ background: rgba(255,80,80,0.16); transform: scale(1.06); }
 		&:active{ transform: scale(0.94); }
-		.material-icons{ font-size:18px; }
 	}
 
 	.empty{
 		display:flex; align-items:center; justify-content:center; gap:12px; min-height:120px;
 		border:1px dashed var(--glass-border); border-radius:var(--radius-md); color:var(--text-muted); padding:16px;
-		.material-icons{ font-size:28px; color:var(--text-dim); }
+		:global(.empty-icon){ color:var(--text-dim); }
 		strong{ color:var(--text-main); } p{ margin:4px 0 0; font-size:0.8rem; }
 	}
 </style>

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import AppMenu from "@components/shared/AppMenu.svelte";
+	import Icon from "@components/shared/Icon.svelte";
 	import MenuTrigger from "@components/shared/MenuTrigger.svelte";
 	import { GAME_FOLDERS_SECTION } from "@lib/features/settingsSection";
 	import { navigateToSettingsSection } from "@stores/navigationStore";
@@ -27,7 +28,7 @@
 	data-stuck-key={stuckKey}
 >
 	<div class="folder-title" title={subtitle || name}>
-		<span class="material-icons folder-icon-main">{icon}</span>
+		<Icon name={icon} size={26} class="folder-icon-main" />
 		<div class="folder-metadata">
 			<span class="folder-name">{name}</span>
 			{#if subtitle}
@@ -46,15 +47,15 @@
 			/>
 			<AppMenu visible={isMenuOpen} mode="anchor" onClose={onCloseMenu}>
 				<button class="menu-item" on:click={onRescan}>
-					<span class="material-icons">refresh</span>
+					<Icon name="refresh" size={18} />
 					<span>Rescan Folder</span>
 				</button>
 				<button class="menu-item" on:click={() => navigateToSettingsSection(GAME_FOLDERS_SECTION)}>
-					<span class="material-icons">folder_managed</span>
+					<Icon name="folder_managed" size={18} />
 					<span>Game folders</span>
 				</button>
 				<button class="menu-item danger" on:click={onRemoveFolder}>
-					<span class="material-icons">delete_outline</span>
+					<Icon name="delete_outline" size={18} />
 					<span>Remove Watch</span>
 				</button>
 			</AppMenu>
@@ -97,7 +98,7 @@
 		flex: 1;
 	}
 
-	.folder-icon-main {
+	:global(.folder-icon-main) {
 		font-size: 26px;
 		color: var(--accent-secondary);
 		filter: drop-shadow(0 0 8px rgba(255, 102, 171, 0.3));

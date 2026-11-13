@@ -166,12 +166,12 @@
 		type="button"
 	>
 		<span class="text">{selectedLabel}</span>
-		<span class="material-icons arrow">expand_more</span>
+		<Icon name="expand_more" size={19} class="arrow" />
 	</button>
 
 	{#if disabled && disabledMessage}
 		<div class="disabled-tooltip">
-			<span class="material-icons info-icon">info</span>
+			<Icon name="info" size={16} class="info-icon" />
 			<span>{disabledMessage}</span>
 		</div>
 	{/if}
@@ -259,8 +259,7 @@
 		gap: 6px;
 		pointer-events: none;
 
-		.info-icon {
-			font-size: 1rem;
+		:global(.info-icon) {
 			color: var(--accent-primary);
 		}
 
@@ -300,13 +299,12 @@
 		}
 	}
 
-	.arrow {
-		font-size: 1.2rem;
+	.dropdown-trigger :global(.arrow) {
 		color: var(--text-muted);
 		transition: transform var(--transition-spring);
 	}
 
-	.open .arrow {
+	.open :global(.arrow) {
 		transform: rotate(180deg);
 		color: var(--accent-primary);
 	}

@@ -1,11 +1,13 @@
 <script lang="ts">
+	import Icon from "@components/shared/Icon.svelte";
+
 	export let icon: string = "folder_open";
 	export let title: string = "No games found";
 	export let subtitle: string = "";
 </script>
 
 <div class="folder-empty-placeholder">
-	<span class="material-icons placeholder-icon">{icon}</span>
+	<Icon name={icon} size={36} class="placeholder-icon" />
 	<span class="placeholder-text">{title}</span>
 	{#if subtitle}
 		<span class="placeholder-subtext">{subtitle}</span>
@@ -27,7 +29,7 @@
 		text-align: center;
 		gap: 8px;
 
-		.placeholder-icon {
+		:global(.placeholder-icon) {
 			font-size: 36px;
 			color: var(--text-dim);
 			opacity: 0.4;

@@ -6,7 +6,13 @@
 	import ScreenshotImage from "@components/shared/ScreenshotImage.svelte";
 	import { notifications } from "@stores/notificationStore";
 	import { libraryApi } from "../../lib/features/libraryApi";
-	import type { Game, GameChange, GameFile, SourceAction } from "../../lib/features/types";
+	import type {
+		Game,
+		GameChange,
+		GameFile,
+		LibraryGetResponse,
+		SourceAction,
+	} from "../../lib/features/types";
 	import { ago, playtime } from "../../lib/features/format";
 	import { libraryErrorMessage } from "./libraryError";
 	import GameFiles from "./GameFiles.svelte";
@@ -32,6 +38,7 @@
 	let notes = $state("");
 	let confirmingRemove = $state(false);
 	let runningAction = $state("");
+	let refreshingFiles = $state(false);
 	let busy = $state(false);
 	let titleEl = $state<HTMLElement>();
 
@@ -66,22 +73,38 @@
 		}
 	}
 
+	/** Shows the page a detail call returned, and keeps the list row in step with it. */
+	function applyDetail(detail: LibraryGetResponse) {
+		files = detail.files;
+		changes = detail.changes;
+		onChanged(detail.game);
+	}
+
 	/** Runs one game-scope action. A refresh reloads the game and its files. */
 	async function runGameAction(action: SourceAction) {
 		runningAction = action.id;
 		try {
 			const result = await libraryApi.runAction(game.source, action.id, game.id);
 			if (result.message) notifications.success(result.message);
-			if (result.refresh) {
-				const detail = await libraryApi.get(game.id);
-				files = detail.files;
-				changes = detail.changes;
-				onChanged(detail.game);
-			}
+			if (result.refresh) applyDetail(await libraryApi.get(game.id));
 		} catch (err) {
 			notifications.error(libraryErrorMessage(err));
 		} finally {
 			runningAction = "";
+		}
+	}
+
+	/** Re-reads the source metadata and plugin file ids, then shows the returned page. */
+	async function refreshFiles() {
+		if (refreshingFiles) return;
+		refreshingFiles = true;
+		try {
+			applyDetail(await libraryApi.refreshFiles(game.id));
+			notifications.success("Files refreshed.");
+		} catch (err) {
+			notifications.error(libraryErrorMessage(err));
+		} finally {
+			refreshingFiles = false;
 		}
 	}
 
@@ -139,6 +162,17 @@
 						{action.label}
 					</Button>
 				{/each}
+				{#if game.sourceKind === "plugin"}
+					<Button
+						size="sm"
+						icon="refresh"
+						loading={refreshingFiles}
+						disabled={runningAction !== "" || busy}
+						onclick={refreshFiles}
+					>
+						Refresh files
+					</Button>
+				{/if}
 				<Button size="sm" aria-pressed={game.favorite} disabled={busy} onclick={toggleFavorite}>
 					{game.favorite ? "Unfavorite" : "Favorite"}
 				</Button>

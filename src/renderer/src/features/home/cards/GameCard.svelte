@@ -3,6 +3,7 @@
 	import { fade } from "svelte/transition";
 	import { cubicOut } from "svelte/easing";
 	import { observeOnce } from "@lib/lazyObserver";
+	import Icon from "@components/shared/Icon.svelte";
 	import GridCard from "./GridCard.svelte";
 	import ListGridCard from "./ListGridCard.svelte";
 
@@ -100,7 +101,7 @@
 		{#if view === "list-grid"}
 			<div class="skeleton-list-card">
 				<div class="skeleton-icon-box">
-					<span class="material-icons skeleton-logo">sports_esports</span>
+					<Icon name="sports_esports" size={32} class="skeleton-logo" />
 				</div>
 				<div class="skeleton-info">
 					<div class="skeleton-line name"></div>
@@ -110,7 +111,7 @@
 		{:else}
 			<div class="skeleton-grid-card">
 				<div class="skeleton-icon-large skeleton-shimmer">
-					<span class="material-icons skeleton-logo">sports_esports</span>
+					<Icon name="sports_esports" size={32} class="skeleton-logo" />
 				</div>
 			</div>
 		{/if}
@@ -155,7 +156,7 @@
 		}
 	}
 
-	.skeleton-logo {
+	:global(.skeleton-logo) {
 		font-size: 32px;
 		color: var(--text-muted, #fff);
 		animation: skeleton-pulse 2s infinite ease-in-out;

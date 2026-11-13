@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Icon from "@components/shared/Icon.svelte";
+
 	export let isSelected: boolean = false;
 	export let inline: boolean = false;
 </script>
@@ -6,7 +8,7 @@
 <div class={inline ? "selection-checkbox" : "selection-overlay"}>
 	<div class="checkbox" class:checked={isSelected}>
 		{#if isSelected}
-			<span class="material-icons" style="font-size: 16px;">check</span>
+			<Icon name="check" size={16} />
 		{/if}
 	</div>
 </div>

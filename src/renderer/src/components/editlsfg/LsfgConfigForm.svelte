@@ -5,6 +5,8 @@
 	$: gpuItems = asOptions(gpuList);
 	import SlideButton from "@components/shared/SlideButton.svelte";
 	import MultiplierInput from "@components/shared/MultiplierInput.svelte";
+	import Button from "@components/shared/Button.svelte";
+	import Icon from "@components/shared/Icon.svelte";
 	import * as core from "@shared";
 
 	export let options: core.LaunchOptions;
@@ -28,9 +30,7 @@
 				<span class="status-badge success">✓ Found</span>
 			{:else}
 				<span class="status-badge error">
-					<span class="material-icons" style="font-size: 14px;"
-						>warning</span
-					>
+					<Icon name="warning" size={14} />
 					Not Set
 				</span>
 			{/if}
@@ -46,7 +46,7 @@
 				readonly={!compact}
 			/>
 			{#if onDllBrowse && showDllSection}
-				<button class="btn primary sm" on:click={onDllBrowse}>Browse</button>
+				<Button variant="primary" size="sm" onclick={() => onDllBrowse?.()}>Browse</Button>
 			{/if}
 		</div>
 		<p class="help-text">Lossless Scaling DLL path for LSFG-VK</p>
@@ -200,10 +200,6 @@
 		display: flex;
 		align-items: center;
 		gap: 4px;
-
-		.material-icons {
-			font-size: 10px;
-		}
 
 		&.success {
 			background: rgba(16, 185, 129, 0.2);

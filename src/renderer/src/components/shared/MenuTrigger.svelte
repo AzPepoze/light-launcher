@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Icon from "./Icon.svelte";
+
 	export let active: boolean = false;
 	export let label: string = "Open menu";
 	export let icon: string = "more_vert";
@@ -13,7 +15,7 @@
 	aria-haspopup="menu"
 	aria-expanded={active}
 >
-	<span class="material-icons">{icon}</span>
+	<Icon name={icon} size={20} class="menu-icon" />
 </button>
 
 <style lang="scss">
@@ -34,8 +36,7 @@
 			border-color var(--transition-fast),
 			transform var(--transition-spring);
 
-		.material-icons {
-			font-size: 20px;
+		:global(.menu-icon) {
 			transition: transform var(--transition-spring);
 		}
 
@@ -54,7 +55,7 @@
 			background: var(--accent-glow);
 			color: var(--accent-primary);
 			border-color: var(--glass-border);
-			.material-icons {
+			:global(.menu-icon) {
 				transform: rotate(90deg);
 			}
 		}

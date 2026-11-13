@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Button from "@components/shared/Button.svelte";
+	import Icon from "@components/shared/Icon.svelte";
 	import type { SettingsState } from "./settingsState.svelte";
 
 	let { settings } = $props<{ settings: SettingsState }>();
@@ -20,7 +22,7 @@
 
 <div class="zone-card zone-card--flat">
 	<div class="zone-header">
-		<span class="material-icons">sports_esports</span>
+		<Icon name="sports_esports" size={24} class="zone-icon" />
 		<h2>Game Activity & Integrations</h2>
 	</div>
 
@@ -29,13 +31,13 @@
 		<p class="desc">
 			Track recent launches and accumulated playtime for the Game Manager. Running-session controls still work when this is disabled.
 		</p>
-		<button
-			class="btn {appSettings.TrackPlaytime !== false ? 'primary' : 'secondary'}"
+		<Button
+			variant={appSettings.TrackPlaytime !== false ? "primary" : "secondary"}
+			icon={appSettings.TrackPlaytime !== false ? "history" : "history_toggle_off"}
 			onclick={togglePlaytimeTracking}
 		>
-			<span class="material-icons mini-icon">{appSettings.TrackPlaytime !== false ? 'history' : 'history_toggle_off'}</span>
-			<span>Playtime Tracking: {appSettings.TrackPlaytime !== false ? 'ON' : 'OFF'}</span>
-		</button>
+			Playtime Tracking: {appSettings.TrackPlaytime !== false ? "ON" : "OFF"}
+		</Button>
 	</div>
 
 	<div class="divider"></div>
@@ -45,13 +47,13 @@
 		<p class="desc">
 			Publish the active LightLauncher game and elapsed session time to Discord. The game instance owns the connection, so presence can remain active after the launcher window closes.
 		</p>
-		<button
-			class="btn {appSettings.DiscordRichPresence !== false ? 'primary' : 'secondary'}"
+		<Button
+			variant={appSettings.DiscordRichPresence !== false ? "primary" : "secondary"}
+			icon="hub"
 			onclick={toggleDiscordPresence}
 		>
-			<span class="material-icons mini-icon">hub</span>
-			<span>Discord Presence: {appSettings.DiscordRichPresence !== false ? 'ON' : 'OFF'}</span>
-		</button>
+			Discord Presence: {appSettings.DiscordRichPresence !== false ? "ON" : "OFF"}
+		</Button>
 
 		<label class="client-id-field">
 			<span>Discord Application ID</span>
@@ -65,10 +67,14 @@
 					autocomplete="off"
 					spellcheck="false"
 				/>
-				<button class="btn secondary" onclick={saveDiscordClientId} disabled={savingDiscordId}>
-					<span class="material-icons mini-icon">save</span>
-					{savingDiscordId ? 'Saving...' : 'Save'}
-				</button>
+				<Button
+					variant="secondary"
+					icon="save"
+					loading={savingDiscordId}
+					onclick={saveDiscordClientId}
+				>
+					{savingDiscordId ? "Saving..." : "Save"}
+				</Button>
 			</div>
 		</label>
 		<p class="hint">You can also set <code>LIGHT_LAUNCHER_DISCORD_CLIENT_ID</code>. If Discord is closed or unavailable, game launch continues normally.</p>
@@ -81,7 +87,10 @@
 	.desc, .hint { margin: 0 0 8px; color: var(--text-muted); font-size: 0.88rem; line-height: 1.55; }
 	.hint { margin-top: 2px; font-size: 0.78rem; color: var(--text-dim); }
 	.divider { height: 2px; background: rgba(255, 255, 255, 0.05); border-radius: var(--radius-pill); }
-	.mini-icon { font-size: 18px; margin-right: 6px; }
+
+	:global(.zone-icon) {
+		color: var(--accent-primary);
+	}
 
 	.client-id-field {
 		display: flex;

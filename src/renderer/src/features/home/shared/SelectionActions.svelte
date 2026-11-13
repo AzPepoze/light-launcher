@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Icon from "@components/shared/Icon.svelte";
 	import { fade } from "svelte/transition";
 
 	export let selectedCount: number;
@@ -17,9 +18,7 @@
 		on:click={onBulkRemove}
 		disabled={selectedCount === 0}
 	>
-		<span class="material-icons" style="font-size: 18px;"
-			>delete</span
-		>
+		<Icon name="delete" size={18} />
 		Remove Selected
 	</button>
 	<button

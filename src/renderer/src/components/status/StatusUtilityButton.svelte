@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { fade, fly } from "svelte/transition";
+	import Icon from "@components/shared/Icon.svelte";
 
 	interface Props {
 		icon: string;
@@ -29,9 +30,9 @@
 	type="button"
 >
 	<div class="content-left">
-		<span class="material-icons util-icon">{icon}</span>
-		<div class="btn-stack">
-			<span class="btn-title">{title}</span>
+		<Icon name={icon} size={24} class="util-icon" />
+		<div class="util-stack">
+			<span class="util-title">{title}</span>
 			<small>{subtitle}</small>
 		</div>
 	</div>
@@ -41,7 +42,7 @@
 			in:fly={{ x: 20, duration: 400 }}
 			out:fade={{ duration: 200 }}
 		>
-			<span class="material-icons" style="font-size: 14px;">check</span>
+			<Icon name="check" size={14} />
 		</div>
 	{/if}
 </button>
@@ -71,20 +72,20 @@
 			min-width: 0;
 		}
 
-		.util-icon {
+		:global(.util-icon) {
 			font-size: 24px;
 			z-index: 2;
 			transition: transform var(--transition-spring);
 		}
 
-		.btn-stack {
+		.util-stack {
 			display: flex;
 			flex-direction: column;
 			align-items: flex-start;
 			z-index: 2;
 		}
 
-		.btn-title {
+		.util-title {
 			font-size: 0.9rem;
 			font-weight: 800;
 			text-transform: uppercase;
@@ -101,7 +102,7 @@
 
 		&:hover {
 			transform: scale(1.03);
-			.util-icon {
+			:global(.util-icon) {
 				transform: scale(1.1);
 			}
 		}
@@ -110,7 +111,7 @@
 			background: rgba(var(--color-cleanup-rgb), 0.05);
 			border-color: rgba(var(--color-cleanup-rgb), 0.2);
 
-			.util-icon, .btn-title {
+			:global(.util-icon), .util-title {
 				color: var(--color-cleanup);
 			}
 			small {
@@ -136,7 +137,7 @@
 			background: rgba(var(--color-cache-rgb), 0.05);
 			border-color: rgba(var(--color-cache-rgb), 0.2);
 
-			.util-icon, .btn-title {
+			:global(.util-icon), .util-title {
 				color: var(--color-cache);
 			}
 			small {
@@ -162,7 +163,7 @@
 			background: rgba(var(--color-drop-caches-rgb), 0.05);
 			border-color: rgba(var(--color-drop-caches-rgb), 0.2);
 
-			.util-icon, .btn-title {
+			:global(.util-icon), .util-title {
 				color: var(--color-drop-caches);
 			}
 			small {
@@ -188,7 +189,7 @@
 			background: rgba(var(--color-clear-swap-rgb), 0.05);
 			border-color: rgba(var(--color-clear-swap-rgb), 0.2);
 
-			.util-icon, .btn-title {
+			:global(.util-icon), .util-title {
 				color: var(--color-clear-swap);
 			}
 			small {
@@ -237,11 +238,6 @@
 		color: #ffffff;
 		padding: 3px;
 		z-index: 2;
-
-		.material-icons {
-			width: 100%;
-			height: 100%;
-		}
 	}
 
 	@keyframes pulse-scan {

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { fly } from "svelte/transition";
 	import { commandPaletteState as state } from "./CommandPaletteState.svelte";
+	import Icon from "./Icon.svelte";
 
 	export let show = false;
 	export let onClose: () => void = () => {};
@@ -50,7 +51,7 @@
 					{:else if item.isCustomIcon}
 						<img src={item.icon} class="item-img-icon" alt="" />
 					{:else}
-						<span class="material-icons item-icon">{item.icon}</span>
+						<Icon name={item.icon} size={20} class="item-icon" />
 					{/if}
 					<span class="item-name">{item.name}</span>
 					{#if item.type === "page"}
@@ -63,7 +64,7 @@
 				</div>
 			{:else}
 				<div class="no-results">
-					<span class="material-icons">search_off</span>
+					<Icon name="search_off" size={32} />
 					<p>No results found for "{state.searchQuery}"</p>
 				</div>
 			{/each}
@@ -131,9 +132,8 @@
 			transform: translateX(4px);
 		}
 
-		.item-icon {
+		&:global(.item-icon) {
 			color: var(--text-dim);
-			font-size: 20px;
 		}
 
 		.item-img-icon {
@@ -143,8 +143,8 @@
 			border-radius: var(--radius-sm);
 		}
 
-		&:hover .item-icon,
-		&.active .item-icon {
+		&:hover :global(.item-icon),
+		&.active :global(.item-icon) {
 			color: var(--text-main);
 		}
 
@@ -189,10 +189,6 @@
 		padding: 40px 20px;
 		color: var(--text-dim);
 		gap: 8px;
-
-		span {
-			font-size: 32px;
-		}
 
 		p {
 			margin: 0;

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Button from "@components/shared/Button.svelte";
+	import Icon from "@components/shared/Icon.svelte";
 	import type { SettingsState } from "./settingsState.svelte";
 
 	let { settings } = $props<{ settings: SettingsState }>();
@@ -15,7 +17,7 @@
 
 <div class="zone-card">
 	<div class="zone-header">
-		<span class="material-icons">block</span>
+		<Icon name="block" size={24} class="zone-icon" />
 		<h2>Hidden / Blacklisted Games</h2>
 	</div>
 
@@ -32,16 +34,22 @@
 							<span class="game-name">{getBaseName(path)}</span>
 							<span class="game-path" title={path}>{path}</span>
 						</div>
-						<button class="restore-btn btn secondary" onclick={() => handleRestoreGame(path)} title="Restore game">
-							<span class="material-icons mini-icon">settings_backup_restore</span>
+						<Button
+							variant="secondary"
+							size="sm"
+							icon="settings_backup_restore"
+							class="restore-btn"
+							onclick={() => handleRestoreGame(path)}
+							title="Restore game"
+						>
 							Restore
-						</button>
+						</Button>
 					</div>
 				{/each}
 			</div>
 		{:else}
 			<div class="empty-blacklist glass">
-				<span class="material-icons empty-icon">done_all</span>
+				<Icon name="done_all" size={24} class="empty-icon" />
 				<span class="empty-text">No games are currently hidden.</span>
 			</div>
 		{/if}
@@ -123,12 +131,7 @@
 			text-overflow: ellipsis;
 		}
 
-		.restore-btn {
-			padding: 8px 16px;
-			font-size: 0.85rem;
-			display: inline-flex;
-			align-items: center;
-			gap: 6px;
+		:global(.restore-btn) {
 			flex-shrink: 0;
 		}
 	}
@@ -143,7 +146,7 @@
 		border-radius: var(--radius-md);
 		color: var(--text-muted);
 
-		.empty-icon {
+		:global(.empty-icon) {
 			font-size: 24px;
 			color: var(--success, #44ffaa);
 			opacity: 0.8;
@@ -155,8 +158,8 @@
 		}
 	}
 
-	.mini-icon {
-		font-size: 16px;
+	:global(.zone-icon) {
+		color: var(--accent-primary);
 	}
 
 	.desc {

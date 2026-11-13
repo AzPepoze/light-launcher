@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { onMount } from "svelte";
+	import Button from "@components/shared/Button.svelte";
+	import Icon from "@components/shared/Icon.svelte";
 	import { gamesInFolder } from "@lib/features/scanFolders";
 	import { GAME_FOLDERS_SECTION } from "@lib/features/settingsSection";
 	import Notice from "@components/shared/Notice.svelte";
@@ -18,7 +20,7 @@
 
 <div class="zone-card" id={GAME_FOLDERS_SECTION}>
 	<div class="zone-header">
-		<span class="material-icons" aria-hidden="true">folder_shared</span>
+		<Icon name="folder_shared" size={24} class="zone-icon" />
 		<h2>Game folders</h2>
 	</div>
 
@@ -56,7 +58,7 @@
 			</ul>
 		{:else}
 			<div class="empty-folders">
-				<span class="material-icons empty-icon" aria-hidden="true">folder_off</span>
+				<Icon name="folder_off" size={24} class="empty-icon" />
 				<span>No game folders yet. Add a folder to find your games.</span>
 			</div>
 		{/if}
@@ -65,10 +67,14 @@
 			<h3>Add a folder</h3>
 			{#if settings.canPickFolder}
 				<div class="add-row">
-					<button class="btn primary" onclick={settings.pickAndAddFolder} disabled={settings.adding}>
-						<span class="material-icons mini-icon" aria-hidden="true">add</span>
+					<Button
+						variant="primary"
+						icon="add"
+						loading={settings.adding}
+						onclick={settings.pickAndAddFolder}
+					>
 						{settings.adding ? "Adding..." : "Choose folder"}
-					</button>
+					</Button>
 				</div>
 			{:else}
 				<label class="field-label" for="new-folder-path">Folder path</label>
@@ -84,10 +90,14 @@
 							if (event.key === "Enter") settings.addFolder(settings.pathInput);
 						}}
 					/>
-					<button class="btn primary" onclick={() => settings.addFolder(settings.pathInput)} disabled={settings.adding}>
-						<span class="material-icons mini-icon" aria-hidden="true">add</span>
+					<Button
+						variant="primary"
+						icon="add"
+						loading={settings.adding}
+						onclick={() => settings.addFolder(settings.pathInput)}
+					>
 						{settings.adding ? "Adding..." : "Add folder"}
-					</button>
+					</Button>
 				</div>
 			{/if}
 			{#if settings.addError}
@@ -107,6 +117,10 @@
 		font-weight: 600;
 		text-transform: none;
 		letter-spacing: normal;
+	}
+
+	:global(.zone-icon) {
+		color: var(--accent-primary);
 	}
 
 	.settings-section {
@@ -144,7 +158,7 @@
 		color: var(--text-muted);
 		font-size: 1rem;
 
-		.empty-icon {
+		:global(.empty-icon) {
 			font-size: 24px;
 		}
 	}
@@ -194,27 +208,11 @@
 				outline-offset: 2px;
 			}
 		}
-
-		button {
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-		}
-	}
-
-	.btn:focus-visible {
-		outline: 2px solid var(--accent-primary);
-		outline-offset: 2px;
 	}
 
 	.error {
 		margin: 0;
 		font-size: 0.875rem;
 		color: var(--danger);
-	}
-
-	.mini-icon {
-		font-size: 18px;
-		margin-right: 6px;
 	}
 </style>

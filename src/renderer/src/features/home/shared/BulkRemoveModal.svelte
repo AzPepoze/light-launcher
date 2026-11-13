@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Button from "@components/shared/Button.svelte";
+	import Icon from "@components/shared/Icon.svelte";
 	import Modal from "@components/shared/Modal.svelte";
 
 	export let show: boolean;
@@ -10,10 +12,7 @@
 <Modal {show} title="Remove Games" {onClose}>
 	<div class="confirm-modal-content">
 		<div class="warning-icon">
-			<span
-				class="material-icons"
-				style="font-size: 48px; color: #ef4444;">warning</span
-			>
+			<Icon name="warning" size={48} />
 		</div>
 		<p>
 			Are you sure you want to remove <strong>{selectedCount}</strong> games
@@ -26,10 +25,8 @@
 	</div>
 
 	<div slot="footer" class="modal-footer-actions">
-		<button class="btn secondary" on:click={onClose}> Cancel </button>
-		<button class="btn danger" on:click={onConfirm}>
-			Remove Games
-		</button>
+		<Button variant="secondary" onclick={onClose}>Cancel</Button>
+		<Button variant="danger" onclick={onConfirm}>Remove Games</Button>
 	</div>
 </Modal>
 
@@ -64,6 +61,7 @@
 			display: flex;
 			align-items: center;
 			justify-content: center;
+			color: #ef4444;
 		}
 	}
 
@@ -72,7 +70,7 @@
 		gap: 12px;
 		width: 100%;
 
-		:global(.btn) {
+		:global(.button) {
 			flex: 1;
 		}
 	}

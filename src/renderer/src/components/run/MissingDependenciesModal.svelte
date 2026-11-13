@@ -1,5 +1,7 @@
 <script lang="ts">
 	import Modal from "@components/shared/Modal.svelte";
+	import Button from "@components/shared/Button.svelte";
+	import Icon from "@components/shared/Icon.svelte";
 
 	export let show: boolean;
 	export let missingTools: string[] = [];
@@ -10,10 +12,7 @@
 <Modal {show} title="Missing Dependencies" {onClose}>
 	<div class="warning-modal-content">
 		<div class="warning-icon">
-			<span
-				class="material-icons"
-				style="font-size: 48px; color: #ef4444;">warning</span
-			>
+			<Icon name="warning" size={48} />
 		</div>
 		<p>
 			The following requested features are not installed on your
@@ -28,10 +27,8 @@
 			Do you want to launch the game without these features?
 		</p>
 		<div class="modal-actions">
-			<button class="btn secondary" on:click={onClose}>Cancel</button>
-			<button class="btn primary" on:click={onConfirm}
-				>Launch Anyway</button
-			>
+			<Button onclick={onClose}>Cancel</Button>
+			<Button variant="primary" onclick={onConfirm}>Launch Anyway</Button>
 		</div>
 	</div>
 </Modal>
@@ -40,10 +37,10 @@
 	.warning-modal-content {
 		text-align: center;
 		.warning-icon {
-			font-size: 3rem;
 			margin-bottom: 20px;
 			display: flex;
 			justify-content: center;
+			color: #ef4444;
 		}
 		p {
 			color: var(--text-main);
@@ -78,42 +75,9 @@
 		display: flex;
 		gap: 16px;
 		margin-top: 36px;
-		button {
+
+		:global(.button) {
 			flex: 1;
-			padding: 14px 28px;
-			font-weight: 800;
-			border-radius: var(--radius-pill);
-			cursor: pointer;
-			transition: transform var(--transition-spring), background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
-		}
-
-		.btn.primary {
-			background: var(--accent-primary);
-			color: #ffffff;
-			border: none;
-			box-shadow: 0 4px 12px var(--accent-glow);
-			&:hover {
-				background: var(--accent-hover);
-				transform: scale(1.05);
-			}
-			&:active {
-				transform: scale(0.95);
-			}
-		}
-
-		.btn.secondary {
-			background: var(--bg-surface);
-			color: var(--text-muted);
-			border: 2px solid rgba(255, 255, 255, 0.05);
-			&:hover {
-				background: var(--bg-elevated);
-				color: var(--text-main);
-				border-color: var(--accent-secondary);
-				transform: scale(1.05);
-			}
-			&:active {
-				transform: scale(0.95);
-			}
 		}
 	}
 </style>

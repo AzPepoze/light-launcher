@@ -27,6 +27,7 @@
 	import PluginsPage from "./features/plugins/PluginsPage.svelte";
 	import NotificationsPage from "./features/notifications/NotificationsPage.svelte";
 	import CommandPalette from "@components/shared/CommandPalette.svelte";
+	import Icon from "@components/shared/Icon.svelte";
 	import { commandPaletteState } from "@components/shared/CommandPaletteState.svelte";
 	import { createLogger } from "@lib/logger";
 	import {
@@ -212,7 +213,7 @@
 						on:click={openCommandPalette}
 						on:mousedown={openCommandPalette}
 					>
-						<span class="material-icons">search</span>
+						<Icon name="search" size={18} class="search-icon" />
 						<input
 							bind:this={commandPaletteState.inputElement}
 							bind:value={commandPaletteState.searchQuery}
@@ -369,8 +370,7 @@
 			box-shadow: 0 6px 24px rgba(0, 0, 0, 0.22);
 		}
 
-		.material-icons {
-			font-size: 18px;
+		:global(.search-icon) {
 			color: var(--text-dim);
 		}
 

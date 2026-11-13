@@ -2,6 +2,7 @@
 	import { loadExeIcon } from "@lib/iconService";
 	import SlideButton from "@components/shared/SlideButton.svelte";
 	import BrowseInput from "@components/shared/BrowseInput.svelte";
+	import Icon from "@components/shared/Icon.svelte";
 	import { createLogger } from "@lib/logger";
 
 	const log = createLogger("ExecutableSelector");
@@ -102,10 +103,7 @@
 					/>
 				{:else}
 					<div class="exe-icon-placeholder">
-						<span
-							class="material-icons"
-							style="font-size: 32px;">laptop_windows</span
-						>
+						<Icon name="laptop_windows" size={32} />
 					</div>
 				{/if}
 			</div>
@@ -158,11 +156,7 @@
 						/>
 					{:else}
 						<div class="exe-icon-placeholder">
-							<span
-								class="material-icons"
-								style="font-size: 32px;"
-								>laptop_windows</span
-							>
+							<Icon name="laptop_windows" size={32} />
 						</div>
 					{/if}
 				</div>
