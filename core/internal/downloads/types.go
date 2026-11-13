@@ -1,7 +1,11 @@
 // Package downloads queues, transfers and extracts game archives.
 package downloads
 
-import "time"
+import (
+	"time"
+
+	"light-launcher/core/internal/contract"
+)
 
 // State is the lifecycle stage of one download.
 type State string
@@ -34,9 +38,11 @@ type Download struct {
 	InstallSubfolder string
 	// DeleteArchive overrides the KeepArchives setting after an install. Nil uses the setting.
 	DeleteArchive *bool
-	CreatedAt     time.Time
-	StartedAt     time.Time
-	FinishedAt    time.Time
+	// Decrypt is how the host decrypts the finished file before an install. Nil means no decryption.
+	Decrypt    *contract.DecryptSpec
+	CreatedAt  time.Time
+	StartedAt  time.Time
+	FinishedAt time.Time
 }
 
 // Segment is one byte range of a download. End is exclusive; Done bytes are already on disk.

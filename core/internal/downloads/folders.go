@@ -69,6 +69,9 @@ func ValidateRequest(req contract.DownloadRequest) error {
 	if err := ValidateSubfolder(req.InstallSubfolder); err != nil {
 		return err
 	}
+	if err := req.Decrypt.Validate(); err != nil {
+		return fmt.Errorf("%w: %w", contract.ErrBadRequest, err)
+	}
 	return checkInstallOptions(req)
 }
 

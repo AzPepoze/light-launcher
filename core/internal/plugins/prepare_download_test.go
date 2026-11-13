@@ -2,6 +2,8 @@ package plugins
 
 import (
 	"context"
+	"encoding/base64"
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -190,6 +192,76 @@ func TestDecodePrepareDownloadLogsUnknownFields(t *testing.T) {
 
 func TestDecodePrepareDownloadRejectsWrongTypes(t *testing.T) {
 	_, err := decodePrepareDownload([]byte(`{"url":"https://files.example/a.zip","headers":{},"root":5}`), "plugin:test")
+	expectCode(t, err, CodeInvalidParams)
+}
+
+// pluginDecryptSpec returns a valid AES-128-CTR spec with fixed bytes.
+func pluginDecryptSpec() *contract.DecryptSpec {
+	return &contract.DecryptSpec{
+		Algorithm: contract.DecryptAlgorithmAES128CTR,
+		Key:       base64.StdEncoding.EncodeToString([]byte("0123456789abcdef")),
+		Nonce:     base64.StdEncoding.EncodeToString([]byte("12345678")),
+	}
+}
+
+func prepareDownloadWithDecrypt(t *testing.T, spec *contract.DecryptSpec) []byte {
+	t.Helper()
+	return fmt.Appendf(nil,
+		`{"url":"https://files.example/a.zip","headers":{},"decrypt":{"algorithm":%q,"key":%q,"nonce":%q}}`,
+		spec.Algorithm, spec.Key, spec.Nonce)
+}
+
+func TestDecodePrepareDownloadAcceptsDecrypt(t *testing.T) {
+	spec := pluginDecryptSpec()
+	result, err := decodePrepareDownload(prepareDownloadWithDecrypt(t, spec), "plugin:test")
+	if err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if !reflect.DeepEqual(result.Decrypt, spec) {
+		t.Fatalf("decrypt = %+v, want %+v", result.Decrypt, spec)
+	}
+	if !knownPrepareDownloadField("decrypt") {
+		t.Fatal("decrypt must be a known source.prepareDownload field")
+	}
+}
+
+func TestDecodePrepareDownloadRejectsBadDecrypt(t *testing.T) {
+	good := pluginDecryptSpec()
+	bad := map[string]*contract.DecryptSpec{
+		"algorithm": {Algorithm: "aes-256-ctr", Key: good.Key, Nonce: good.Nonce},
+		"key size":  {Algorithm: contract.DecryptAlgorithmAES128CTR, Key: base64.StdEncoding.EncodeToString(make([]byte, 15)), Nonce: good.Nonce},
+		"nonce size": {Algorithm: contract.DecryptAlgorithmAES128CTR, Key: good.Key,
+			Nonce: base64.StdEncoding.EncodeToString(make([]byte, 7))},
+	}
+	for name, spec := range bad {
+		t.Run(name, func(t *testing.T) {
+			_, err := decodePrepareDownload(prepareDownloadWithDecrypt(t, spec), "plugin:test")
+			expectCode(t, err, CodeInvalidParams)
+			if spec.Key != "" && strings.Contains(err.Error(), spec.Key) {
+				t.Fatal("the validation error must not contain the key")
+			}
+		})
+	}
+}
+
+func TestPreparedRequestCarriesDecrypt(t *testing.T) {
+	env, _ := downloadEnv(t, nil, "")
+	spec := pluginDecryptSpec()
+	got, err := preparedRequest(env, 7, PrepareDownloadResult{
+		URL: "https://files.example/a.zip", Decrypt: spec,
+	})
+	if err != nil {
+		t.Fatalf("preparedRequest: %v", err)
+	}
+	if !reflect.DeepEqual(got.Decrypt, spec) {
+		t.Fatalf("decrypt = %+v, want %+v", got.Decrypt, spec)
+	}
+
+	bad := *spec
+	bad.Algorithm = "aes-128-gcm"
+	_, err = preparedRequest(env, 7, PrepareDownloadResult{
+		URL: "https://files.example/a.zip", Decrypt: &bad,
+	})
 	expectCode(t, err, CodeInvalidParams)
 }
 

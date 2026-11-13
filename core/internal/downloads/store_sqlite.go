@@ -30,13 +30,15 @@ create table if not exists downloads (
   install integer not null default 0,
   created_at text not null,
   started_at text,
-  finished_at text
+  finished_at text,
+  decrypt text
 )`
 
 // sqliteAddedColumns are columns that older databases lack. They are added when missing.
 var sqliteAddedColumns = []struct{ name, definition string }{
 	{"install_subfolder", "text not null default ''"},
 	{"delete_archive", "integer"},
+	{"decrypt", "text"},
 }
 
 const sqliteSegmentsTable = `
@@ -49,7 +51,7 @@ create table if not exists segments (
   primary key (download_id, idx)
 )`
 
-const downloadColumns = `id, game_id, url, filename, dest, size, bytes_done, connections, status, error, etag, headers, install, created_at, started_at, finished_at, install_subfolder, delete_archive`
+const downloadColumns = `id, game_id, url, filename, dest, size, bytes_done, connections, status, error, etag, headers, install, created_at, started_at, finished_at, install_subfolder, delete_archive, decrypt`
 
 // updateDownloadSQL keeps every column whose argument is NULL.
 const updateDownloadSQL = `
@@ -116,17 +118,21 @@ func (s *SQLiteStore) Insert(ctx context.Context, d Download) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
+	decrypt, err := encodeDecrypt(d.Decrypt)
+	if err != nil {
+		return 0, err
+	}
 	created := d.CreatedAt
 	if created.IsZero() {
 		created = time.Now()
 	}
 	res, err := s.db.ExecContext(ctx, `
-insert into downloads (game_id, url, filename, dest, size, bytes_done, connections, status, error, etag, headers, install, created_at, started_at, finished_at, install_subfolder, delete_archive)
-values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+insert into downloads (game_id, url, filename, dest, size, bytes_done, connections, status, error, etag, headers, install, created_at, started_at, finished_at, install_subfolder, delete_archive, decrypt)
+values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
 		d.GameID, d.URL, d.Filename, d.Dest, d.Size, d.BytesDone, d.Connections, string(d.State),
 		nullString(d.Error), nullString(d.ETag), headers, boolInt(d.Install),
 		formatTime(created), optionalTime(d.StartedAt), optionalTime(d.FinishedAt),
-		d.InstallSubfolder, nullBoolInt(d.DeleteArchive),
+		d.InstallSubfolder, nullBoolInt(d.DeleteArchive), decrypt,
 	)
 	if err != nil {
 		return 0, fmt.Errorf("insert download: %w", err)
@@ -238,12 +244,13 @@ func scanDownload(row rowScanner) (Download, error) {
 		state, created         string
 		errText, etag, headers sql.NullString
 		started, finished      sql.NullString
+		decrypt                sql.NullString
 		deleteArchive          sql.NullInt64
 		install                int
 	)
 	err := row.Scan(&d.ID, &d.GameID, &d.URL, &d.Filename, &d.Dest, &d.Size, &d.BytesDone,
 		&d.Connections, &state, &errText, &etag, &headers, &install, &created, &started, &finished,
-		&d.InstallSubfolder, &deleteArchive)
+		&d.InstallSubfolder, &deleteArchive, &decrypt)
 	if err != nil {
 		return Download{}, err
 	}
@@ -252,6 +259,9 @@ func scanDownload(row rowScanner) (Download, error) {
 	d.ETag = etag.String
 	d.Install = install != 0
 	d.DeleteArchive = decodeBoolInt(deleteArchive)
+	if d.Decrypt, err = decodeDecrypt(decrypt); err != nil {
+		return Download{}, err
+	}
 	if d.CreatedAt, err = parseTime(created); err != nil {
 		return Download{}, err
 	}

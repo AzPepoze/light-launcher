@@ -32,6 +32,8 @@ type PrepareDownloadResult struct {
 	Install          bool   `json:"install,omitempty"`
 	InstallSubfolder string `json:"installSubfolder,omitempty"`
 	DeleteArchive    *bool  `json:"deleteArchive,omitempty"`
+	// Decrypt, when set, tells the host how to decrypt the finished file before an install.
+	Decrypt *contract.DecryptSpec `json:"decrypt,omitempty"`
 }
 
 func (r PrepareDownloadResult) downloadOptions() downloadOptions {
@@ -163,9 +165,23 @@ func (r *Registry) PrepareDownload(ctx context.Context, plugin string, params an
 	if result.Filename != "" && !isPlainFileName(result.Filename) {
 		return contract.DownloadRequest{}, invalidParams("filename must be a plain file name")
 	}
-	req, err := sup.cfg.env.preparedDownloadRequest(gameID, result)
+	req, err := preparedRequest(sup.cfg.env, gameID, result)
 	if err != nil {
 		return contract.DownloadRequest{}, fmt.Errorf("prepare download with %s: %w", plugin, err)
+	}
+	return req, nil
+}
+
+// preparedRequest builds the host request from a decoded plugin answer. The folder hints come from
+// the plugin env; the decrypt spec is not a folder hint, so it is added and checked here.
+func preparedRequest(env *pluginEnv, gameID int64, result PrepareDownloadResult) (contract.DownloadRequest, error) {
+	req, err := env.preparedDownloadRequest(gameID, result)
+	if err != nil {
+		return contract.DownloadRequest{}, err
+	}
+	req.Decrypt = result.Decrypt
+	if err := req.Decrypt.Validate(); err != nil {
+		return contract.DownloadRequest{}, invalidParams("decrypt: " + err.Error())
 	}
 	return req, nil
 }
@@ -201,6 +217,9 @@ func decodePrepareDownload(raw json.RawMessage, category string) (PrepareDownloa
 	if err := json.Unmarshal(raw, &fields); err != nil {
 		return result, invalidParams("source.prepareDownload result: " + err.Error())
 	}
+	if err := result.Decrypt.Validate(); err != nil {
+		return result, invalidParams("source.prepareDownload result: " + err.Error())
+	}
 	for name := range fields {
 		if !knownPrepareDownloadField(name) {
 			logger.Debug(category, "source.prepareDownload ignored unknown field %q", name)
@@ -211,7 +230,7 @@ func decodePrepareDownload(raw json.RawMessage, category string) (PrepareDownloa
 
 func knownPrepareDownloadField(name string) bool {
 	switch name {
-	case "url", "headers", "filename", "size", "root", "subfolder", "install", "installSubfolder", "deleteArchive":
+	case "url", "headers", "filename", "size", "root", "subfolder", "install", "installSubfolder", "deleteArchive", "decrypt":
 		return true
 	}
 	return false

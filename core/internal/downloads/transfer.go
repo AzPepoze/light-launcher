@@ -58,7 +58,13 @@ func (t *transferer) run(ctx context.Context, j *job) error {
 	if err := file.Close(); err != nil {
 		return err
 	}
-	return os.Rename(part, j.row.Dest)
+	if err := placeFinished(ctx, part, j.row.Dest, j.row.Decrypt, j.row.Install); err != nil {
+		return err
+	}
+	if j.row.Decrypt != nil {
+		removePart(part)
+	}
+	return nil
 }
 
 // openPart reuses the part file when the saved segments still match this file. Otherwise it starts over.

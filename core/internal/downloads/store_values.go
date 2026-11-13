@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+
+	"light-launcher/core/internal/contract"
 )
 
 // encodeHeaders stores request headers as JSON. No headers means NULL.
@@ -36,6 +38,32 @@ func nullString(s string) any {
 		return nil
 	}
 	return s
+}
+
+// encodeDecrypt stores the decrypt spec as JSON. No spec means NULL. The key is stored as it is,
+// because the download can only be decrypted after a restart if the key comes back with the row.
+func encodeDecrypt(d *contract.DecryptSpec) (any, error) {
+	if d == nil {
+		return nil, nil
+	}
+	data, err := json.Marshal(d)
+	if err != nil {
+		return nil, fmt.Errorf("encode decrypt: %w", err)
+	}
+	return string(data), nil
+}
+
+// decodeDecrypt reads a stored decrypt spec. A damaged value fails the row instead of silently
+// installing an encrypted archive.
+func decodeDecrypt(v sql.NullString) (*contract.DecryptSpec, error) {
+	if !v.Valid || v.String == "" {
+		return nil, nil
+	}
+	var d contract.DecryptSpec
+	if err := json.Unmarshal([]byte(v.String), &d); err != nil {
+		return nil, fmt.Errorf("decode decrypt: %w", err)
+	}
+	return &d, nil
 }
 
 func boolInt(b bool) int {

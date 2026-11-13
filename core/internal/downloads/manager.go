@@ -149,6 +149,7 @@ func (m *Manager) Enqueue(ctx context.Context, req contract.DownloadRequest) (in
 		Install:          req.Install,
 		InstallSubfolder: req.InstallSubfolder,
 		DeleteArchive:    req.DeleteArchive,
+		Decrypt:          req.Decrypt,
 	})
 	if err != nil {
 		return 0, err

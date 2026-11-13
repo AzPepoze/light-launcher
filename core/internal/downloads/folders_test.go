@@ -3,6 +3,7 @@ package downloads
 import (
 	"context"
 	"database/sql"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http/httptest"
@@ -378,18 +379,51 @@ func TestSQLiteStoreAddsFolderColumnsToOldDatabase(t *testing.T) {
 		t.Fatal(err)
 	}
 	d, err := store.Get(ctx, old)
-	if err != nil || d.InstallSubfolder != "" || d.DeleteArchive != nil {
+	if err != nil || d.InstallSubfolder != "" || d.DeleteArchive != nil || d.Decrypt != nil {
 		t.Fatalf("old row = %+v, %v", d, err)
 	}
 
 	yes := true
+	spec := testDecryptSpec()
 	id, err := store.Insert(ctx, Download{URL: "http://x", Filename: "b.zip", Dest: "/d/b.zip", State: StateQueued,
-		InstallSubfolder: "Pack", DeleteArchive: &yes})
+		InstallSubfolder: "Pack", DeleteArchive: &yes, Decrypt: spec})
 	if err != nil {
 		t.Fatal(err)
 	}
 	d, err = store.Get(ctx, id)
 	if err != nil || d.InstallSubfolder != "Pack" || d.DeleteArchive == nil || !*d.DeleteArchive {
 		t.Fatalf("new row = %+v, %v", d, err)
+	}
+	if d.Decrypt == nil || *d.Decrypt != *spec {
+		t.Fatalf("decrypt spec = %+v, want %+v", d.Decrypt, spec)
+	}
+}
+
+// testDecryptSpec returns a valid AES-128-CTR spec with fixed bytes.
+func testDecryptSpec() *contract.DecryptSpec {
+	return &contract.DecryptSpec{
+		Algorithm: contract.DecryptAlgorithmAES128CTR,
+		Key:       base64.StdEncoding.EncodeToString([]byte("0123456789abcdef")),
+		Nonce:     base64.StdEncoding.EncodeToString([]byte("12345678")),
+	}
+}
+
+func TestValidateRequestChecksDecrypt(t *testing.T) {
+	if err := ValidateRequest(contract.DownloadRequest{URL: "http://x/a.zip", Decrypt: testDecryptSpec()}); err != nil {
+		t.Fatalf("valid decrypt spec rejected: %v", err)
+	}
+	bad := map[string]*contract.DecryptSpec{
+		"algorithm": {Algorithm: "aes-256-ctr", Key: testDecryptSpec().Key, Nonce: testDecryptSpec().Nonce},
+		"key size":  {Algorithm: contract.DecryptAlgorithmAES128CTR, Key: base64.StdEncoding.EncodeToString(make([]byte, 15)), Nonce: testDecryptSpec().Nonce},
+		"nonce":     {Algorithm: contract.DecryptAlgorithmAES128CTR, Key: testDecryptSpec().Key, Nonce: base64.StdEncoding.EncodeToString(make([]byte, 7))},
+	}
+	for name, spec := range bad {
+		err := ValidateRequest(contract.DownloadRequest{URL: "http://x/a.zip", Decrypt: spec})
+		if !errors.Is(err, contract.ErrBadRequest) {
+			t.Errorf("%s: err = %v, want ErrBadRequest", name, err)
+		}
+		if !errors.Is(err, contract.ErrBadDecrypt) {
+			t.Errorf("%s: err = %v, want ErrBadDecrypt", name, err)
+		}
 	}
 }

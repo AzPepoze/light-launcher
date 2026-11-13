@@ -3,7 +3,9 @@ package contract
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -62,6 +64,61 @@ var ErrBadFolder = errors.New("bad folder")
 // ErrBadRequest means a download request has options that do not fit together.
 var ErrBadRequest = errors.New("bad request")
 
+// DecryptAlgorithmAES128CTR is the only decryption the host applies to a prepared download.
+const DecryptAlgorithmAES128CTR = "aes-128-ctr"
+
+// DecryptSpec tells the downloader how to decrypt a finished file. Key and Nonce are base64:
+// the key is 16 bytes and the nonce is 8 bytes. AES-CTR counts from zero after the nonce.
+// The key belongs to one download and must never be written to a log.
+type DecryptSpec struct {
+	Algorithm string `json:"algorithm"`
+	Key       string `json:"key"`
+	Nonce     string `json:"nonce"`
+}
+
+// ErrBadDecrypt means a decrypt spec is malformed or names an algorithm the host does not support.
+var ErrBadDecrypt = errors.New("bad decrypt spec")
+
+// String redacts the key and nonce, so printing a spec by accident cannot leak the download key.
+func (d DecryptSpec) String() string {
+	return fmt.Sprintf("decrypt{algorithm:%s key:redacted nonce:redacted}", d.Algorithm)
+}
+
+// Decode checks the spec and returns the raw key and nonce. Its errors never contain either value.
+func (d *DecryptSpec) Decode() (key, nonce []byte, err error) {
+	if d == nil {
+		return nil, nil, fmt.Errorf("%w: decrypt spec is missing", ErrBadDecrypt)
+	}
+	if d.Algorithm != DecryptAlgorithmAES128CTR {
+		return nil, nil, fmt.Errorf("%w: algorithm %q is not supported", ErrBadDecrypt, d.Algorithm)
+	}
+	key, err = base64.StdEncoding.DecodeString(d.Key)
+	if err != nil {
+		return nil, nil, fmt.Errorf("%w: key is not standard base64", ErrBadDecrypt)
+	}
+	if len(key) != 16 {
+		return nil, nil, fmt.Errorf("%w: key has %d bytes, want 16", ErrBadDecrypt, len(key))
+	}
+	nonce, err = base64.StdEncoding.DecodeString(d.Nonce)
+	if err != nil {
+		return nil, nil, fmt.Errorf("%w: nonce is not standard base64", ErrBadDecrypt)
+	}
+	if len(nonce) != 8 {
+		return nil, nil, fmt.Errorf("%w: nonce has %d bytes, want 8", ErrBadDecrypt, len(nonce))
+	}
+	return key, nonce, nil
+}
+
+// Validate reports whether the host can apply the decrypt spec. A nil spec is valid and means
+// the finished file is not decrypted.
+func (d *DecryptSpec) Validate() error {
+	if d == nil {
+		return nil
+	}
+	_, _, err := d.Decode()
+	return err
+}
+
 // DownloadRequest asks the host downloader to fetch one file for a library game.
 type DownloadRequest struct {
 	GameID   int64             `json:"gameId"`
@@ -69,6 +126,8 @@ type DownloadRequest struct {
 	Headers  map[string]string `json:"headers,omitempty"`
 	Filename string            `json:"filename,omitempty"`
 	Install  bool              `json:"install"`
+	// Decrypt, when set, describes how the host decrypts the finished file before an install.
+	Decrypt *DecryptSpec `json:"decrypt,omitempty"`
 
 	// Root is RootDownloads (the default) or RootGames. Subfolder is a relative folder under Root.
 	Root      string `json:"root,omitempty"`
