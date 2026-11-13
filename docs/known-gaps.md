@@ -26,7 +26,8 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | Publish the plugin SDK. The plugins use a local `file:` link, so a fresh clone cannot install. |
 | [ ] | Run `actionlint` and `shellcheck` on the workflows and scripts (not installed yet). |
 | [x] | Make the plugin SDK and plugin repos public and push them. |
-| [ ] | Plugin registry index (`plugins.json`) for community installs. |
+| [x] | The launcher reads a versioned HTTPS `plugins.json` index and shows installable entries in the Community dialog; the URL is a setting. |
+| [ ] | Host and publish a real `plugins.json` and its package URLs/digests; until then the Community dialog says the list is not configured. |
 | [x] | Plugin packages can be signed (`llp keygen` / `llp sign`); the app lists trusted key fingerprints and can add/remove keys. |
 | [ ] | Publish the project's public signing key and a community registry host; no release URL or key is published yet. |
 
