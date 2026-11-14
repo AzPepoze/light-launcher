@@ -378,7 +378,7 @@
 
 	/*
 	 * One grid: [rail 56px | filters 260px | grid fills the rest]. The rail and filter columns
-	 * stretch the full content height and share one panel background, split by a thin divider.
+	 * sit on the page background; only the divider after the filters separates them from the grid.
 	 * With a game open, the detail panel is a fourth column on the right.
 	 */
 	.layout {
@@ -391,9 +391,7 @@
 		grid-template-columns: 56px 260px minmax(0, 1fr) 420px;
 	}
 
-	.rail-col,
 	.side-col {
-		background: var(--bg-surface);
 		border-right: 1px solid var(--glass-border);
 	}
 

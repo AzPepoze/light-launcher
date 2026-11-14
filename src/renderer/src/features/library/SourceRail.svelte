@@ -92,6 +92,7 @@
 		padding: 0 5px;
 		border-radius: var(--radius-pill);
 		background: var(--bg-surface);
+		box-shadow: 0 0 0 1px var(--glass-border);
 		color: var(--text-muted);
 		font-size: 0.6875rem;
 		font-weight: 600;
