@@ -21,7 +21,8 @@
 	export let toggleGameSelection: (game: GameInfo, shiftKey: boolean, ctrlKey?: boolean) => void = () => {};
 	export let loadIcon: (
 		path: string,
-		customIconPath?: string | null
+		customIconPath?: string | null,
+		hasCover?: boolean
 	) => void | Promise<unknown> = () => {};
 
 	$: cardView = view === "sidebar-grid" ? "grid" : view;

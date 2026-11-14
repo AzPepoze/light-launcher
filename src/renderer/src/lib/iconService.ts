@@ -80,11 +80,31 @@ export function loadExeIcon(filePath: string, priority: IconPriority = "high"): 
 	return promise;
 }
 
-/** Loads a custom icon when configured, falling back to the executable icon. */
+/** The cover fields a library or scanned game may carry. */
+export interface CoverFields {
+	cover?: string | null;
+	coverLocal?: string | null;
+}
+
+/** True when the game has a cover image, remote or cached. */
+export function hasLibraryCover(game: CoverFields): boolean {
+	return Boolean(game.cover || game.coverLocal);
+}
+
+/** Exe icon extraction is only needed for games without a cover. */
+export function needsExeIcon(game: CoverFields): boolean {
+	return !hasLibraryCover(game);
+}
+
+/**
+ * Loads a custom icon when configured, then the executable icon.
+ * With hasCover, the exe icon is never extracted: the card shows the cover instead.
+ */
 export async function loadGameIcon(
 	gamePath: string,
 	customIconPath: string | null = null,
-	priority: IconPriority = "high"
+	priority: IconPriority = "high",
+	hasCover = false
 ): Promise<GameIconResult> {
 	if (customIconPath) {
 		try {
@@ -94,6 +114,8 @@ export async function loadGameIcon(
 			log.warn("Custom game icon unavailable", error);
 		}
 	}
+
+	if (hasCover) return { icon: "", source: null };
 
 	const icon = (await loadExeIcon(gamePath, priority)) || "";
 	return { icon, source: icon ? "exe" : null };

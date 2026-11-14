@@ -1,4 +1,9 @@
-import { loadGameIcon, type IconPriority } from "@lib/iconService";
+import {
+	loadGameIcon,
+	needsExeIcon,
+	type CoverFields,
+	type IconPriority
+} from "@lib/iconService";
 import { createLogger } from "@lib/logger";
 import { getGamePath } from "@lib/gameUtils";
 import type { GameInfo } from "@shared";
@@ -21,7 +26,8 @@ export class IconLoaderState {
 	enqueueIconLoad(
 		gamePath: string,
 		customIconPath: string | null = null,
-		priority: IconPriority = "high"
+		priority: IconPriority = "high",
+		hasCover = false
 	): Promise<void> {
 		const requestedSource = customIconPath ? `custom:${customIconPath}` : `exe:${gamePath}`;
 
@@ -30,7 +36,7 @@ export class IconLoaderState {
 		}
 
 		return this.iconLoads.share(gamePath, () =>
-			this.loadIcon(gamePath, customIconPath, requestedSource, priority)
+			this.loadIcon(gamePath, customIconPath, requestedSource, priority, hasCover)
 		);
 	}
 
@@ -38,10 +44,11 @@ export class IconLoaderState {
 		gamePath: string,
 		customIconPath: string | null,
 		requestedSource: string,
-		priority: IconPriority
+		priority: IconPriority,
+		hasCover: boolean
 	): Promise<void> {
 		try {
-			const { icon, source } = await loadGameIcon(gamePath, customIconPath, priority);
+			const { icon, source } = await loadGameIcon(gamePath, customIconPath, priority, hasCover);
 
 			if (icon && source) {
 				this.gameIcons[gamePath] = icon;
@@ -57,11 +64,11 @@ export class IconLoaderState {
 		}
 	}
 
-	/** Pre-extracts icons for the given games; the queue pauses during user scroll. */
-	warm(games: GameInfo[]) {
+	/** Pre-extracts exe icons for games without a cover; the queue pauses during user scroll. */
+	warm(games: (GameInfo & CoverFields)[]) {
 		for (const game of games) {
 			const gamePath = getGamePath(game);
-			if (gamePath) {
+			if (gamePath && needsExeIcon(game)) {
 				void this.enqueueIconLoad(gamePath, game.config?.CustomIconPath ?? null, "low");
 			}
 		}

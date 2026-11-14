@@ -6,6 +6,8 @@
 	import Icon from "@components/shared/Icon.svelte";
 	import GridCard from "./GridCard.svelte";
 	import ListGridCard from "./ListGridCard.svelte";
+	import { useCover } from "@lib/features/useMedia.svelte";
+	import { hasLibraryCover, needsExeIcon } from "@lib/iconService";
 
 	export let game: any;
 	export let icon: string = "";
@@ -19,7 +21,8 @@
 	export let onSelect: (game: any, shiftKey: boolean, ctrlKey?: boolean) => void = () => {};
 	export let loadIcon: (
 		path: string,
-		customIconPath?: string | null
+		customIconPath?: string | null,
+		hasCover?: boolean
 	) => void | Promise<unknown> = () => {};
 
 	let containerElement: HTMLElement;
@@ -30,6 +33,17 @@
 	const prefersReducedMotion =
 		typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+	// The library cover, used in the icon slot when there is no custom icon.
+	const cover = useCover(() => ({
+		id: game.id,
+		cover: game.cover ?? null,
+		coverLocal: game.coverLocal ?? null
+	}));
+
+	$: hasCover = hasLibraryCover(game);
+	$: displayIcon = icon || (hasCover && !iconPending ? (cover.url ?? "") : "");
+	$: displayPending = !displayIcon && (iconPending || (hasCover && cover.pending));
+
 	onMount(() => {
 		if (!containerElement) return;
 		return observeOnce(containerElement, () => {
@@ -39,20 +53,26 @@
 
 	$: if (isIntersecting) {
 		const path = game.path || game.config?.LauncherPath;
-		if (path) {
-			void requestIcon(path, game.config?.CustomIconPath ?? null);
+		const customIconPath = game.config?.CustomIconPath ?? null;
+		// A covered game without a custom icon never asks for an exe icon.
+		if (path && (customIconPath || needsExeIcon(game))) {
+			void requestIcon(path, customIconPath, hasCover);
 		} else {
-			// Nothing to load from: the card goes straight to the rocket fallback.
+			// Nothing to load from: the card shows its cover or the rocket fallback.
 			iconPending = false;
 		}
 	}
 
-	async function requestIcon(path: string, customIconPath: string | null): Promise<void> {
+	async function requestIcon(
+		path: string,
+		customIconPath: string | null,
+		hasCoverForIcon: boolean
+	): Promise<void> {
 		const request = ++iconRequestId;
 		iconPending = true;
 		try {
 			// The shared loader resolves once the icon cache has an answer, including "no icon".
-			await Promise.resolve(loadIcon(path, customIconPath));
+			await Promise.resolve(loadIcon(path, customIconPath, hasCoverForIcon));
 		} catch {
 			// A failed load ends in the same fallback as a game without an icon.
 		}
@@ -72,8 +92,8 @@
 			{#if view === "grid"}
 				<GridCard
 					{game}
-					{icon}
-					{iconPending}
+					icon={displayIcon}
+					iconPending={displayPending}
 					{isRunning}
 					{isSelectionMode}
 					{isSelected}
@@ -85,8 +105,8 @@
 			{:else}
 				<ListGridCard
 					{game}
-					{icon}
-					{iconPending}
+					icon={displayIcon}
+					iconPending={displayPending}
 					{isRunning}
 					{isSelectionMode}
 					{isSelected}
