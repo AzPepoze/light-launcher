@@ -112,12 +112,6 @@ func Close() {
 	}
 }
 
-func SetLevel(level Level) {
-	mu.Lock()
-	defer mu.Unlock()
-	minLevel = level
-}
-
 // Log writes one line to stderr and to the log file. Error lines also go to the notifier, if one is set.
 func Log(level Level, category string, format string, args ...interface{}) {
 	if !levelEnabled(level) {

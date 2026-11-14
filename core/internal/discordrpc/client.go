@@ -93,20 +93,6 @@ func (c *Client) SetActivity(gameName string, startedAt time.Time) error {
 	})
 }
 
-func (c *Client) ClearActivity() error {
-	if c == nil || c.conn == nil {
-		return nil
-	}
-	return c.writePacket(opFrame, map[string]any{
-		"cmd": "SET_ACTIVITY",
-		"args": map[string]any{
-			"pid":      os.Getpid(),
-			"activity": nil,
-		},
-		"nonce": strconv.FormatInt(time.Now().UnixNano(), 10),
-	})
-}
-
 func (c *Client) Close() error {
 	if c == nil || c.conn == nil {
 		return nil
