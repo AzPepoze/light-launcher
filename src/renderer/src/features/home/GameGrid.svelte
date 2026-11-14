@@ -20,11 +20,13 @@
 	import { saveHomeScroll, getHomeView } from "@stores/homeViewStore";
 	import Marquee from "./shared/Marquee.svelte";
 	import { setIconQueuePaused } from "@lib/iconService";
+	import { scanStatusForFolder, type FolderScanStatus } from "./state/homeLoadingStatus";
 
 	export let currentView: "grid" | "list-grid" | "sidebar-grid" = "grid";
 	export let games: any[] = [];
 	export let filteredGames: any[] = [];
 	export let scannedFolderGroups: any[] = [];
+	export let folderScan: FolderScanStatus | null = null;
 	export let gameIcons: Record<string, string> = {};
 	export let searchQuery = "";
 	export let selectedPrefixFilter = "All Prefixes";
@@ -38,7 +40,7 @@
 	export let handleChooseLauncher: (game: any, launcherPath: string | null) => void = () => {};
 	export let toggleGameSelection: (game: any, shiftKey: boolean, ctrlKey?: boolean) => void;
 	export let onRefresh: () => void = () => {};
-	export let loadIcon: (path: string, customIconPath?: string | null) => void = () => {};
+	export let loadIcon: (path: string, customIconPath?: string | null, hasCover?: boolean) => void = () => {};
 	export let onMarqueeSelect: (paths: string[], additive: boolean) => void = () => {};
 	export let onSelectAll: () => void = () => {};
 	export let onCancelSelection: () => void = () => {};
@@ -505,6 +507,8 @@
 
 	$: showCustomProfiles = currentView !== "sidebar-grid" ? filteredGames.length > 0 : selectedGroupKey === "no-folder";
 	$: foldersToRender = currentView !== "sidebar-grid" ? scannedFolderGroups : scannedFolderGroups.filter(g => g.folderPath === selectedGroupKey);
+	$: folderScanPending = scannedFolderGroups.some(g => g.loading);
+	$: showNoResults = !folderScanPending && filteredGames.length === 0 && scannedFolderGroups.every(g => g.games.length === 0) && (games.length > 0 || scannedFolderGroups.length > 0);
 </script>
 
 <svelte:window on:keydown={handleKeydown} on:click|capture={handleWindowClickCapture} />
@@ -585,6 +589,7 @@
 				{isSelectionMode}
 				{selectedPaths}
 				isStuck={!!stuckByFolder[group.folderPath]}
+				scanStatus={scanStatusForFolder(folderScan, group.folderName)}
 				bind:activeFolderMenu
 				{toggleFolderMenu}
 				{handleRescan}
@@ -598,7 +603,7 @@
 			/>
 		{/each}
 
-		{#if filteredGames.length === 0 && scannedFolderGroups.every(g => g.games.length === 0) && (games.length > 0 || scannedFolderGroups.length > 0)}
+		{#if showNoResults}
 			<div class="no-results">
 				<p>
 					No games matching

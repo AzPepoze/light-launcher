@@ -14,13 +14,21 @@ import { plainMessage } from "@lib/plainMessage";
 import { runState } from "@stores/runState";
 import { getHomeView, saveHomeViewMode } from "@stores/homeViewStore";
 import { HOME_SCAN_EVENT } from "@lib/features/events";
-import { toHomeScan, type HomeScan } from "@lib/homeScan";
-import type { GameInfo, RunningSession, ScannedFolderGroup } from "@shared";
+import { loadAppSettings } from "@lib/settingsService";
+import { toHomeScan, toScanGroup, type HomeScan } from "@lib/homeScan";
+import type { GameInfo, RunningSession } from "@shared";
 import { IconLoaderState } from "./IconLoaderState.svelte";
 import { SelectionState } from "./SelectionState.svelte";
 import { droppedFiles } from "./homeEvents";
 import type { HomeViewMode } from "./homeViewMemory";
-import { homeStatus } from "./homeLoadingStatus";
+import { homeStatus, runningFolderScan } from "./homeLoadingStatus";
+import {
+	addLoadingGroups,
+	loadedGroups,
+	upsertGroup,
+	withLibraryCovers,
+	type HomeFolderGroup
+} from "./scanGroups";
 
 const log = createLogger("HomePage");
 
@@ -45,9 +53,12 @@ function gamesSignature(games: GameInfo[]): string {
 		.join(";");
 }
 
-function groupsSignature(groups: ScannedFolderGroup[]): string {
+function groupsSignature(groups: HomeFolderGroup[]): string {
 	return groups
-		.map((group) => `${group.folderPath}#${gamesSignature(group.games)}`)
+		.map(
+			(group) =>
+				`${group.folderPath}:${group.loading ? "1" : "0"}#${gamesSignature(group.games)}`
+		)
 		.sort()
 		.join(";");
 }
@@ -60,7 +71,7 @@ function matchesPrefix(game: GameInfo, prefix: string): boolean {
 
 export class HomePageState {
 	games = $state<GameInfo[]>([]);
-	scannedFolderGroups = $state<ScannedFolderGroup[]>([]);
+	scannedFolderGroups = $state<HomeFolderGroup[]>([]);
 	sessions = $state<RunningSession[]>([]);
 	prefixes = $state<string[]>(["All Prefixes"]);
 	selectedPrefixFilter = $state("All Prefixes");
@@ -69,7 +80,9 @@ export class HomePageState {
 	showAddModal = $state(false);
 	isLoading = $state(true);
 	scan = $state<HomeScan | null>(null);
-	status = $derived(homeStatus(this.isLoading, this.scan));
+	status = $derived(homeStatus(this.isLoading));
+	/** Progress shown in the header of the folder being scanned. */
+	folderScan = $derived(runningFolderScan(this.scan));
 	/** True once the library and folder scan are both done and nothing is listed. */
 	showEmptyState = $derived(
 		!this.isLoading &&
@@ -97,8 +110,11 @@ export class HomePageState {
 		});
 	});
 
+	/** Scanned folders with the cover fields of their library games. Recomputed when either changes. */
+	scannedFolderGroupsWithCovers = $derived(withLibraryCovers(this.scannedFolderGroups, this.games));
+
 	filteredScannedFolderGroups = $derived.by(() => {
-		return this.scannedFolderGroups
+		return this.scannedFolderGroupsWithCovers
 			.map((group) => {
 				const games = group.games.filter((game) => {
 					const matchesSearch = game.name.toLowerCase().includes(this.searchQuery.toLowerCase());
@@ -120,6 +136,7 @@ export class HomePageState {
 			log.error("Failed to load scanned folders", error);
 			return null;
 		});
+		const folderPromise = this.prefillScanGroups();
 
 		try {
 			const data = await service.refreshHomeData();
@@ -142,15 +159,27 @@ export class HomePageState {
 		// Render the library before waiting on the scan.
 		this.isLoading = false;
 
+		// Wait for the placeholders so none is added after the final result.
+		await folderPromise;
 		const scannedGroups = await scannedPromise;
-		if (
-			scannedGroups &&
-			groupsSignature(scannedGroups) !== groupsSignature(this.scannedFolderGroups)
-		) {
-			this.scannedFolderGroups = scannedGroups;
+		if (scannedGroups) {
+			const loaded = loadedGroups(scannedGroups);
+			if (groupsSignature(loaded) !== groupsSignature(this.scannedFolderGroups)) {
+				this.scannedFolderGroups = loaded;
+			}
 		}
 
 		this.scheduleIconWarm();
+	}
+
+	/** Lists each configured scan folder as loading until its result arrives. */
+	private async prefillScanGroups() {
+		const settings = await loadAppSettings();
+		if (!settings) return;
+		this.scannedFolderGroups = addLoadingGroups(
+			this.scannedFolderGroups,
+			settings.ScanFolders ?? []
+		);
 	}
 
 	private scheduleIconWarm() {
@@ -159,7 +188,7 @@ export class HomePageState {
 			this.iconWarmTimer = null;
 			this.icons.warm([
 				...this.games,
-				...this.scannedFolderGroups.flatMap((group) => group.games || [])
+				...this.scannedFolderGroupsWithCovers.flatMap((group) => group.games || [])
 			]);
 		}, 1200);
 	}
@@ -184,6 +213,8 @@ export class HomePageState {
 		this.scanUnsubscribe = onEvent(HOME_SCAN_EVENT, (event: unknown) => {
 			const scan = toHomeScan(event);
 			if (scan) this.scan = scan;
+			const group = toScanGroup(event);
+			if (group) this.scannedFolderGroups = upsertGroup(this.scannedFolderGroups, group);
 		});
 		this.refreshData(false);
 

@@ -75,6 +75,7 @@
 				games={state.games}
 				filteredGames={state.filteredGames}
 				scannedFolderGroups={state.filteredScannedFolderGroups}
+				folderScan={state.folderScan}
 				gameIcons={state.icons.gameIcons}
 				searchQuery={state.searchQuery}
 				selectedPrefixFilter={state.selectedPrefixFilter}
@@ -87,7 +88,7 @@
 				handleChooseLauncher={(game, launcherPath) => state.chooseLauncher(game, launcherPath)}
 				toggleGameSelection={(game, shiftKey, ctrlKey) => state.selection.toggleGameSelection(game, shiftKey, ctrlKey)}
 				onRefresh={() => state.refreshData(true)}
-				loadIcon={(path, customIconPath) => state.icons.enqueueIconLoad(path, customIconPath)}
+				loadIcon={(path, customIconPath, hasCover) => state.icons.enqueueIconLoad(path, customIconPath, "high", hasCover)}
 				onMarqueeSelect={(paths, additive) => state.selection.applyMarquee(paths, additive)}
 				onSelectAll={() => state.selection.selectAll()}
 				onCancelSelection={() => state.selection.toggleSelectionMode()}

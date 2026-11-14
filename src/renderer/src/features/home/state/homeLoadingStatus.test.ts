@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { homeStatus, scanPercent, scanStatusText } from "./homeLoadingStatus";
+import {
+	homeStatus,
+	runningFolderScan,
+	scanPercent,
+	scanStatusForFolder
+} from "./homeLoadingStatus";
 
 describe("scanPercent", () => {
 	it("returns the done share of the total", () => {
@@ -18,62 +23,64 @@ describe("scanPercent", () => {
 	});
 });
 
-describe("scanStatusText", () => {
-	it("counts folders done", () => {
-		expect(scanStatusText(3, 5)).toBe("Scanning folders... 3 of 5");
+describe("homeStatus", () => {
+	it("shows the library load with no progress value", () => {
+		expect(homeStatus(true)).toEqual({ text: "Loading games...", percent: null });
 	});
 
-	it("names the folder being scanned", () => {
-		expect(scanStatusText(2, 5, "Games")).toBe("Scanning Games... 2 of 5");
-	});
-
-	it("appends the games found so far", () => {
-		expect(scanStatusText(0, 1, "Games", 12)).toBe("Scanning Games... 0 of 1 · 12 found");
-		expect(scanStatusText(0, 1, "Games", 0)).toBe("Scanning Games... 0 of 1 · 0 found");
-	});
-
-	it("falls back to the folder count when current is empty", () => {
-		expect(scanStatusText(2, 5, "")).toBe("Scanning folders... 2 of 5");
-	});
-
-	it("drops the count when the total is unknown", () => {
-		expect(scanStatusText(0, 0)).toBe("Scanning folders...");
+	it("shows nothing once the library is loaded", () => {
+		expect(homeStatus(false)).toBeNull();
 	});
 });
 
-describe("homeStatus", () => {
-	it("shows the library load first, with no progress value", () => {
+describe("runningFolderScan", () => {
+	it("names the folder being scanned with its progress", () => {
 		expect(
-			homeStatus(true, { state: "running", done: 1, total: 3, found: 4, current: "Games" })
+			runningFolderScan({ state: "running", done: 3, total: 5, found: 18, current: "Games" })
 		).toEqual({
-			text: "Loading games...",
-			percent: null
-		});
-	});
-
-	it("shows scan progress once the library is loaded", () => {
-		expect(
-			homeStatus(false, { state: "running", done: 3, total: 5, found: 18, current: "" })
-		).toEqual({
-			text: "Scanning folders... 3 of 5 · 18 found",
+			folderName: "Games",
+			text: "Scanning... 3 of 5 · 18 found",
 			percent: 0.6
 		});
 	});
 
-	it("names the folder being scanned and the games found", () => {
+	it("keeps the count when the total is unknown", () => {
 		expect(
-			homeStatus(false, { state: "running", done: 1, total: 4, found: 9, current: "Library" })
-		).toEqual({
-			text: "Scanning Library... 1 of 4 · 9 found",
-			percent: 0.25
-		});
+			runningFolderScan({ state: "running", done: 0, total: 0, found: 0, current: "Games" })
+		).toEqual({ folderName: "Games", text: "Scanning... 0 of 0 · 0 found", percent: null });
 	});
 
-	it("shows nothing when the scan is done", () => {
-		expect(homeStatus(false, { state: "done" })).toBeNull();
+	it("returns null when the scan is done", () => {
+		expect(runningFolderScan({ state: "done" })).toBeNull();
 	});
 
-	it("shows nothing when no scan has reported", () => {
-		expect(homeStatus(false, null)).toBeNull();
+	it("returns null when no scan has reported", () => {
+		expect(runningFolderScan(null)).toBeNull();
+	});
+
+	it("returns null when no folder name is known yet", () => {
+		expect(
+			runningFolderScan({ state: "running", done: 0, total: 2, found: 0, current: "" })
+		).toBeNull();
+	});
+});
+
+describe("scanStatusForFolder", () => {
+	const status = {
+		folderName: "Games",
+		text: "Scanning... 1 of 2 · 4 found",
+		percent: 0.5
+	};
+
+	it("returns the status for the folder being scanned", () => {
+		expect(scanStatusForFolder(status, "Games")).toBe(status);
+	});
+
+	it("returns null for any other folder", () => {
+		expect(scanStatusForFolder(status, "Library")).toBeNull();
+	});
+
+	it("returns null when no folder is being scanned", () => {
+		expect(scanStatusForFolder(null, "Games")).toBeNull();
 	});
 });

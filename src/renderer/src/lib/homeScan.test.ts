@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { toHomeScan } from "./homeScan";
+import { toHomeScan, toScanGroup } from "./homeScan";
 
 describe("toHomeScan", () => {
 	it("maps a running payload to progress", () => {
@@ -76,5 +76,42 @@ describe("toHomeScan", () => {
 	it("rejects a running payload without numeric counts", () => {
 		expect(toHomeScan({ state: "running", done: "1", total: 2 })).toBeNull();
 		expect(toHomeScan({ state: "running" })).toBeNull();
+	});
+});
+
+describe("toScanGroup", () => {
+	it("reads the finished folder from the event", () => {
+		const game = { name: "Alpha", path: "C:/Games/Alpha/alpha.exe" };
+		expect(
+			toScanGroup({
+				state: "running",
+				done: 1,
+				total: 2,
+				found: 1,
+				group: { folderPath: "C:/Games", folderName: "Games", games: [game] }
+			})
+		).toEqual({ folderPath: "C:/Games", folderName: "Games", games: [game] });
+	});
+
+	it("treats a null games list as empty", () => {
+		expect(
+			toScanGroup({ state: "running", group: { folderPath: "D:/Lib", folderName: "Lib", games: null } })
+		).toEqual({ folderPath: "D:/Lib", folderName: "Lib", games: [] });
+	});
+
+	it("returns null when the event has no group", () => {
+		expect(toScanGroup({ state: "running", done: 1, total: 2, found: 0 })).toBeNull();
+		expect(toScanGroup({ state: "running", group: null })).toBeNull();
+	});
+
+	it("ignores a group without string folder fields", () => {
+		expect(toScanGroup({ group: { folderName: "Lib", games: [] } })).toBeNull();
+		expect(toScanGroup({ group: { folderPath: 4, folderName: "Lib", games: [] } })).toBeNull();
+		expect(toScanGroup({ group: { folderPath: "D:/Lib", games: [] } })).toBeNull();
+	});
+
+	it("ignores payloads that are not objects", () => {
+		expect(toScanGroup(null)).toBeNull();
+		expect(toScanGroup("group")).toBeNull();
 	});
 });

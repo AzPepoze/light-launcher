@@ -1,9 +1,14 @@
 <script lang="ts">
-	import FolderHeader from "./FolderHeader.svelte";
+	import FolderHeader from "@components/shared/FolderHeader.svelte";
+	import type { HomeFolderGroup } from "../state/scanGroups";
+	import type { FolderScanStatus } from "../state/homeLoadingStatus";
 	import GameCardGrid from "./GameCardGrid.svelte";
 	import EmptySectionPlaceholder from "./EmptySectionPlaceholder.svelte";
+	import HomeSkeleton from "../HomeSkeleton.svelte";
 
-	export let group: any;
+	export let group: HomeFolderGroup;
+	/** Set only while this folder is the one being scanned. */
+	export let scanStatus: FolderScanStatus | null = null;
 	export let currentView: "grid" | "list-grid" | "sidebar-grid";
 	export let gameIcons: Record<string, string> = {};
 	export let isGameRunning: (game: any, sessionsList: any[]) => boolean;
@@ -20,7 +25,7 @@
 	export let handleConfigure: (game: any) => void;
 	export let handleChooseLauncher: (game: any, launcherPath: string | null) => void = () => {};
 	export let toggleGameSelection: (game: any, shiftKey: boolean, ctrlKey?: boolean) => void;
-	export let loadIcon: (path: string, customIconPath?: string | null) => void = () => {};
+	export let loadIcon: (path: string, customIconPath?: string | null, hasCover?: boolean) => void = () => {};
 	export let isStuck: boolean = false;
 </script>
 
@@ -29,7 +34,9 @@
 		icon="folder"
 		name={group.folderName}
 		subtitle={group.folderPath}
-		count={group.games.length}
+		count={group.loading ? "..." : group.games.length}
+		scanText={scanStatus?.text ?? null}
+		scanValue={scanStatus?.percent ?? null}
 		hasMenu={true}
 		stuckBleed={17}
 		stuckKey={group.folderPath}
@@ -41,7 +48,9 @@
 		onRemoveFolder={() => handleRemoveFolder(group.folderPath)}
 	/>
 
-	{#if group.games.length > 0}
+	{#if group.loading}
+		<HomeSkeleton view={currentView} />
+	{:else if group.games.length > 0}
 		<GameCardGrid
 			games={group.games}
 			view={currentView}

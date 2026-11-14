@@ -2,13 +2,18 @@
 	import AppMenu from "@components/shared/AppMenu.svelte";
 	import Icon from "@components/shared/Icon.svelte";
 	import MenuTrigger from "@components/shared/MenuTrigger.svelte";
+	import ProgressBar from "@components/shared/ProgressBar.svelte";
 	import { GAME_FOLDERS_SECTION } from "@lib/features/settingsSection";
 	import { navigateToSettingsSection } from "@stores/navigationStore";
 
 	export let icon: string = "folder";
 	export let name: string = "";
 	export let subtitle: string = "";
-	export let count: number = 0;
+	export let count: number | string = 0;
+	/** Scan line shown under the title. Null hides it. */
+	export let scanText: string | null = null;
+	/** Share done, from 0 to 1. Null shows a sliding bar. */
+	export let scanValue: number | null = null;
 	export let hasMenu: boolean = false;
 	export let isMenuOpen: boolean = false;
 	export let onToggleMenu: (event: MouseEvent) => void = () => {};
@@ -23,6 +28,7 @@
 <div
 	class="folder-group-header"
 	class:is-stuck={isStuck}
+	class:is-scanning={scanText !== null}
 	style:--stuck-bleed="{stuckBleed}px"
 	data-sticky-header=""
 	data-stuck-key={stuckKey}
@@ -33,6 +39,14 @@
 			<span class="folder-name">{name}</span>
 			{#if subtitle}
 				<span class="folder-path">{subtitle}</span>
+			{/if}
+			{#if scanText !== null}
+				<div class="folder-scan">
+					<span class="folder-scan-text">{scanText}</span>
+					<div class="folder-scan-bar">
+						<ProgressBar value={scanValue} label={scanText} active height={4} />
+					</div>
+				</div>
 			{/if}
 		</div>
 		<span class="badge">{count}</span>
@@ -81,6 +95,11 @@
 		border-radius: 0;
 		transition: background var(--transition-fast), border-color var(--transition-fast), border-radius var(--transition-fast);
 
+		&.is-scanning {
+			height: auto;
+			min-height: 64px;
+		}
+
 		&.is-stuck {
 			background: var(--bg-base);
 			border: 1px solid rgba(255, 255, 255, 0.06);
@@ -128,6 +147,27 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		max-width: 400px;
+	}
+
+	.folder-scan {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		margin-top: 4px;
+		min-width: 0;
+	}
+
+	.folder-scan-text {
+		flex: 0 1 auto;
+		font-size: 0.75rem;
+		line-height: 14px;
+		color: var(--text-muted);
+		white-space: nowrap;
+	}
+
+	.folder-scan-bar {
+		flex: 0 1 160px;
+		min-width: 60px;
 	}
 
 	.badge {

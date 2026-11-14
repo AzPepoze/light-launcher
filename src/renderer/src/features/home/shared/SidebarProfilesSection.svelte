@@ -1,5 +1,5 @@
 <script lang="ts">
-	import FolderHeader from "./FolderHeader.svelte";
+	import FolderHeader from "@components/shared/FolderHeader.svelte";
 	import GameCardGrid from "./GameCardGrid.svelte";
 	import EmptySectionPlaceholder from "./EmptySectionPlaceholder.svelte";
 
@@ -14,7 +14,7 @@
 	export let handleConfigure: (game: any) => void;
 	export let handleChooseLauncher: (game: any, launcherPath: string | null) => void = () => {};
 	export let toggleGameSelection: (game: any, shiftKey: boolean, ctrlKey?: boolean) => void;
-	export let loadIcon: (path: string, customIconPath?: string | null) => void = () => {};
+	export let loadIcon: (path: string, customIconPath?: string | null, hasCover?: boolean) => void = () => {};
 </script>
 
 <FolderHeader

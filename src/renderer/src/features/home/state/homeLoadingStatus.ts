@@ -6,27 +6,41 @@ export interface HomeStatus {
 	percent: number | null;
 }
 
+/** The progress shown in the header of the folder being scanned. */
+export interface FolderScanStatus {
+	/** Basename of the folder, matched against the folder group name. */
+	folderName: string;
+	text: string;
+	/** Share done, from 0 to 1. Null when the total is unknown. */
+	percent: number | null;
+}
+
 /** Share of a scan that is done, or null when there is no total to measure against. */
 export function scanPercent(done: number, total: number): number | null {
 	if (total <= 0) return null;
 	return Math.min(1, Math.max(0, done / total));
 }
 
-export function scanStatusText(done: number, total: number, current = "", found?: number): string {
-	const base = current
-		? `Scanning ${current}... ${done} of ${total}`
-		: total <= 0
-			? "Scanning folders..."
-			: `Scanning folders... ${done} of ${total}`;
-	return found === undefined ? base : `${base} · ${found} found`;
+/** The top status line while the library loads. Null once it is loaded. */
+export function homeStatus(isLoading: boolean): HomeStatus | null {
+	if (!isLoading) return null;
+	return { text: "Loading games...", percent: null };
 }
 
-/** The header status line while the library loads or folders scan. Null when nothing runs. */
-export function homeStatus(isLoading: boolean, scan: HomeScan | null): HomeStatus | null {
-	if (isLoading) return { text: "Loading games...", percent: null };
-	if (scan?.state !== "running") return null;
+/** The status of the folder the scan is on. Null when no folder is being scanned. */
+export function runningFolderScan(scan: HomeScan | null): FolderScanStatus | null {
+	if (scan?.state !== "running" || !scan.current) return null;
 	return {
-		text: scanStatusText(scan.done, scan.total, scan.current, scan.found),
+		folderName: scan.current,
+		text: `Scanning... ${scan.done} of ${scan.total} · ${scan.found} found`,
 		percent: scanPercent(scan.done, scan.total)
 	};
+}
+
+/** The scan status when it belongs to the folder with this name. Null for every other folder. */
+export function scanStatusForFolder(
+	status: FolderScanStatus | null,
+	folderName: string
+): FolderScanStatus | null {
+	return status?.folderName === folderName ? status : null;
 }
