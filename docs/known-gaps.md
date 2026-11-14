@@ -124,6 +124,14 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [x] | Scheduled sync uses `Library.SyncSource`, so sync-only sources save their games on the timer just like a manual sync. |
 | [x] | The Library sidebar for plugin sources: the overview carries each source's `sidebar`, and the page browses it through `LibraryBrowse` and `LibraryFilters`. Fixed groups, dynamic choices and a sort with direction are drawn. |
 | [ ] | Check the plugin Library sidebar by eye in the real window with the fixture plugin (only typecheck, tests and build so far). |
+| [ ] | Plugin browse grid in a source group: picked choices show the plugin's results. Built and unit-tested; not seen in a window. |
+| [x] | Browse results open the add dialog with their link. Retry asks the failed source again. A plugin group stays visible while its browse is on. Built; not seen in a window. |
+| [ ] | Check the browse grid against a real plugin that sends no total count (the grid grows one page at a time). |
+| [ ] | Home: scanned games use the cover from the Go payload (`cover`, `coverLocal`) before the exe icon. Built and tested; not seen in a window. |
+| [ ] | Home: a folder group shows its header and skeleton before the scan ends, then fills as each folder finishes. Not seen in a window. |
+| [ ] | Home: the folder count shows "..." while the folder loads. Not seen in a window. |
+| [ ] | Library: the local exe-icon fallback for coverless games needs a real window check. |
+| [ ] | Library rail: clicking a source scrolls to its group. The highlight does not follow scrolling yet (no scroll spy). |
 | [x] | The plugin SDK docs describe `sidebar`, the `browse:filters` capability, `source.browse` and `source.listFilters`. |
 | [x] | itch implements `source.browse`/`source.listFilters` with a search sidebar. It scrapes itch.io's public search HTML; there is no stable search API or pager, and sort is best-effort. |
 
