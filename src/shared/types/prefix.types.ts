@@ -1,19 +1,8 @@
-import type { LaunchOptions } from "./config.types";
+import type { WirePrefixConfigWithProton, WireProtonTool } from "../contract/wire.generated";
 
-export interface ProtonTool {
-	Name: string;
-	Path: string;
-	IsSteam: boolean;
-	DisplayName: string;
-}
+export type ProtonTool = WireProtonTool;
 
-export interface PrefixConfigWithProton {
-	config: LaunchOptions;
-	protonDisplayName: string;
-	protonName: string;
-	protonPath: string;
-	protonIsSteam: boolean;
-}
+export type PrefixConfigWithProton = WirePrefixConfigWithProton;
 
 export interface PrefixStats {
 	name: string;

@@ -1,20 +1,14 @@
-export interface SystemToolsStatus {
-	hasGamescope: boolean;
-	hasMangoHud: boolean;
-	hasGameMode: boolean;
-	hasVulkanInfo: boolean;
-}
+import type {
+	WireSystemInfo,
+	WireSystemToolsStatus,
+	WireUtilsStatus
+} from "../contract/wire.generated";
 
-export interface SystemInfo {
-	os: string;
-	kernel: string;
-	cpu: string;
-	gpu: string;
-	gpus?: string[];
-	ram: string;
-	driver: string;
-}
+export type SystemToolsStatus = WireSystemToolsStatus;
 
+export type SystemInfo = WireSystemInfo;
+
+// WireSystemUsage allows a null gpus list; the renderer always keeps a list.
 export interface SystemUsage {
 	cpu: number;
 	ram: number;
@@ -23,10 +17,7 @@ export interface SystemUsage {
 	gpus: number[];
 }
 
-export interface UtilsStatus {
-	isLsfgInstalled: boolean;
-	lsfgVersion: string;
-}
+export type UtilsStatus = WireUtilsStatus;
 
 /** Launch tools and UI parts the current OS supports. Mirrors the Go platform.Features. */
 export interface PlatformFeatures {

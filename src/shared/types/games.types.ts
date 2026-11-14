@@ -1,15 +1,17 @@
+import type {
+	WireGameActivity,
+	WireLauncher,
+	WireLauncherKind,
+	WireRunningSession
+} from "../contract/wire.generated";
 import type { LaunchOptions } from "./config.types";
 
-export type LauncherKind = "main" | "unreal-stub" | "x86" | "other";
+export type LauncherKind = WireLauncherKind;
 
 /** One executable that starts a game folder. */
-export interface Launcher {
-	name: string;
-	path: string;
-	kind: LauncherKind;
-	primary: boolean;
-}
+export type Launcher = WireLauncher;
 
+// WireGameInfo allows a null launchers list; the renderer always keeps a list.
 export interface GameInfo {
 	name: string;
 	path: string;
@@ -22,25 +24,13 @@ export interface GameInfo {
 	launcherCount: number;
 }
 
+// WireScannedFolderGroup allows a null games list; the renderer always keeps a list.
 export interface ScannedFolderGroup {
 	folderPath: string;
 	folderName: string;
 	games: GameInfo[];
 }
 
-export interface RunningSession {
-	pid: number;
-	gamePath: string;
-	gameName: string;
-	startedAt?: number;
-}
+export type RunningSession = WireRunningSession;
 
-export interface GameActivity {
-	gamePath: string;
-	gameName: string;
-	profileId?: string;
-	customIconPath?: string;
-	lastPlayedAt: number;
-	totalPlaytimeSeconds: number;
-	activeSince?: number;
-}
+export type GameActivity = WireGameActivity;
