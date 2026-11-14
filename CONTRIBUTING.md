@@ -50,7 +50,7 @@ bun run dev
 
 This detects the OS and opens the native window on the Vite page: GTK/WebKitGTK on Linux, WebView2 on Windows. Use `bun run dev:linux` or `bun run dev:windows` to pick the window yourself.
 
-For a browser instead of the native window, run `bun run dev:browser` and open `http://localhost:9245/#t=dev`. Vite proxies API calls to the launcher on port 9246.
+For a browser instead of the native window, run `bun run dev:browser` and open `http://localhost:9245/#t=dev`. Vite proxies API calls to the launcher on port 9246. `bun run dev:web` does the same as `dev:browser`, but it opens the browser for you once Vite is ready.
 
 ### Build locally
 
@@ -66,36 +66,37 @@ bun run build
 
 ## Scripts
 
-| Command                        | What it does                                                   |
-| :----------------------------- | :------------------------------------------------------------- |
-| `bun run build`                | Builds the launcher with the embedded UI and the game runner.  |
-| `bun run build:instance`       | Builds the game runner.                                        |
-| `bun run build:launcher`       | Builds the launcher with the embedded UI.                      |
-| `bun run build:launcher:dev`   | Builds the launcher for development, without the embedded UI.  |
-| `bun run build:linux`          | Builds the local Linux app, including the GTK window.          |
-| `bun run build:renderer`       | Builds the UI into `src/renderer/dist`.                        |
-| `bun run build:shell:gtk`      | Builds the GTK window (Linux).                                 |
-| `bun run build:shell:webview2` | Builds the WebView2 window (Windows).                          |
-| `bun run clean`                | Removes `bin`, `dist` and the UI build folder.                 |
-| `bun run dev`                  | Detects the OS and opens the native dev window.                |
-| `bun run dev:browser`          | Starts the launcher API and the Vite UI in the browser.        |
-| `bun run dev:linux`            | Builds and opens the GTK window on the Vite UI (Linux).        |
-| `bun run dev:renderer`         | Starts only the Vite UI.                                       |
-| `bun run dev:server`           | Starts only the launcher API.                                  |
-| `bun run dev:windows`          | Builds and opens the WebView2 window on the Vite UI (Windows). |
-| `bun run e2e`                  | Runs the launcher API end-to-end test.                         |
-| `bun run format`               | Formats the code with `oxfmt`.                                 |
-| `bun run format:check`         | Checks formatting without changing files.                      |
-| `bun run lint`                 | Runs `oxlint` and `go vet`.                                    |
-| `bun run lint:fix`             | Fixes lint findings with `oxlint`.                             |
-| `bun run lint:go`              | Runs `go vet` on the Go code.                                  |
-| `bun run lint:ui`              | Runs `oxlint`.                                                 |
-| `bun run test`                 | Runs the UI and Go tests.                                      |
-| `bun run test:coverage`        | Runs the UI tests with coverage.                               |
-| `bun run test:go`              | Runs the Go tests.                                             |
-| `bun run test:ui`              | Runs the Vitest tests.                                         |
-| `bun run test:watch`           | Runs the Vitest tests in watch mode.                           |
-| `bun run typecheck`            | Runs `tsc` and `svelte-check`.                                 |
+| Command                        | What it does                                                                       |
+| :----------------------------- | :--------------------------------------------------------------------------------- |
+| `bun run build`                | Builds the launcher with the embedded UI and the game runner.                      |
+| `bun run build:instance`       | Builds the game runner.                                                            |
+| `bun run build:launcher`       | Builds the launcher with the embedded UI.                                          |
+| `bun run build:launcher:dev`   | Builds the launcher for development, without the embedded UI.                      |
+| `bun run build:linux`          | Builds the local Linux app, including the GTK window.                              |
+| `bun run build:renderer`       | Builds the UI into `src/renderer/dist`.                                            |
+| `bun run build:shell:gtk`      | Builds the GTK window (Linux).                                                     |
+| `bun run build:shell:webview2` | Builds the WebView2 window (Windows).                                              |
+| `bun run clean`                | Removes `bin`, `dist` and the UI build folder.                                     |
+| `bun run dev`                  | Detects the OS and opens the native dev window.                                    |
+| `bun run dev:browser`          | Starts the launcher API and the Vite UI in the browser.                            |
+| `bun run dev:linux`            | Builds and opens the GTK window on the Vite UI (Linux).                            |
+| `bun run dev:renderer`         | Starts only the Vite UI.                                                           |
+| `bun run dev:server`           | Starts only the launcher API.                                                      |
+| `bun run dev:web`              | Starts the UI dev server and opens the launcher in the default browser (all OSes). |
+| `bun run dev:windows`          | Builds and opens the WebView2 window on the Vite UI (Windows).                     |
+| `bun run e2e`                  | Runs the launcher API end-to-end test.                                             |
+| `bun run format`               | Formats the code with `oxfmt`.                                                     |
+| `bun run format:check`         | Checks formatting without changing files.                                          |
+| `bun run lint`                 | Runs `oxlint` and `go vet`.                                                        |
+| `bun run lint:fix`             | Fixes lint findings with `oxlint`.                                                 |
+| `bun run lint:go`              | Runs `go vet` on the Go code.                                                      |
+| `bun run lint:ui`              | Runs `oxlint`.                                                                     |
+| `bun run test`                 | Runs the UI and Go tests.                                                          |
+| `bun run test:coverage`        | Runs the UI tests with coverage.                                                   |
+| `bun run test:go`              | Runs the Go tests.                                                                 |
+| `bun run test:ui`              | Runs the Vitest tests.                                                             |
+| `bun run test:watch`           | Runs the Vitest tests in watch mode.                                               |
+| `bun run typecheck`            | Runs `tsc` and `svelte-check`.                                                     |
 
 ## Tests and checks
 

@@ -23,6 +23,7 @@ light-launcher [flags] [GAME_PATH]
 | :----------------------------------------------- | :---------- | :--------------------------------------------------------------------------- |
 | `GAME_PATH`                                      | none        | Opens the launcher on this game.                                             |
 | `--shell <name>`                                 | `auto`      | The window type. See [Shell values](#shell-values).                          |
+| `--web`                                          | off         | Opens the UI in the default browser for this run. Same as `--shell=browser`. Cannot be used with `--no-shell`, `--shell=gtk` or `--shell=webview2`. |
 | `--no-shell`                                     | off         | Runs the UI with no window. The launcher logs the address to open.           |
 | `--ui <dir>`                                     | built-in UI | Serves the UI from this folder. The folder must contain `index.html`.        |
 | `--edit-lsfg`                                    | off         | Opens the Lossless Scaling (LSFG) editor on start. Linux only.               |
@@ -40,6 +41,24 @@ light-launcher [flags] [GAME_PATH]
 > `gtk` and `webview2` start the same kind of program: the shell next to the launcher. The shell file decides the window engine.
 
 If the shell program is missing, the launcher opens the default browser instead.
+
+### Open in browser
+
+Open LightLauncher in your default browser instead of a window.
+
+| Way | Effect |
+| :--- | :--- |
+| Settings > "Window type" > "Open in browser" | On every start. Applies on the next start. |
+| `--web` flag | Once, for this run only. |
+
+An explicit `--shell` value wins over the setting.
+
+| Order | Source | Result |
+| :--- | :--- | :--- |
+| 1 | `--web` flag | Browser |
+| 2 | `--shell <name>` flag | That shell |
+| 3 | Settings "Open in browser" is on | Browser |
+| 4 | Otherwise | Native window (`auto`) |
 
 ### Starting twice
 
@@ -61,6 +80,9 @@ light-launcher ~/Games/Game/game.exe
 
 # Use the default browser instead of a window
 light-launcher --shell=browser
+
+# Open in the default browser for this run only
+light-launcher --web
 
 # Run the UI with no window
 light-launcher --no-shell

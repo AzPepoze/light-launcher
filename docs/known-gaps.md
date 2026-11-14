@@ -181,6 +181,15 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [x] | `SettingRow` has an optional icon slot; the Updates settings source rows use it instead of local row markup. |
 | [x] | `Checkbox` is intentionally kept for `PluginConsent` only. |
 
+## Browser mode
+
+| Status | Item |
+|---|---|
+| [ ] | The `RestartApp` call emits a `restart-app` event that no code handles (`core/internal/services/appsvc/register.go` line ~85), so the restart after the transparency and display platform toggles does nothing. Fix or remove the event later. |
+| [ ] | `SettingsState.setOpenInBrowser` has no test. `vitest.config.ts` has no Svelte plugin and no `@stores` alias, so the class cannot be imported in tests. Add both to test the setter. |
+| [ ] | Check that `PickFile` and `PickFolder` work in a plain browser tab on Linux and on Windows. The renderer falls back to invoke when `window.llShell` is missing (`src/renderer/src/lib/transport.ts` around line 151). |
+| [ ] | The `--web` flag opens the Windows default browser with `rundll32 url.dll,FileProtocolHandler <url>`. Confirm that the `#t=` token in the URL survives on Windows. Not tested from Linux. |
+
 ## Migration
 
 | Status | Item |
