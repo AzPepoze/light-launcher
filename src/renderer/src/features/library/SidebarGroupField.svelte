@@ -55,7 +55,12 @@
 	}
 </script>
 
-{#if group.type === "toggles"}
+{#if group.dynamic && !library.choicesLoaded(group.id)}
+	<div class="group">
+		<span class="label">{group.label}</span>
+		<Button size="sm" icon="sync" onclick={() => library.loadChoices()}>Load choices</Button>
+	</div>
+{:else if group.type === "toggles"}
 	<div class="group" role="group" aria-label={group.label}>
 		<span class="label">{group.label}</span>
 		<div class="choices">

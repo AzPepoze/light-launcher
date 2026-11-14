@@ -9,6 +9,7 @@
 
 	let {
 		library,
+		source,
 		ratio,
 		minColumnPx,
 		card,
@@ -18,6 +19,8 @@
 		onOpen
 	}: {
 		library: LibraryState;
+		/** The source whose games this grid shows. */
+		source: string;
 		/** Width divided by height of each cover. */
 		ratio: number;
 		/** Smallest width of one column, from the card size setting. */
@@ -39,7 +42,7 @@
 	let frame = 0;
 
 	const layout = $derived(gridLayout(width, ratio, minColumnPx));
-	const total = $derived(library.total ?? PAGE_SIZE);
+	const total = $derived(library.listOf(source).total ?? PAGE_SIZE);
 	const range = $derived(
 		gridWindow({ total, layout, scrollTop: scrolledPast, viewportHeight })
 	);
@@ -47,7 +50,7 @@
 
 	// Keeps the pages behind the visible rows loaded. Runs again when the query resets the pages.
 	$effect(() => {
-		library.requestRange(range.start, range.end);
+		library.requestRange(source, range.start, range.end);
 	});
 
 	/** The nearest ancestor that scrolls. Null when the page itself scrolls. */
@@ -80,13 +83,6 @@
 		if (frame === 0) frame = requestAnimationFrame(() => measure(scroller));
 	}
 
-	/** A new section starts at the top of its grid, not wherever the last one was scrolled to. */
-	function showGridTop(scroller: HTMLElement | null) {
-		if (!gridEl || !scroller) return;
-		const gap = visibleTop(scroller) - gridEl.getBoundingClientRect().top;
-		if (gap > 0) scroller.scrollTop -= gap;
-	}
-
 	onMount(() => {
 		if (!gridEl) return;
 		const scroller = findScrollParent(gridEl);
@@ -94,7 +90,6 @@
 		const onScroll = () => scheduleMeasure(scroller);
 		const resizeObserver = new ResizeObserver(onScroll);
 
-		showGridTop(scroller);
 		resizeObserver.observe(gridEl);
 		if (scroller) resizeObserver.observe(scroller);
 		target.addEventListener("scroll", onScroll, { passive: true });
@@ -117,7 +112,7 @@
 		style:grid-auto-rows="{layout.rowHeight}px"
 	>
 		{#each indexes as index (index)}
-			{@const game = library.gameAt(index)}
+			{@const game = library.gameAt(source, index)}
 			<li>
 				{#if game}
 					<GameTile

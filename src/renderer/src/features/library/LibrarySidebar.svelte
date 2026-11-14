@@ -3,75 +3,33 @@
 	import type { LibraryState } from "./libraryState.svelte";
 	import SavedFilters from "./SavedFilters.svelte";
 	import SidebarGroupField from "./SidebarGroupField.svelte";
-	import { searchPlaceholder } from "./sidebarGroups";
 
-	const SYNC_HINT = "Adds the games from your account to the Library";
+	const SEARCH_PLACEHOLDER = "Title, developer or tag";
 
-	let {
-		library,
-		canSync,
-		syncing,
-		onSync
-	}: {
-		library: LibraryState;
-		/** Only sources that can sync games get the built-in Sync now button. */
-		canSync: boolean;
-		syncing: boolean;
-		onSync: () => void;
-	} = $props();
-
-	const actions = $derived(
-		(library.current?.actions ?? []).filter((action) => action.scope === "library")
-	);
-	const placeholder = $derived(searchPlaceholder(library.current));
+	let { library }: { library: LibraryState } = $props();
 </script>
 
-<aside class="sidebar" aria-label="Library tools">
-	{#if canSync || actions.length > 0}
-		<div class="actions">
-			{#if canSync}
-				<Button size="sm" icon="sync" title={SYNC_HINT} disabled={syncing} onclick={onSync}>
-					{syncing ? "Syncing..." : "Sync now"}
-				</Button>
-			{/if}
-			{#each actions as action (action.id)}
-				<Button
-					size="sm"
-					icon={action.icon}
-					loading={library.runningAction === action.id}
-					disabled={library.runningAction !== ""}
-					onclick={() => library.runSourceAction(action)}
-				>
-					{action.label}
-				</Button>
-			{/each}
-		</div>
-	{/if}
-
+<aside class="sidebar" aria-label="Library filters">
 	<label class="field">
 		<span class="label">Search</span>
 		<input
 			class="input"
 			type="search"
-			{placeholder}
+			placeholder={SEARCH_PLACEHOLDER}
 			value={library.filters.query}
 			oninput={(event) => library.setQuery(event.currentTarget.value)}
 		/>
 	</label>
 
-	{#key library.section}
-		{#each library.sidebarGroups as group (group.id)}
-			<SidebarGroupField {library} {group} />
-		{/each}
-	{/key}
+	{#each library.sidebarGroups as group (group.id)}
+		<SidebarGroupField {library} {group} />
+	{/each}
 
 	{#if library.filtersActive}
 		<Button size="sm" onclick={() => library.clearFilters()}>Clear filters</Button>
 	{/if}
 
-	{#if !library.usesBrowse}
-		<SavedFilters {library} />
-	{/if}
+	<SavedFilters {library} />
 </aside>
 
 <style lang="scss">
@@ -96,12 +54,6 @@
 		}
 	}
 
-	.actions {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 6px;
-	}
-
 	.field {
 		display: flex;
 		flex-direction: column;
@@ -115,5 +67,4 @@
 		text-transform: uppercase;
 		letter-spacing: 0.04em;
 	}
-
 </style>

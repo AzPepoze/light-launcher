@@ -3,7 +3,12 @@ import type { LibrarySource, SidebarGroup } from "../../lib/features/types";
 import { initialBrowseFilters } from "./browseFilters";
 import { DEFAULT_FILTERS, toLibraryFilters, withLibraryFilters } from "./libraryFilters";
 import { LOCAL_SOURCE } from "./librarySections";
-import { builtinGroups, searchPlaceholder, sidebarGroupsFor } from "./sidebarGroups";
+import {
+	builtinGroups,
+	choiceGroupsOf,
+	searchPlaceholder,
+	sidebarGroupsFor
+} from "./sidebarGroups";
 
 const TAGS = [{ tag: "Sample", count: 4 }];
 
@@ -108,12 +113,25 @@ describe("local filter conversion", () => {
 			installed: true,
 			updates: false,
 			favorite: false,
-			sort: "added"
+			sort: "added",
+			plugin: {}
 		});
 	});
 
 	it("falls back to the default sort for an unknown sort name", () => {
 		const filters = { ...initialBrowseFilters(builtinGroups(TAGS)), sort: "nope" };
 		expect(toLibraryFilters(filters).sort).toBe("added");
+	});
+});
+
+describe("choiceGroupsOf", () => {
+	it("asks for nothing on the local list or a source with no sidebar", () => {
+		expect(choiceGroupsOf(undefined)).toEqual([]);
+		expect(choiceGroupsOf({ ...PLUGIN, source: LOCAL_SOURCE })).toEqual([]);
+		expect(choiceGroupsOf({ ...PLUGIN, sidebar: [] })).toEqual([]);
+	});
+
+	it("asks only for the dynamic groups of a plugin source", () => {
+		expect(choiceGroupsOf(PLUGIN).map((group) => group.id)).toEqual(["genres"]);
 	});
 });

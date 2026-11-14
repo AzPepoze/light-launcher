@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { onMount, tick } from "svelte";
 	import { get } from "svelte/store";
+	import Badge from "@components/shared/Badge.svelte";
 	import Button from "@components/shared/Button.svelte";
 	import EmptyState from "@components/shared/EmptyState.svelte";
+	import Icon from "@components/shared/Icon.svelte";
 	import IconButton from "@components/shared/IconButton.svelte";
 	import LoadingState from "@components/shared/LoadingState.svelte";
 	import Notice from "@components/shared/Notice.svelte";
@@ -10,7 +12,7 @@
 	import Tabs from "@components/shared/Tabs.svelte";
 	import type { TabItem } from "@components/shared/tabs";
 	import { libraryTab, type LibraryTab } from "@stores/libraryTabStore";
-	import type { Game } from "../../lib/features/types";
+	import type { Game, LibrarySource, SourceAction } from "../../lib/features/types";
 	import { libraryApi } from "../../lib/features/libraryApi";
 	import { loadAppSettings } from "../../lib/settingsService";
 	import {
@@ -24,11 +26,12 @@
 	import IncomingPanel from "./IncomingPanel.svelte";
 	import LibraryGrid from "./LibraryGrid.svelte";
 	import LibrarySidebar from "./LibrarySidebar.svelte";
-	import SectionHeader from "./SectionHeader.svelte";
 	import SourceRail from "./SourceRail.svelte";
 	import { LibraryState } from "./libraryState.svelte";
 	import { REVEAL_MAX_TILES, revealDoneMs } from "./libraryMotion";
-	import { LOCAL_SOURCE, sourceLabel } from "./librarySections";
+	import { sectionElementId, showsSection, sourceLabel } from "./librarySections";
+	import { sourceIcon } from "./sourceIcon";
+	import { syncMessage } from "./librarySync";
 	import { coverRatioOf } from "./coverRatio";
 	import { canSyncGames } from "./syncFlag";
 	import { closesDetailOn } from "./detailPanel";
@@ -36,6 +39,8 @@
 	import DownloadsPage from "../downloads/DownloadsPage.svelte";
 	import UpdatesPage from "../updates/UpdatesPage.svelte";
 	import { transferKinds } from "./transferState";
+
+	const SYNC_HINT = "Adds the games from your account to the Library";
 
 	const library = new LibraryState();
 	const downloads = new DownloadsState();
@@ -49,7 +54,7 @@
 			(row) => row.transfer.state === "active"
 		)
 	);
-	/** Tabs whose page stays mounted once opened. The Games grid is cheap to rebuild from the pager. */
+	/** Tabs whose page stays mounted once opened. The Games page is cheap to rebuild from the lists. */
 	type PanelTab = Exclude<LibraryTab, "games">;
 
 	/** The tab the store opens on, used to mount its panel on the first render. */
@@ -74,9 +79,12 @@
 	/** Under 900px the filter sidebar slides in over the grid. */
 	let filtersOpen = $state(false);
 
-	const current = $derived(library.current);
-	const isPlugin = $derived(library.section !== LOCAL_SOURCE);
-	const ratio = $derived(coverRatioOf(current?.cover));
+	/** The sections that show on the page, in rail order. Empty plugin sources are left out. */
+	const visibleSections = $derived(library.sections.filter(isShown));
+	/** Games in the sections on the page, for the reveal animation. */
+	const shownTotal = $derived(
+		visibleSections.reduce((sum, source) => sum + (library.listOf(source.source).total ?? 0), 0)
+	);
 	const subtitle = $derived(
 		`${library.overview.stats.total} games · ${library.overview.stats.installed} installed` +
 			(library.overview.stats.updates ? ` · ${library.overview.stats.updates} updates` : "")
@@ -92,8 +100,8 @@
 			(action) => action.scope === "game"
 		)
 	);
-	const hasTiles = $derived((library.total ?? 0) > 0);
-	const revealCount = $derived(Math.min(library.total ?? 0, REVEAL_MAX_TILES));
+	const hasTiles = $derived(shownTotal > 0);
+	const revealCount = $derived(Math.min(shownTotal, REVEAL_MAX_TILES));
 
 	onMount(() => {
 		const stopTab = libraryTab.subscribe((next) => {
@@ -163,6 +171,31 @@
 		else openBrowseGame(game);
 	}
 
+	/** A browse result is not saved yet, so it opens the add dialog with its link. */
+	function openBrowseGame(game: Game) {
+		addUrl = game.url;
+		addOpen = true;
+	}
+
+	/** A section shows when it is local, or a plugin source with games, an error or a live browse. */
+	function isShown(source: LibrarySource): boolean {
+		if (library.browse.shows(source.source)) return true;
+		const list = library.listOf(source.source);
+		return showsSection(source, list.total, list.error !== "");
+	}
+
+	/** Scrolls the page to a source's group and shows its sidebar groups. The rail calls this on click. */
+	function showSection(source: string) {
+		library.selectSource(source);
+		document
+			.getElementById(sectionElementId(source))
+			?.scrollIntoView({ behavior: "smooth", block: "start" });
+	}
+
+	function libraryActionsOf(source: LibrarySource): SourceAction[] {
+		return source.actions.filter((action) => action.scope === "library");
+	}
+
 	async function closeGame() {
 		const id = selected?.id;
 		selected = null;
@@ -187,16 +220,6 @@
 		addOpen = false;
 		selected = game;
 		library.scheduleRefresh();
-	}
-
-	function syncNow() {
-		void library.startSync(library.section);
-	}
-
-	/** A browse result is not saved yet, so it opens the add dialog with its link. */
-	function openBrowseGame(game: Game) {
-		addUrl = game.url;
-		addOpen = true;
 	}
 
 	function closeAdd() {
@@ -261,23 +284,14 @@
 				{library.overviewError}
 				<Button size="sm" onclick={() => library.refresh()}>Retry</Button>
 			</Notice>
-		{:else if current}
+		{:else}
 			<div class="layout" class:with-detail={selected !== null}>
 				<div class="rail-col">
-					<SourceRail
-						sections={library.sections}
-						selected={library.section}
-						onSelect={(source) => library.selectSection(source)}
-					/>
+					<SourceRail sections={visibleSections} selected={library.activeSource} onSelect={showSection} />
 				</div>
 
 				<div class="side-col" class:open={filtersOpen}>
-					<LibrarySidebar
-						{library}
-						canSync={canSyncGames(current)}
-						syncing={library.isSyncing(library.section)}
-						onSync={syncNow}
-					/>
+					<LibrarySidebar {library} />
 				</div>
 
 				<div class="main">
@@ -285,58 +299,82 @@
 						<Button size="sm" icon="tune" onclick={() => (filtersOpen = !filtersOpen)}>Filters</Button>
 					</div>
 
-					<SectionHeader
-						label={current.label}
-						count={current.count}
-						{isPlugin}
-						progress={library.syncs[library.section]}
-					/>
+					{#each visibleSections as source (source.source)}
+						{@const list = library.listOf(source.source)}
+						<section class="group" id={sectionElementId(source.source)} aria-label={source.label}>
+							<header class="group-header">
+								<span class="group-icon"><Icon name={sourceIcon(source.source)} size={22} /></span>
+								<h2>{source.label}</h2>
+								<Badge>{list.total ?? 0}</Badge>
+								<div class="group-actions">
+									{#if canSyncGames(source)}
+										<Button
+											size="sm"
+											icon="sync"
+											title={SYNC_HINT}
+											disabled={library.isSyncing(source.source)}
+											onclick={() => library.startSync(source.source)}
+										>
+											{library.isSyncing(source.source) ? "Syncing..." : "Sync now"}
+										</Button>
+									{/if}
+									{#each libraryActionsOf(source) as action (action.id)}
+										<Button
+											size="sm"
+											icon={action.icon}
+											loading={library.runningAction === action.id}
+											disabled={library.runningAction !== ""}
+											onclick={() => library.runSourceAction(source.source, action)}
+										>
+											{action.label}
+										</Button>
+									{/each}
+								</div>
+							</header>
 
-					{#if library.error}
-						<Notice tone="error">
-							{library.error}
-							<Button size="sm" onclick={() => library.retry()}>Retry</Button>
-						</Notice>
-					{/if}
-
-					{#if library.total === null}
-						{#if !library.error}<LoadingState label="Loading games..." />{/if}
-					{:else if library.total === 0}
-						{#if !library.error}
-							{#if library.filtersActive}
-								<EmptyState icon="search_off" title="No games match these filters.">
-									<Button size="sm" onclick={() => library.clearFilters()}>Clear filters</Button>
-								</EmptyState>
-							{:else if isPlugin}
-								<EmptyState
-									icon="store"
-									title="No games yet."
-									hint="Install the plugin, sign in, then press Sync now."
-								/>
-							{:else}
-								<EmptyState
-									icon="videogame_asset"
-									title="No games yet."
-									hint="Add a link or scan your folders."
-								>
-									<Button size="sm" variant="primary" onclick={() => (addOpen = true)}>Add game</Button>
-								</EmptyState>
+							{#if library.syncs[source.source]}
+								{@const progress = library.syncs[source.source]}
+								<p class="sync" class:failed={progress.phase === "error"} role="status">
+									{syncMessage(progress)}
+								</p>
 							{/if}
-						{/if}
-					{:else}
-						{#key library.section}
-							<LibraryGrid
-								{library}
-								{ratio}
-								minColumnPx={cardSize}
-								card={current.card}
-								{transfers}
-								blurUntilHover={blurCovers}
-								{revealed}
-								onOpen={openTile}
-							/>
-						{/key}
-					{/if}
+
+							{#if list.error}
+								<Notice tone="error">
+									{list.error}
+									<Button size="sm" onclick={() => library.retry(source.source)}>Retry</Button>
+								</Notice>
+							{/if}
+
+							{#if list.total === null}
+								{#if !list.error}<LoadingState label="Loading games..." />{/if}
+							{:else if list.total === 0}
+								{#if !list.error}
+									{#if library.filtersActive}
+										<EmptyState icon="search_off" title="No games match these filters.">
+											<Button size="sm" onclick={() => library.clearFilters()}>Clear filters</Button>
+										</EmptyState>
+									{:else}
+										<EmptyState icon="videogame_asset" title="No games yet." hint="Add a link or scan your folders.">
+											<Button size="sm" variant="primary" onclick={() => (addOpen = true)}>Add game</Button>
+										</EmptyState>
+									{/if}
+								{/if}
+							{:else}
+								<LibraryGrid
+									{library}
+									source={source.source}
+									ratio={coverRatioOf(source.cover)}
+									minColumnPx={cardSize}
+									card={source.card}
+									{transfers}
+									blurUntilHover={blurCovers}
+									{revealed}
+									onOpen={openTile}
+								/>
+							{/if}
+						</section>
+					{/each}
 				</div>
 
 				{#if selected}
@@ -403,6 +441,50 @@
 	.filters-toggle {
 		display: none;
 		margin-bottom: 12px;
+	}
+
+	/* Each source is a group: its header, then its sync note, notices and grid. */
+	.group {
+		/* Keeps the group title clear of the sticky page header when the rail scrolls to it. */
+		scroll-margin-top: 84px;
+		margin-bottom: 32px;
+	}
+
+	.group-header {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 10px;
+		margin-bottom: 12px;
+	}
+
+	.group-icon {
+		display: inline-flex;
+		color: var(--text-muted);
+	}
+
+	.group-header h2 {
+		margin: 0;
+		font-size: 1.25rem;
+		font-weight: 600;
+	}
+
+	.group-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+		margin-left: auto;
+	}
+
+	.sync {
+		min-height: 1.5em;
+		margin: 0 0 12px;
+		font-size: 0.875rem;
+		color: var(--text-muted);
+	}
+
+	.sync.failed {
+		color: var(--danger);
 	}
 
 	/* Wide: the panel sits beside the grid and stays in view while the grid scrolls. */

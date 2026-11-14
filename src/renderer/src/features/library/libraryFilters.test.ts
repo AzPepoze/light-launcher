@@ -1,11 +1,101 @@
 import { describe, expect, it } from "vitest";
+import { initialBrowseFilters } from "./browseFilters";
 import {
 	DEFAULT_FILTERS,
+	anyPicked,
 	hasActiveFilters,
 	libraryQuery,
+	pluginKeysOf,
 	sortOf,
+	sourceValues,
+	toLibraryFilters,
+	withLibraryFilters,
+	withoutPluginFilters,
 	type LibraryFilters
 } from "./libraryFilters";
+import type { SidebarGroup } from "../../lib/features/types";
+
+const PLUGIN_GROUPS: SidebarGroup[] = [
+	{
+		type: "sort",
+		id: "sort",
+		label: "Sort",
+		placeholder: "",
+		options: [],
+		dynamic: false,
+		searchable: false,
+		orderable: true,
+		default: null
+	},
+	{
+		type: "select",
+		id: "engine",
+		label: "Engine",
+		placeholder: "",
+		options: [],
+		dynamic: true,
+		searchable: true,
+		orderable: false,
+		default: null
+	},
+	{
+		type: "toggles",
+		id: "adult",
+		label: "Adult",
+		placeholder: "",
+		options: [{ value: "hide_adult", label: "Hide adult", icon: null, count: null }],
+		dynamic: false,
+		searchable: false,
+		orderable: false,
+		default: null
+	}
+];
+
+describe("plugin filter keys", () => {
+	it("lists the select id and the toggle option values, and skips the sort", () => {
+		expect(pluginKeysOf(PLUGIN_GROUPS)).toEqual(["engine", "hide_adult"]);
+	});
+
+	it("keeps only the values of the given groups", () => {
+		const values = { engine: "unity", hide_adult: true, installed: true, other: "x" };
+		expect(sourceValues(values, PLUGIN_GROUPS)).toEqual({ engine: "unity", hide_adult: true });
+	});
+
+	it("counts a value as picked only when it narrows the list", () => {
+		expect(anyPicked({ engine: "" })).toBe(false);
+		expect(anyPicked({ tags: [], hide_adult: false })).toBe(false);
+		expect(anyPicked({ engine: "unity" })).toBe(true);
+	});
+});
+
+describe("plugin choices in the saved filters", () => {
+	const filters = initialBrowseFilters(PLUGIN_GROUPS);
+
+	it("passes the picked plugin choices through toLibraryFilters", () => {
+		const picked = { ...filters, values: { ...filters.values, engine: "unity", hide_adult: true } };
+		expect(toLibraryFilters(picked).plugin).toEqual({ engine: "unity", hide_adult: true });
+	});
+
+	it("leaves out plugin keys that are not picked", () => {
+		expect(toLibraryFilters(filters).plugin).toEqual({});
+	});
+
+	it("restores the saved plugin choices and drops the ones it does not hold", () => {
+		const current = { ...filters, values: { ...filters.values, engine: "godot" } };
+		const saved: LibraryFilters = { ...DEFAULT_FILTERS, plugin: { hide_adult: true } };
+		const restored = withLibraryFilters(current, saved);
+		expect(restored.values.hide_adult).toBe(true);
+		expect(restored.values.engine).toBeUndefined();
+	});
+
+	it("drops the plugin choices and keeps the local values", () => {
+		const picked = {
+			...filters,
+			values: { ...filters.values, engine: "unity", installed: true }
+		};
+		expect(withoutPluginFilters(picked).values).toEqual({ installed: true });
+	});
+});
 
 describe("hasActiveFilters", () => {
 	it("is false for the defaults", () => {

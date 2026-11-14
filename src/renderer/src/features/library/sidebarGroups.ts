@@ -85,6 +85,15 @@ export function sidebarGroupsFor(
 		);
 }
 
+/**
+ * The dynamic groups whose choices the plugin must be asked for. Empty for local games and for
+ * sources with no sidebar, so nothing is requested for them.
+ */
+export function choiceGroupsOf(source: LibrarySource | undefined): SidebarGroup[] {
+	if (!source || source.source === LOCAL_SOURCE || source.sidebar.length === 0) return [];
+	return source.sidebar.filter((group) => group.dynamic);
+}
+
 /** The placeholder of the sidebar search box for a section. */
 export function searchPlaceholder(source: LibrarySource | undefined): string {
 	if (!source || source.source === LOCAL_SOURCE) return "Title, developer or tag";

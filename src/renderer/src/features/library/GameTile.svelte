@@ -3,7 +3,9 @@
 	import CoverImage from "@components/shared/CoverImage.svelte";
 	import Icon from "@components/shared/Icon.svelte";
 	import Marquee from "@components/shared/Marquee.svelte";
+	import { loadExeIcon } from "../../lib/iconService";
 	import type { Game, SourceCard } from "../../lib/features/types";
+	import { LOCAL_SOURCE } from "./librarySections";
 	import { cardView, type TileState } from "./tileCard";
 	import type { TransferKind } from "./transferState";
 
@@ -32,6 +34,30 @@
 	const view = $derived(cardView(game, card, transfer));
 	const cornerStart = $derived(view.states.filter((state) => state === "favorite"));
 	const cornerEnd = $derived(view.states.filter((state) => state !== "favorite"));
+	const exePath = $derived(exeIconPathFor(game));
+	/** The exe icon as a data URL, shown only for a local game with no cover. */
+	let exeIcon = $state("");
+
+	// Runs once per game path. Only a stale request is dropped, so a reused tile never shows the old icon.
+	$effect(() => {
+		const path = exePath;
+		exeIcon = "";
+		if (!path) return;
+		let current = true;
+		void loadExeIcon(path, "low").then((icon) => {
+			if (current) exeIcon = icon;
+		});
+		return () => {
+			current = false;
+		};
+	});
+
+	/** The exe to read an icon from: a local game with no cover and a known exe. Otherwise null. */
+	function exeIconPathFor(item: Game): string | null {
+		const hasCover = Boolean(item.cover || item.coverLocal);
+		if (item.source !== LOCAL_SOURCE || hasCover) return null;
+		return item.exePath || null;
+	}
 
 	const STATE_VIEW: Record<TileState, { label: string; icon: string; tone: "danger" | "accent" | "neutral" | "warning" }> = {
 		favorite: { label: "Favorite", icon: "favorite", tone: "danger" },
@@ -53,6 +79,8 @@
 	<span class="cover" class:blurred={blurUntilHover} style:aspect-ratio={ratio}>
 		{#if game.cover || game.coverLocal}
 			<CoverImage {game} />
+		{:else if exeIcon}
+			<img class="exe-icon" src={exeIcon} alt="" />
 		{:else}
 			<Icon name="videogame_asset" size={40} class="placeholder" />
 		{/if}
@@ -156,6 +184,13 @@
 
 		:global(.placeholder) {
 			color: var(--text-muted);
+		}
+
+		/* The exe icon is small art: it keeps its shape and sits centred on the tile. */
+		.exe-icon {
+			width: 48%;
+			height: 48%;
+			object-fit: contain;
 		}
 	}
 

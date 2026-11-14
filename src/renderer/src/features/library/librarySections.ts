@@ -28,6 +28,17 @@ export function librarySections(sources: LibrarySource[]): LibrarySource[] {
 	return [local, ...plugins];
 }
 
+/** A section shows when it is the local one, or a plugin source with games or an error to report. */
+export function showsSection(source: LibrarySource, total: number | null, hasError: boolean): boolean {
+	if (source.source === LOCAL_SOURCE) return true;
+	return (total ?? 0) > 0 || hasError;
+}
+
+/** The element id of a source's group on the Library page, used by the source rail to scroll to it. */
+export function sectionElementId(source: string): string {
+	return `library-section-${source}`;
+}
+
 /** The human name of a source. Falls back to the id when the overview has no label for it. */
 export function sourceLabel(sources: LibrarySource[], source: string): string {
 	const known = sources.find((item) => item.source === source)?.label;

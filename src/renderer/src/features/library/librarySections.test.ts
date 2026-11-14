@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { LibrarySource } from "../../lib/features/types";
-import { LOCAL_SOURCE, librarySections, sourceLabel } from "./librarySections";
+import {
+	LOCAL_SOURCE,
+	librarySections,
+	sectionElementId,
+	showsSection,
+	sourceLabel
+} from "./librarySections";
 
 const SERVER_SOURCES: LibrarySource[] = [
 	{ source: "f95", label: "F95 Zone", kind: "plugin", plugin: "f95", capabilities: ["browse", "updateCheck"], sync: false, updateCheck: true, count: 12, tile: "wide", cover: "16:9", actions: [], card: null, sidebar: [] },
@@ -45,6 +51,36 @@ describe("librarySections", () => {
 
 	it("gives a single section for an empty overview", () => {
 		expect(librarySections([]).map((item) => item.source)).toEqual([LOCAL_SOURCE]);
+	});
+});
+
+describe("showsSection", () => {
+	const [f95, local, itch] = SERVER_SOURCES;
+
+	it("always shows the local section, even when empty", () => {
+		expect(showsSection(local, 0, false)).toBe(true);
+	});
+
+	it("hides a plugin source with no games", () => {
+		expect(showsSection(itch, 0, false)).toBe(false);
+	});
+
+	it("shows a plugin source with games", () => {
+		expect(showsSection(f95, 4, false)).toBe(true);
+	});
+
+	it("shows a plugin source that failed to load, so the error is seen", () => {
+		expect(showsSection(itch, 0, true)).toBe(true);
+	});
+
+	it("hides a plugin source that is still loading", () => {
+		expect(showsSection(f95, null, false)).toBe(false);
+	});
+});
+
+describe("sectionElementId", () => {
+	it("builds a stable id from the source id", () => {
+		expect(sectionElementId("f95")).toBe("library-section-f95");
 	});
 });
 
