@@ -12,10 +12,13 @@ export function scanPercent(done: number, total: number): number | null {
 	return Math.min(1, Math.max(0, done / total));
 }
 
-export function scanStatusText(done: number, total: number, current = ""): string {
-	if (current) return `Scanning ${current}... ${done} of ${total}`;
-	if (total <= 0) return "Scanning folders...";
-	return `Scanning folders... ${done} of ${total}`;
+export function scanStatusText(done: number, total: number, current = "", found?: number): string {
+	const base = current
+		? `Scanning ${current}... ${done} of ${total}`
+		: total <= 0
+			? "Scanning folders..."
+			: `Scanning folders... ${done} of ${total}`;
+	return found === undefined ? base : `${base} · ${found} found`;
 }
 
 /** The header status line while the library loads or folders scan. Null when nothing runs. */
@@ -23,7 +26,7 @@ export function homeStatus(isLoading: boolean, scan: HomeScan | null): HomeStatu
 	if (isLoading) return { text: "Loading games...", percent: null };
 	if (scan?.state !== "running") return null;
 	return {
-		text: scanStatusText(scan.done, scan.total, scan.current),
+		text: scanStatusText(scan.done, scan.total, scan.current, scan.found),
 		percent: scanPercent(scan.done, scan.total)
 	};
 }

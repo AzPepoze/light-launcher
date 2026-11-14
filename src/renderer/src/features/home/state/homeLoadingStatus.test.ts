@@ -27,6 +27,11 @@ describe("scanStatusText", () => {
 		expect(scanStatusText(2, 5, "Games")).toBe("Scanning Games... 2 of 5");
 	});
 
+	it("appends the games found so far", () => {
+		expect(scanStatusText(0, 1, "Games", 12)).toBe("Scanning Games... 0 of 1 · 12 found");
+		expect(scanStatusText(0, 1, "Games", 0)).toBe("Scanning Games... 0 of 1 · 0 found");
+	});
+
 	it("falls back to the folder count when current is empty", () => {
 		expect(scanStatusText(2, 5, "")).toBe("Scanning folders... 2 of 5");
 	});
@@ -38,22 +43,28 @@ describe("scanStatusText", () => {
 
 describe("homeStatus", () => {
 	it("shows the library load first, with no progress value", () => {
-		expect(homeStatus(true, { state: "running", done: 1, total: 3, current: "Games" })).toEqual({
+		expect(
+			homeStatus(true, { state: "running", done: 1, total: 3, found: 4, current: "Games" })
+		).toEqual({
 			text: "Loading games...",
 			percent: null
 		});
 	});
 
 	it("shows scan progress once the library is loaded", () => {
-		expect(homeStatus(false, { state: "running", done: 3, total: 5, current: "" })).toEqual({
-			text: "Scanning folders... 3 of 5",
+		expect(
+			homeStatus(false, { state: "running", done: 3, total: 5, found: 18, current: "" })
+		).toEqual({
+			text: "Scanning folders... 3 of 5 · 18 found",
 			percent: 0.6
 		});
 	});
 
-	it("names the folder being scanned", () => {
-		expect(homeStatus(false, { state: "running", done: 1, total: 4, current: "Library" })).toEqual({
-			text: "Scanning Library... 1 of 4",
+	it("names the folder being scanned and the games found", () => {
+		expect(
+			homeStatus(false, { state: "running", done: 1, total: 4, found: 9, current: "Library" })
+		).toEqual({
+			text: "Scanning Library... 1 of 4 · 9 found",
 			percent: 0.25
 		});
 	});

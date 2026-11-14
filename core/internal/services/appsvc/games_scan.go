@@ -37,12 +37,19 @@ func (s *service) getAutoScannedGames(force bool) ([]types.ScannedFolderGroup, e
 	index := newScanIndex(settings.ScanFolders, s.games.List(), s.preferences.Preferred())
 	blacklist := blacklistSet(settings.Blacklist)
 
-	defer s.reportScan(types.HomeScanDone, len(folders), len(folders), "")
+	found := 0
+	defer func() {
+		s.reportScan(types.HomeScanDone, len(folders), len(folders), found, "")
+	}()
 
 	groups := []types.ScannedFolderGroup{}
 	for i, folderCfg := range folders {
-		s.reportScan(types.HomeScanRunning, i, len(folders), filepath.Base(folderCfg.Path))
-		group, err := s.scanFolderGroup(folderCfg, index, blacklist)
+		current := filepath.Base(folderCfg.Path)
+		s.reportScan(types.HomeScanRunning, i, len(folders), found, current)
+		group, err := s.scanFolderGroup(folderCfg, index, blacklist, func() {
+			found++
+			s.reportScan(types.HomeScanRunning, i, len(folders), found, current)
+		})
 		if err != nil {
 			return nil, err
 		}
@@ -54,11 +61,17 @@ func (s *service) getAutoScannedGames(force bool) ([]types.ScannedFolderGroup, e
 }
 
 // reportScan sends folder scan progress as home.scan. A scan with no folders sends nothing.
-func (s *service) reportScan(state string, done, total int, current string) {
+func (s *service) reportScan(state string, done, total, found int, current string) {
 	if s.events == nil || total == 0 {
 		return
 	}
-	s.events.Emit(homeScanChannel, types.HomeScanEvent{State: state, Done: done, Total: total, Current: current})
+	s.events.Emit(homeScanChannel, types.HomeScanEvent{
+		State:   state,
+		Done:    done,
+		Total:   total,
+		Found:   found,
+		Current: current,
+	})
 }
 
 func cachedScanGroups() ([]types.ScannedFolderGroup, bool) {
@@ -112,7 +125,7 @@ func blacklistSet(blacklist []string) map[string]bool {
 	return set
 }
 
-func (s *service) scanFolderGroup(folderCfg types.ScanFolderConfig, index scanIndex, blacklist map[string]bool) (types.ScannedFolderGroup, error) {
+func (s *service) scanFolderGroup(folderCfg types.ScanFolderConfig, index scanIndex, blacklist map[string]bool, onGame func()) (types.ScannedFolderGroup, error) {
 	folder := config.CleanPath(folderCfg.Path)
 	excludeNames := folderCfg.ExcludeNames
 	if excludeNames == nil {
@@ -127,6 +140,9 @@ func (s *service) scanFolderGroup(folderCfg types.ScanFolderConfig, index scanIn
 			return types.ScannedFolderGroup{}, err
 		}
 		games = append(games, game)
+		if onGame != nil {
+			onGame()
+		}
 	}
 
 	return types.ScannedFolderGroup{

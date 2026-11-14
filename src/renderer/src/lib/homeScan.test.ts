@@ -3,34 +3,57 @@ import { toHomeScan } from "./homeScan";
 
 describe("toHomeScan", () => {
 	it("maps a running payload to progress", () => {
+		expect(toHomeScan({ state: "running", done: 2, total: 5, found: 7 })).toEqual({
+			state: "running",
+			done: 2,
+			total: 5,
+			found: 7,
+			current: ""
+		});
+	});
+
+	it("defaults a missing found count to zero", () => {
 		expect(toHomeScan({ state: "running", done: 2, total: 5 })).toEqual({
 			state: "running",
 			done: 2,
 			total: 5,
+			found: 0,
+			current: ""
+		});
+		expect(toHomeScan({ state: "running", done: 2, total: 5, found: "7" })).toEqual({
+			state: "running",
+			done: 2,
+			total: 5,
+			found: 0,
 			current: ""
 		});
 	});
 
 	it("keeps the current folder name", () => {
-		expect(toHomeScan({ state: "running", done: 1, total: 3, current: "Games" })).toEqual({
-			state: "running",
-			done: 1,
-			total: 3,
-			current: "Games"
-		});
+		expect(toHomeScan({ state: "running", done: 1, total: 3, found: 4, current: "Games" })).toEqual(
+			{
+				state: "running",
+				done: 1,
+				total: 3,
+				found: 4,
+				current: "Games"
+			}
+		);
 	});
 
 	it("treats a blank current as empty", () => {
-		expect(toHomeScan({ state: "running", done: 1, total: 3, current: "   " })).toEqual({
+		expect(toHomeScan({ state: "running", done: 1, total: 3, found: 0, current: "   " })).toEqual({
 			state: "running",
 			done: 1,
 			total: 3,
+			found: 0,
 			current: ""
 		});
-		expect(toHomeScan({ state: "running", done: 1, total: 3, current: 7 })).toEqual({
+		expect(toHomeScan({ state: "running", done: 1, total: 3, found: 0, current: 7 })).toEqual({
 			state: "running",
 			done: 1,
 			total: 3,
+			found: 0,
 			current: ""
 		});
 	});

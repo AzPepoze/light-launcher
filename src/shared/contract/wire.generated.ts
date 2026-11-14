@@ -911,6 +911,7 @@ export interface WireHomeScan {
 	state: string;
 	done: number;
 	total: number;
+	found: number;
 	current?: string;
 }
 

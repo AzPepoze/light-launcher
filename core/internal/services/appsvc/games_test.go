@@ -37,9 +37,37 @@ func TestGetAutoScannedGamesReportsFolderProgress(t *testing.T) {
 		t.Fatalf("getAutoScannedGames: %v", err)
 	}
 	want := []types.HomeScanEvent{
-		{State: types.HomeScanRunning, Done: 0, Total: 2, Current: filepath.Base(folders[0])},
-		{State: types.HomeScanRunning, Done: 1, Total: 2, Current: filepath.Base(folders[1])},
-		{State: types.HomeScanDone, Done: 2, Total: 2},
+		{State: types.HomeScanRunning, Done: 0, Total: 2, Found: 0, Current: filepath.Base(folders[0])},
+		{State: types.HomeScanRunning, Done: 0, Total: 2, Found: 1, Current: filepath.Base(folders[0])},
+		{State: types.HomeScanRunning, Done: 1, Total: 2, Found: 1, Current: filepath.Base(folders[1])},
+		{State: types.HomeScanRunning, Done: 1, Total: 2, Found: 2, Current: filepath.Base(folders[1])},
+		{State: types.HomeScanDone, Done: 2, Total: 2, Found: 2},
+	}
+	if !slices.Equal(recorder.events, want) {
+		t.Fatalf("scan events = %+v, want %+v", recorder.events, want)
+	}
+}
+
+func TestGetAutoScannedGamesReportsFoundWithinOneFolder(t *testing.T) {
+	svc := newTestService(t)
+	folder := config.CleanPath(t.TempDir())
+	for _, name := range []string{"first", "second"} {
+		mustWrite(t, filepath.Join(folder, name, name+".exe"))
+	}
+	if err := svc.addScanFolder(folder); err != nil {
+		t.Fatalf("addScanFolder: %v", err)
+	}
+	recorder := &scanEventRecorder{}
+	svc.events = recorder
+
+	if _, err := svc.getAutoScannedGames(true); err != nil {
+		t.Fatalf("getAutoScannedGames: %v", err)
+	}
+	want := []types.HomeScanEvent{
+		{State: types.HomeScanRunning, Done: 0, Total: 1, Found: 0, Current: filepath.Base(folder)},
+		{State: types.HomeScanRunning, Done: 0, Total: 1, Found: 1, Current: filepath.Base(folder)},
+		{State: types.HomeScanRunning, Done: 0, Total: 1, Found: 2, Current: filepath.Base(folder)},
+		{State: types.HomeScanDone, Done: 1, Total: 1, Found: 2},
 	}
 	if !slices.Equal(recorder.events, want) {
 		t.Fatalf("scan events = %+v, want %+v", recorder.events, want)

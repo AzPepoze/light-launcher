@@ -136,6 +136,7 @@ type HomeScanEvent struct {
 	State   string `json:"state"`
 	Done    int    `json:"done"`
 	Total   int    `json:"total"`
+	Found   int    `json:"found"`
 	Current string `json:"current,omitempty"`
 }
 
