@@ -148,6 +148,10 @@
 	}
 
 	.status-text {
+		flex: 0 1 auto;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
 		font-size: 0.85rem;
 		color: var(--text-muted);
 		white-space: nowrap;
