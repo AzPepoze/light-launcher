@@ -143,6 +143,15 @@
 
 		<PluginRegistrySetting {settings} />
 
+		<Section title="Window type" icon="open_in_browser">
+			<SlideButton
+				label="Open in browser"
+				subtitle="Use your default browser instead of the app window. Applies on the next start."
+				checked={settings.appSettings.OpenInBrowser}
+				onChange={(enabled) => settings.setOpenInBrowser(enabled)}
+			/>
+		</Section>
+
 		{#if platformInfo.os === "linux"}
 			<Section title="Display & window platform" icon="desktop_windows">
 				<SettingRow

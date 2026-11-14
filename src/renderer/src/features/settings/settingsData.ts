@@ -9,6 +9,7 @@ export const DEFAULT_SCAN_DEPTH = 2;
 export const DEFAULT_APP_SETTINGS: AppSettings = {
 	TransparentMode: true,
 	NativeWayland: false,
+	OpenInBrowser: false,
 	ScanFolders: [],
 	ScanFolderConfigs: [],
 	Blacklist: [],
@@ -72,10 +73,7 @@ export function withRemovedScanFolder(settings: AppSettings, path: string): AppS
 }
 
 /** Replaces the scan settings of a folder, or adds them when the folder has none yet. */
-export function withScanFolderConfig(
-	settings: AppSettings,
-	config: ScanFolderConfig
-): AppSettings {
+export function withScanFolderConfig(settings: AppSettings, config: ScanFolderConfig): AppSettings {
 	const key = folderKey(config.Path);
 	const configs = settings.ScanFolderConfigs ?? [];
 	const index = configs.findIndex((item) => folderKey(item.Path) === key);

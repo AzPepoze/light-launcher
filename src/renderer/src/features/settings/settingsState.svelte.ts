@@ -2,11 +2,7 @@ import { get } from "svelte/store";
 import { notifications } from "@stores/notificationStore";
 import { plainMessage } from "@lib/plainMessage";
 import { settingsStore, type UserSettings } from "@stores/settingsStore";
-import {
-	folderInputError,
-	gamesFoundText,
-	gamesInFolder
-} from "@lib/features/scanFolders";
+import { folderInputError, gamesFoundText, gamesInFolder } from "@lib/features/scanFolders";
 import { sectionScroll } from "@lib/features/settingsSection";
 import { createLogger } from "@lib/logger";
 import { libraryApi } from "@lib/features/libraryApi";
@@ -89,6 +85,18 @@ export class SettingsState {
 		await this.saveAndRestart(next, "Restarting app to apply display platform changes...");
 	}
 
+	/** Saves the browser switch. The change applies on the next start, so the app does not restart. */
+	async setOpenInBrowser(enabled: boolean): Promise<void> {
+		const next = appSettingsWith(this.appSettings, { OpenInBrowser: enabled });
+		try {
+			await this.persist(next);
+			notifications.info("Takes effect the next time you start LightLauncher");
+		} catch (err) {
+			log.error("Failed to save setting", err);
+			notifications.error("Failed to save setting");
+		}
+	}
+
 	toggleTheme(): void {
 		this.applyUserSettings({ ...this.userSettings, theme: toggledTheme(this.userSettings.theme) });
 	}
@@ -153,9 +161,7 @@ export class SettingsState {
 		const next = appSettingsWith(this.appSettings, { BlurCoversUntilHover: enabled });
 		try {
 			await this.persist(next);
-			notifications.success(
-				enabled ? "Covers blur until hovered" : "Covers stay sharp"
-			);
+			notifications.success(enabled ? "Covers blur until hovered" : "Covers stay sharp");
 		} catch (err) {
 			log.error("Failed to save cover blur setting", err);
 			notifications.error(`Failed to save settings: ${plainMessage(err)}`);
@@ -340,7 +346,9 @@ export class SettingsState {
 			if (picked) await this.addFolder(picked);
 		} catch (err) {
 			log.error("Folder picker failed", err);
-			notifications.error("Could not open the folder picker. Type the path instead.", { source: "Settings" });
+			notifications.error("Could not open the folder picker. Type the path instead.", {
+				source: "Settings"
+			});
 		}
 	}
 
