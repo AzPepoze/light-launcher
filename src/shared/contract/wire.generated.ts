@@ -880,6 +880,7 @@ export interface WireMemoryConfig {
 
 /** types.GameInfo, from core/internal/types/types.go. */
 export interface WireGameInfo {
+	id?: number;
 	name: string;
 	path: string;
 	icon: string;
@@ -889,6 +890,8 @@ export interface WireGameInfo {
 	folder: string;
 	launchers: WireLauncher[] | null;
 	launcherCount: number;
+	cover?: string;
+	coverLocal?: string;
 }
 
 /** types.Launcher, from core/internal/types/types.go. */
@@ -913,6 +916,7 @@ export interface WireHomeScan {
 	total: number;
 	found: number;
 	current?: string;
+	group?: WireScannedFolderGroup;
 }
 
 /** types.RunningSession, from core/internal/types/types.go. */

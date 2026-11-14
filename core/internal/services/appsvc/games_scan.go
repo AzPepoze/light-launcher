@@ -53,6 +53,7 @@ func (s *service) getAutoScannedGames(force bool) ([]types.ScannedFolderGroup, e
 		if err != nil {
 			return nil, err
 		}
+		s.emitScanGroup(i+1, len(folders), found, current, group)
 		groups = append(groups, group)
 	}
 
@@ -62,16 +63,32 @@ func (s *service) getAutoScannedGames(force bool) ([]types.ScannedFolderGroup, e
 
 // reportScan sends folder scan progress as home.scan. A scan with no folders sends nothing.
 func (s *service) reportScan(state string, done, total, found int, current string) {
-	if s.events == nil || total == 0 {
-		return
-	}
-	s.events.Emit(homeScanChannel, types.HomeScanEvent{
+	s.emitScan(types.HomeScanEvent{
 		State:   state,
 		Done:    done,
 		Total:   total,
 		Found:   found,
 		Current: current,
 	})
+}
+
+// emitScanGroup sends a folder's finished games as one home.scan event.
+func (s *service) emitScanGroup(done, total, found int, current string, group types.ScannedFolderGroup) {
+	s.emitScan(types.HomeScanEvent{
+		State:   types.HomeScanRunning,
+		Done:    done,
+		Total:   total,
+		Found:   found,
+		Current: current,
+		Group:   &group,
+	})
+}
+
+func (s *service) emitScan(event types.HomeScanEvent) {
+	if s.events == nil || event.Total == 0 {
+		return
+	}
+	s.events.Emit(homeScanChannel, event)
 }
 
 func cachedScanGroups() ([]types.ScannedFolderGroup, bool) {

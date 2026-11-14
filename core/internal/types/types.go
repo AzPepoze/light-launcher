@@ -114,6 +114,7 @@ type Launcher struct {
 
 // GameInfo is one card. Path, Name and Config describe the primary launcher.
 type GameInfo struct {
+	ID            int64         `json:"id,omitempty"`
 	Name          string        `json:"name"`
 	Path          string        `json:"path"`
 	Icon          string        `json:"icon"`
@@ -123,6 +124,9 @@ type GameInfo struct {
 	Folder        string        `json:"folder"`
 	Launchers     []Launcher    `json:"launchers"`
 	LauncherCount int           `json:"launcherCount"`
+	// Cover is the remote cover URL. CoverLocal is the cached copy, relative to the media folder.
+	Cover      string `json:"cover,omitempty"`
+	CoverLocal string `json:"coverLocal,omitempty"`
 }
 
 type ScannedFolderGroup struct {
@@ -133,11 +137,12 @@ type ScannedFolderGroup struct {
 
 // HomeScanEvent is the payload of home.scan: folder scan progress for the Home page.
 type HomeScanEvent struct {
-	State   string `json:"state"`
-	Done    int    `json:"done"`
-	Total   int    `json:"total"`
-	Found   int    `json:"found"`
-	Current string `json:"current,omitempty"`
+	State   string              `json:"state"`
+	Done    int                 `json:"done"`
+	Total   int                 `json:"total"`
+	Found   int                 `json:"found"`
+	Current string              `json:"current,omitempty"`
+	Group   *ScannedFolderGroup `json:"group,omitempty"`
 }
 
 // Values of HomeScanEvent.State.

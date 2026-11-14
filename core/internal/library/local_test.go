@@ -228,3 +228,43 @@ func TestLaunchLocalUsesSavedConfig(t *testing.T) {
 		t.Error("last played was not recorded")
 	}
 }
+
+func TestLocalGamesCarryCoverFields(t *testing.T) {
+	ctx := context.Background()
+	lib := openTestLibrary(t, Options{})
+	root := filepath.Join(t.TempDir(), "Harbor")
+	config := localConfig("one", "Harbor", filepath.Join(root, "Harbor.exe"))
+	if _, err := lib.BackfillLocal(ctx, LocalBackfillInput{
+		Configs:     []types.LaunchOptions{config},
+		ScanFolders: []string{filepath.Dir(root)},
+	}); err != nil {
+		t.Fatalf("BackfillLocal: %v", err)
+	}
+	page, err := lib.List(ctx, Filter{Source: "manual"})
+	if err != nil || len(page.Items) != 1 {
+		t.Fatalf("list = %d items, err %v; want 1", len(page.Items), err)
+	}
+	coverPath := filepath.Join(lib.opts.MediaDir, "covers", "harbor.jpg")
+	coverURL := "https://example.test/harbor.jpg"
+	if _, err := lib.Patch(ctx, page.Items[0].ID, Patch{CoverPath: &coverPath, CoverURL: &coverURL}); err != nil {
+		t.Fatalf("Patch: %v", err)
+	}
+
+	games, err := lib.LocalGames(ctx)
+	if err != nil {
+		t.Fatalf("LocalGames: %v", err)
+	}
+	if len(games) != 1 {
+		t.Fatalf("games = %d, want 1", len(games))
+	}
+	game := games[0]
+	if game.ID != page.Items[0].ID {
+		t.Errorf("id = %d, want %d", game.ID, page.Items[0].ID)
+	}
+	if game.Cover != coverURL {
+		t.Errorf("cover = %q, want %q", game.Cover, coverURL)
+	}
+	if want := "covers/harbor.jpg"; game.CoverLocal != want {
+		t.Errorf("coverLocal = %q, want %q", game.CoverLocal, want)
+	}
+}

@@ -36,7 +36,7 @@ func (l *Library) LocalGames(ctx context.Context) ([]types.GameInfo, error) {
 	}
 	out := make([]types.GameInfo, 0, len(games))
 	for _, game := range games {
-		out = append(out, localGameInfo(game, launchers[game.ID]))
+		out = append(out, l.localGameInfo(game, launchers[game.ID]))
 	}
 	return out, nil
 }
@@ -74,7 +74,7 @@ func (l *Library) LocalGroups(ctx context.Context) ([]types.ScannedFolderGroup, 
 				FolderName: config.BaseName(folder),
 			})
 		}
-		groups[at].Games = append(groups[at].Games, localGameInfo(game, nil))
+		groups[at].Games = append(groups[at].Games, l.localGameInfo(game, nil))
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -273,7 +273,8 @@ func (l *Library) allLaunchers(ctx context.Context) (map[int64][]types.Launcher,
 	return out, rows.Err()
 }
 
-func localGameInfo(game Game, launchers []types.Launcher) types.GameInfo {
+// localGameInfo builds the card for a local row. Its cover fields follow decorate in library.go.
+func (l *Library) localGameInfo(game Game, launchers []types.Launcher) types.GameInfo {
 	folder := ""
 	if game.FolderPath != nil {
 		folder = *game.FolderPath
@@ -295,7 +296,8 @@ func localGameInfo(game Game, launchers []types.Launcher) types.GameInfo {
 	if len(launchers) == 0 {
 		launchers = []types.Launcher{{Name: game.Title, Path: path, Kind: types.LauncherMain, Primary: true}}
 	}
-	return types.GameInfo{
+	info := types.GameInfo{
+		ID:            game.ID,
 		Name:          game.Title,
 		Path:          path,
 		Config:        *config,
@@ -304,4 +306,11 @@ func localGameInfo(game Game, launchers []types.Launcher) types.GameInfo {
 		Launchers:     launchers,
 		LauncherCount: len(launchers),
 	}
+	if game.CoverURL != nil {
+		info.Cover = *game.CoverURL
+	}
+	if local := l.media.localPath(game.CoverPath); local != nil {
+		info.CoverLocal = *local
+	}
+	return info
 }

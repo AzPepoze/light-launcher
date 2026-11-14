@@ -19,6 +19,17 @@ func (r *scanEventRecorder) Emit(channel string, data any) {
 	}
 }
 
+// progressEvents drops the per-folder group events, leaving only progress.
+func progressEvents(events []types.HomeScanEvent) []types.HomeScanEvent {
+	progress := make([]types.HomeScanEvent, 0, len(events))
+	for _, event := range events {
+		if event.Group == nil {
+			progress = append(progress, event)
+		}
+	}
+	return progress
+}
+
 func TestGetAutoScannedGamesReportsFolderProgress(t *testing.T) {
 	svc := newTestService(t)
 	folders := make([]string, 0, 2)
@@ -43,8 +54,49 @@ func TestGetAutoScannedGamesReportsFolderProgress(t *testing.T) {
 		{State: types.HomeScanRunning, Done: 1, Total: 2, Found: 2, Current: filepath.Base(folders[1])},
 		{State: types.HomeScanDone, Done: 2, Total: 2, Found: 2},
 	}
-	if !slices.Equal(recorder.events, want) {
-		t.Fatalf("scan events = %+v, want %+v", recorder.events, want)
+	if got := progressEvents(recorder.events); !slices.Equal(got, want) {
+		t.Fatalf("scan events = %+v, want %+v", got, want)
+	}
+}
+
+func TestGetAutoScannedGamesSendsGroupPerFolderBeforeDone(t *testing.T) {
+	svc := newTestService(t)
+	folders := make([]string, 0, 2)
+	for range 2 {
+		folder := config.CleanPath(t.TempDir())
+		folders = append(folders, folder)
+		mustWrite(t, filepath.Join(folder, "game.exe"))
+		if err := svc.addScanFolder(folder); err != nil {
+			t.Fatalf("addScanFolder: %v", err)
+		}
+	}
+	recorder := &scanEventRecorder{}
+	svc.events = recorder
+
+	if _, err := svc.getAutoScannedGames(true); err != nil {
+		t.Fatalf("getAutoScannedGames: %v", err)
+	}
+	events := recorder.events
+	last := len(events) - 1
+	if events[last].State != types.HomeScanDone {
+		t.Fatalf("last scan event = %+v, want done", events[last])
+	}
+	var groupEvents []types.HomeScanEvent
+	for _, event := range events[:last] {
+		if event.Group != nil {
+			groupEvents = append(groupEvents, event)
+		}
+	}
+	if len(groupEvents) != len(folders) {
+		t.Fatalf("group events = %d, want %d", len(groupEvents), len(folders))
+	}
+	for i, event := range groupEvents {
+		if event.State != types.HomeScanRunning || event.Done != i+1 {
+			t.Fatalf("group event %d = %+v, want running with done %d", i, event, i+1)
+		}
+		if event.Group.FolderPath != folders[i] {
+			t.Fatalf("group event %d folder = %q, want %q", i, event.Group.FolderPath, folders[i])
+		}
 	}
 }
 
@@ -69,8 +121,8 @@ func TestGetAutoScannedGamesReportsFoundWithinOneFolder(t *testing.T) {
 		{State: types.HomeScanRunning, Done: 0, Total: 1, Found: 2, Current: filepath.Base(folder)},
 		{State: types.HomeScanDone, Done: 1, Total: 1, Found: 2},
 	}
-	if !slices.Equal(recorder.events, want) {
-		t.Fatalf("scan events = %+v, want %+v", recorder.events, want)
+	if got := progressEvents(recorder.events); !slices.Equal(got, want) {
+		t.Fatalf("scan events = %+v, want %+v", got, want)
 	}
 }
 
