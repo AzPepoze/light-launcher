@@ -94,10 +94,6 @@ export const PASTEL_PALETTE: LogColor[] = [
 	}
 ];
 
-export const ANSI_RESET = "\x1b[0m";
-export const ANSI_DIM = "\x1b[2m";
-export const ANSI_BOLD = "\x1b[1m";
-
 export const LEVEL_COLORS: Record<LogLevel, { ansi: string; hex: string; bg: string }> = {
 	debug: {
 		ansi: "\x1b[38;2;176;190;197m",

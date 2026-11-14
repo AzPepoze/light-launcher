@@ -29,7 +29,7 @@ export interface MediaCache {
 	dispose(): void;
 }
 
-export const MEDIA_CACHE_LIMIT = 200;
+const MEDIA_CACHE_LIMIT = 200;
 
 /** The server route that serves the cached cover of a game. */
 export function coverRoute(id: number): string {

@@ -3,7 +3,7 @@ import { folderKey } from "@lib/features/scanFolders";
 import { LIBRARY_CARD_SIZE_DEFAULT } from "./libraryAppearance";
 
 /** The folder depth the backend uses when a folder is added without settings. */
-export const DEFAULT_SCAN_DEPTH = 2;
+const DEFAULT_SCAN_DEPTH = 2;
 
 /** What the page shows before the backend answers, and what fills missing fields. */
 export const DEFAULT_APP_SETTINGS: AppSettings = {

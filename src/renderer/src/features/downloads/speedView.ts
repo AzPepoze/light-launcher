@@ -1,4 +1,4 @@
-export const SAMPLE_COUNT = 60;
+const SAMPLE_COUNT = 60;
 export const SAMPLE_INTERVAL_MS = 1000;
 
 /** Adds a sample and keeps only the newest `max`. Returns a new array. */

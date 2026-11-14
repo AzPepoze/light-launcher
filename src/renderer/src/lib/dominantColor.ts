@@ -110,7 +110,3 @@ export async function getDominantColor(
 		el.src = src;
 	});
 }
-
-export function clearDominantColorCache() {
-	cache.clear();
-}

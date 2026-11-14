@@ -235,7 +235,7 @@ export function defaultInput(field: SettingsField): FieldInput | undefined {
 	return inputFromValue(field, field.defaultValue);
 }
 
-export function sameInput(a: FieldInput | undefined, b: FieldInput | undefined): boolean {
+function sameInput(a: FieldInput | undefined, b: FieldInput | undefined): boolean {
 	if (Array.isArray(a) && Array.isArray(b)) {
 		return a.length === b.length && a.every((item, index) => item === b[index]);
 	}

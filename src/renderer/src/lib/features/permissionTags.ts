@@ -18,7 +18,7 @@ export interface PermissionTag {
 	sensitive: boolean;
 }
 
-export function permissionKind(entry: string): PermissionKind {
+function permissionKind(entry: string): PermissionKind {
 	if (entry.startsWith(NETWORK_PREFIX)) return "site";
 	if (entry.startsWith(FILES_PREFIX)) return "files";
 	return FLAG_KINDS.get(entry) ?? "other";

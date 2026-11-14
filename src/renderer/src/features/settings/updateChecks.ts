@@ -18,9 +18,9 @@ export interface SourceUpdateView {
 }
 
 /** Limits and defaults from core/internal/types/types.go. */
-export const UPDATE_HOURS_MAX = 720;
-export const DEFAULT_UPDATE_INTERVAL_HOURS = 24;
-export const DEFAULT_UPDATE_RECHECK_HOURS = 24;
+const UPDATE_HOURS_MAX = 720;
+const DEFAULT_UPDATE_INTERVAL_HOURS = 24;
+const DEFAULT_UPDATE_RECHECK_HOURS = 24;
 
 export const INTERVAL_OPTIONS: DropdownOption[] = [
 	{ value: "0", label: "Never" },
@@ -95,7 +95,7 @@ export function globalUpdateChecks(settings: WireUpdateCheckSettings | undefined
 }
 
 /** The mode of a source. A missing or unknown mode means inherit. */
-export function sourceMode(settings: WireUpdateCheckSettings | undefined, sourceId: string): SourceMode {
+function sourceMode(settings: WireUpdateCheckSettings | undefined, sourceId: string): SourceMode {
 	return sourceModeFromOption(settings?.sources?.[sourceId]?.mode ?? "inherit");
 }
 

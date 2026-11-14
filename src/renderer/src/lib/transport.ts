@@ -106,11 +106,6 @@ export function isMethodNotFound(err: unknown): boolean {
 	return err instanceof InvokeError && err.code === "method_not_found";
 }
 
-/** True when a failed call needs the user to sign in or add a key. */
-export function isAuthRequired(err: unknown): boolean {
-	return err instanceof InvokeError && err.code === "auth_required";
-}
-
 async function unwrapEnvelope<T>(response: Response, label: string): Promise<T> {
 	const body = await readEnvelope<T>(response, label);
 	if (!body.success) {

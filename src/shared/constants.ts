@@ -1,16 +1,10 @@
 export const AppName = "light-launcher";
 export const ConfigDirName = "config/executables";
 export const PrefixesDirName = "prefixes";
-export const LogsDirName = "logs";
 
 export const DefaultWidth = "1280";
 export const DefaultHeight = "720";
-export const DefaultRefreshRate = "60";
 export const DefaultMultiplier = "2";
-export const DefaultMemoryValue = "4G";
-
-export const IconPngSize = 128;
-export const IconCacheMaxEntries = 1000;
 
 export const DefaultExcludeNames = [
 	"UnityCrashHandler*.exe",

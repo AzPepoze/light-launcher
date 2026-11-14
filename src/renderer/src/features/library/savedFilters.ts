@@ -8,7 +8,7 @@ export interface SavedFilter {
 
 const STORAGE_KEY = "library.savedFilters";
 
-export function parseSavedFilters(raw: string | null): SavedFilter[] {
+function parseSavedFilters(raw: string | null): SavedFilter[] {
 	if (!raw) return [];
 	try {
 		const parsed: unknown = JSON.parse(raw);

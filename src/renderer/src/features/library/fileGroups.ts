@@ -51,11 +51,11 @@ export function platformOf(name: string): FilePlatform {
 	return PLATFORM_BY_NAME[name.trim().toLowerCase()] ?? "other";
 }
 
-export function platformLabel(platform: FilePlatform): string {
+function platformLabel(platform: FilePlatform): string {
 	return PLATFORM_LABELS[platform];
 }
 
-export function platformIcon(platform: FilePlatform): string {
+function platformIcon(platform: FilePlatform): string {
 	return PLATFORM_ICONS[platform];
 }
 

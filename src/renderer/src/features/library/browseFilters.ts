@@ -1,7 +1,7 @@
 import type { BrowseFilterValue, BrowseQuery, SidebarGroup } from "../../lib/features/types";
 
 /** The host caps a browse page at 100; 60 fills a wide grid without a huge answer. */
-export const BROWSE_PAGE_SIZE = 60;
+const BROWSE_PAGE_SIZE = 60;
 
 export interface BrowseFilters {
 	/** The search group's text. */

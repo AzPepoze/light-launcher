@@ -67,7 +67,7 @@ function toRegistryEntry(wire: WireRegistryIndexEntry): PluginRegistryEntry {
 }
 
 /** Reads the PluginRegistry reply. A failed load stays in error so the dialog can offer a retry. */
-export function toPluginRegistry(wire: WirePluginRegistry): PluginRegistry {
+function toPluginRegistry(wire: WirePluginRegistry): PluginRegistry {
 	return {
 		configured: wire.configured,
 		url: wire.url ?? "",
@@ -77,7 +77,7 @@ export function toPluginRegistry(wire: WirePluginRegistry): PluginRegistry {
 }
 
 /** A community entry can be installed only from an https package with a full SHA256. */
-export function isInstallableRegistryEntry(entry: PluginRegistryEntry): boolean {
+function isInstallableRegistryEntry(entry: PluginRegistryEntry): boolean {
 	return entry.downloadUrl.startsWith("https://") && REGISTRY_SHA256.test(entry.sha256);
 }
 

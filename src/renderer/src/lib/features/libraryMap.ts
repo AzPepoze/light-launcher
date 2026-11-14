@@ -259,7 +259,7 @@ function toActionScope(scope: string | undefined): "library" | "game" {
 	return scope === "game" ? "game" : "library";
 }
 
-export function toSourceActions(actions: WireSourceAction[] | null | undefined): SourceAction[] {
+function toSourceActions(actions: WireSourceAction[] | null | undefined): SourceAction[] {
 	return (actions ?? []).map((action) => ({
 		id: action.id,
 		label: action.label,
@@ -270,7 +270,7 @@ export function toSourceActions(actions: WireSourceAction[] | null | undefined):
 }
 
 /** The server sends only the three known badge names, so the cast is safe. */
-export function toSourceCard(card: WireSourceCard | null | undefined): SourceCard | null {
+function toSourceCard(card: WireSourceCard | null | undefined): SourceCard | null {
 	if (!card) return null;
 	return { ...card, badges: card.badges as SourceBadge[] | undefined };
 }

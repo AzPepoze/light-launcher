@@ -155,7 +155,7 @@ export function relativeTime(time: number, now: number): string {
 	return ago(new Date(time).toISOString(), now);
 }
 
-export function toastDuration(type: NotificationType): number {
+function toastDuration(type: NotificationType): number {
 	return type === "error" ? ERROR_TOAST_MS : TOAST_MS;
 }
 

@@ -3,7 +3,6 @@ import {
 	GetConfig,
 	GetRunningSessions,
 	ListPrefixes,
-	KillSession,
 	RemoveGame,
 	GetPrefixBaseDir,
 	SaveGameConfig,
@@ -61,19 +60,6 @@ export async function quickLaunchGame(game: GameInfo, showLogs = false): Promise
 		}
 	}
 	await launchGame(options, { showLogs });
-}
-
-/**
- * Terminates a running game session
- */
-export async function terminateSession(processId: number, gameName: string): Promise<void> {
-	try {
-		await KillSession(processId);
-		notifications.add(`Terminated session: ${gameName}`, "success");
-	} catch (error) {
-		notifications.add(`Failed to kill session: ${plainMessage(error)}`, "error");
-		throw error;
-	}
 }
 
 /**

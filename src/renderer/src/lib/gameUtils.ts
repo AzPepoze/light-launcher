@@ -28,12 +28,6 @@ export function getGamePath(game: GamePathSource | null | undefined): string {
 	);
 }
 
-/** Resolves the display name for a game. */
-export function getGameName(game: GamePathSource | null | undefined): string {
-	if (!game) return "";
-	return game.name || game.config?.Name || game.Name || "Unknown Game";
-}
-
 /** Resolves the unique identifier for a game. */
 export function getGameId(game: GamePathSource | null | undefined): string {
 	if (!game) return "";

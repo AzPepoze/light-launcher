@@ -15,7 +15,7 @@ const SECOND_TOLERANCE_MS = 1;
 const LONG_FRAME_FACTOR = 1.5;
 const RATE_TOLERANCE = 0.04;
 
-export const COMMON_REFRESH_RATES = [30, 48, 50, 60, 72, 75, 90, 100, 120, 144, 165, 180, 240];
+const COMMON_REFRESH_RATES = [30, 48, 50, 60, 72, 75, 90, 100, 120, 144, 165, 180, 240];
 
 /** Nearest-rank percentile. `p` is between 0 and 1. `sorted` must be ascending. */
 export function percentile(sorted: ArrayLike<number>, p: number): number {

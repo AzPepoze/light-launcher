@@ -30,7 +30,7 @@ const LOG_LEVELS: readonly PluginLogLine["level"][] = ["debug", "info", "warn", 
 const PLUGIN_STATUSES: readonly PluginStatus[] = ["broken", "disabled", "running", "stopped"];
 
 /** Keeps a real server status; an unknown value from a newer host reads as stopped. */
-export function toPluginStatus(value: string): PluginStatus {
+function toPluginStatus(value: string): PluginStatus {
 	return PLUGIN_STATUSES.find((status) => status === value) ?? "stopped";
 }
 
@@ -152,7 +152,7 @@ function optionalText(value: string | null | undefined): string | null {
 	return value || null;
 }
 
-export function toPluginUpdateStatus(wire: WirePluginUpdateStatus): PluginUpdateStatus {
+function toPluginUpdateStatus(wire: WirePluginUpdateStatus): PluginUpdateStatus {
 	return {
 		id: wire.id,
 		installedVersion: wire.installedVersion,
