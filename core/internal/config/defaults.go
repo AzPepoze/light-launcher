@@ -108,6 +108,7 @@ func DefaultSettings() types.AppSettings {
 	return types.AppSettings{
 		TransparentMode:          true,
 		NativeWayland:            false,
+		OpenInBrowser:            false,
 		ScanFolders:              []string{},
 		ScanFolderConfigs:        []types.ScanFolderConfig{},
 		Blacklist:                []string{},

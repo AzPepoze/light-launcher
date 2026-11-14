@@ -12,9 +12,11 @@ import (
 	"path/filepath"
 	"syscall"
 
+	"light-launcher/core/internal/config"
 	"light-launcher/core/internal/logger"
 	"light-launcher/core/internal/plugins"
 	"light-launcher/core/internal/services/appsvc"
+	"light-launcher/core/internal/types"
 )
 
 const (
@@ -36,6 +38,7 @@ var validShells = map[string]bool{"auto": true, "gtk": true, "webview2": true, "
 type options struct {
 	shell    string
 	noShell  bool
+	web      bool
 	uiDir    string
 	editLsfg bool
 	gamePath string
@@ -75,11 +78,12 @@ func launch(args []string) int {
 	// The game path and the lsfg editor flag are read by the UI on start, through the app service.
 	appsvc.SetInitialArgs("", opts.gamePath, opts.editLsfg)
 	port, token := apiEndpoint(opts)
+	settings := config.NewSettingsStore(config.SettingsFilePath()).Load()
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	err = run(ctx, runConfig{
 		UI:       ui,
-		Shell:    resolveShell(opts.shell),
+		Shell:    resolveShell(shellFor(opts, settings)),
 		NoShell:  opts.noShell,
 		LockPath: lockPath,
 		Port:     port,
@@ -118,6 +122,7 @@ func parseOptions(args []string) (options, error) {
 	flags := flag.NewFlagSet("light-launcher", flag.ContinueOnError)
 	flags.StringVar(&opts.shell, "shell", "auto", "window type: auto, gtk, webview2 or browser")
 	flags.BoolVar(&opts.noShell, "no-shell", false, "serve the UI and print the URL, without a window")
+	flags.BoolVar(&opts.web, "web", false, "open the UI in the default browser (same as --shell=browser)")
 	flags.StringVar(&opts.uiDir, "ui", "", "directory with the built UI (default: embedded UI, else ui next to the executable)")
 	flags.BoolVar(&opts.editLsfg, "edit-lsfg", false, "open the lsfg-vk editor on start")
 	flags.IntVar(&opts.port, "port", 0, "loopback port for the API (default: a free port)")
@@ -127,6 +132,9 @@ func parseOptions(args []string) (options, error) {
 	}
 	if !validShells[opts.shell] {
 		return opts, fmt.Errorf("unknown shell %q", opts.shell)
+	}
+	if err := applyWeb(&opts); err != nil {
+		return opts, err
 	}
 	if opts.port < 0 || opts.port > 65535 {
 		return opts, fmt.Errorf("port %d is out of range", opts.port)
@@ -139,6 +147,35 @@ func parseOptions(args []string) (options, error) {
 		opts.gamePath = gamePath
 	}
 	return opts, nil
+}
+
+// applyWeb turns --web into --shell=browser and rejects flags that conflict with it.
+func applyWeb(opts *options) error {
+	if !opts.web {
+		return nil
+	}
+	if opts.noShell {
+		return errors.New("--web cannot be used with --no-shell")
+	}
+	if opts.shell != "auto" && opts.shell != "browser" {
+		return fmt.Errorf("--web cannot be used with --shell=%s", opts.shell)
+	}
+	opts.shell = "browser"
+	return nil
+}
+
+// shellFor picks the window type. --web wins, then an explicit --shell, then the saved setting.
+func shellFor(opts options, settings types.AppSettings) string {
+	if opts.web {
+		return "browser"
+	}
+	if opts.shell != "auto" {
+		return opts.shell
+	}
+	if settings.OpenInBrowser {
+		return "browser"
+	}
+	return "auto"
 }
 
 // resolveUI picks the UI source and checks that it has an index.html.

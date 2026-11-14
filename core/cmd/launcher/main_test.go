@@ -3,6 +3,8 @@ package main
 import (
 	"path/filepath"
 	"testing"
+
+	"light-launcher/core/internal/types"
 )
 
 func TestParseOptionsDefaults(t *testing.T) {
@@ -28,6 +30,59 @@ func TestParseOptionsAcceptsGTKShell(t *testing.T) {
 	}
 	if opts.shell != "gtk" {
 		t.Fatalf("shell = %q, want gtk", opts.shell)
+	}
+}
+
+func TestParseOptionsWebSetsBrowserShell(t *testing.T) {
+	opts, err := parseOptions([]string{"--web"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if opts.shell != "browser" {
+		t.Fatalf("shell = %q, want browser", opts.shell)
+	}
+}
+
+func TestParseOptionsWebRejectsNoShell(t *testing.T) {
+	if _, err := parseOptions([]string{"--web", "--no-shell"}); err == nil {
+		t.Fatal("--web with --no-shell was accepted")
+	}
+}
+
+func TestParseOptionsWebRejectsGTKShell(t *testing.T) {
+	if _, err := parseOptions([]string{"--web", "--shell=gtk"}); err == nil {
+		t.Fatal("--web with --shell=gtk was accepted")
+	}
+}
+
+func TestParseOptionsWebAcceptsBrowserShell(t *testing.T) {
+	opts, err := parseOptions([]string{"--web", "--shell=browser"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if opts.shell != "browser" {
+		t.Fatalf("shell = %q, want browser", opts.shell)
+	}
+}
+
+func TestShellForPrecedence(t *testing.T) {
+	tests := []struct {
+		name     string
+		opts     options
+		settings types.AppSettings
+		want     string
+	}{
+		{"setting browser, auto shell", options{shell: "auto"}, types.AppSettings{OpenInBrowser: true}, "browser"},
+		{"setting browser, explicit gtk", options{shell: "gtk"}, types.AppSettings{OpenInBrowser: true}, "gtk"},
+		{"web flag without setting", options{shell: "browser", web: true}, types.AppSettings{}, "browser"},
+		{"no setting, auto shell", options{shell: "auto"}, types.AppSettings{}, "auto"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := shellFor(tt.opts, tt.settings); got != tt.want {
+				t.Fatalf("shellFor() = %q, want %q", got, tt.want)
+			}
+		})
 	}
 }
 

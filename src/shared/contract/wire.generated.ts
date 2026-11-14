@@ -778,6 +778,7 @@ export interface WirePluginRegistry {
 export interface WireAppSettings {
 	TransparentMode: boolean;
 	NativeWayland: boolean;
+	OpenInBrowser: boolean;
 	ScanFolders: string[] | null;
 	ScanFolderConfigs: WireScanFolderConfig[] | null;
 	Blacklist: string[] | null;
