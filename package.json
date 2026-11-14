@@ -19,6 +19,7 @@
 		"dev:linux": "bun run build:launcher:dev && bun run build:instance && bun run build:shell:gtk && concurrently -k \"bun run dev:renderer\" \"until curl -s -o /dev/null http://localhost:9245/; do sleep 0.3; done && ./bin/light-launcher --dev-token dev --port 9246 --ui src/renderer\"",
 		"dev:renderer": "cd src/renderer && bun run dev",
 		"dev:server": "go run ./core/cmd/launcher --no-shell --dev-token dev --port 9246 --ui src/renderer",
+		"dev:web": "concurrently -k \"bun run dev:renderer\" \"bun scripts/wait-for-url.ts http://localhost:9245/ && go run ./core/cmd/launcher --web --dev-token dev --port 9246 --ui src/renderer\"",
 		"dev:windows": "bun run build:launcher:dev && bun run build:instance && bun run build:shell:webview2 && concurrently -k \"bun run dev:renderer\" \"./bin/light-launcher.exe --dev-token dev --port 9246 --ui src/renderer\"",
 		"e2e": "go test -tags e2e -count=1 ./core/cmd/launcher/...",
 		"format": "oxfmt --write .",
