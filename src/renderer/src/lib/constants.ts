@@ -14,7 +14,7 @@ export const DEFAULT_LAUNCH_OPTIONS: core.LaunchOptions = {
 			EnableGamemode: false,
 			Lsfg: {
 				Enabled: false,
-				Multiplier: "2",
+				Multiplier: core.DefaultMultiplier,
 				PerfMode: false,
 				DllPath: "",
 				Gpu: "",
