@@ -195,7 +195,7 @@ export interface LibraryListPage {
 	total?: number;
 }
 
-export type LibrarySyncPhase = "running" | "done" | "error";
+type LibrarySyncPhase = "running" | "done" | "error";
 
 export interface LibrarySyncProgress {
 	source: string;
@@ -352,7 +352,7 @@ export interface UpdateStatus {
 	games: Game[];
 }
 
-export interface UpdateProgress {
+interface UpdateProgress {
 	done: number;
 	total: number;
 }
@@ -480,7 +480,7 @@ export interface PluginInfo {
 	commands: PluginCommand[];
 }
 
-export interface PluginCommand {
+interface PluginCommand {
 	id: string;
 	label: string;
 	/** Null for a command that only shows up; the host refuses to run it. */
