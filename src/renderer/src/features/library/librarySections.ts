@@ -39,10 +39,14 @@ export function sectionElementId(source: string): string {
 	return `library-section-${source}`;
 }
 
+/** "1 game" or "12 games". */
+export function gameCount(count: number): string {
+	return count === 1 ? "1 game" : `${count} games`;
+}
+
 /** The toolbar's stats line: "12 games, 4 installed" and "2 updates" when any are waiting. */
 export function librarySubtitle(stats: { total: number; installed: number; updates: number }): string {
-	const games = stats.total === 1 ? "1 game" : `${stats.total} games`;
-	const parts = [games, `${stats.installed} installed`];
+	const parts = [gameCount(stats.total), `${stats.installed} installed`];
 	if (stats.updates > 0) parts.push(`${stats.updates} updates`);
 	return parts.join(", ");
 }

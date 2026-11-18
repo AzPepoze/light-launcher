@@ -2,12 +2,21 @@ import { describe, expect, it } from "vitest";
 import type { LibrarySource } from "../../lib/features/types";
 import {
 	LOCAL_SOURCE,
+	gameCount,
 	librarySections,
 	librarySubtitle,
 	sectionElementId,
 	showsSection,
 	sourceLabel
 } from "./librarySections";
+
+describe("gameCount", () => {
+	it("uses the singular for one game and the plural otherwise", () => {
+		expect(gameCount(0)).toBe("0 games");
+		expect(gameCount(1)).toBe("1 game");
+		expect(gameCount(2)).toBe("2 games");
+	});
+});
 
 describe("librarySubtitle", () => {
 	it("joins the counts with commas, not middle dots", () => {

@@ -1,10 +1,8 @@
 <script lang="ts">
 	import { onMount, tick } from "svelte";
 	import { get } from "svelte/store";
-	import Badge from "@components/shared/Badge.svelte";
 	import Button from "@components/shared/Button.svelte";
 	import EmptyState from "@components/shared/EmptyState.svelte";
-	import Icon from "@components/shared/Icon.svelte";
 	import IconButton from "@components/shared/IconButton.svelte";
 	import LoadingState from "@components/shared/LoadingState.svelte";
 	import Notice from "@components/shared/Notice.svelte";
@@ -26,11 +24,11 @@
 	import IncomingPanel from "./IncomingPanel.svelte";
 	import LibraryGrid from "./LibraryGrid.svelte";
 	import LibrarySidebar from "./LibrarySidebar.svelte";
+	import SectionHeader from "./SectionHeader.svelte";
 	import SourceChips from "./SourceChips.svelte";
 	import { LibraryState } from "./libraryState.svelte";
 	import { REVEAL_MAX_TILES, revealDoneMs } from "./libraryMotion";
 	import { librarySubtitle, sectionElementId, showsSection, sourceLabel } from "./librarySections";
-	import { sourceIcon } from "./sourceIcon";
 	import { syncMessage } from "./librarySync";
 	import { coverRatioOf } from "./coverRatio";
 	import { canSyncGames } from "./syncFlag";
@@ -350,48 +348,45 @@
 					{#each visibleSections as source (source.source)}
 						{@const list = library.listOf(source.source)}
 						<section class="group" id={sectionElementId(source.source)} aria-label={source.label}>
-							<header class="group-header">
-								<span class="group-icon"><Icon name={sourceIcon(source.source)} size={22} /></span>
-								<h2>{source.label}</h2>
-								<Badge>{list.total ?? 0}</Badge>
-								<div class="group-actions">
-									{#if canSyncGames(source)}
-										<Button
-											size="sm"
-											icon="sync"
-											title={SYNC_HINT}
-											disabled={library.isSyncing(source.source)}
-											onclick={() => library.startSync(source.source)}
-										>
-											{library.isSyncing(source.source) ? "Syncing..." : "Sync now"}
-										</Button>
-									{/if}
-									{#each libraryActionsOf(source) as action (action.id)}
-										<Button
-											size="sm"
-											icon={action.icon}
-											loading={library.runningAction === action.id}
-											disabled={library.runningAction !== ""}
-											onclick={() => library.runSourceAction(source.source, action)}
-										>
-											{action.label}
-										</Button>
-									{/each}
-								</div>
-							</header>
+							<SectionHeader label={source.label} count={list.total ?? 0}>
+								{#if canSyncGames(source)}
+									<Button
+										size="sm"
+										variant="text"
+										icon="sync"
+										title={SYNC_HINT}
+										disabled={library.isSyncing(source.source)}
+										onclick={() => library.startSync(source.source)}
+									>
+										{library.isSyncing(source.source) ? "Syncing..." : "Sync"}
+									</Button>
+								{/if}
+								{#each libraryActionsOf(source) as action (action.id)}
+									<Button
+										size="sm"
+										variant="text"
+										icon={action.icon}
+										loading={library.runningAction === action.id}
+										disabled={library.runningAction !== ""}
+										onclick={() => library.runSourceAction(source.source, action)}
+									>
+										{action.label}
+									</Button>
+								{/each}
+							</SectionHeader>
 
 							{#if library.syncs[source.source]}
 								{@const progress = library.syncs[source.source]}
-								<p class="sync" class:failed={progress.phase === "error"} role="status">
+								<p class="status" class:failed={progress.phase === "error"} role="status">
 									{syncMessage(progress)}
 								</p>
 							{/if}
 
 							{#if list.error}
-								<Notice tone="error">
+								<p class="status failed" role="alert">
 									{list.error}
-									<Button size="sm" onclick={() => library.retry(source.source)}>Retry</Button>
-								</Notice>
+									<Button size="sm" variant="text" onclick={() => library.retry(source.source)}>Retry</Button>
+								</p>
 							{/if}
 
 							{#if list.total === null}
@@ -581,40 +576,15 @@
 		margin-bottom: 32px;
 	}
 
-	.group-header {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: 10px;
-		margin-bottom: 12px;
-	}
-
-	.group-icon {
-		display: inline-flex;
-		color: var(--text-muted);
-	}
-
-	.group-header h2 {
-		margin: 0;
-		font-size: 1.25rem;
-		font-weight: 600;
-	}
-
-	.group-actions {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 6px;
-		margin-left: auto;
-	}
-
-	.sync {
+	/* Sync and error lines are quiet text under the header, not boxes. */
+	.status {
 		min-height: 1.5em;
 		margin: 0 0 12px;
 		font-size: 0.875rem;
 		color: var(--text-muted);
 	}
 
-	.sync.failed {
+	.status.failed {
 		color: var(--danger);
 	}
 
