@@ -4,6 +4,7 @@
 	import HeatmapCard from "@components/manager/HeatmapCard.svelte";
 	import RunningRail from "@components/manager/RunningRail.svelte";
 	import ActivityTabs from "@components/manager/ActivityTabs.svelte";
+	import PageHeader from "@components/shared/PageHeader.svelte";
 	import { GetRunningSessions, KillSession, GetAppSettings, GetGameActivity, GetAllGames, GetAutoScannedGames } from "@lib/api";
 	import { notifications } from "@stores/notificationStore";
 	import { plainMessage } from "@lib/plainMessage";
@@ -147,7 +148,7 @@
 </script>
 
 <div class="manager-container">
-	<!-- Top: single transparent centered container -->
+	<PageHeader title="Game Manager" />
 	<div class="top-summary">
 		<div class="today-block">
 			<span class="today-label">Today</span>
@@ -188,7 +189,7 @@
 		flex-direction: column;
 		gap: 26px;
 		min-height: calc(100vh - 200px);
-		padding-bottom: 140px; // room for fixed drawer
+		padding-bottom: 240px; // room for the fixed status drawer, collapsed and open
 		box-sizing: border-box;
 	}
 
