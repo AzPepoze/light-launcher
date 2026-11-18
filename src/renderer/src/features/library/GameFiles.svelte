@@ -4,6 +4,7 @@
 	import Badge from "@components/shared/Badge.svelte";
 	import Icon from "@components/shared/Icon.svelte";
 	import IconButton from "@components/shared/IconButton.svelte";
+	import { tooltip } from "@components/shared/tooltip";
 	import { downloadsApi } from "../../lib/features/downloadsApi";
 	import { bytes } from "../../lib/features/format";
 	import { isFileForOs } from "../../lib/features/platform";
@@ -61,7 +62,7 @@
 								<li>
 									<span class="type"><Icon name={fileIcon(file)} size={20} /></span>
 									<div class="info">
-										<p class="label" title={name}>{name}</p>
+										<p class="label" use:tooltip={name}>{name}</p>
 										<p class="meta">
 											{#if file.size}<span>{bytes(file.size)}</span>{/if}
 											{#if host}<span>{host}</span>{/if}

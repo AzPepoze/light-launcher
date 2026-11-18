@@ -9,6 +9,7 @@
 	import Button from "@components/shared/Button.svelte";
 	import EmptyState from "@components/shared/EmptyState.svelte";
 	import Notice from "@components/shared/Notice.svelte";
+	import { tooltip } from "@components/shared/tooltip";
 	import { libraryErrorMessage } from "./libraryError";
 
 	let { onChanged }: { onChanged: () => void } = $props();
@@ -72,7 +73,7 @@
 		{#each visibleItems as item (item.name)}
 			<li class="item">
 				<div class="head">
-					<p class="name" title={item.name}>{item.name}</p>
+					<p class="name" use:tooltip={item.name}>{item.name}</p>
 					<p class="muted">
 						{bytes(item.size)} · {ago(item.mtime)}
 						{#if item.auto}· Will import automatically{/if}

@@ -7,6 +7,7 @@
 	import IconButton from "@components/shared/IconButton.svelte";
 	import ImageViewer from "@components/shared/ImageViewer.svelte";
 	import ScreenshotImage from "@components/shared/ScreenshotImage.svelte";
+	import { tooltip } from "@components/shared/tooltip";
 	import { notifications } from "@stores/notificationStore";
 	import { OpenFileLocation } from "@lib/api";
 	import { plainMessage } from "@lib/plainMessage";
@@ -227,7 +228,7 @@
 			<Icon name={game.favorite ? "star" : "star_border"} size={18} />
 			{game.favorite ? "Favorited" : "Favorite"}
 		</Button>
-		<a class="btn icon-link" href={game.url} target="_blank" rel="noreferrer" title="Open page" aria-label="Open page">
+		<a class="btn icon-link" href={game.url} target="_blank" rel="noreferrer" use:tooltip={"Open page"} aria-label="Open page">
 			<Icon name="open_in_new" size={18} />
 		</a>
 		<IconButton

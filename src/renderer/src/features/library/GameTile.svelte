@@ -3,6 +3,7 @@
 	import CoverImage from "@components/shared/CoverImage.svelte";
 	import Icon from "@components/shared/Icon.svelte";
 	import Marquee from "@components/shared/Marquee.svelte";
+	import { tooltip } from "@components/shared/tooltip";
 	import { loadGameIcon } from "../../lib/iconService";
 	import { getGamePath } from "../../lib/gameUtils";
 	import type { Game, SourceCard } from "../../lib/features/types";
@@ -75,7 +76,7 @@
 </script>
 
 {#snippet stateBadge(state: TileState)}
-	<span class="state-badge {state}" role="img" aria-label={STATE_VIEW[state].label} title={STATE_VIEW[state].label}>
+	<span class="state-badge {state}" role="img" aria-label={STATE_VIEW[state].label} use:tooltip={STATE_VIEW[state].label}>
 		<Badge icon={STATE_VIEW[state].icon} tone={STATE_VIEW[state].tone} />
 	</span>
 {/snippet}

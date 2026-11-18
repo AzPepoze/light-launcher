@@ -12,6 +12,7 @@
 	import RangeSlider from "@components/shared/RangeSlider.svelte";
 	import Tabs from "@components/shared/Tabs.svelte";
 	import type { TabItem } from "@components/shared/tabs";
+	import { tooltip } from "@components/shared/tooltip";
 	import { libraryTab, type LibraryTab } from "@stores/libraryTabStore";
 	import type { Game, LibrarySource, SourceAction } from "../../lib/features/types";
 	import { loadAppSettings, saveAppSettings } from "../../lib/settingsService";
@@ -407,7 +408,7 @@
 						class="detail-backdrop"
 						transition:fade={{ duration: DRAWER_MS }}
 						role="presentation"
-						title="Click outside to close"
+						use:tooltip={"Click outside to close"}
 						onclick={closeGame}
 					></div>
 					<aside

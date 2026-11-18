@@ -89,7 +89,7 @@
 	<h3>Install</h3>
 
 	{#if game.installDir}
-		<p class="path" title={game.installDir}>{game.installDir}</p>
+		<p class="path" use:tooltip={game.installDir}>{game.installDir}</p>
 	{:else}
 		<p class="muted">Not installed. Download a file above, or link a source page.</p>
 	{/if}
