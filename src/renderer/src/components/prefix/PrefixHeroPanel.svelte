@@ -1,8 +1,6 @@
 <script lang="ts">
 	import Dropdown, { asOptions } from "@components/shared/Dropdown.svelte";
 	import Icon from "@components/shared/Icon.svelte";
-
-	$: protonItems = asOptions(protonDisplayNames);
 	import BrowseInput from "@components/shared/BrowseInput.svelte";
 
 	export let currentPrefixName: string;
@@ -12,6 +10,9 @@
 	export let heroSize: string = "--";
 	export let heroGamesLinked: string = "0 games";
 	export let heroCreated: string = "Created --";
+
+	$: protonItems = asOptions(protonDisplayNames);
+	$: hasProton = protonDisplayNames.length > 0;
 </script>
 
 <section class="panel hero-panel">
@@ -32,6 +33,9 @@
 				<Dropdown
 					options={protonItems}
 					bind:value={chosenProtonName}
+					placeholder="Choose a Proton version"
+					disabled={!hasProton}
+					disabledMessage="No Proton installed"
 				/>
 			</div>
 		</div>
