@@ -5,6 +5,7 @@
 	import ProgressBar from "@components/shared/ProgressBar.svelte";
 	import TransferMeta from "@components/shared/TransferMeta.svelte";
 	import TransferStages from "@components/shared/TransferStages.svelte";
+	import { tooltip } from "@components/shared/tooltip";
 	import type { DownloadAction } from "../../lib/features/types";
 	import type { TransferRow } from "./downloadGroups";
 	import {
@@ -31,7 +32,7 @@
 
 	<div class="main">
 		<div class="heading">
-			<p class="name" title={row.item.filename}>{row.item.filename}</p>
+			<p class="name" use:tooltip={row.item.filename}>{row.item.filename}</p>
 			{#if row.gameTitle}<p class="game">{row.gameTitle}</p>{/if}
 			{#if badge}<Badge tone={badge.tone}>{badge.label}</Badge>{/if}
 			{#if transfer.state === "done"}
