@@ -216,6 +216,13 @@
 		min-height: 0;
 	}
 
+	.left-col,
+	.right-col {
+		display: flex;
+		flex-direction: column;
+		min-height: 0;
+	}
+
 	.card {
 		background: transparent;
 		border: none;
@@ -228,6 +235,31 @@
 
 	@media (max-width: 980px) {
 		.manager-grid { grid-template-columns: minmax(0, 1fr); }
+	}
+
+	/* Desktop: the page fits the screen. Each column scrolls inside its own box. */
+	@media (min-width: 981px) {
+		.manager-container {
+			height: 100%;
+			min-height: 0;
+		}
+
+		.manager-grid {
+			grid-template-rows: minmax(0, 1fr);
+		}
+
+		.left-col {
+			overflow-y: auto;
+			overscroll-behavior: contain;
+
+			> .card {
+				flex-shrink: 0;
+			}
+		}
+
+		.right-col > .card {
+			flex: 1;
+		}
 	}
 
 	@media (max-width: 600px) {

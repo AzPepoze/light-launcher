@@ -249,7 +249,7 @@
 						easing: cubicOut,
 					}}
 				>
-					<div class="content-zone" class:full-width={activePage === "home" || activePage === "editlsfg" || activePage === "manager" || activePage === "prefix" || activePage === "library"} class:home-zone={activePage === "home"} class:prefix-zone={activePage === "prefix"} class:run-zone={activePage === "run"} class:settings-zone={activePage === "settings"}>
+					<div class="content-zone" class:full-width={activePage === "home" || activePage === "editlsfg" || activePage === "manager" || activePage === "prefix" || activePage === "library"} class:home-zone={activePage === "home"} class:prefix-zone={activePage === "prefix"} class:run-zone={activePage === "run"} class:settings-zone={activePage === "settings"} class:game-manager-zone={activePage === "manager"}>
 						{#if activePage === "editlsfg"}
 							<EditLsfg gamePath={editLsfgGamePath} />
 						{:else if Object.hasOwn(pageComponents, activePage)}
@@ -487,6 +487,11 @@
 
 		/* Gives the Settings page a definite height so its sections scroll in their own column. */
 		&.settings-zone {
+			height: 100%;
+		}
+
+		/* Gives the Game Manager a definite height so its columns scroll inside the screen. */
+		&.game-manager-zone {
 			height: 100%;
 		}
 	}
