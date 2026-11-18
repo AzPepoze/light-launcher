@@ -143,6 +143,8 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | Library narrow width and update count: check by eye in the real window. |
 | [x] | Updates tab at 390x844: the Notes and Update buttons sit under the title, and none are clipped. Checked by measurement; check by eye in the real window. |
 | [ ] | `MarkSeen` has no callers, so the unseen update checks never clear. The Updates badge now uses the game count from the header instead. |
+| [ ] | Library card size slider beside the tabs saves `LibraryCardSize` and sizes the grid. Landscape covers get 1.6 times the width, so 16:9 tiles stay large. Check by eye in the real window. |
+| [ ] | Game drawer redesign: full-bleed cover with the title on it, facts grid, tags and description with "Show more", notes box with scroll, wider drawer (640px), fade and slide in and out. Check by eye in the real window. |
 | [x] | Settings sections scroll in their own column; the nav stays put at 1440x900 and becomes chips under 900px. Checked by measurement; check by eye in the real window. |
 | [ ] | Settings at 390x844: some number and text fields are 13px wider than the sections column, so the column scrolls sideways a little. The page itself does not. Check the fields and fix their width. |
 | [x] | The plugin SDK docs describe `sidebar`, the `browse:filters` capability, `source.browse` and `source.listFilters`. |
