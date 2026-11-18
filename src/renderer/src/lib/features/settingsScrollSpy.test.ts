@@ -27,6 +27,11 @@ describe("activeSectionId", () => {
 		expect(activeSectionId(order, tops, 24, false)).toBe("two");
 	});
 
+	it("counts a section scrolled to the line as reached despite sub-pixel rounding", () => {
+		const tops = { one: -300, two: 24.5, three: 400 };
+		expect(activeSectionId(order, tops, 24, false)).toBe("two");
+	});
+
 	it("picks the first section when none has reached the line yet", () => {
 		const tops = { one: 80, two: 500, three: 900 };
 		expect(activeSectionId(order, tops, 24, false)).toBe("one");

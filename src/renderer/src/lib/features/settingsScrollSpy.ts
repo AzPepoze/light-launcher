@@ -3,6 +3,9 @@ import type { SettingsNavGroup } from "./settingsSection";
 /** Pixels below the top of the scroll area where a section counts as reached. */
 export const SPY_LINE_PX = 24;
 
+/** Sub-pixel slack, so a section scrolled to the line still counts as reached. */
+const SPY_SLACK_PX = 1;
+
 /** The section ids in nav order, which is also page order. */
 export function navSectionIds(groups: SettingsNavGroup[]): string[] {
 	return groups.flatMap((group) => group.items.map((item) => item.id));
@@ -23,6 +26,6 @@ export function activeSectionId(
 	if (measured.length === 0) return null;
 	if (atBottom) return measured[measured.length - 1];
 
-	const reached = measured.filter((id) => tops[id] <= line);
+	const reached = measured.filter((id) => tops[id] <= line + SPY_SLACK_PX);
 	return reached.length > 0 ? reached[reached.length - 1] : measured[0];
 }
