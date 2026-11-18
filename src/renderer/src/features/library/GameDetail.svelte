@@ -191,11 +191,11 @@
 				onclick={launch}
 			/>
 		{/if}
-		<Button aria-pressed={game.favorite} disabled={busy} onclick={toggleFavorite}>
+		<Button class="favorite" aria-pressed={game.favorite} disabled={busy} onclick={toggleFavorite}>
 			<Icon name={game.favorite ? "star" : "star_border"} size={18} />
 			{game.favorite ? "Favorited" : "Favorite"}
 		</Button>
-		<a class="icon-link" href={game.url} target="_blank" rel="noreferrer" title="Open page" aria-label="Open page">
+		<a class="btn icon-link" href={game.url} target="_blank" rel="noreferrer" title="Open page" aria-label="Open page">
 			<Icon name="open_in_new" size={18} />
 		</a>
 		{#each actions as action (action.id)}
@@ -417,8 +417,15 @@
 	.actions {
 		display: flex;
 		flex-wrap: wrap;
+		align-items: center;
 		gap: 8px;
+	}
 
+	/* Every control in the row is 36px tall, the same as the round icon buttons. */
+	.actions :global(.favorite) {
+		height: 36px;
+		box-sizing: border-box;
+		padding-block: 0;
 	}
 
 	/* The Play button is a white round icon; the icon inherits the black colour. */
@@ -440,7 +447,9 @@
 		width: 36px;
 		height: 36px;
 		box-sizing: border-box;
+		padding: 0;
 		border: 1px solid var(--glass-border);
+		letter-spacing: normal;
 		border-radius: var(--radius-pill);
 		color: var(--text-muted);
 		text-decoration: none;
