@@ -1,6 +1,7 @@
 <script lang="ts">
 	import MiniResourceGraph from "./MiniResourceGraph.svelte";
 	import Icon from "@components/shared/Icon.svelte";
+	import { tooltip } from "@components/shared/tooltip";
 	import type { SystemInfo, SystemUsage } from "@shared";
 
 	interface Props {
@@ -21,6 +22,7 @@
 	);
 	const safeGpuIdx = $derived(Math.max(0, Math.min(gpuIdx, gpuList.length - 1)));
 	const currentGpu = $derived(gpuList[safeGpuIdx] ?? "");
+	const currentGpuTooltip = $derived(`${currentGpu} (${sysInfo.driver})`);
 	const currentGpuUsage = $derived(sysUsage.gpus[safeGpuIdx] ?? 0);
 	const currentGpuHistory = $derived(gpuHistoryMap[safeGpuIdx] ?? []);
 
@@ -48,7 +50,7 @@
 			<span class="usage">{sysUsage.cpu.toFixed(1)}%</span>
 		</div>
 		<MiniResourceGraph data={cpuHistory} color="var(--accent-primary, #64ffda)" height={46} />
-		<span class="info-text" title={sysInfo.cpu}>{sysInfo.cpu}</span>
+		<span class="info-text" use:tooltip={sysInfo.cpu}>{sysInfo.cpu}</span>
 	</div>
 
 	<!-- RAM -->
@@ -85,7 +87,7 @@
 				{#key safeGpuIdx}
 					<span
 						class="info-text gpu-name"
-						title="{currentGpu} ({sysInfo.driver})"
+						use:tooltip={currentGpuTooltip}
 						style="animation: {slideDir > 0 ? 'slideInRight' : 'slideInLeft'} 0.22s cubic-bezier(0.16, 1, 0.3, 1)"
 					>
 						{currentGpu}
