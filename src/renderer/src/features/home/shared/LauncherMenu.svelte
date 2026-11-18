@@ -1,6 +1,7 @@
 <script lang="ts">
 	import AppMenu from "@components/shared/AppMenu.svelte";
 	import Icon from "@components/shared/Icon.svelte";
+	import { tooltip } from "@components/shared/tooltip";
 	import { launcherCountLabel } from "@lib/features/launcher";
 	import type { GameInfo } from "@shared";
 	import { tick } from "svelte";
@@ -147,7 +148,7 @@
 			type="button"
 			class="launcher-note"
 			class:open={isOpen}
-			title="Choose launcher"
+			use:tooltip={"Choose launcher"}
 			aria-haspopup="menu"
 			aria-expanded={isOpen}
 			onclick={toggleMenu}

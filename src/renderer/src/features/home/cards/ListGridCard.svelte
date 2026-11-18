@@ -2,6 +2,7 @@
 	import CardRunningIndicator from "./shared/CardRunningIndicator.svelte";
 	import CardSelectionCheckbox from "./shared/CardSelectionCheckbox.svelte";
 	import Icon from "@components/shared/Icon.svelte";
+	import { tooltip } from "@components/shared/tooltip";
 	import { getGamePath } from "@lib/gameUtils";
 	import LauncherMenu from "../shared/LauncherMenu.svelte";
 	import { iconFade } from "@lib/iconReveal";
@@ -94,14 +95,14 @@
 			<LauncherMenu {game} onChoose={onChooseLauncher} />
 			<button
 				class="action-btn play"
-				title="Play Now"
+				use:tooltip={"Play Now"} aria-label="Play Now"
 				on:click|stopPropagation={(e) => handleLaunch(e)}
 			>
 				<Icon name="play_arrow" size={20} class="play-icon" />
 			</button>
 			<button
 				class="action-btn config"
-				title="Configure"
+				use:tooltip={"Configure"} aria-label="Configure"
 				on:click|stopPropagation={handleConfigure}
 			>
 				<Icon name="settings" size={20} />

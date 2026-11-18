@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Icon from "@components/shared/Icon.svelte";
+	import { tooltip } from "@components/shared/tooltip";
 	import { fade } from "svelte/transition";
 
 	export let foundExecutables: {
@@ -23,7 +24,7 @@
 				tabindex="0"
 				on:keydown={(e) =>
 					e.key === "Enter" && onToggleDiscard(exe.path)}
-				title={exe.path}
+				use:tooltip={exe.path}
 			>
 				{#if exe.alreadyExists}
 					<div class="library-badge">In Library</div>
@@ -42,7 +43,7 @@
 							</div>
 						{/if}
 					</div>
-					<div class="name" title={exe.path}>{exe.name}</div>
+					<div class="name" use:tooltip={exe.path}>{exe.name}</div>
 				</div>
 				<div class="discard-overlay">
 					<Icon name="delete" size={24} />

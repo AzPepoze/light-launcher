@@ -2,6 +2,7 @@
 	import Dropdown, { asOptions } from "@components/shared/Dropdown.svelte";
 	import Icon from "@components/shared/Icon.svelte";
 	import PageHeader from "@components/shared/PageHeader.svelte";
+	import { tooltip } from "@components/shared/tooltip";
 
 	$: prefixItems = asOptions(prefixes);
 	import SelectionActions from "./SelectionActions.svelte";
@@ -26,14 +27,14 @@
 	{#if isSelectionMode}
 		<SelectionActions {selectedCount} {onBulkRemove} {onToggleSelectionMode} {onSelectAll} />
 	{:else}
-		<button class="add-btn" on:click={onShowAddModal} title="Add Game">
+		<button class="add-btn" on:click={onShowAddModal} use:tooltip={"Add Game"} aria-label="Add Game">
 			<Icon name="add" size={20} />
 		</button>
 
 		<button
 			class="select-mode-btn"
 			on:click={onToggleSelectionMode}
-			title="Bulk Remove"
+			use:tooltip={"Bulk Remove"} aria-label="Bulk Remove"
 			class:active={isSelectionMode}
 		>
 			<Icon name="checklist" size={20} />
@@ -42,7 +43,7 @@
 		<button
 			class="help-btn"
 			on:click={onShowHelpModal}
-			title="How it works"
+			use:tooltip={"How it works"} aria-label="How it works"
 		>
 			<Icon name="help_outline" size={24} />
 		</button>
@@ -80,7 +81,7 @@
 			class="view-btn"
 			class:active={currentView === "grid"}
 			on:click={() => (currentView = "grid")}
-			title="Grid View"
+			use:tooltip={"Grid View"} aria-label="Grid View"
 		>
 			<Icon name="grid_view" size={18} />
 		</button>
@@ -88,7 +89,7 @@
 			class="view-btn"
 			class:active={currentView === "list-grid"}
 			on:click={() => (currentView = "list-grid")}
-			title="List View"
+			use:tooltip={"List View"} aria-label="List View"
 		>
 			<Icon name="view_list" size={18} />
 		</button>
@@ -96,7 +97,7 @@
 			class="view-btn"
 			class:active={currentView === "sidebar-grid"}
 			on:click={() => (currentView = "sidebar-grid")}
-			title="Sidebar View"
+			use:tooltip={"Sidebar View"} aria-label="Sidebar View"
 		>
 			<Icon name="view_sidebar" size={18} />
 		</button>

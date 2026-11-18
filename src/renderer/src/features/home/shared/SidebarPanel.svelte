@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Icon from "@components/shared/Icon.svelte";
+	import { tooltip } from "@components/shared/tooltip";
 
 	export let filteredGames: any[] = [];
 	export let scannedFolderGroups: any[] = [];
@@ -31,7 +32,7 @@
 			<Icon name="folder" size={20} class="item-icon" />
 			<div class="item-meta">
 				<span class="item-name">{group.folderName}</span>
-				<span class="item-path" title={group.folderPath}>{group.folderPath}</span>
+				<span class="item-path" use:tooltip={group.folderPath}>{group.folderPath}</span>
 			</div>
 			<span class="item-badge">{group.games.length}</span>
 		</button>

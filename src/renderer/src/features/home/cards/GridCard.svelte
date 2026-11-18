@@ -4,6 +4,7 @@
 	import AnimatedPlayIcon from "./shared/AnimatedPlayIcon.svelte";
 	import Icon from "@components/shared/Icon.svelte";
 	import Marquee from "@components/shared/Marquee.svelte";
+	import { tooltip } from "@components/shared/tooltip";
 	import LauncherMenu from "../shared/LauncherMenu.svelte";
 	import { getDominantColor } from "@lib/dominantColor";
 	import { iconFade } from "@lib/iconReveal";
@@ -168,7 +169,7 @@
 				<span class="launch-icon-large">
 					<AnimatedPlayIcon size={64} />
 				</span>
-				<span class="overlay-path" title={getGamePath(game)}>{getGamePath(game)}</span>
+				<span class="overlay-path" use:tooltip={getGamePath(game)}>{getGamePath(game)}</span>
 			{/if}
 		</div>
 
@@ -183,7 +184,7 @@
 				<button
 					class="config-btn"
 					type="button"
-					title="Configure"
+					use:tooltip={"Configure"}
 					aria-label="Configure {game.name}"
 					on:click|stopPropagation={handleConfigure}
 				>
