@@ -66,15 +66,15 @@
 
 	const STATE_VIEW: Record<TileState, { label: string; icon: string; tone: "danger" | "accent" | "neutral" | "warning" }> = {
 		favorite: { label: "Favorite", icon: "favorite", tone: "danger" },
-		updateAvailable: { label: "Update", icon: "system_update_alt", tone: "accent" },
-		notInstalled: { label: "Not installed", icon: "cloud_off", tone: "neutral" },
+		updateAvailable: { label: "Update", icon: "system_update_alt", tone: "warning" },
+		notInstalled: { label: "Not installed", icon: "download", tone: "success" },
 		downloading: { label: "Downloading", icon: "downloading", tone: "warning" },
 		installing: { label: "Installing", icon: "progress_activity", tone: "warning" }
 	};
 </script>
 
 {#snippet stateBadge(state: TileState)}
-	<span class="state-badge" role="img" aria-label={STATE_VIEW[state].label} title={STATE_VIEW[state].label}>
+	<span class="state-badge {state}" role="img" aria-label={STATE_VIEW[state].label} title={STATE_VIEW[state].label}>
 		<Badge icon={STATE_VIEW[state].icon} tone={STATE_VIEW[state].tone} />
 	</span>
 {/snippet}
@@ -270,6 +270,15 @@
 		background: var(--tone);
 		color: var(--bg-base);
 		backdrop-filter: none;
+	}
+
+	/* Update is yellow and install is green, both with a dark icon. */
+	.state-badge.updateAvailable :global(.badge) {
+		--tone: var(--tile-update);
+	}
+
+	.state-badge.notInstalled :global(.badge) {
+		--tone: var(--success);
 	}
 
 	/* Badge sets its icon to 14px inline, so this must win over that inline style. */
