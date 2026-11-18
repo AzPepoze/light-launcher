@@ -104,3 +104,37 @@ export function useScreenshot(getShot: () => ScreenshotSource): MediaImage {
 		};
 	});
 }
+
+/**
+ * The URLs of a list of screenshots, the same ones useScreenshot shows: the cached copy when
+ * there is one, otherwise the remote link. Each entry starts as the remote link and switches
+ * to the cached copy when it loads. Call it during component setup.
+ */
+export function useScreenshotUrls(getShots: () => ScreenshotSource[]): { readonly urls: string[] } {
+	const scope = `shots-${++nextScope}`;
+	let urls = $state<string[]>([]);
+
+	$effect(() => {
+		const shots = getShots();
+		let active = true;
+		urls = shots.map((shot) => shot.remote);
+		shots.forEach((shot, position) => {
+			const itemScope = `${scope}-${position}`;
+			const key = screenshotKey(shot.gameId, shot.index, shot.local);
+			const route = screenshotRoute(shot.gameId, shot.index);
+			void media.load(itemScope, key, route).then((local) => {
+				if (active && local) urls[position] = local;
+			});
+		});
+		return () => {
+			active = false;
+			shots.forEach((_, position) => media.release(`${scope}-${position}`));
+		};
+	});
+
+	return {
+		get urls() {
+			return urls;
+		}
+	};
+}
