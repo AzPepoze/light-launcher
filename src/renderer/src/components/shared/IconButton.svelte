@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { HTMLButtonAttributes } from "svelte/elements";
 	import Icon from "./Icon.svelte";
+	import { tooltip } from "./tooltip";
 
 	type Props = Omit<HTMLButtonAttributes, "type" | "onclick"> & {
 		icon: string;
@@ -31,7 +32,7 @@
 	class="icon-button {tone} {className}"
 	style:width="{size}px"
 	style:height="{size}px"
-	title={label}
+	use:tooltip={label}
 	aria-label={label}
 	{...rest}
 	type="button"
