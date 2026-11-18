@@ -4,11 +4,12 @@
 	import { fade, fly } from "svelte/transition";
 	import Icon from "./Icon.svelte";
 
+	/* Material Symbols names. The old Material Icons names rendered as literal text. */
 	const TYPE_ICONS: Record<NotificationType, string> = {
-		error: "error_outline",
-		warning: "warning_amber",
-		success: "check_circle_outline",
-		info: "info_outline"
+		error: "error",
+		warning: "warning",
+		success: "check_circle",
+		info: "info"
 	};
 
 	const toasts = notifications.toasts;
@@ -98,6 +99,8 @@
 
 		.message {
 			flex: 1;
+			min-width: 0;
+			overflow-wrap: anywhere;
 			font-size: 0.85rem;
 			font-weight: 800;
 			text-transform: uppercase;
@@ -111,6 +114,7 @@
 		}
 
 		.close {
+			flex-shrink: 0;
 			background: var(--bg-base);
 			border: 2px solid rgba(255, 255, 255, 0.05);
 			color: var(--text-muted);
