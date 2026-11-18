@@ -7,6 +7,7 @@
 	import IconButton from "@components/shared/IconButton.svelte";
 	import PageHeader from "@components/shared/PageHeader.svelte";
 	import Tabs from "@components/shared/Tabs.svelte";
+	import { tooltip } from "@components/shared/tooltip";
 	import {
 		groupByDay,
 		notifications,
@@ -153,7 +154,7 @@
 									</p>
 									<div class="meta">
 										<Badge>{entry.source ?? "Launcher"}</Badge>
-										<span class="time" title={fullTime(entry.time)}>
+										<span class="time" use:tooltip={fullTime(entry.time)}>
 											{relativeTime(entry.time, now)}
 										</span>
 									</div>
