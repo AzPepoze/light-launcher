@@ -66,12 +66,18 @@
 
 	const STATE_VIEW: Record<TileState, { label: string; icon: string; tone: "danger" | "accent" | "neutral" | "warning" }> = {
 		favorite: { label: "Favorite", icon: "favorite", tone: "danger" },
-		updateAvailable: { label: "Update", icon: "system_update", tone: "accent" },
-		notInstalled: { label: "Not installed", icon: "download", tone: "neutral" },
+		updateAvailable: { label: "Update", icon: "system_update_alt", tone: "accent" },
+		notInstalled: { label: "Not installed", icon: "cloud_off", tone: "neutral" },
 		downloading: { label: "Downloading", icon: "downloading", tone: "warning" },
 		installing: { label: "Installing", icon: "progress_activity", tone: "warning" }
 	};
 </script>
+
+{#snippet stateBadge(state: TileState)}
+	<span class="state-badge" role="img" aria-label={STATE_VIEW[state].label} title={STATE_VIEW[state].label}>
+		<Badge icon={STATE_VIEW[state].icon} tone={STATE_VIEW[state].tone} />
+	</span>
+{/snippet}
 
 <button
 	class="tile"
@@ -96,14 +102,14 @@
 		{#if cornerStart.length > 0}
 			<span class="corner start">
 				{#each cornerStart as state (state)}
-					<Badge icon={STATE_VIEW[state].icon} tone={STATE_VIEW[state].tone}>{STATE_VIEW[state].label}</Badge>
+					{@render stateBadge(state)}
 				{/each}
 			</span>
 		{/if}
 		{#if cornerEnd.length > 0}
 			<span class="corner end">
 				{#each cornerEnd as state (state)}
-					<Badge icon={STATE_VIEW[state].icon} tone={STATE_VIEW[state].tone}>{STATE_VIEW[state].label}</Badge>
+					{@render stateBadge(state)}
 				{/each}
 			</span>
 		{/if}
@@ -251,6 +257,24 @@
 			right: 6px;
 			justify-content: flex-end;
 		}
+	}
+
+	/* Solid round icon badges, coloured by the tone the badge gets from its state. */
+	.corner :global(.badge) {
+		width: 26px;
+		height: 26px;
+		padding: 0;
+		justify-content: center;
+		border: none;
+		border-radius: 50%;
+		background: var(--tone);
+		color: var(--bg-base);
+		backdrop-filter: none;
+	}
+
+	/* Badge sets its icon to 14px inline, so this must win over that inline style. */
+	.corner :global(.badge .material-symbols-rounded) {
+		font-size: 16px !important;
 	}
 
 	/* Bottom overlay: fades in with a 6px slide on hover and focus, always shown on touch. */
