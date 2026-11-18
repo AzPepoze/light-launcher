@@ -1,7 +1,8 @@
 <script lang="ts">
 	import CreatePrefixForm from "./CreatePrefixForm.svelte";
 	import PrefixListItem from "./PrefixListItem.svelte";
-	import Icon from "@components/shared/Icon.svelte";
+	import Button from "@components/shared/Button.svelte";
+	import EmptyState from "@components/shared/EmptyState.svelte";
 	import { formatBytes } from "@lib/features/format";
 
 	export let availablePrefixes: string[] = [];
@@ -44,7 +45,9 @@
 
 	<div class="prefix-list" role="listbox" aria-label="Available prefixes">
 		{#if availablePrefixes.length === 0 && !showCreateForm}
-			<p class="list-empty-hint">No prefixes yet</p>
+			<EmptyState icon="folder_off" title="No prefixes yet" hint="A prefix keeps a game's files apart.">
+				<Button variant="primary" size="sm" icon="add" onclick={openCreateForm}>New prefix</Button>
+			</EmptyState>
 		{/if}
 
 		{#each availablePrefixes as name (name)}
@@ -58,21 +61,17 @@
 			/>
 		{/each}
 
+	</div>
+
+	<div class="list-footer">
 		{#if showCreateForm}
 			<CreatePrefixForm
 				{availablePrefixes}
 				onCreate={handleCreate}
 				onCancel={closeCreateForm}
 			/>
-		{:else}
-			<button
-				type="button"
-				class="list-row add-row"
-				on:click={openCreateForm}
-			>
-				<Icon name="add" size={20} class="row-icon" />
-				<span class="add-label">New prefix</span>
-			</button>
+		{:else if availablePrefixes.length > 0}
+			<Button variant="secondary" icon="add" class="new-prefix-btn" onclick={openCreateForm}>New prefix</Button>
 		{/if}
 	</div>
 </div>
@@ -103,8 +102,6 @@
 			font-weight: 800;
 			margin: 0;
 			color: var(--text-main);
-			text-transform: uppercase;
-			letter-spacing: 0.8px;
 			flex: 1;
 		}
 	}
@@ -145,49 +142,31 @@
 		}
 	}
 
-	.list-empty-hint {
-		margin: 8px 12px 4px;
-		font-size: 0.78rem;
-		font-weight: 600;
-		color: var(--text-dim);
-		text-align: center;
+	.list-footer {
+		padding: 10px;
+		border-top: 2px solid var(--glass-border);
+		flex-shrink: 0;
+
+		:global(.new-prefix-btn) {
+			width: 100%;
+		}
 	}
 
-	.list-row {
-		display: flex;
-		align-items: center;
-		gap: 10px;
-		width: 100%;
-		border-radius: var(--radius-md);
-		box-sizing: border-box;
-	}
-
-	.add-row {
-		padding: 11px 12px;
-		border: 2px dashed var(--glass-border);
-		background: transparent;
-		color: var(--text-muted);
-		cursor: pointer;
-		text-align: left;
-		transition:
-			border-color var(--transition-fast),
-			background var(--transition-fast),
-			color var(--transition-fast);
-
-		:global(.row-icon) {
-			color: var(--accent-primary);
+	@media (max-width: 900px) {
+		.prefix-list-panel {
+			height: auto;
+			max-height: none;
 		}
 
-		.add-label {
-			font-size: 0.85rem;
-			font-weight: 700;
-		}
+		.prefix-list {
+			flex: none;
+			flex-direction: row;
+			overflow-x: auto;
+			overflow-y: hidden;
 
-		&:hover {
-			border-color: var(--accent-secondary);
-			border-style: solid;
-			background: var(--bg-elevated);
-			color: var(--text-main);
+			:global(.prefix-item) {
+				flex: 0 0 auto;
+			}
 		}
 	}
 </style>
