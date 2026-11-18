@@ -143,7 +143,8 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | Library narrow width and update count: check by eye in the real window. |
 | [x] | Updates tab at 390x844: the Notes and Update buttons sit under the title, and none are clipped. Checked by measurement; check by eye in the real window. |
 | [ ] | `MarkSeen` has no callers, so the unseen update checks never clear. The Updates badge now uses the game count from the header instead. |
-| [ ] | Settings section sidebar: check by eye in the real window. |
+| [x] | Settings sections scroll in their own column; the nav stays put at 1440x900 and becomes chips under 900px. Checked by measurement; check by eye in the real window. |
+| [ ] | Settings at 390x844: some number and text fields are 13px wider than the sections column, so the column scrolls sideways a little. The page itself does not. Check the fields and fix their width. |
 | [x] | The plugin SDK docs describe `sidebar`, the `browse:filters` capability, `source.browse` and `source.listFilters`. |
 | [x] | itch implements `source.browse`/`source.listFilters` with a search sidebar. It scrapes itch.io's public search HTML; there is no stable search API or pager, and sort is best-effort. |
 
