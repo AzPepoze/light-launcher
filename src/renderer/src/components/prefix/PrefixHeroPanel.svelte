@@ -1,7 +1,13 @@
 <script lang="ts">
+	import Badge from "@components/shared/Badge.svelte";
+	import BrowseInput from "@components/shared/BrowseInput.svelte";
+	import Button from "@components/shared/Button.svelte";
 	import Dropdown, { asOptions } from "@components/shared/Dropdown.svelte";
 	import Icon from "@components/shared/Icon.svelte";
-	import BrowseInput from "@components/shared/BrowseInput.svelte";
+	import Notice from "@components/shared/Notice.svelte";
+	import Section from "@components/shared/Section.svelte";
+	import SettingRow from "@components/shared/SettingRow.svelte";
+	import { navigateTo } from "@stores/navigationStore";
 
 	export let currentPrefixName: string;
 	export let protonDisplayNames: string[];
@@ -13,158 +19,132 @@
 
 	$: protonItems = asOptions(protonDisplayNames);
 	$: hasProton = protonDisplayNames.length > 0;
+
+	function openVersions() {
+		navigateTo("versions");
+	}
 </script>
 
-<section class="panel hero-panel">
-	<div class="hero-top">
-		<div class="hero-title">
-			<Icon name="folder" size={36} class="hero-icon" />
-			<div>
-				<p class="hero-label">Active prefix</p>
-				<h2 class="hero-name">{currentPrefixName}</h2>
-			</div>
-		</div>
-		<div class="runtime-field">
-			<label class="field-label" for="prefix-runtime">
-				<Icon name="science" size={16} />
-				Runtime
-			</label>
-			<div class="runtime-dropdown" id="prefix-runtime">
+<header class="active-header">
+	<Icon name="folder" size={32} class="header-icon" />
+	<div class="header-text">
+		<p class="header-label">Active prefix</p>
+		<h2 class="header-name">{currentPrefixName}</h2>
+	</div>
+	<Badge tone={chosenProtonName ? "accent" : "warning"} icon="science">
+		{chosenProtonName || "No runtime selected"}
+	</Badge>
+</header>
+
+<Section title="Runtime" help="Proton runs the games and tools in this prefix.">
+	{#if hasProton}
+		<SettingRow title="Proton version" help="Used for every tool and game in this prefix.">
+			<div class="runtime-control">
 				<Dropdown
 					options={protonItems}
 					bind:value={chosenProtonName}
 					placeholder="Choose a Proton version"
-					disabled={!hasProton}
-					disabledMessage="No Proton installed"
 				/>
 			</div>
-		</div>
-	</div>
+		</SettingRow>
+	{:else}
+		<Notice tone="warning" icon="info">
+			<div class="notice-action">
+				<p>No Proton installed. Install one on the Versions page.</p>
+				<Button size="sm" icon="open_in_new" onclick={openVersions}>Open Versions</Button>
+			</div>
+		</Notice>
+	{/if}
+</Section>
 
-	<div style="margin-top: 16px;">
+<Section title="Location" help="The folder that holds this prefix's files.">
+	<div class="location-field">
+		<label class="field-label" for="prefix-path">Prefix folder</label>
 		<BrowseInput
+			id="prefix-path"
 			bind:value={prefixPath}
-			placeholder="Path to WINE prefix..."
+			placeholder="Path to Wine prefix"
 			type="folder"
 		/>
 	</div>
-
-	<div class="hero-badges">
-		<span class="hero-badge">{heroSize}</span>
-		<span class="hero-badge">{heroGamesLinked}</span>
-		<span class="hero-badge">{heroCreated}</span>
+	<div class="facts">
+		<Badge icon="hard_drive">{heroSize}</Badge>
+		<Badge icon="sports_esports">{heroGamesLinked}</Badge>
+		<Badge icon="event">{heroCreated}</Badge>
 	</div>
-</section>
+</Section>
 
 <style lang="scss">
-	.panel {
-		background: var(--bg-surface);
-		border: 2px solid var(--glass-border);
-		border-radius: var(--radius-lg);
-		padding: 22px 24px;
-	}
-
-	.hero-panel {
-		display: flex;
-		flex-direction: column;
-		gap: 18px;
-	}
-
-	.hero-top {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: flex-end;
-		justify-content: space-between;
-		gap: 20px;
-	}
-
-	.hero-title {
+	.active-header {
 		display: flex;
 		align-items: center;
 		gap: 14px;
-		min-width: 0;
+		padding: 18px 24px;
+		background: var(--bg-surface);
+		border: 2px solid var(--glass-border);
+		border-radius: var(--radius-lg);
+		flex-wrap: wrap;
 
-		:global(.hero-icon) {
+		:global(.header-icon) {
 			color: var(--accent-primary);
 			flex-shrink: 0;
 		}
 	}
 
-	.hero-label {
+	.header-text {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.header-label {
 		margin: 0 0 2px;
-		font-size: 0.75rem;
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 1px;
+		font-size: 0.8rem;
+		font-weight: 600;
 		color: var(--text-muted);
 	}
 
-	.hero-name {
+	.header-name {
 		margin: 0;
-		font-size: 1.5rem;
+		font-size: 1.3rem;
 		font-weight: 800;
 		color: var(--text-main);
-		text-transform: uppercase;
-		letter-spacing: 1px;
-		line-height: 1.1;
+		line-height: 1.2;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
-		max-width: 320px;
 	}
 
-	.runtime-field {
+	.runtime-control {
+		width: min(360px, 100%);
+	}
+
+	.notice-action {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		flex-wrap: wrap;
+
+		p {
+			margin: 0;
+		}
+	}
+
+	.location-field {
 		display: flex;
 		flex-direction: column;
 		gap: 8px;
-		min-width: 220px;
-		flex: 1;
-		max-width: 360px;
 	}
 
 	.field-label {
-		display: flex;
-		align-items: center;
-		gap: 6px;
-		font-size: 0.75rem;
-		font-weight: 800;
-		text-transform: uppercase;
-		letter-spacing: 0.5px;
-		color: var(--accent-primary);
+		font-size: 0.85rem;
+		font-weight: 700;
+		color: var(--text-main);
 	}
 
-	.runtime-dropdown {
-		width: 100%;
-	}
-
-	.hero-badges {
+	.facts {
 		display: flex;
 		gap: 8px;
 		flex-wrap: wrap;
-		margin-top: 14px;
-	}
-
-	.hero-badge {
-		display: inline-flex;
-		align-items: center;
-		padding: 4px 10px;
-		border-radius: var(--radius-pill);
-		background: var(--bg-elevated);
-		border: 1px solid var(--glass-border);
-		font-size: 0.68rem;
-		font-weight: 800;
-		letter-spacing: 0.4px;
-		color: var(--text-muted);
-		white-space: nowrap;
-	}
-
-	@media (max-width: 900px) {
-		.hero-name {
-			max-width: 100%;
-		}
-
-		.runtime-field {
-			max-width: 100%;
-		}
 	}
 </style>

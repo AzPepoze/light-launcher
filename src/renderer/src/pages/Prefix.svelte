@@ -251,7 +251,7 @@
 	<PageHeader
 		title="Prefix Manager"
 		icon="folder_shared"
-		subtitle="Wine/Proton prefixes, runtime, and default launch options"
+		subtitle="Wine and Proton prefixes, runtimes and launch defaults"
 	/>
 
 		{#if isPageLoading}
