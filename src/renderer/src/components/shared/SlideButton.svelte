@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Icon from "./Icon.svelte";
+	import { tooltip } from "./tooltip";
 
 	export let checked = false;
 	export let label = "";
@@ -38,7 +39,8 @@
 			<button
 				class="config-btn"
 				on:click={openConfig}
-				title="Configure"
+				use:tooltip={"Configure"}
+				aria-label="Configure"
 			>
 				<Icon name="settings" size={16} />
 			</button>

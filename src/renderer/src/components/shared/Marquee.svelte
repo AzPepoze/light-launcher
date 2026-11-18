@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { marqueeTextShift } from "../../features/home/state/marqueeGeometry";
+	import { tooltip } from "./tooltip";
 
 	let {
 		text,
@@ -45,7 +46,7 @@
 		class="marquee-text {className}"
 		class:scrolling={shift > 0}
 		style="--marquee-shift: -{shift}px;"
-		title={title}
+		use:tooltip={title ?? ""}
 		bind:this={textEl}>{text}</span
 	>
 </span>

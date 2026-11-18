@@ -4,6 +4,7 @@
 	import { notifications } from "@stores/notificationStore";
 	import { routes, type AppRoute } from "../../app/routes";
 	import Icon from "./Icon.svelte";
+	import { tooltip } from "./tooltip";
 
 	export let activePage: string = "home";
 	export let onNavigate: (page: string) => void = () => {};
@@ -57,7 +58,7 @@
 		data-id={item.id}
 		class:active={activePage === item.id}
 		on:click={() => setActive(item.id)}
-		title={item.label}
+		use:tooltip={item.label}
 		aria-label={item.id === "notifications" && $unreadCount > 0
 			? `${item.label}, ${$unreadCount} unread`
 			: item.label}

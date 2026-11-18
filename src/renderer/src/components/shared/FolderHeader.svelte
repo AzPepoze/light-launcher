@@ -1,6 +1,7 @@
 <script lang="ts">
 	import AppMenu from "@components/shared/AppMenu.svelte";
 	import Icon from "@components/shared/Icon.svelte";
+	import { tooltip } from "@components/shared/tooltip";
 	import MenuTrigger from "@components/shared/MenuTrigger.svelte";
 	import ProgressBar from "@components/shared/ProgressBar.svelte";
 	import { GAME_FOLDERS_SECTION } from "@lib/features/settingsSection";
@@ -33,7 +34,7 @@
 	data-sticky-header=""
 	data-stuck-key={stuckKey}
 >
-	<div class="folder-title" title={subtitle || name}>
+	<div class="folder-title" use:tooltip={subtitle || name}>
 		<Icon name={icon} size={26} class="folder-icon-main" />
 		<div class="folder-metadata">
 			<span class="folder-name">{name}</span>
