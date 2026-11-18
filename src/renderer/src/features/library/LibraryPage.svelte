@@ -13,7 +13,6 @@
 	import type { TabItem } from "@components/shared/tabs";
 	import { libraryTab, type LibraryTab } from "@stores/libraryTabStore";
 	import type { Game, LibrarySource, SourceAction } from "../../lib/features/types";
-	import { libraryApi } from "../../lib/features/libraryApi";
 	import { loadAppSettings } from "../../lib/settingsService";
 	import {
 		LIBRARY_CARD_SIZE_DEFAULT,
@@ -31,6 +30,7 @@
 	import { REVEAL_MAX_TILES, revealDoneMs } from "./libraryMotion";
 	import { sectionElementId, showsSection, sourceLabel } from "./librarySections";
 	import { sourceIcon } from "./sourceIcon";
+	import { librarySubtitle, updateCountOf } from "./libraryCounts";
 	import { syncMessage } from "./librarySync";
 	import { coverRatioOf } from "./coverRatio";
 	import { canSyncGames } from "./syncFlag";
@@ -69,7 +69,6 @@
 		downloads: startingTab === "downloads",
 		incoming: startingTab === "incoming"
 	});
-	let updateCount = $state(0);
 	let selected = $state<Game | null>(null);
 	let addOpen = $state(false);
 	let addUrl = $state("");
@@ -87,13 +86,15 @@
 	const shownTotal = $derived(
 		visibleSections.reduce((sum, source) => sum + (library.listOf(source.source).total ?? 0), 0)
 	);
-	const subtitle = $derived(
-		`${library.overview.stats.total} games · ${library.overview.stats.installed} installed` +
-			(library.overview.stats.updates ? ` · ${library.overview.stats.updates} updates` : "")
-	);
+	const subtitle = $derived(librarySubtitle(library.overview.stats));
 	const topTabs = $derived<TabItem[]>([
 		{ id: "games", label: "Games", icon: "videogame_asset" },
-		{ id: "updates", label: "Updates", icon: "system_update_alt", badge: updateCount },
+		{
+			id: "updates",
+			label: "Updates",
+			icon: "system_update_alt",
+			badge: updateCountOf(library.overview.stats)
+		},
 		{ id: "downloads", label: "Downloads", icon: "downloading", badge: activeDownloads },
 		{ id: "incoming", label: "Incoming", icon: "move_to_inbox" }
 	]);
@@ -113,8 +114,6 @@
 		});
 		void library.start();
 		void loadAppearance();
-		// The Updates page reads its own status and reports it back, so start it only off that tab.
-		if (tab !== "updates") void loadUpdateCount();
 		void downloads.load();
 		const stopDownloads = downloads.subscribe();
 		const stopLibrary = library.subscribe();
@@ -156,15 +155,6 @@
 		if (!settings) return;
 		cardSize = libraryCardSize(settings);
 		blurCovers = blurCoversUntilHover(settings);
-	}
-
-	/** Reads the unseen update count for the Updates tab badge. Starts no check. */
-	async function loadUpdateCount() {
-		try {
-			updateCount = (await libraryApi.updateStatus()).count;
-		} catch {
-			// The badge stays empty; the Updates tab shows the error itself.
-		}
 	}
 
 	function selectTab(id: string) {
@@ -267,7 +257,7 @@
 			hidden={tab !== "updates"}
 			aria-hidden={tab !== "updates"}
 		>
-			<UpdatesPage sources={library.overview.sources} onStatus={(next) => (updateCount = next.count)} />
+			<UpdatesPage sources={library.overview.sources} />
 		</div>
 	{/if}
 
