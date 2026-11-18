@@ -415,7 +415,6 @@
 									ratio={coverRatioOf(source.cover)}
 									minColumnPx={cardSize}
 									card={source.card}
-									variant={source.kind === "local" ? "home" : "cover"}
 									{transfers}
 									blurUntilHover={blurCovers}
 									{revealed}

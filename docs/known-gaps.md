@@ -163,7 +163,8 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [x] | The Library overview carries `kind`, `capabilities`, `sync` and `updateCheck`; the Updates page reads them from the overview instead of `PluginsList`. |
 | [x] | Updates, Downloads and Incoming mount lazily on first visit and then stay mounted but hidden; in-flight and expanded state survives tab switches. Per-tab scroll still uses the shared page scroller. |
 | [x] | Library sidebar and rail have no background or divider; choices are rows with a tinted selected state, no checkbox. |
-| [x] | Library cards: no Installed badge, name and version in a hover overlay on the cover, denser 12 px grid. |
+| [x] | Library cards: no Installed badge, the name sits under each cover, denser 12 px grid. Superseded by the tile redesign row below for the look. |
+| [ ] | Library tile pills: only Favorite, Not installed, Downloading and Installing are drawn. An update that is waiting shows no pill (Updates tab only). Confirm the wording. |
 | [x] | Updates page shows "Last checked X ago · Next check in Y" from `nextRunAt`. |
 | [x] | Notification center as a full page, with its bell at the bottom of the left rail. Built and tested, not seen in a window. |
 | [x] | Rebuilt `bin/light-launcher` and `bin/light-launcher-instance` with the embedded UI. |

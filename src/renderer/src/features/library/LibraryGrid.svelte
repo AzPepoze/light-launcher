@@ -13,7 +13,6 @@
 		ratio,
 		minColumnPx,
 		card,
-		variant,
 		transfers,
 		blurUntilHover,
 		revealed,
@@ -27,8 +26,6 @@
 		/** Smallest width of one column, from the card size setting. */
 		minColumnPx: number;
 		card: SourceCard | null;
-		/** The card look: media covers, or the square Home-style frame for local games. */
-		variant: "cover" | "home";
 		/** The download or install running for each game id. */
 		transfers: Map<number, TransferKind>;
 		blurUntilHover: boolean;
@@ -122,19 +119,13 @@
 						{game}
 						{ratio}
 						{card}
-						{variant}
 						transfer={transfers.get(game.id) ?? null}
 						{blurUntilHover}
 						revealIndex={revealIndex(index, revealed)}
 						{onOpen}
 					/>
 				{:else}
-					<span
-						class="skeleton cover"
-						class:home={variant === "home"}
-						style:aspect-ratio={ratio}
-						aria-hidden="true"
-					></span>
+					<span class="skeleton cover" style:aspect-ratio={ratio} aria-hidden="true"></span>
 				{/if}
 			</li>
 		{/each}
@@ -145,8 +136,9 @@
 <style lang="scss">
 	.grid {
 		display: grid;
-		/* Covers form a dense wall: 12px between them both ways. */
-		gap: 12px;
+		/* Covers form a dense wall. The row gap is inside rowHeight, so only columns need a gap here. */
+		column-gap: 12px;
+		row-gap: 0;
 		margin: 0;
 		padding: 0;
 		list-style: none;
@@ -157,18 +149,9 @@
 		min-width: 0;
 	}
 
-
 	.cover {
 		display: block;
 		width: 100%;
-		border-radius: var(--radius-md);
+		border-radius: var(--library-tile-radius);
 	}
-
-	/* Matches the padded Home-style frame used for local games. */
-	.cover.home {
-		width: calc(100% - 16px);
-		margin: 8px;
-		border-radius: var(--radius-lg);
-	}
-
 </style>
