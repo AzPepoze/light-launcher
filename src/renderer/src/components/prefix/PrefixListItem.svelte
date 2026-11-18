@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Icon from "@components/shared/Icon.svelte";
+	import { tooltip } from "@components/shared/tooltip";
 
 	export let name: string;
 	export let currentPrefixName: string = "";
@@ -39,7 +40,7 @@
 		</span>
 	</button>
 	{#if hasRunning}
-		<span class="running-indicator" title="{runningGames.length} running">
+		<span class="running-indicator">
 			<span class="pulse-dot"></span>
 			<span class="running-count">{runningGames.length}</span>
 		</span>
@@ -56,7 +57,7 @@
 		<button
 			type="button"
 			class="remove-btn"
-			title="Delete {name}"
+			use:tooltip={`Delete ${name}`}
 			aria-label="Delete {name}"
 			on:click|stopPropagation={() => onRemovePrefix(name)}
 		>

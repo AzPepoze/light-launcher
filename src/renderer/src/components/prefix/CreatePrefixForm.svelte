@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { tick } from "svelte";
 	import Icon from "@components/shared/Icon.svelte";
+	import { tooltip } from "@components/shared/tooltip";
 
 	export let availablePrefixes: string[] = [];
 	export let onCreate: (name: string) => void;
@@ -83,7 +84,7 @@
 		<button
 			type="button"
 			class="icon-action"
-			title="Cancel"
+			use:tooltip={"Cancel"}
 			aria-label="Cancel"
 			on:click={onCancel}
 		>
@@ -92,7 +93,7 @@
 		<button
 			type="button"
 			class="icon-action confirm"
-			title="Create"
+			use:tooltip={"Create"}
 			aria-label="Create prefix"
 			disabled={!canCreate}
 			on:click={submitCreate}
