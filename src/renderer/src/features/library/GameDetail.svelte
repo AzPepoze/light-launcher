@@ -4,6 +4,7 @@
 	import CoverImage from "@components/shared/CoverImage.svelte";
 	import ExpandableText from "@components/shared/ExpandableText.svelte";
 	import Icon from "@components/shared/Icon.svelte";
+	import IconButton from "@components/shared/IconButton.svelte";
 	import ScreenshotImage from "@components/shared/ScreenshotImage.svelte";
 	import { notifications } from "@stores/notificationStore";
 	import { libraryApi } from "../../lib/features/libraryApi";
@@ -187,7 +188,9 @@
 			<Icon name={game.favorite ? "star" : "star_border"} size={18} />
 			{game.favorite ? "Favorited" : "Favorite"}
 		</Button>
-		<a class="btn sm" href={game.url} target="_blank" rel="noreferrer">Open page</a>
+		<a class="icon-link" href={game.url} target="_blank" rel="noreferrer" title="Open page" aria-label="Open page">
+			<Icon name="open_in_new" size={18} />
+		</a>
 		{#each actions as action (action.id)}
 			<Button
 				icon={action.icon}
@@ -199,14 +202,12 @@
 			</Button>
 		{/each}
 		{#if game.sourceKind === "plugin"}
-			<Button
-				icon="refresh"
-				loading={refreshingFiles}
-				disabled={runningAction !== "" || busy}
+			<IconButton
+				icon={refreshingFiles ? "hourglass_top" : "refresh"}
+				label="Refresh files"
+				disabled={runningAction !== "" || busy || refreshingFiles}
 				onclick={refreshFiles}
-			>
-				Refresh files
-			</Button>
+			/>
 		{/if}
 	</div>
 
@@ -411,8 +412,28 @@
 		flex-wrap: wrap;
 		gap: 8px;
 
-		a {
-			text-decoration: none;
+	}
+
+	/* The Open page link is an icon with a tooltip, sized like the icon buttons beside it. */
+	.icon-link {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 36px;
+		height: 36px;
+		box-sizing: border-box;
+		border: 1px solid var(--glass-border);
+		border-radius: var(--radius-pill);
+		color: var(--text-muted);
+		text-decoration: none;
+
+		&:hover {
+			color: var(--text-main);
+		}
+
+		&:focus-visible {
+			outline: 2px solid var(--accent-primary);
+			outline-offset: 2px;
 		}
 	}
 
