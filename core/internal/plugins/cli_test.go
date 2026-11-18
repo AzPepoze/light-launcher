@@ -42,6 +42,34 @@ func TestCLIInstallListAndRemove(t *testing.T) {
 	}
 }
 
+func TestCLIDevLinkAndUnlink(t *testing.T) {
+	host := newTestHost(t)
+	dir := filepath.Join(t.TempDir(), "fixture-src")
+	writeDevFolder(t, dir, "0.2.0")
+	ctx := context.Background()
+
+	var out bytes.Buffer
+	if code := runCommand(ctx, host, []string{"plugin", "dev", dir}, &out); code != 0 {
+		t.Fatalf("dev exit = %d, output %q", code, out.String())
+	}
+	if !strings.Contains(out.String(), "linked for development fixture (version 0.2.0)") {
+		t.Fatalf("dev output = %q", out.String())
+	}
+
+	out.Reset()
+	if code := runCommand(ctx, host, []string{"plugin", "unlink", "fixture"}, &out); code != 0 {
+		t.Fatalf("unlink exit = %d, output %q", code, out.String())
+	}
+	if !strings.Contains(out.String(), "unlinked fixture") {
+		t.Fatalf("unlink output = %q", out.String())
+	}
+
+	out.Reset()
+	if code := runCommand(ctx, host, []string{"plugin", "unlink", "fixture"}, &out); code != 1 {
+		t.Fatalf("second unlink exit = %d, want 1, output %q", code, out.String())
+	}
+}
+
 func TestCLIRejectsUnknownCommandsAndFlags(t *testing.T) {
 	host := newTestHost(t)
 	ctx := context.Background()

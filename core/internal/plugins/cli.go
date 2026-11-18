@@ -19,6 +19,8 @@ const usageText = `Usage:
   plugin enable <id>
   plugin disable <id>
   plugin rollback <id>
+  plugin dev <path>
+  plugin unlink <id>
 `
 
 var errUsage = errors.New("usage")
@@ -85,6 +87,15 @@ func dispatch(ctx context.Context, host *Host, command string, rest []string, ou
 			return err
 		}
 		fmt.Fprintf(out, "removed %s\n", target)
+		return nil
+	case "dev":
+		info, err := host.DevLink(target)
+		return reportChange(info, err, "linked for development", out)
+	case "unlink":
+		if err := host.DevUnlink(target); err != nil {
+			return err
+		}
+		fmt.Fprintf(out, "unlinked %s\n", target)
 		return nil
 	default:
 		return errUsage
