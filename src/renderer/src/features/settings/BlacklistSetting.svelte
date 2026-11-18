@@ -36,7 +36,7 @@
 						icon="settings_backup_restore"
 						class="restore-btn"
 						onclick={() => handleRestoreGame(path)}
-						title="Restore game"
+						tooltip="Restore game"
 					>
 						Restore
 					</Button>
