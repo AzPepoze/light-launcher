@@ -8,6 +8,7 @@
 	import { getDominantColor } from "@lib/dominantColor";
 	import { iconFade } from "@lib/iconReveal";
 	import { cardIconState, type CardIconState } from "../shared/cardIconState";
+	import { getGamePath } from "@lib/gameUtils";
 
 	export let game: any;
 	export let icon: string = "";
@@ -167,6 +168,7 @@
 				<span class="launch-icon-large">
 					<AnimatedPlayIcon size={64} />
 				</span>
+				<span class="overlay-path" title={getGamePath(game)}>{getGamePath(game)}</span>
 			{/if}
 		</div>
 
@@ -185,7 +187,7 @@
 					aria-label="Configure {game.name}"
 					on:click|stopPropagation={handleConfigure}
 				>
-					<Icon name="settings" size={16} />
+					<Icon name="settings" size={22} />
 				</button>
 			</div>
 		</div>
@@ -445,6 +447,21 @@
 			position: relative;
 			z-index: 2;
 		}
+
+		.overlay-path {
+			position: absolute;
+			left: 10px;
+			right: 10px;
+			bottom: 10px;
+			z-index: 2;
+			font-size: 0.7rem;
+			font-weight: 700;
+			color: var(--text-muted);
+			text-align: center;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
 	}
 
 	.game-card:hover .launch-icon-large,
@@ -506,9 +523,7 @@
 
 	.config-btn {
 		flex-shrink: 0;
-		width: 28px;
-		height: 28px;
-		padding: 0;
+		padding: 12px;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
