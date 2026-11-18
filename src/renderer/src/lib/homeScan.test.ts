@@ -58,9 +58,17 @@ describe("toHomeScan", () => {
 		});
 	});
 
-	it("maps a done payload", () => {
-		expect(toHomeScan({ state: "done", done: 5, total: 5, current: "Games" })).toEqual({
-			state: "done"
+	it("maps a done payload and keeps its found count", () => {
+		expect(toHomeScan({ state: "done", done: 5, total: 5, found: 8, current: "Games" })).toEqual({
+			state: "done",
+			found: 8
+		});
+	});
+
+	it("defaults a missing found count on a done payload to zero", () => {
+		expect(toHomeScan({ state: "done", done: 5, total: 5 })).toEqual({
+			state: "done",
+			found: 0
 		});
 	});
 
@@ -95,7 +103,10 @@ describe("toScanGroup", () => {
 
 	it("treats a null games list as empty", () => {
 		expect(
-			toScanGroup({ state: "running", group: { folderPath: "D:/Lib", folderName: "Lib", games: null } })
+			toScanGroup({
+				state: "running",
+				group: { folderPath: "D:/Lib", folderName: "Lib", games: null }
+			})
 		).toEqual({ folderPath: "D:/Lib", folderName: "Lib", games: [] });
 	});
 
