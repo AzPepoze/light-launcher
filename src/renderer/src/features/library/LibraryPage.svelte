@@ -42,6 +42,10 @@
 	import DownloadsPage from "../downloads/DownloadsPage.svelte";
 	import UpdatesPage from "../updates/UpdatesPage.svelte";
 	import { transferKinds } from "./transferState";
+	import { fade, fly } from "svelte/transition";
+
+	/** The drawer's open and close time. Zero when the system asks for less motion. */
+	const DRAWER_MS = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 240;
 
 	const SYNC_HINT = "Adds the games from your account to the Library";
 	const SIZE_SAVE_DELAY_MS = 400;
@@ -401,18 +405,19 @@
 				{#if selected}
 					<div
 						class="detail-backdrop"
+						transition:fade={{ duration: DRAWER_MS }}
 						role="presentation"
 						title="Click outside to close"
 						onclick={closeGame}
 					></div>
 					<aside
 						class="detail-col"
+						transition:fly={{ x: 28, duration: DRAWER_MS }}
 						role="dialog"
 						aria-modal="true"
 						aria-label="Game details"
 					>
-						<div class="detail-chrome">
-							<span class="detail-eyebrow">Game details</span>
+						<div class="detail-close">
 							<IconButton icon="close" label="Close" onclick={closeGame} />
 						</div>
 						<!-- Keyed by id so switching tiles resets the scroll and loads the new game's files and notes. -->
@@ -546,7 +551,6 @@
 		-webkit-backdrop-filter: blur(10px);
 		backdrop-filter: blur(10px);
 		cursor: pointer;
-		animation: detail-backdrop-in var(--motion-base) var(--ease-out) both;
 	}
 
 	/* The drawer itself is sharp and opaque: the blur belongs to the excluded backdrop only. */
@@ -558,54 +562,35 @@
 		z-index: 210;
 		display: flex;
 		flex-direction: column;
-		width: min(460px, 100vw);
+		width: min(640px, 100vw);
 		background: var(--bg-surface);
 		border-left: 1px solid var(--glass-border);
 		box-shadow: -18px 0 60px rgb(0 0 0 / 0.4);
-		animation: detail-slide-in var(--motion-base) var(--ease-out) both;
 		overflow: hidden;
 	}
 
-	.detail-chrome {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 12px;
-		flex-shrink: 0;
-		padding: 12px 16px;
-		border-bottom: 1px solid var(--glass-border);
-		background: var(--bg-surface);
-	}
-
-	.detail-eyebrow {
-		color: var(--text-muted);
-		font-size: 0.75rem;
-		font-weight: 800;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
+	/* Floats over the cover at the top right; the drawer has no header bar. */
+	.detail-close {
+		position: absolute;
+		top: 12px;
+		right: 12px;
+		z-index: 2;
+		border-radius: var(--radius-pill);
+		background: rgb(0 0 0 / 0.5);
+		-webkit-backdrop-filter: blur(6px);
+		backdrop-filter: blur(6px);
 	}
 
 	.detail-scroll {
 		flex: 1;
 		min-height: 0;
+		position: relative;
 		overflow-y: auto;
 		overscroll-behavior: contain;
 		scrollbar-gutter: stable;
-		padding: 16px 20px 28px;
+		padding: 0 0 28px;
 	}
 
-	@keyframes detail-backdrop-in {
-		from {
-			opacity: 0;
-		}
-	}
-
-	@keyframes detail-slide-in {
-		from {
-			opacity: 0;
-			transform: translateX(28px);
-		}
-	}
 
 	/* Narrow: the rail stays a column. The filters leave the grid and slide over it. */
 	@media (max-width: 899px) {
