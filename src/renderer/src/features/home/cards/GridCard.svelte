@@ -368,21 +368,6 @@
 		}
 	}
 
-	@keyframes play-bounce {
-		0% {
-			transform: scale(0.8);
-		}
-		55% {
-			transform: scale(1.15);
-		}
-		75% {
-			transform: scale(0.96);
-		}
-		100% {
-			transform: scale(1);
-		}
-	}
-
 	@keyframes ripple-pulse {
 		0% {
 			transform: scale(0.85);
@@ -391,16 +376,6 @@
 		100% {
 			transform: scale(1.45);
 			opacity: 0;
-		}
-	}
-
-	@keyframes play-pulse {
-		0%,
-		100% {
-			transform: scale(1);
-		}
-		50% {
-			transform: scale(1.08);
 		}
 	}
 
@@ -442,8 +417,6 @@
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			transform: scale(0.8);
-			transition: transform 240ms var(--ease-spring);
 			position: relative;
 			z-index: 2;
 		}
@@ -462,13 +435,6 @@
 			overflow: hidden;
 			text-overflow: ellipsis;
 		}
-	}
-
-	.game-card:hover .launch-icon-large,
-	.game-card:focus-within .launch-icon-large {
-		animation:
-			play-bounce 480ms var(--ease-spring) forwards,
-			play-pulse 1.8s ease-in-out 0.48s infinite;
 	}
 
 	.game-card:hover .play-ripple,
