@@ -41,7 +41,7 @@ import {
 } from "./libraryFilters";
 import { libraryErrorMessage } from "./libraryError";
 import { LibraryPager, type PagerSnapshot } from "./libraryPager";
-import { LOCAL_SOURCE, librarySections } from "./librarySections";
+import { LOCAL_SOURCE, librarySections, pickSection, showsSection } from "./librarySections";
 import { PAGE_SIZE, pagesToLoad } from "./libraryWindow";
 import { loadSavedFilters, storeSavedFilters, type SavedFilter } from "./savedFilters";
 import { builtinGroups, choiceGroupsOf, sidebarGroupsFor } from "./sidebarGroups";
@@ -91,9 +91,12 @@ export class LibraryState {
 	/** Plugin choices for the sidebar. Filled only when the user asks for them. */
 	readonly browse = new BrowseFeed();
 	sections = $derived(librarySections(this.overview.sources));
-	/** The source the rail picked last. The sidebar shows its groups. */
-	activeSource = $state(LOCAL_SOURCE);
-	activeSection = $derived(this.sections.find((item) => item.source === this.activeSource));
+	/** The sources that show in the rail. Empty plugin sources are left out. */
+	visibleSections = $derived(this.sections.filter((source) => this.isShown(source)));
+	/** The source the rail picked, or an empty string for none yet. */
+	activeSource = $state("");
+	/** The one source on the page. The sidebar and the grid both follow it. */
+	activeSection = $derived(pickSection(this.visibleSections, this.activeSource));
 	sidebarGroups = $derived(
 		sidebarGroupsFor(this.activeSection, this.overview.tags, this.browse.choices)
 	);
@@ -203,6 +206,13 @@ export class LibraryState {
 		this.activeSource = source;
 		this.browse.stop();
 		this.filters = withoutPluginFilters(this.filters);
+	}
+
+	/** A section shows when it is local, or a plugin source with games, an error or a live browse. */
+	private isShown(source: LibrarySource): boolean {
+		if (this.browse.shows(source.source)) return true;
+		const list = this.listOf(source.source);
+		return showsSection(source, list.total, list.error !== "");
 	}
 
 	/** Whether a dynamic group's choices have arrived for the sidebar. */

@@ -28,7 +28,7 @@
 	import SourceRail from "./SourceRail.svelte";
 	import { LibraryState } from "./libraryState.svelte";
 	import { REVEAL_MAX_TILES, revealDoneMs } from "./libraryMotion";
-	import { sectionElementId, showsSection, sourceLabel } from "./librarySections";
+	import { sourceLabel } from "./librarySections";
 	import { sourceIcon } from "./sourceIcon";
 	import { librarySubtitle, updateCountOf } from "./libraryCounts";
 	import { syncMessage } from "./librarySync";
@@ -80,11 +80,9 @@
 	/** Measured height of the sticky header, so the rail and sidebar can stick below it. */
 	let headHeight = $state(0);
 
-	/** The sections that show on the page, in rail order. Empty plugin sources are left out. */
-	const visibleSections = $derived(library.sections.filter(isShown));
-	/** Games in the sections on the page, for the reveal animation. */
+	/** Games in the source on the page, for the reveal animation. */
 	const shownTotal = $derived(
-		visibleSections.reduce((sum, source) => sum + (library.listOf(source.source).total ?? 0), 0)
+		library.activeSection ? (library.listOf(library.activeSection.source).total ?? 0) : 0
 	);
 	const subtitle = $derived(librarySubtitle(library.overview.stats));
 	const topTabs = $derived<TabItem[]>([
@@ -180,21 +178,6 @@
 	function openBrowseGame(game: Game) {
 		addUrl = game.url;
 		addOpen = true;
-	}
-
-	/** A section shows when it is local, or a plugin source with games, an error or a live browse. */
-	function isShown(source: LibrarySource): boolean {
-		if (library.browse.shows(source.source)) return true;
-		const list = library.listOf(source.source);
-		return showsSection(source, list.total, list.error !== "");
-	}
-
-	/** Scrolls the page to a source's group and shows its sidebar groups. The rail calls this on click. */
-	function showSection(source: string) {
-		library.selectSource(source);
-		document
-			.getElementById(sectionElementId(source))
-			?.scrollIntoView({ behavior: "smooth", block: "start" });
 	}
 
 	function libraryActionsOf(source: LibrarySource): SourceAction[] {
@@ -304,7 +287,11 @@
 		{:else}
 			<div class="layout">
 				<div class="rail-col">
-					<SourceRail sections={visibleSections} selected={library.activeSource} onSelect={showSection} />
+					<SourceRail
+						sections={library.visibleSections}
+						selected={library.activeSection?.source ?? ""}
+						onSelect={(source) => library.selectSource(source)}
+					/>
 				</div>
 
 				<div class="side-col" class:open={filtersOpen}>
@@ -316,9 +303,10 @@
 						<Button size="sm" icon="tune" onclick={() => (filtersOpen = !filtersOpen)}>Filters</Button>
 					</div>
 
-					{#each visibleSections as source (source.source)}
+					{#if library.activeSection}
+						{@const source = library.activeSection}
 						{@const list = library.listOf(source.source)}
-						<section class="group" id={sectionElementId(source.source)} aria-label={source.label}>
+						<section class="group" aria-label={source.label}>
 							<header class="group-header">
 								<span class="group-icon"><Icon name={sourceIcon(source.source)} size={22} /></span>
 								<h2>{source.label}</h2>
@@ -392,7 +380,7 @@
 								/>
 							{/if}
 						</section>
-					{/each}
+					{/if}
 				</div>
 
 				{#if selected}
@@ -483,10 +471,8 @@
 		margin-bottom: 12px;
 	}
 
-	/* Each source is a group: its header, then its sync note, notices and grid. */
+	/* The source on the page: its header, then its sync note, notices and grid. */
 	.group {
-		/* Keeps the group title clear of the sticky page header when the rail scrolls to it. */
-		scroll-margin-top: calc(var(--library-head-height, 0px) + 16px);
 		margin-bottom: 32px;
 	}
 

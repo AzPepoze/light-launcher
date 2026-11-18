@@ -3,7 +3,7 @@ import type { LibrarySource } from "../../lib/features/types";
 import {
 	LOCAL_SOURCE,
 	librarySections,
-	sectionElementId,
+	pickSection,
 	showsSection,
 	sourceLabel
 } from "./librarySections";
@@ -78,9 +78,23 @@ describe("showsSection", () => {
 	});
 });
 
-describe("sectionElementId", () => {
-	it("builds a stable id from the source id", () => {
-		expect(sectionElementId("f95")).toBe("library-section-f95");
+describe("pickSection", () => {
+	const [f95, local] = SERVER_SOURCES;
+
+	it("selects the first visible source when none is chosen", () => {
+		expect(pickSection([local, f95], "")?.source).toBe(LOCAL_SOURCE);
+	});
+
+	it("selects the chosen source when it is visible", () => {
+		expect(pickSection([local, f95], "f95")?.source).toBe("f95");
+	});
+
+	it("falls back to the first visible source when the chosen one is gone", () => {
+		expect(pickSection([local], "f95")?.source).toBe(LOCAL_SOURCE);
+	});
+
+	it("returns nothing when no source is visible", () => {
+		expect(pickSection([], "f95")).toBeUndefined();
 	});
 });
 

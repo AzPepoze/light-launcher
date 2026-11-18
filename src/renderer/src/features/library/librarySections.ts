@@ -34,9 +34,9 @@ export function showsSection(source: LibrarySource, total: number | null, hasErr
 	return (total ?? 0) > 0 || hasError;
 }
 
-/** The element id of a source's group on the Library page, used by the source rail to scroll to it. */
-export function sectionElementId(source: string): string {
-	return `library-section-${source}`;
+/** The chosen source when it is visible, otherwise the first visible one. */
+export function pickSection(visible: LibrarySource[], chosen: string): LibrarySource | undefined {
+	return visible.find((source) => source.source === chosen) ?? visible[0];
 }
 
 /** The human name of a source. Falls back to the id when the overview has no label for it. */
