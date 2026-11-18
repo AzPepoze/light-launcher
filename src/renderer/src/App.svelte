@@ -338,6 +338,15 @@
 		align-items: center;
 		z-index: 150;
 		pointer-events: none;
+
+		/* Narrow: start after the 68px rail, so the search never covers the logo. */
+		@media (max-width: 900px) {
+			left: 68px;
+			right: 12px;
+			width: auto;
+			max-width: none;
+			transform: none;
+		}
 	}
 
 	.global-search-trigger {
