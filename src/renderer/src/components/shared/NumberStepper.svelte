@@ -8,45 +8,75 @@
 		max,
 		step = 1,
 		label,
-		onChange
+		invalid = false,
+		describedBy,
+		onChange,
+		oninput
 	}: {
 		id?: string;
-		value: number;
-		min: number;
-		max: number;
-		step?: number;
+		value: number | string;
+		min?: number;
+		max?: number;
+		step?: number | "any";
 		/** Names the field and the arrow buttons for screen readers. */
 		label: string;
+		invalid?: boolean;
+		describedBy?: string;
 		onChange: (value: number) => void;
+		/** Reports the raw text on every edit and turns off clamping, so the caller validates. */
+		oninput?: (text: string) => void;
 	} = $props();
 
 	let input = $state<HTMLInputElement>();
 
+	// Arrow buttons need a number, so a free-step field ("any") moves by one.
+	const arrowStep = $derived(step === "any" ? 1 : step);
+
+	function currentNumber(): number {
+		const parsed = Number(value);
+		return value === "" || !Number.isFinite(parsed) ? (min ?? 0) : parsed;
+	}
+
+	function isInRange(next: number): boolean {
+		return (min === undefined || next >= min) && (max === undefined || next <= max);
+	}
+
 	function clamp(next: number): number {
-		return Math.min(max, Math.max(min, next));
+		const capped = max === undefined ? next : Math.min(max, next);
+		return min === undefined ? capped : Math.max(min, capped);
+	}
+
+	function canStep(direction: 1 | -1): boolean {
+		const current = currentNumber();
+		if (direction === 1) return max === undefined || current < max;
+		return min === undefined || current > min;
 	}
 
 	function setValue(next: number) {
-		if (next !== value) onChange(next);
+		if (next !== currentNumber()) onChange(next);
 	}
 
 	function stepBy(direction: 1 | -1) {
-		setValue(clamp(value + direction * step));
+		setValue(clamp(currentNumber() + direction * arrowStep));
 	}
 
 	// Saves a typed value as soon as it is in range. Out-of-range values wait for commit.
 	function handleInput(event: Event) {
 		const text = (event.currentTarget as HTMLInputElement).value;
+		if (oninput) {
+			oninput(text);
+			return;
+		}
 		const typed = Number(text);
 		if (text === "" || !Number.isFinite(typed)) return;
-		if (typed >= min && typed <= max) setValue(typed);
+		if (isInRange(typed)) setValue(typed);
 	}
 
 	// Clamps the typed value and puts it back in the field. Runs on Enter, blur and change.
 	function commit() {
-		if (!input) return;
+		if (!input || oninput) return;
 		const typed = Number(input.value);
-		const next = input.value === "" || !Number.isFinite(typed) ? value : clamp(typed);
+		const next = input.value === "" || !Number.isFinite(typed) ? currentNumber() : clamp(typed);
 		setValue(next);
 		input.value = String(next);
 	}
@@ -56,13 +86,15 @@
 	}
 </script>
 
-<div class="number-stepper">
+<div class="number-stepper" class:invalid>
 	<input
 		{id}
 		bind:this={input}
 		type="number"
 		class="field"
 		aria-label={label}
+		aria-invalid={invalid || undefined}
+		aria-describedby={describedBy}
 		{min}
 		{max}
 		{step}
@@ -78,7 +110,7 @@
 			class="arrow"
 			aria-label="Increase {label}"
 			title="Increase {label}"
-			disabled={value >= max}
+			disabled={!canStep(1)}
 			onclick={() => stepBy(1)}
 		>
 			<Icon name="keyboard_arrow_up" size={22} />
@@ -88,7 +120,7 @@
 			class="arrow"
 			aria-label="Decrease {label}"
 			title="Decrease {label}"
-			disabled={value <= min}
+			disabled={!canStep(-1)}
 			onclick={() => stepBy(-1)}
 		>
 			<Icon name="keyboard_arrow_down" size={22} />
@@ -114,6 +146,10 @@
 			border-color: var(--accent-primary);
 			box-shadow: 0 0 0 4px var(--accent-glow);
 			transform: scale(1.01);
+		}
+
+		&.invalid {
+			border-color: var(--danger);
 		}
 
 		.field {

@@ -1,50 +1,46 @@
 <script lang="ts">
+	import NumberStepper from "./NumberStepper.svelte";
+
 	export let label: string = "Value";
 	export let value: string = "2";
 	export let min: number = 2;
 	export let max: number = 100;
 	export let onChange: ((val: string) => void) | null = null;
 
-	function handleChange(e: Event) {
-		const input = e.target as HTMLInputElement;
-		let numVal = parseInt(input.value);
+	const NO_LIMIT = "-1";
 
-		// If empty, set to min
-		if (isNaN(numVal)) {
-			numVal = min;
-		}
+	$: isNoLimit = value === NO_LIMIT;
+	// With no limit the stepper must not clamp, so -1 is kept. The clamp below still applies to other values.
+	$: stepperMin = isNoLimit ? undefined : min;
+	$: stepperMax = isNoLimit ? undefined : max;
+	$: stepperValue = parseInt(value) || min;
+
+	function handleStep(next: number) {
+		let numVal = next;
 
 		// Clamp to range, but allow -1
 		if (numVal !== -1) {
 			numVal = Math.max(min, Math.min(max, numVal));
 		}
 
-		const newVal = numVal.toString();
-
-		value = newVal;
-		onChange?.(newVal);
-	}
-
-	function handleBlur(e: Event) {
-		const input = e.target as HTMLInputElement;
-		if (input.value === "") {
-			value = min.toString();
-			onChange?.(value);
-		}
+		value = numVal.toString();
+		onChange?.(value);
 	}
 </script>
 
 <div class="numeric-input-container">
 	<label for="numeric-input">{label}</label>
 	<div class="input-wrapper">
-		<input
-			id="numeric-input"
-			type="number"
-			class="input"
-			value={parseInt(value) || min}
-			on:change={handleChange}
-			on:blur={handleBlur}
-		/>
+		<div class="stepper-box">
+			<NumberStepper
+				id="numeric-input"
+				{label}
+				value={stepperValue}
+				min={stepperMin}
+				max={stepperMax}
+				onChange={handleStep}
+			/>
+		</div>
 		<span class="range-hint">
 			{#if value === "-1"}
 				No Limit
@@ -75,28 +71,8 @@
 		align-items: center;
 		gap: 12px;
 
-		.input {
-			max-width: 140px;
-			padding: 10px 16px;
-			background: var(--bg-input);
-			border: 2px solid var(--glass-border);
-			border-radius: var(--radius-md);
-			color: var(--text-main);
-			font-size: 0.95rem;
-			font-weight: 700;
-			outline: none;
-			transition: border-color var(--transition-fast), transform var(--transition-fast);
-
-			&:focus {
-				border-color: var(--accent-primary);
-				transform: scale(1.005);
-			}
-
-			&::-webkit-inner-spin-button,
-			&::-webkit-outer-spin-button {
-				-webkit-appearance: none;
-				margin: 0;
-			}
+		.stepper-box {
+			width: 140px;
 		}
 
 		.range-hint {

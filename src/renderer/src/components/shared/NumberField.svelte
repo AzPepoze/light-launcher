@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from "svelte";
+	import NumberStepper from "./NumberStepper.svelte";
 
 	let {
 		id,
@@ -25,24 +26,25 @@
 		children?: Snippet;
 	} = $props();
 
-	function handleInput(event: Event) {
-		oninput((event.currentTarget as HTMLInputElement).value);
+	// Arrow buttons report a number, so it is sent on as text like typed input.
+	function handleStep(next: number) {
+		oninput(String(next));
 	}
 </script>
 
 <div class="number-field">
 	<label for={id}>{label}</label>
-	<input
+	<NumberStepper
 		{id}
-		type="number"
-		class="input"
+		{label}
+		{value}
 		{min}
 		{max}
 		{step}
-		{value}
-		aria-invalid={invalid}
-		aria-describedby={describedBy}
-		oninput={handleInput}
+		{invalid}
+		{describedBy}
+		{oninput}
+		onChange={handleStep}
 	/>
 	{@render children?.()}
 </div>
@@ -58,14 +60,6 @@
 			font-size: 0.875rem;
 			font-weight: 600;
 			color: var(--text-main);
-		}
-
-		.input {
-			width: 100%;
-
-			&[aria-invalid="true"] {
-				border-color: var(--danger);
-			}
 		}
 	}
 </style>

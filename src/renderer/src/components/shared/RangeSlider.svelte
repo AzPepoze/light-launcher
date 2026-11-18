@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Icon from "./Icon.svelte";
+	import NumberStepper from "./NumberStepper.svelte";
 
 	export let value: number = 4;
 	export let min: number = 0.1;
@@ -70,6 +71,11 @@
 		onChange(value);
 	}
 
+	function setTypedValue(next: number) {
+		value = next;
+		onChange(value);
+	}
+
 	$: isWarning = showWarning && value > max * warningPercentage;
 	$: displayLabel = label || `${value} ${unit} / ${max} ${unit}`;
 </script>
@@ -80,15 +86,16 @@
 			<span>{displayLabel}</span>
 		</div>
 		<div class="input-wrapper">
-			<input
-				type="number"
-				step="0.1"
-				min={inputMin ?? min}
-				max={inputMax ?? max}
-				bind:value
-				on:input={() => onChange(value)}
-				class="manual-input"
-			/>
+			<div class="value-box">
+				<NumberStepper
+					label="Value"
+					{value}
+					min={inputMin ?? min}
+					max={inputMax ?? max}
+					step={0.1}
+					onChange={setTypedValue}
+				/>
+			</div>
 			<span class="unit">{unit}</span>
 		</div>
 	</div>
@@ -174,31 +181,8 @@
 	.input-wrapper {
 		display: flex;
 		align-items: center;
-		background: var(--bg-input);
-		border-radius: var(--radius-pill);
-		padding: 6px 14px;
-		border: 2px solid var(--glass-border);
-		transition: border-color var(--transition-fast);
-
-		&:focus-within {
-			border-color: var(--accent-primary);
-		}
-
-		.manual-input {
-			background: transparent;
-			border: none;
-			color: var(--text-main);
-			width: 60px;
-			text-align: right;
-			font-weight: 800;
-			font-size: 0.95rem;
-			outline: none;
-
-			&::-webkit-inner-spin-button,
-			&::-webkit-outer-spin-button {
-				-webkit-appearance: none;
-				margin: 0;
-			}
+		.value-box {
+			width: 120px;
 		}
 
 		.unit {
