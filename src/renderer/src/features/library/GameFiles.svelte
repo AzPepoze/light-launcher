@@ -2,7 +2,6 @@
 	import { platform } from "@stores/platformStore";
 	import { notifications } from "@stores/notificationStore";
 	import Badge from "@components/shared/Badge.svelte";
-	import Button from "@components/shared/Button.svelte";
 	import Icon from "@components/shared/Icon.svelte";
 	import IconButton from "@components/shared/IconButton.svelte";
 	import { downloadsApi } from "../../lib/features/downloadsApi";
@@ -46,11 +45,12 @@
 			{#each groups as group (group.platform)}
 				{@const open = !closedGroups[group.platform]}
 				<div class="group">
-					<Button variant="text" size="sm" icon={open ? "expand_less" : "expand_more"} onclick={() => toggleGroup(group.platform)} aria-expanded={open}>
+					<button type="button" class="group-header" aria-expanded={open} onclick={() => toggleGroup(group.platform)}>
+						<Icon name={open ? "expand_less" : "expand_more"} size={18} />
 						<Icon name={group.icon} size={16} />
-						<span>{group.label}</span>
+						<span class="group-name">{group.label}</span>
 						<span class="count">{group.files.length}</span>
-					</Button>
+					</button>
 
 					{#if open}
 						<ul class="files">
@@ -117,7 +117,35 @@
 		align-items: stretch;
 	}
 
+	.group-header {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		width: 100%;
+		padding: 8px 4px;
+		border: 0;
+		border-top: 1px solid var(--glass-border);
+		border-radius: var(--radius-md);
+		background: transparent;
+		color: var(--text-main);
+		font: inherit;
+		font-size: 0.9rem;
+		font-weight: 600;
+		text-align: left;
+		cursor: pointer;
+
+		&:hover {
+			background: var(--bg-elevated);
+		}
+
+		&:focus-visible {
+			outline: 2px solid var(--accent-primary);
+			outline-offset: 2px;
+		}
+	}
+
 	.count {
+		margin-left: auto;
 		color: var(--text-muted);
 	}
 
