@@ -71,6 +71,7 @@
 		{#if item.id === "notifications" && $unreadCount > 0}
 			<span class="nav-badge" aria-hidden="true">{badgeLabel($unreadCount)}</span>
 		{/if}
+		<span class="nav-label">{item.label}</span>
 	</button>
 {/snippet}
 
@@ -96,11 +97,11 @@
 
 <style lang="scss">
 	.navbar-wrapper {
-		width: 100%;
+		width: 68px;
 		height: 100%;
 		display: flex;
 		flex-direction: column;
-		align-items: center;
+		align-items: flex-start;
 		justify-content: flex-start;
 		padding: 16px 0;
 		gap: 24px;
@@ -110,6 +111,17 @@
 		overflow-y: auto;
 		scrollbar-width: thin;
 		scrollbar-color: var(--glass-border) transparent;
+		transition:
+			width var(--transition-normal),
+			background-color var(--transition-normal),
+			box-shadow var(--transition-normal);
+
+		&:hover,
+		&:has(:focus-visible) {
+			width: 212px;
+			background: var(--glass-surface);
+			box-shadow: var(--glass-shadow);
+		}
 	}
 
 	.brand-logo {
@@ -122,6 +134,8 @@
 		transition: transform var(--transition-spring);
 		/* In the flow above the icons, so a short window scrolls the icons and never slides them under the logo. */
 		flex-shrink: 0;
+		/* Left-aligned, so the logo stays put while the rail expands. */
+		margin-left: 18px;
 
 		&:hover {
 			transform: scale(1.2) rotate(10deg);
@@ -135,9 +149,10 @@
 	}
 
 	.navbar {
+		width: 100%;
 		display: flex;
 		flex-direction: column;
-		align-items: center;
+		align-items: stretch;
 		gap: 4px;
 		position: relative;
 		flex: 1;
@@ -150,7 +165,7 @@
 	.nav-bottom {
 		display: flex;
 		flex-direction: column;
-		align-items: center;
+		align-items: stretch;
 		gap: 4px;
 	}
 
@@ -164,7 +179,7 @@
 
 	.indicator {
 		position: absolute;
-		left: 0;
+		left: 12px;
 		width: 3px;
 		border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
 		background: var(--accent-primary);
@@ -180,13 +195,16 @@
 	.nav-item {
 		display: flex;
 		align-items: center;
-		justify-content: center;
-		width: 44px;
+		justify-content: flex-start;
+		margin: 0 12px;
+		padding: 0 11px;
 		height: 44px;
 		flex-shrink: 0;
 		border: none;
 		background: transparent;
 		color: var(--text-muted);
+		font: inherit;
+		text-align: left;
 		cursor: pointer;
 		border-radius: var(--radius-md);
 		transition:
@@ -197,13 +215,27 @@
 		z-index: 3;
 
 		:global(.icon) {
+			flex-shrink: 0;
 			color: inherit;
 			transition:
 				color var(--transition-fast),
 				transform var(--transition-spring);
 		}
 
+		.nav-label {
+			min-width: 0;
+			margin-left: 12px;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			font-size: 0.9rem;
+			font-weight: 600;
+			opacity: 0;
+			transition: opacity var(--transition-normal);
+		}
+
 		.custom-icon {
+			flex-shrink: 0;
 			width: 22px;
 			height: 22px;
 			object-fit: contain;
@@ -254,5 +286,16 @@
 		line-height: 18px;
 		text-align: center;
 		pointer-events: none;
+	}
+
+	.navbar-wrapper:is(:hover, :has(:focus-visible)) .nav-label {
+		opacity: 1;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.navbar-wrapper,
+		.nav-label {
+			transition: none;
+		}
 	}
 </style>
