@@ -142,8 +142,11 @@
 		height: 100%;
 		max-height: 100%;
 		overflow: hidden;
-		/* Room for the fixed status drawer, open (about 380px tall at 900px high). */
-		padding-bottom: 420px;
+
+		/* Scroll space so the last row clears the open status drawer (about 380px tall at 900px high). */
+		:global(.games-container) {
+			padding-bottom: 420px;
+		}
 	}
 
 	.status-line {
