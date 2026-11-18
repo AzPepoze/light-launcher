@@ -2,6 +2,7 @@
 	import PageHeader from "@components/shared/PageHeader.svelte";
 	import Button from "@components/shared/Button.svelte";
 	import Badge from "@components/shared/Badge.svelte";
+	import { tooltip } from "@components/shared/tooltip";
 	import { ScanProtonVersions, OpenURL } from "@lib/api";
 	import * as core from "@shared";
 	import { notifications } from "@stores/notificationStore";
@@ -89,7 +90,7 @@
 					</div>
 					<div class="info">
 						<div class="name">{tool.Name}</div>
-						<div class="path" title={tool.Path}>
+						<div class="path" use:tooltip={tool.Path}>
 							{tool.Path}
 						</div>
 					</div>
