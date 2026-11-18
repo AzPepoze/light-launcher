@@ -20,6 +20,7 @@
 	export let onShowHelpModal: () => void;
 </script>
 
+<div class="quick-launch-header">
 <PageHeader title="Quick Launch">
 	<div class="header-controls">
 	{#if isSelectionMode}
@@ -102,14 +103,30 @@
 	</div>
 	</div>
 </PageHeader>
+</div>
 
 <style lang="scss">
+	/* PageHeader keeps its actions at full width; let them shrink on narrow screens. */
+	.quick-launch-header :global(.header-actions) {
+		flex-shrink: 1;
+		min-width: 0;
+		max-width: 100%;
+	}
+
 	.header-controls {
 		display: flex;
 		align-items: center;
 		justify-content: flex-end;
 		flex-wrap: wrap;
 		gap: 12px;
+	}
+
+	@media (max-width: 600px) {
+		.prefix-filter-container,
+		.search-container {
+			flex: 1 1 100%;
+			max-width: none;
+		}
 	}
 
 	.view-switcher {
