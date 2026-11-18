@@ -141,6 +141,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | Library rail: clicking a source scrolls to its group. The highlight does not follow scrolling yet (no scroll spy). |
 | [ ] | Library grid and header scroll: check by eye in the real window. Checked by code and tests only: grid spacing, sticky title and tabs, rail and sidebar placement, no horizontal scroll at phone width. |
 | [ ] | Library narrow width and update count: check by eye in the real window. |
+| [x] | Updates tab at 390x844: the Notes and Update buttons sit under the title, and none are clipped. Checked by measurement; check by eye in the real window. |
 | [ ] | `MarkSeen` has no callers, so the unseen update checks never clear. The Updates badge now uses the game count from the header instead. |
 | [ ] | Settings section sidebar: check by eye in the real window. |
 | [x] | The plugin SDK docs describe `sidebar`, the `browse:filters` capability, `source.browse` and `source.listFilters`. |
@@ -204,6 +205,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 
 | Status | Item |
 |---|---|
+| [x] | Versions, Utils and Plugins at 390x844: no sideways scroll and no element past the edge. Header buttons wrap, the Utils table stacks. Checked by measurement; check by eye in the real window. |
 | [ ] | Versions: check the Steam and External badges, the legend line and the ProtonDB, ProtonPlus and ProtonUp icons by eye in the real window. |
 | [ ] | Prefix: check the Wine Tools, Defaults and Advanced tab strip, the "Choose a Proton version" placeholder with its disabled message, and the tools grid columns by eye in the real window. |
 | [ ] | Utils: check the status badges, the install hints and the single LSFG-VK card filling the row by eye in the real window. |
