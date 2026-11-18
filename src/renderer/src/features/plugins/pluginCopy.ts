@@ -97,3 +97,23 @@ export function pluginProgress(position: number, total: number): string {
 export function installedSummary(installed: number, total: number): string {
 	return `Installed ${installed} of ${total} plugins`;
 }
+
+export const DEV_BADGE = "Dev";
+
+export const LINK_FOLDER_LABEL = "Link folder";
+
+export const LINK_FOLDER_HINT =
+	"Runs a plugin you are building from its folder. Restarts on save. Not signed.";
+
+export const DEV_WARNING =
+	"This plugin runs from a linked folder. It is not signed, and its files are not checked.";
+
+export const UNLINK_LABEL = "Unlink";
+
+export function linkedSummary(name: string): string {
+	return `Linked ${name} from its folder`;
+}
+
+export function unlinkedSummary(name: string): string {
+	return `Unlinked ${name}. The installed copy runs again, if there is one.`;
+}

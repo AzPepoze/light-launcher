@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from "svelte";
+	import { PickFolder } from "@lib/api";
 	import Button from "@components/shared/Button.svelte";
 	import Modal from "@components/shared/Modal.svelte";
 	import { notifications } from "@stores/notificationStore";
@@ -8,7 +9,13 @@
 	import type { PluginInfo, PluginPreview } from "../../lib/features/types";
 	import PluginConsent from "./PluginConsent.svelte";
 	import QueueProgress from "./QueueProgress.svelte";
-	import { PERMISSION_HINT, pluginProgress } from "./pluginCopy";
+	import {
+		LINK_FOLDER_HINT,
+		LINK_FOLDER_LABEL,
+		PERMISSION_HINT,
+		linkedSummary,
+		pluginProgress
+	} from "./pluginCopy";
 
 	let {
 		initialSource = "",
@@ -34,6 +41,8 @@
 
 	/** The pinned digest applies only while the box still holds the link it came with. */
 	const pinnedSha256 = $derived(source.trim() === initialSource.trim() ? expectedSha256 : "");
+	/** Linking a folder is offered only for a manual install, not a queued or community one. */
+	const showLinkFolder = $derived(!queue && !initialSource);
 
 	onMount(() => {
 		if (!initialSource) return;
@@ -60,6 +69,22 @@
 	function cancelReview() {
 		if (queue) onClose();
 		else preview = null;
+	}
+
+	/** Picks a plugin folder and runs it in dev mode. A linked folder has no consent step. */
+	async function linkFolder() {
+		busy = true;
+		try {
+			const path = await PickFolder();
+			if (!path) return;
+			const plugin = await pluginsApi.devLink(path);
+			notifications.success(linkedSummary(plugin.name));
+			onInstalled(plugin);
+		} catch (err) {
+			notifications.error(errorMessage(err));
+		} finally {
+			busy = false;
+		}
 	}
 
 	async function install(shown: PluginPreview) {
@@ -92,6 +117,15 @@
 		</label>
 		<Button type="submit" size="sm" disabled={busy || !source.trim()}>Check</Button>
 	</form>
+
+	{#if showLinkFolder}
+		<div class="link">
+			<p class="hint">{LINK_FOLDER_HINT}</p>
+			<Button size="sm" icon="folder_open" disabled={busy} onclick={linkFolder}>
+				{LINK_FOLDER_LABEL}
+			</Button>
+		</div>
+	{/if}
 
 	{#if preview}
 		{@const shown = preview}
@@ -127,6 +161,21 @@
 
 		.input {
 			width: 100%;
+		}
+	}
+
+	.link {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		flex-wrap: wrap;
+		margin-top: 16px;
+
+		.hint {
+			margin: 0;
+			font-size: 0.875rem;
+			color: var(--text-muted);
 		}
 	}
 </style>

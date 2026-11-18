@@ -14,10 +14,14 @@
 	import PluginSettings from "./PluginSettings.svelte";
 	import UnsignedBadge from "./UnsignedBadge.svelte";
 	import {
+		DEV_BADGE,
+		DEV_WARNING,
 		NO_NEW_PERMISSIONS,
 		SLEEPING_BADGE,
+		UNLINK_LABEL,
 		UNSIGNED_WARNING,
-		UPDATE_PERMISSION_HINT
+		UPDATE_PERMISSION_HINT,
+		unlinkedSummary
 	} from "./pluginCopy";
 	import { UNAVAILABLE_CHECK_TEXT, checkFailureHint, isCheckFailure } from "./pluginNotices";
 
@@ -99,6 +103,13 @@
 			onRemoved(plugin.id);
 		});
 	}
+
+	function unlink() {
+		run(async () => {
+			await pluginsApi.devUnlink(plugin.id);
+			notifications.success(unlinkedSummary(plugin.name));
+		});
+	}
 </script>
 
 <div class="detail">
@@ -115,9 +126,13 @@
 						<span>Updates from {plugin.repository}</span>
 					{/if}
 				</p>
+				{#if plugin.dev && plugin.devPath}
+					<p class="muted">Linked from {plugin.devPath}</p>
+				{/if}
 			</div>
 		</div>
 		<div class="badges">
+			{#if plugin.dev}<Badge tone="accent" icon="code">{DEV_BADGE}</Badge>{/if}
 			<Badge>{plugin.enabled ? "Enabled" : "Disabled"}</Badge>
 			{#if plugin.idle}<Badge icon="bedtime">{SLEEPING_BADGE}</Badge>{/if}
 			{#if !plugin.signed}
@@ -135,7 +150,9 @@
 	{#if plugin.error}
 		<Notice tone="error">{plugin.error}</Notice>
 	{/if}
-	{#if !plugin.signed}
+	{#if plugin.dev}
+		<Notice tone="warning" icon="warning">{DEV_WARNING}</Notice>
+	{:else if !plugin.signed}
 		<Notice tone="warning" icon="warning">{UNSIGNED_WARNING}</Notice>
 	{/if}
 
@@ -164,6 +181,9 @@
 			{plugin.enabled ? "Disable" : "Enable"}
 		</Button>
 		<Button size="sm" disabled={busy} onclick={rollback}>Roll back</Button>
+		{#if plugin.dev}
+			<Button size="sm" disabled={busy} onclick={unlink}>{UNLINK_LABEL}</Button>
+		{/if}
 		{#if confirmingRemove}
 			<Button size="sm" variant="danger" disabled={busy} onclick={remove}>Confirm remove</Button>
 			<Button size="sm" onclick={() => (confirmingRemove = false)}>Cancel</Button>

@@ -5,7 +5,7 @@
 	import type { PluginInfo, PluginUpdateStatus } from "../../lib/features/types";
 	import PluginIdentity from "./PluginIdentity.svelte";
 	import UnsignedBadge from "./UnsignedBadge.svelte";
-	import { STATUS_COPY } from "./pluginCopy";
+	import { DEV_BADGE, STATUS_COPY } from "./pluginCopy";
 	import { UNAVAILABLE_CHECK_TEXT, checkFailureHint, isCheckFailure } from "./pluginNotices";
 
 	let {
@@ -29,6 +29,9 @@
 		<span class="line">
 			<span class="name">{plugin.name}</span>
 			<span class="version">v{plugin.version}</span>
+			{#if plugin.dev}
+				<Badge tone="accent" icon="code">{DEV_BADGE}</Badge>
+			{/if}
 		</span>
 		<span class="status" class:dimmed>
 			{#if status === "unsigned"}
