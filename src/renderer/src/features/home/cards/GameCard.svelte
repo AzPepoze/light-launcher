@@ -8,6 +8,7 @@
 	import ListGridCard from "./ListGridCard.svelte";
 	import { useCover } from "@lib/features/useMedia.svelte";
 	import { hasLibraryCover, needsExeIcon } from "@lib/iconService";
+	import { getGamePath } from "@lib/gameUtils";
 
 	export let game: any;
 	export let icon: string = "";
@@ -52,7 +53,7 @@
 	});
 
 	$: if (isIntersecting) {
-		const path = game.path || game.config?.LauncherPath;
+		const path = getGamePath(game);
 		const customIconPath = game.config?.CustomIconPath ?? null;
 		// A covered game without a custom icon never asks for an exe icon.
 		if (path && (customIconPath || needsExeIcon(game))) {

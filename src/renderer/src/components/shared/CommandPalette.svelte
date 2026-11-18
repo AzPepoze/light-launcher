@@ -2,6 +2,7 @@
 	import { fly } from "svelte/transition";
 	import { commandPaletteState as state } from "./CommandPaletteState.svelte";
 	import Icon from "./Icon.svelte";
+	import { getGamePath } from "@lib/gameUtils";
 
 	export let show = false;
 	export let onClose: () => void = () => {};
@@ -17,6 +18,10 @@
 
 	$: if (state.searchQuery !== undefined) {
 		state.filterItems();
+	}
+
+	function gameIconFor(game: any): string | undefined {
+		return state.gameIcons[getGamePath(game)];
 	}
 
 	function handleWindowMouseDown(e: MouseEvent) {
@@ -46,8 +51,8 @@
 					role="option"
 					tabindex="-1"
 				>
-					{#if item.type === "game" && state.gameIcons[item.game.path || item.game.config?.LauncherPath]}
-						<img src={state.gameIcons[item.game.path || item.game.config?.LauncherPath]} class="item-img-icon" alt="" />
+					{#if item.type === "game" && gameIconFor(item.game)}
+						<img src={gameIconFor(item.game)} class="item-img-icon" alt="" />
 					{:else if item.isCustomIcon}
 						<img src={item.icon} class="item-img-icon" alt="" />
 					{:else}

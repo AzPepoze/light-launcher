@@ -20,6 +20,7 @@
 	import { saveHomeScroll, getHomeView } from "@stores/homeViewStore";
 	import Marquee from "./shared/Marquee.svelte";
 	import { setIconQueuePaused } from "@lib/iconService";
+	import { getGamePath } from "@lib/gameUtils";
 	import { scanStatusForFolder, type FolderScanStatus } from "./state/homeLoadingStatus";
 
 	export let currentView: "grid" | "list-grid" | "sidebar-grid" = "grid";
@@ -85,10 +86,6 @@
 		menuY = event.clientY;
 		activeMenuGame = game;
 		menuVisible = true;
-	}
-
-	function getGamePath(game: any): string {
-		return game?.path || game?.config?.GamePath || game?.config?.LauncherPath || "";
 	}
 
 	async function handleOpenFileLocation() {

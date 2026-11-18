@@ -5,6 +5,7 @@ import { pluginsApi } from "../../lib/features/pluginsApi";
 import { errorMessage } from "../../lib/features/rpc";
 import { openLibraryTab, type LibraryTab } from "@stores/libraryTabStore";
 import { loadExeIcon } from "@lib/iconService";
+import { getGamePath } from "@lib/gameUtils";
 import { quickLaunchGame } from "@lib/homeService";
 import { createLogger } from "@lib/logger";
 import { currentFeatures, isPageAvailable } from "@stores/platformStore";
@@ -66,7 +67,7 @@ export class CommandPaletteState {
 			this.games = fetched || [];
 
 			for (const game of this.games) {
-				const gamePath = game.path || game.config?.LauncherPath;
+				const gamePath = getGamePath(game);
 				if (!gamePath) continue;
 				const customIconPath = game.config?.CustomIconPath;
 				try {
