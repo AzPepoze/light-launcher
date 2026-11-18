@@ -18,10 +18,18 @@
 	onMount(() => {
 		state.initialize();
 	});
+
+	function headerSubtitle(profileName: string, gamePath: string): string {
+		return [profileName, gamePath].filter(Boolean).join(" · ");
+	}
 </script>
 
 <div class="run-container">
-	<PageHeader title="Launch Configuration" icon="rocket_launch" />
+	<PageHeader
+		title="Launch Configuration"
+		icon="rocket_launch"
+		subtitle={headerSubtitle(state.options.Name, state.options.GamePath)}
+	/>
 
 	<div class="zones-stack">
 		<!-- Zone 1: General & Paths -->
@@ -158,6 +166,7 @@
 		flex-direction: column;
 		gap: 32px;
 		margin-top: 24px;
+		padding-bottom: 120px; // room above the sticky actions row
 	}
 
 	.profile-name-group {
@@ -200,6 +209,7 @@
 		bottom: 0;
 		margin-top: 32px;
 		padding: 24px 0 8px;
+		background: linear-gradient(to top, var(--bg-base) 70%, transparent);
 		z-index: 10;
 		display: flex;
 		align-items: center;
