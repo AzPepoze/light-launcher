@@ -2,6 +2,7 @@
 	import type { Snippet } from "svelte";
 	import type { HTMLButtonAttributes } from "svelte/elements";
 	import Icon from "./Icon.svelte";
+	import { tooltip as tooltipAction } from "./tooltip";
 
 	type Props = Omit<HTMLButtonAttributes, "type" | "onclick"> & {
 		variant?: "primary" | "secondary" | "danger" | "text";
@@ -11,6 +12,7 @@
 		disabled?: boolean;
 		type?: "button" | "submit" | "reset";
 		onclick?: (event: MouseEvent) => void;
+		tooltip?: string;
 		children?: Snippet;
 	};
 
@@ -22,6 +24,7 @@
 		disabled = false,
 		type = "button",
 		onclick,
+		tooltip,
 		class: className = "",
 		children,
 		...rest
@@ -29,6 +32,7 @@
 
 	const isDisabled = $derived(disabled || loading);
 	const iconSize = $derived(size === "sm" ? 16 : 18);
+	const tooltipText = $derived(tooltip ?? "");
 </script>
 
 <button
@@ -38,6 +42,7 @@
 	disabled={isDisabled}
 	aria-busy={loading}
 	{onclick}
+	use:tooltipAction={tooltipText}
 	{...rest}
 >
 	{#if loading}
