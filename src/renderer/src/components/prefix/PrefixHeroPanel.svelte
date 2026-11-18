@@ -6,7 +6,6 @@
 	import Icon from "@components/shared/Icon.svelte";
 	import Notice from "@components/shared/Notice.svelte";
 	import Section from "@components/shared/Section.svelte";
-	import SettingRow from "@components/shared/SettingRow.svelte";
 	import { navigateTo } from "@stores/navigationStore";
 
 	export let currentPrefixName: string;
@@ -19,6 +18,14 @@
 
 	$: protonItems = asOptions(protonDisplayNames);
 	$: hasProton = protonDisplayNames.length > 0;
+	$: runtimeInstalled = protonDisplayNames.includes(chosenProtonName);
+	$: runtimeLabel = getRuntimeLabel(chosenProtonName, runtimeInstalled);
+
+	function getRuntimeLabel(name: string, installed: boolean): string {
+		if (installed) return name;
+		if (name) return "Saved runtime not installed";
+		return "No runtime selected";
+	}
 
 	function openVersions() {
 		navigateTo("versions");
@@ -31,14 +38,16 @@
 		<p class="header-label">Active prefix</p>
 		<h2 class="header-name">{currentPrefixName}</h2>
 	</div>
-	<Badge tone={chosenProtonName ? "accent" : "warning"} icon="science">
-		{chosenProtonName || "No runtime selected"}
+	<Badge tone={runtimeInstalled ? "accent" : "warning"} icon="science">
+		{runtimeLabel}
 	</Badge>
 </header>
 
 <Section title="Runtime" help="Proton runs the games and tools in this prefix.">
 	{#if hasProton}
-		<SettingRow title="Proton version" help="Used for every tool and game in this prefix.">
+		<div class="runtime-field">
+			<span class="field-title">Proton version</span>
+			<span class="field-help">Used for every tool and game in this prefix.</span>
 			<div class="runtime-control">
 				<Dropdown
 					options={protonItems}
@@ -46,7 +55,7 @@
 					placeholder="Choose a Proton version"
 				/>
 			</div>
-		</SettingRow>
+		</div>
 	{:else}
 		<Notice tone="warning" icon="info">
 			<div class="notice-action">
@@ -114,8 +123,26 @@
 		white-space: nowrap;
 	}
 
+	.runtime-field {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+	}
+
+	.field-title {
+		font-size: 0.95rem;
+		font-weight: 600;
+		color: var(--text-main);
+	}
+
+	.field-help {
+		font-size: 0.85rem;
+		color: var(--text-muted);
+	}
+
 	.runtime-control {
 		width: min(360px, 100%);
+		margin-top: 8px;
 	}
 
 	.notice-action {
