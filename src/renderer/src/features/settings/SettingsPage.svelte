@@ -7,6 +7,8 @@
 	import SettingRow from "@components/shared/SettingRow.svelte";
 	import SlideButton from "@components/shared/SlideButton.svelte";
 	import Slider from "@components/shared/Slider.svelte";
+	import { activeSectionId, navSectionIds, SPY_LINE_PX } from "@lib/features/settingsScrollSpy";
+	import { settingsNavGroups } from "@lib/features/settingsSection";
 	import { pendingSettingsSection } from "@stores/navigationStore";
 	import { platform } from "@stores/platformStore";
 	import { onMount } from "svelte";
@@ -18,6 +20,7 @@
 	import PluginRegistrySetting from "./PluginRegistrySetting.svelte";
 	import PrefixStorageSetting from "./PrefixStorageSetting.svelte";
 	import ScanFoldersSetting from "./ScanFoldersSetting.svelte";
+	import SettingsNav from "./SettingsNav.svelte";
 	import TrustedKeysSetting from "./TrustedKeysSetting.svelte";
 	import UpdatesSettings from "./UpdatesSettings.svelte";
 	import {
@@ -30,9 +33,44 @@
 
 	const settings = new SettingsState();
 	let platformInfo = $state<PlatformInfo>(get(platform));
+	let scroller = $state<HTMLElement>();
+	let activeId = $state<string | null>(null);
+
+	const navGroups = $derived(
+		settingsNavGroups({
+			linux: platformInfo.os === "linux",
+			prefix: platformInfo.features.prefix
+		})
+	);
+	const navIds = $derived(navSectionIds(navGroups));
 
 	function toPercent(value: number): string {
 		return `${Math.round(value * 100)}%`;
+	}
+
+	function measureTops(root: HTMLElement, ids: string[]): Record<string, number> {
+		const origin = root.getBoundingClientRect().top;
+		const tops: Record<string, number> = {};
+		for (const id of ids) {
+			const element = document.getElementById(id);
+			if (element) tops[id] = element.getBoundingClientRect().top - origin;
+		}
+		return tops;
+	}
+
+	function isAtBottom(root: HTMLElement): boolean {
+		return root.scrollTop + root.clientHeight >= root.scrollHeight - 4;
+	}
+
+	function refreshActive(): void {
+		if (!scroller) return;
+		const tops = measureTops(scroller, navIds);
+		activeId = activeSectionId(navIds, tops, SPY_LINE_PX, isAtBottom(scroller));
+	}
+
+	function jumpTo(id: string): void {
+		activeId = id;
+		settings.scrollToSection(id);
 	}
 
 	onMount(() => {
@@ -47,142 +85,181 @@
 			if (settings.scrollToSection(section)) pendingSettingsSection.set(null);
 		})
 	);
+
+	// The observer covers sections entering the top of the scroll area. The scroll
+	// handler covers the bottom of the page, where a short last section never crosses the line.
+	$effect(() => {
+		const root = scroller;
+		if (!root) return;
+		const observer = new IntersectionObserver(refreshActive, {
+			root,
+			rootMargin: "-24px 0px -60% 0px"
+		});
+		for (const id of navIds) {
+			const element = document.getElementById(id);
+			if (element) observer.observe(element);
+		}
+		refreshActive();
+		return () => observer.disconnect();
+	});
 </script>
 
-<div class="settings-container" aria-busy={settings.loading}>
+<div class="settings-container" aria-busy={settings.loading} bind:this={scroller} onscroll={refreshActive}>
 	<PageHeader title="Appearance & Settings" icon="settings" />
 
-	<div class="zones-stack">
-		<Section title="Theme & opacity" icon="palette">
-			<SettingRow title="Theme mode" help="Switch between dark and light themes.">
-				<Button variant="secondary" icon="contrast" onclick={() => settings.toggleTheme()}>
-					Switch to {settings.userSettings.theme === "light" ? "Dark" : "Light"} Mode
-				</Button>
-			</SettingRow>
+	<div class="layout">
+		<SettingsNav groups={navGroups} active={activeId} onSelect={jumpTo} />
 
-			<SettingRow
-				title="Background opacity"
-				help="Lower values make the background more see-through while text and UI stay fully visible."
-			>
-				<Slider
-					value={settings.userSettings.transparency}
-					min={0.1}
-					max={1}
-					step={0.05}
-					format={toPercent}
-					onChange={(value) => settings.setTransparency(value)}
-				/>
-			</SettingRow>
+		<div class="zones-stack">
+			<div class="anchor" id="theme-opacity">
+				<Section title="Theme & opacity" icon="palette">
+					<SettingRow title="Theme mode" help="Switch between dark and light themes.">
+						<Button variant="secondary" icon="contrast" onclick={() => settings.toggleTheme()}>
+							Switch to {settings.userSettings.theme === "light" ? "Dark" : "Light"} Mode
+						</Button>
+					</SettingRow>
 
-			<SettingRow title="Transparent background" help="Restarts the app to apply.">
-				<Button
-					variant={settings.appSettings.TransparentMode ? "primary" : "secondary"}
-					icon={settings.appSettings.TransparentMode ? "visibility" : "visibility_off"}
-					onclick={() => settings.toggleTransparentMode()}
+					<SettingRow
+						title="Background opacity"
+						help="Lower values make the background more see-through while text and UI stay fully visible."
+					>
+						<Slider
+							value={settings.userSettings.transparency}
+							min={0.1}
+							max={1}
+							step={0.05}
+							format={toPercent}
+							onChange={(value) => settings.setTransparency(value)}
+						/>
+					</SettingRow>
+
+					<SlideButton
+						label="Transparent background"
+						subtitle="Restarts the app to apply"
+						checked={settings.appSettings.TransparentMode}
+						onChange={(enabled) => settings.setTransparentMode(enabled)}
+					/>
+				</Section>
+			</div>
+
+			<div class="anchor" id="wallpaper">
+				<Section
+					title="Wallpaper background"
+					icon="wallpaper"
+					help="Set a custom image background for the launcher that bleeds through the translucent glass surfaces."
 				>
-					{settings.appSettings.TransparentMode
-						? "Transparent Background: ON"
-						: "Transparent Background: OFF"} (Restarts App)
-				</Button>
-			</SettingRow>
-		</Section>
+					{#if settings.userSettings.backgroundImagePath}
+						<div class="bg-path-display">
+							<Icon name="wallpaper" size={18} />
+							<span class="path-text" title={settings.userSettings.backgroundImagePath}>
+								{settings.userSettings.backgroundImagePath}
+							</span>
+						</div>
+					{/if}
 
-		<Section
-			title="Wallpaper background"
-			icon="wallpaper"
-			help="Set a custom image background for the launcher that bleeds through the translucent glass surfaces."
-		>
-			{#if settings.userSettings.backgroundImagePath}
-				<div class="bg-path-display">
-					<Icon name="wallpaper" size={18} />
-					<span class="path-text" title={settings.userSettings.backgroundImagePath}>
-						{settings.userSettings.backgroundImagePath}
-					</span>
+					<div class="actions-row">
+						<Button variant="primary" icon="folder" onclick={() => settings.browseBackgroundImage()}>
+							Browse image
+						</Button>
+						{#if settings.userSettings.backgroundImagePath}
+							<Button variant="danger" icon="delete" onclick={() => settings.clearBackgroundImage()}>
+								Clear image
+							</Button>
+						{/if}
+					</div>
+				</Section>
+			</div>
+
+			<div class="anchor" id="library-covers">
+				<Section title="Library covers" icon="grid_view">
+					<SettingRow title="Card size" help="Minimum width of a Library card in pixels.">
+						<RangeSlider
+							value={libraryCardSize(settings.appSettings)}
+							min={LIBRARY_CARD_SIZE_MIN}
+							max={LIBRARY_CARD_SIZE_MAX}
+							unit="px"
+							label={`${libraryCardSize(settings.appSettings)} px`}
+							snapValues={[]}
+							showWarning={false}
+							onChange={(value) => settings.setLibraryCardSize(value)}
+						/>
+					</SettingRow>
+
+					<SlideButton
+						label="Blur covers until hover"
+						subtitle="Blur Library covers until you hover or focus them."
+						checked={blurCoversUntilHover(settings.appSettings)}
+						onChange={(enabled) => settings.toggleBlurCoversUntilHover(enabled)}
+					/>
+				</Section>
+			</div>
+
+			<div class="anchor" id="game-folders">
+				<ScanFoldersSetting {settings} />
+			</div>
+
+			<div class="anchor" id="hidden-games">
+				<BlacklistSetting {settings} />
+			</div>
+
+			<div class="anchor" id="game-activity">
+				<GamingIntegrationsSetting {settings} />
+			</div>
+
+			<div class="anchor" id="downloads">
+				<DownloadsSettings />
+			</div>
+
+			<div class="anchor" id="updates">
+				<UpdatesSettings {settings} />
+			</div>
+
+			<div class="anchor" id="trusted-keys">
+				<TrustedKeysSetting />
+			</div>
+
+			<div class="anchor" id="community-plugins">
+				<PluginRegistrySetting {settings} />
+			</div>
+
+			{#if platformInfo.features.prefix}
+				<div class="anchor" id="prefix-storage">
+					<PrefixStorageSetting {settings} />
 				</div>
 			{/if}
 
-			<div class="actions-row">
-				<Button variant="primary" icon="folder" onclick={() => settings.browseBackgroundImage()}>
-					Browse image
-				</Button>
-				{#if settings.userSettings.backgroundImagePath}
-					<Button variant="danger" icon="delete" onclick={() => settings.clearBackgroundImage()}>
-						Clear image
-					</Button>
-				{/if}
+			<div class="anchor" id="window-type">
+				<Section title="Window type" icon="open_in_browser">
+					<SlideButton
+						label="Open in browser"
+						subtitle="Use your default browser instead of the app window. Applies on the next start."
+						checked={settings.appSettings.OpenInBrowser}
+						onChange={(enabled) => settings.setOpenInBrowser(enabled)}
+					/>
+				</Section>
 			</div>
-		</Section>
 
-		<Section title="Library covers" icon="grid_view">
-			<SettingRow title="Card size" help="Minimum width of a Library card in pixels.">
-				<RangeSlider
-					value={libraryCardSize(settings.appSettings)}
-					min={LIBRARY_CARD_SIZE_MIN}
-					max={LIBRARY_CARD_SIZE_MAX}
-					unit="px"
-					label={`${libraryCardSize(settings.appSettings)} px`}
-					snapValues={[]}
-					showWarning={false}
-					onChange={(value) => settings.setLibraryCardSize(value)}
-				/>
-			</SettingRow>
-
-			<SlideButton
-				label="Blur covers until hover"
-				subtitle="Blur Library covers until you hover or focus them."
-				checked={blurCoversUntilHover(settings.appSettings)}
-				onChange={(enabled) => settings.toggleBlurCoversUntilHover(enabled)}
-			/>
-		</Section>
-
-		<DownloadsSettings />
-
-		<UpdatesSettings {settings} />
-
-		<TrustedKeysSetting />
-
-		<PluginRegistrySetting {settings} />
-
-		<Section title="Window type" icon="open_in_browser">
-			<SlideButton
-				label="Open in browser"
-				subtitle="Use your default browser instead of the app window. Applies on the next start."
-				checked={settings.appSettings.OpenInBrowser}
-				onChange={(enabled) => settings.setOpenInBrowser(enabled)}
-			/>
-		</Section>
-
-		{#if platformInfo.os === "linux"}
-			<Section title="Display & window platform" icon="desktop_windows">
-				<SettingRow
-					title="Ozone platform (Wayland / X11)"
-					help="Configure whether LightLauncher runs natively on Wayland or via X11/Xwayland."
-				>
-					<Button
-						variant={settings.appSettings.NativeWayland ? "primary" : "secondary"}
-						icon={settings.appSettings.NativeWayland ? "layers" : "view_in_ar"}
-						onclick={() => settings.toggleNativeWayland()}
-					>
-						{settings.appSettings.NativeWayland
-							? "Platform: Native Wayland"
-							: "Platform: X11 / Xwayland"} (Restarts App)
-					</Button>
-				</SettingRow>
-			</Section>
-		{/if}
-
-		<GamingIntegrationsSetting {settings} />
-
-		<!-- Wine Prefix Storage Location (Linux only) -->
-		{#if platformInfo.features.prefix}
-			<PrefixStorageSetting {settings} />
-		{/if}
-
-		<!-- Automatic Scan Folders -->
-		<ScanFoldersSetting {settings} />
-
-		<!-- Hidden / Blacklisted Games -->
-		<BlacklistSetting {settings} />
+			{#if platformInfo.os === "linux"}
+				<div class="anchor" id="display-platform">
+					<Section title="Display & window platform" icon="desktop_windows">
+						<SettingRow
+							title="Ozone platform (Wayland / X11)"
+							help="Configure whether LightLauncher runs natively on Wayland or via X11/Xwayland."
+						>
+							<Button
+								variant={settings.appSettings.NativeWayland ? "primary" : "secondary"}
+								icon={settings.appSettings.NativeWayland ? "layers" : "view_in_ar"}
+								onclick={() => settings.toggleNativeWayland()}
+							>
+								{settings.appSettings.NativeWayland
+									? "Platform: Native Wayland"
+									: "Platform: X11 / Xwayland"} (Restarts App)
+							</Button>
+						</SettingRow>
+					</Section>
+				</div>
+			{/if}
+		</div>
 	</div>
 </div>
 
@@ -206,11 +283,31 @@
 		}
 	}
 
+	.layout {
+		display: grid;
+		grid-template-columns: 200px minmax(0, 1fr);
+		align-items: start;
+		gap: 32px;
+		margin-top: 24px;
+	}
+
 	.zones-stack {
 		display: flex;
 		flex-direction: column;
 		gap: 32px;
-		margin-top: 24px;
+		min-width: 0;
+	}
+
+	/* Keeps a section clear of the top edge when the nav jumps to it. */
+	.anchor {
+		scroll-margin-top: 24px;
+	}
+
+	@media (max-width: 899px) {
+		.layout {
+			grid-template-columns: minmax(0, 1fr);
+			gap: 24px;
+		}
 	}
 
 	.bg-path-display {

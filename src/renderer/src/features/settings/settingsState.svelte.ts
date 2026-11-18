@@ -71,10 +71,8 @@ export class SettingsState {
 		});
 	}
 
-	async toggleTransparentMode(): Promise<void> {
-		const next = appSettingsWith(this.appSettings, {
-			TransparentMode: !this.appSettings.TransparentMode
-		});
+	async setTransparentMode(enabled: boolean): Promise<void> {
+		const next = appSettingsWith(this.appSettings, { TransparentMode: enabled });
 		await this.saveAndRestart(next, "Restarting app to apply transparency changes...");
 	}
 
