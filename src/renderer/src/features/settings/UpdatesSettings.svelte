@@ -84,19 +84,21 @@
 	icon="update"
 	help="When the launcher checks your games for new versions."
 >
-	<SlideButton
-		label="Check for updates in the background"
-		subtitle="Checks run on their own. Check now always works."
-		checked={global.enabled}
-		onChange={(enabled) => settings.setUpdateChecks(withGlobalUpdateChecks(checks, { enabled }))}
-	/>
+	<div class="toggles">
+		<SlideButton
+			label="Check for updates in the background"
+			subtitle="Checks run on their own. Check now always works."
+			checked={global.enabled}
+			onChange={(enabled) => settings.setUpdateChecks(withGlobalUpdateChecks(checks, { enabled }))}
+		/>
 
-	<SlideButton
-		label="Check once after launch"
-		subtitle="A quiet check a short time after the app starts."
-		checked={global.onStartup}
-		onChange={(onStartup) => settings.setUpdateChecks(withGlobalUpdateChecks(checks, { onStartup }))}
-	/>
+		<SlideButton
+			label="Check once after launch"
+			subtitle="A quiet check a short time after the app starts."
+			checked={global.onStartup}
+			onChange={(onStartup) => settings.setUpdateChecks(withGlobalUpdateChecks(checks, { onStartup }))}
+		/>
+	</div>
 
 	<SettingRow title="Check every" help="How often background checks run. Never turns them off.">
 		<Dropdown
@@ -144,6 +146,12 @@
 </Section>
 
 <style lang="scss">
+	.toggles {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+	}
+
 	.sources {
 		display: flex;
 		flex-direction: column;
