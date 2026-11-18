@@ -152,6 +152,34 @@
 		}
 	}
 
+	@media (max-width: 600px) {
+		.section-container {
+			padding: 16px;
+		}
+
+		.status-table,
+		.status-table tbody,
+		.status-table tr,
+		.status-table td {
+			display: block;
+		}
+
+		.status-table thead {
+			display: none;
+		}
+
+		.status-table tr {
+			padding: 12px 0;
+			border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+		}
+
+		.status-table td {
+			padding: 4px 0;
+			border-bottom: 0;
+			overflow-wrap: anywhere;
+		}
+	}
+
 	.hint {
 		margin: 4px 0 0;
 		font-size: 0.75rem;
