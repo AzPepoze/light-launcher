@@ -131,15 +131,10 @@
 		align-items: center;
 		justify-content: center;
 		cursor: pointer;
-		transition: transform var(--transition-spring);
 		/* In the flow above the icons, so a short window scrolls the icons and never slides them under the logo. */
 		flex-shrink: 0;
 		/* Left-aligned, so the logo stays put while the rail expands. */
 		margin-left: 18px;
-
-		&:hover {
-			transform: scale(1.2) rotate(10deg);
-		}
 
 		img {
 			width: 100%;
@@ -247,7 +242,6 @@
 
 		&:hover {
 			color: var(--text-main);
-			transform: scale(1.15);
 			.custom-icon {
 				filter: grayscale(0%) opacity(0.9);
 			}
