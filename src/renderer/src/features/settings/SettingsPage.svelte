@@ -7,6 +7,7 @@
 	import SettingRow from "@components/shared/SettingRow.svelte";
 	import SlideButton from "@components/shared/SlideButton.svelte";
 	import Slider from "@components/shared/Slider.svelte";
+	import { tooltip } from "@components/shared/tooltip";
 	import { activeSectionId, navSectionIds, SPY_LINE_PX } from "@lib/features/settingsScrollSpy";
 	import {
 		settingsNavFilter,
@@ -225,7 +226,7 @@
 					{#if settings.userSettings.backgroundImagePath}
 						<div class="bg-path-display">
 							<Icon name="wallpaper" size={18} />
-							<span class="path-text" title={settings.userSettings.backgroundImagePath}>
+							<span class="path-text" use:tooltip={settings.userSettings.backgroundImagePath}>
 								{settings.userSettings.backgroundImagePath}
 							</span>
 						</div>

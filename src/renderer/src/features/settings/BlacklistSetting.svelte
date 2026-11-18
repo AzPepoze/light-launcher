@@ -2,6 +2,7 @@
 	import Button from "@components/shared/Button.svelte";
 	import Icon from "@components/shared/Icon.svelte";
 	import Section from "@components/shared/Section.svelte";
+	import { tooltip } from "@components/shared/tooltip";
 	import type { SettingsState } from "./settingsState.svelte";
 
 	let { settings } = $props<{ settings: SettingsState }>();
@@ -27,7 +28,7 @@
 				<div class="blacklist-item">
 					<div class="game-info-col">
 						<span class="game-name">{getBaseName(path)}</span>
-						<span class="game-path" title={path}>{path}</span>
+						<span class="game-path" use:tooltip={path}>{path}</span>
 					</div>
 					<Button
 						variant="secondary"
