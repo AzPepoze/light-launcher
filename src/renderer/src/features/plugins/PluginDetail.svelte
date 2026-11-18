@@ -2,6 +2,7 @@
 	import Badge from "@components/shared/Badge.svelte";
 	import Button from "@components/shared/Button.svelte";
 	import Notice from "@components/shared/Notice.svelte";
+	import { tooltip } from "@components/shared/tooltip";
 	import { notifications } from "@stores/notificationStore";
 	import { errorMessage } from "../../lib/features/rpc";
 	import { ago } from "../../lib/features/format";
@@ -173,7 +174,7 @@
 		</section>
 	{/if}
 	{#if checkFailed && update?.error}
-		<p class="muted" title={checkFailureHint(update)}>{UNAVAILABLE_CHECK_TEXT}</p>
+		<p class="muted" use:tooltip={checkFailureHint(update)}>{UNAVAILABLE_CHECK_TEXT}</p>
 	{/if}
 
 	<div class="actions">

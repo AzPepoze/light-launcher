@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Badge from "@components/shared/Badge.svelte";
 	import Icon from "@components/shared/Icon.svelte";
+	import { tooltip } from "@components/shared/tooltip";
 	import { pluginStatusKind } from "../../lib/features/pluginStatus";
 	import type { PluginInfo, PluginUpdateStatus } from "../../lib/features/types";
 	import PluginIdentity from "./PluginIdentity.svelte";
@@ -49,7 +50,7 @@
 			<span class="unsigned-note">{UNSIGNED_WARNING}</span>
 		{/if}
 		{#if checkFailed && update?.error}
-			<span class="unavailable" title={checkFailureHint(update.error)}>{UNAVAILABLE_CHECK_TEXT}</span>
+			<span class="unavailable" use:tooltip={checkFailureHint(update.error)}>{UNAVAILABLE_CHECK_TEXT}</span>
 		{/if}
 	</span>
 	{#if update?.available}
