@@ -4,6 +4,14 @@
 
 	type DaySession = { gameName: string; seconds: number };
 
+	const legendLevels = [
+		{ level: 0, label: "None" },
+		{ level: 1, label: "Under 30m" },
+		{ level: 2, label: "30m to 1h" },
+		{ level: 3, label: "1h to 2h" },
+		{ level: 4, label: "2h or more" }
+	];
+
 	let containerEl: HTMLDivElement;
 	let tip: {
 		x: number;
@@ -92,11 +100,12 @@
 	<div class="heatmap-legend">
 		<span>Less</span>
 		<div class="legend-cells">
-			<div class="day-cell level-0 sm"></div>
-			<div class="day-cell level-1 sm"></div>
-			<div class="day-cell level-2 sm"></div>
-			<div class="day-cell level-3 sm"></div>
-			<div class="day-cell level-4 sm"></div>
+			{#each legendLevels as item}
+				<div class="legend-item">
+					<div class="day-cell level-{item.level} sm"></div>
+					<span>{item.label}</span>
+				</div>
+			{/each}
 		</div>
 		<span>More</span>
 	</div>
@@ -150,7 +159,8 @@
 	}
 	.heatmap-legend{
 		display:flex; align-items:center; gap:6px; font-size:0.68rem; color:var(--text-dim); font-weight:700;
-		.legend-cells{ display:flex; gap:3px; }
+		.legend-cells{ display:flex; flex-wrap:wrap; justify-content:flex-end; gap:4px 12px; }
+		.legend-item{ display:flex; align-items:center; gap:4px; }
 	}
 
 	.heatmap-tip {

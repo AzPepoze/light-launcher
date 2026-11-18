@@ -89,7 +89,7 @@
 				<div class="tabs">
 					<button class:active={tab==="recent"} on:click={()=>tab="recent"}>Recent</button>
 					<button class:active={tab==="played"} on:click={()=>tab="played"}>Interest</button>
-					<button class:active={tab==="stale"} on:click={()=>tab="stale"}>Stale <span class="badge">{stale.length}</span></button>
+					<button class:active={tab==="stale"} on:click={()=>tab="stale"} title="Not played in 30 days">Stale <span class="badge">{stale.length}</span></button>
 				</div>
 			{/if}
 			<div class="mode-switch" role="group" aria-label="View mode">
