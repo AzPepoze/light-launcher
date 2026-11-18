@@ -40,6 +40,9 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [x] | Skeleton tiles on the first library load. Built and tested, not seen in a window. |
 | [x] | The scan status shows the folder being scanned ("Scanning Library... 3 of 5"). Built and tested, not seen in a window. |
 | [x] | Game cards show a neutral skeleton while an icon is pending, share in-flight loads, and use the rocket only when the icon is truly missing or failed. Grid and list views match. |
+| [ ] | Quick Launch header on the shared page header: controls wrap and search width look right. Check by eye in the real window. |
+| [ ] | Grid card shows the game path on hover; long paths truncate. Check by eye in the real window. |
+| [ ] | Larger gear button on grid cards. Check by eye in the real window. |
 
 ## Plugin system
 
@@ -244,3 +247,16 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | Deep links (`lightlauncher://`). |
 | [ ] | Thai and English text, and accessibility checks. |
 | [ ] | macOS support (out of scope for now). |
+
+## Game Manager and Run
+
+| Status | Item |
+|---|---|
+| [ ] | Game Manager page header added. Check by eye in the real window. |
+| [ ] | Last Game Manager rows clear the status drawer when collapsed. Check by eye in the real window. |
+| [ ] | Last Game Manager rows clear the status drawer when expanded. The drawer height depends on its content, so the padding may not be enough. Check by eye in the real window. |
+| [ ] | Heatmap legend shows level text. Check by eye in the real window. |
+| [ ] | Stale tab chip has a tooltip. Check by eye in the real window. |
+| [ ] | Run header subtitle shows the profile name and game path. Check by eye in the real window. |
+| [ ] | Run sticky actions row fades out and does not cover fields at 1440x900. Check by eye in the real window. |
+| [ ] | Empty "Launcher executable" hint is not done. It needs `components/run/ExecutableSelector.svelte`, which is outside this slice. |
