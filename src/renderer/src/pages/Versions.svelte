@@ -110,6 +110,19 @@
 		flex-direction: column;
 	}
 
+	@media (max-width: 600px) {
+		.versions-container {
+			padding: 24px 0;
+		}
+
+		.versions-container :global(.header-actions) {
+			flex-wrap: wrap;
+			flex-shrink: 1;
+			min-width: 0;
+			max-width: 100%;
+		}
+	}
+
 	.legend {
 		display: flex;
 		flex-wrap: wrap;
@@ -183,6 +196,7 @@
 
 		.info {
 			flex: 1;
+			min-width: 0;
 			overflow: hidden;
 		}
 
@@ -202,6 +216,18 @@
 			text-overflow: ellipsis;
 		}
 
+	}
+
+	@media (max-width: 600px) {
+		.version-card {
+			gap: 12px;
+			padding: 14px;
+		}
+
+		.version-card .path {
+			white-space: normal;
+			overflow-wrap: anywhere;
+		}
 	}
 
 	.loading {
