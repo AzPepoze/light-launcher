@@ -43,7 +43,7 @@
 		<Button
 			variant="secondary"
 			icon="travel_explore"
-			title="ProtonDB: check game compatibility reports (opens in browser)"
+			tooltip="ProtonDB: check game compatibility reports (opens in browser)"
 			onclick={() => openExternal("https://protondb.com")}
 		>
 			ProtonDB
@@ -51,7 +51,7 @@
 		<Button
 			variant="secondary"
 			icon="extension"
-			title="ProtonPlus: manage Proton versions (opens GitHub)"
+			tooltip="ProtonPlus: manage Proton versions (opens GitHub)"
 			onclick={() =>
 				openExternal("https://github.com/Vysp3r/ProtonPlus")}
 		>
@@ -60,7 +60,7 @@
 		<Button
 			variant="secondary"
 			icon="download"
-			title="ProtonUp-Qt: install Proton versions (opens GitHub)"
+			tooltip="ProtonUp-Qt: install Proton versions (opens GitHub)"
 			onclick={() =>
 				openExternal(
 					"https://github.com/DavidoTek/ProtonUp-Qt",
