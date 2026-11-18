@@ -38,6 +38,7 @@ export class SettingsState {
 	discordClientId = $state("");
 	pluginRegistryUrl = $state("");
 	savingRegistryUrl = $state(false);
+	savingPrefixDir = $state(false);
 	private cardSizeSaveTimer: ReturnType<typeof setTimeout> | undefined;
 	private updateCheckSaveTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -229,6 +230,28 @@ export class SettingsState {
 	async clearPluginRegistryUrl(): Promise<void> {
 		this.pluginRegistryUrl = "";
 		await this.savePluginRegistryUrl();
+	}
+
+	/** Saves the trimmed Wine prefix folder. An empty path uses the default folder. */
+	async savePrefixDirectory(path: string): Promise<void> {
+		const folder = path.trim();
+		if (this.savingPrefixDir || folder === (this.appSettings.CustomPrefixDir ?? "")) return;
+
+		this.savingPrefixDir = true;
+		try {
+			const next = appSettingsWith(this.appSettings, { CustomPrefixDir: folder });
+			await this.persist(next);
+			notifications.success(
+				folder
+					? "Updated Wine prefix storage directory"
+					: "Reset Wine prefix storage to default (~/.config/light-launcher/prefixes)"
+			);
+		} catch (err) {
+			log.error("Failed to save prefix directory", err);
+			notifications.error(`Failed to save prefix directory: ${plainMessage(err)}`);
+		} finally {
+			this.savingPrefixDir = false;
+		}
 	}
 
 	async browsePrefixDirectory(): Promise<void> {
