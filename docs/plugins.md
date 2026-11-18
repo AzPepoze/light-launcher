@@ -72,6 +72,33 @@ Every plugin needs its own tick in the consent box. A single tick does not cover
 >
 > Removing a plugin also deletes its saved secrets, such as sign-in cookies and API keys.
 
+## Dev mode
+
+Dev mode runs a plugin from its source folder while you build it. You do not pack or install it again after each change.
+
+| Task | In the app | Command |
+| :--- | :--- | :--- |
+| Link a folder | Install, then **Link folder** | `light-launcher plugin dev <path>` |
+| Unlink | Open the plugin, then **Unlink** | `light-launcher plugin unlink <id>` |
+
+The folder needs a `plugin.json`. A linked plugin shows a **Dev** badge in the list.
+
+| | Installed plugin | Linked folder |
+| :--- | :--- | :--- |
+| Version bump | Needed for an update | Not needed |
+| Reinstall after a change | Yes | No, the launcher restarts it on save |
+| Checksum and signature | Checked | Not checked |
+| Permission consent | Shown on install | Not shown |
+| Stopped when idle | Yes, after 5 minutes | No |
+
+> [!WARNING]
+> A linked plugin is not signed, and its files are not checked. Link only folders you wrote or trust.
+
+> [!NOTE]
+> - Installing over a linked plugin is refused. Unlink it first.
+> - Entry programs must be executable on Linux and macOS (`chmod +x`).
+> - Unlink hands the plugin back to its installed copy. With no installed copy, the plugin is removed.
+
 ## Updates
 
 A plugin can name its update source in `plugin.json`:

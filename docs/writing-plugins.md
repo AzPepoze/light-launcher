@@ -76,7 +76,7 @@ Plugins use JSON-RPC 2.0. Each message is one line of JSON. The launcher writes 
 | Health check | Every 15 seconds the launcher pings the plugin. A plugin that does not answer is stopped.              |
 | Crash        | The launcher restarts the plugin after a short wait. The wait doubles each time, up to 30 seconds.     |
 | Crash limit  | Three crashes within 5 minutes turn the plugin off.                                                    |
-| Sleep        | After 5 minutes without a call, the launcher stops the plugin. The next call starts it again.           |
+| Sleep        | After 5 minutes without a call, the launcher stops the plugin. The next call starts it again. A linked folder ([dev mode](plugins.md#dev-mode)) never sleeps. |
 | Stop         | The launcher sends `shutdown`. The plugin has a short time to finish, then it is stopped.              |
 
 > [!IMPORTANT]
@@ -430,6 +430,7 @@ These keywords start with `x-ll-`. Other tools ignore them.
 
 - Read the SDK guide, starting with `docs/writing-a-plugin.md`.
 - Check your plugin with the SDK's `llp validate`, `llp test` and `llp pack` commands.
+- While you build, run `llp dev` in the plugin folder. It links the folder and rebuilds on save. See [Dev mode](plugins.md#dev-mode).
 - Install the package with `light-launcher plugin install`. See [Usage](usage.md#plugin-commands).
 
 ## More

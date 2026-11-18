@@ -224,6 +224,8 @@ light-launcher plugin remove <id> [--delete-data]
 light-launcher plugin enable <id>
 light-launcher plugin disable <id>
 light-launcher plugin rollback <id>
+light-launcher plugin dev <path>
+light-launcher plugin unlink <id>
 ```
 
 | Command              | What it does                                                      |
@@ -234,6 +236,8 @@ light-launcher plugin rollback <id>
 | `remove`             | Removes the plugin. `--delete-data` also deletes its saved data.  |
 | `enable` / `disable` | Turns a plugin on or off.                                         |
 | `rollback`           | Goes back to the previous version.                                |
+| `dev`                | Runs the plugin from its source folder. Not signed. See [Dev mode](plugins.md#dev-mode). |
+| `unlink`             | Stops running the plugin from its source folder.                  |
 
 `--allow-unsigned` installs a plugin that has no signature. See [Plugins](plugins.md#trust-levels).
 
