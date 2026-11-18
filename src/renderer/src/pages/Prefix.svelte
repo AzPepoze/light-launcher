@@ -8,6 +8,8 @@
 	import PageHeader from "@components/shared/PageHeader.svelte";
 	import Button from "@components/shared/Button.svelte";
 	import Icon from "@components/shared/Icon.svelte";
+	import Section from "@components/shared/Section.svelte";
+	import SettingRow from "@components/shared/SettingRow.svelte";
 	import Tabs from "@components/shared/Tabs.svelte";
 	import type { TabItem } from "@components/shared/tabs";
 	import { createLaunchOptions } from "@lib/formService";
@@ -53,6 +55,17 @@
 			protonVersions.find((t) => t.DisplayName === chosenProtonName) ||
 			null;
 	}
+
+	function getToolBlockReason(proton: core.ProtonTool | null, path: string): string {
+		if (!proton) return "Choose a Proton version first";
+		if (!path.trim()) return "Choose a prefix folder first";
+		return "";
+	}
+
+	$: toolBlockReason = getToolBlockReason(chosenProton, prefixPath);
+	$: toolsHelp = chosenProton
+		? `Runs in this prefix with ${chosenProton.DisplayName}.`
+		: "Open a Wine tool in the active prefix.";
 
 	$: currentPrefixName = prefixPath.startsWith(baseDir)
 		? prefixPath.replace(baseDir + "/", "")
@@ -217,6 +230,12 @@
 		await selectPrefix(name);
 	}
 
+	async function duplicateCurrentPrefix() {
+		const base = currentPrefixName.replace(/[^a-zA-Z0-9_-]/g, "") || "Default";
+		newPrefixName = `${base}-copy`;
+		await handleCreatePrefix();
+	}
+
 	async function handleRemovePrefix(name: string) {
 		await service.deletePrefix(name);
 		await refreshPrefixes(false);
@@ -285,31 +304,24 @@
 					heroCreated={heroInfo.created}
 				/>
 
-				<section class="panel tab-panel-wrapper">
-					<div class="tabs">
-						<Tabs
-							tabs={prefixTabs}
-							value={activeTab}
-							onChange={selectTab}
-							aria-label="Prefix sections"
-						/>
-						<span class="tabs-meta">6 tools · 5 toggles</span>
-					</div>
+				<div class="tabs-row">
+					<Tabs
+						tabs={prefixTabs}
+						value={activeTab}
+						onChange={selectTab}
+						aria-label="Prefix sections"
+					/>
+				</div>
 
-					{#if activeTab === 'tools'}
-						<div class="tab-content" role="tabpanel">
-							<p class="tab-hint">Launch utilities inside the selected prefix — uses your selected Proton + <span class="kbd">umu-run</span></p>
-							<PrefixTools {runningToolName} onRunTool={runTool} />
-						</div>
-					{:else if activeTab === 'config'}
-						<div class="tab-content" role="tabpanel">
-							<header class="panel-header" style="margin-bottom: 16px">
-								<Icon name="tune" size={22} class="panel-icon" />
-								<div>
-									<h3>Default configuration</h3>
-									<p>Applied when launching games with this prefix</p>
-								</div>
-							</header>
+				{#if activeTab === 'tools'}
+					<div class="tab-content" role="tabpanel">
+						<Section title="Wine tools" help={toolsHelp}>
+							<PrefixTools {runningToolName} blockReason={toolBlockReason} onRunTool={runTool} />
+						</Section>
+					</div>
+				{:else if activeTab === 'config'}
+					<div class="tab-content" role="tabpanel">
+						<Section title="Launch defaults" help="Applied when launching games with this prefix.">
 							<ConfigForm bind:options={prefixOptions} />
 							<div class="save-bar">
 								<Button
@@ -323,31 +335,23 @@
 										size={18}
 										class={isSaving ? "spin" : ""}
 									/>
-									{isSaving ? "Saving…" : "Save Defaults"}
+									{isSaving ? "Saving…" : "Save defaults"}
 								</Button>
 							</div>
-						</div>
-					{:else}
-						<div class="tab-content" role="tabpanel">
-							<div class="advanced-grid">
-								<div class="advanced-card">
-									<h4>Symlinks</h4>
-									<p>Repair broken prefix symlinks after moving storage.</p>
-									<Button size="sm">Repair</Button>
-								</div>
-								<div class="advanced-card">
-									<h4>Duplicate Prefix</h4>
-									<p>Clone config + Wine bottle into a new prefix.</p>
-									<Button size="sm" onclick={() => {
-										const base = currentPrefixName.replace(/[^a-zA-Z0-9_-]/g, '') || 'Default';
-										newPrefixName = `${base}-copy`;
-										handleCreatePrefix();
-									}}>Duplicate "{currentPrefixName}"</Button>
-								</div>
-							</div>
-						</div>
-					{/if}
-				</section>
+						</Section>
+					</div>
+				{:else}
+					<div class="tab-content" role="tabpanel">
+						<Section title="Advanced" help="Repair and copy the active prefix.">
+							<SettingRow title="Repair symlinks" help="Fix broken prefix symlinks after moving storage.">
+								<Button size="sm">Repair</Button>
+							</SettingRow>
+							<SettingRow title="Duplicate prefix" help="Copy the config and Wine files into a new prefix.">
+								<Button size="sm" onclick={duplicateCurrentPrefix}>Duplicate</Button>
+							</SettingRow>
+						</Section>
+					</div>
+				{/if}
 			</main>
 		</div>
 	{/if}
@@ -443,116 +447,14 @@
 		}
 	}
 
-	.panel {
-		background: var(--bg-surface);
-		border: 2px solid var(--glass-border);
-		border-radius: var(--radius-lg);
-		padding: 22px 24px;
-	}
-
-	.panel-header {
-		display: flex;
-		align-items: flex-start;
-		gap: 14px;
-		margin-bottom: 20px;
-
-		:global(.panel-icon) {
-			color: var(--accent-primary);
-			margin-top: 2px;
-		}
-
-		h3 {
-			margin: 0 0 4px;
-			font-size: 1rem;
-			font-weight: 800;
-			color: var(--text-main);
-			text-transform: uppercase;
-			letter-spacing: 0.5px;
-		}
-
-		p {
-			margin: 0;
-			font-size: 0.8rem;
-			font-weight: 600;
-			color: var(--text-muted);
-		}
-	}
-
-	.tab-panel-wrapper {
-		padding: 14px 16px 18px;
-	}
-
-	.tabs {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		border-bottom: 2px solid var(--glass-border);
-		padding-bottom: 10px;
-		margin-bottom: 18px;
+	.tabs-row {
 		flex-shrink: 0;
-	}
-
-	.tabs-meta {
-		margin-left: auto;
-		align-self: center;
-		font-size: 0.7rem;
-		font-weight: 700;
-		color: var(--text-muted);
-		background: var(--bg-elevated);
-		padding: 4px 8px;
-		border-radius: var(--radius-pill);
-		border: 1px solid var(--glass-border);
-		white-space: nowrap;
+		margin-bottom: 16px;
+		border-bottom: 2px solid var(--glass-border);
 	}
 
 	.tab-content {
 		animation: fadeIn 150ms ease;
-	}
-
-	.tab-hint {
-		margin: 0 0 12px;
-		font-size: 0.78rem;
-		font-weight: 600;
-		color: var(--text-muted);
-
-		.kbd {
-			font-family: monospace;
-			font-size: 0.7rem;
-			background: rgba(255, 255, 255, 0.06);
-			border: 1px solid rgba(255, 255, 255, 0.1);
-			padding: 2px 6px;
-			border-radius: 6px;
-			color: var(--text-dim);
-		}
-	}
-
-	.advanced-grid {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 12px;
-	}
-
-	.advanced-card {
-		padding: 16px;
-		background: var(--bg-elevated);
-		border: 2px solid var(--glass-border);
-		border-radius: var(--radius-md);
-
-		h4 {
-			margin: 0 0 6px;
-			font-size: 0.85rem;
-			font-weight: 800;
-			letter-spacing: 0.5px;
-			text-transform: uppercase;
-		}
-
-		p {
-			margin: 0 0 10px;
-			font-size: 0.78rem;
-			font-weight: 600;
-			color: var(--text-muted);
-			line-height: 1.5;
-		}
 	}
 
 	.save-bar {
@@ -592,10 +494,6 @@
 			overflow: visible;
 			padding-right: 0;
 			padding-bottom: 0;
-		}
-
-		.advanced-grid {
-			grid-template-columns: 1fr;
 		}
 	}
 </style>
