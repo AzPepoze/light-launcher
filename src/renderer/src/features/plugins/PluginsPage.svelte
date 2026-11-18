@@ -222,16 +222,18 @@
 	}
 </script>
 
-<PageHeader title="Plugins" {subtitle} icon="extension">
-	{#if updates.checkedAt}
-		<span class="checked">Checked {ago(updates.checkedAt)}</span>
-	{/if}
-	<Button size="sm" disabled={checkingUpdates} onclick={checkUpdates}>
-		{checkingUpdates ? CHECKING_UPDATES_LABEL : CHECK_UPDATES_LABEL}
-	</Button>
-	<Button size="sm" icon="public" onclick={openCommunity}>{COMMUNITY_OPEN_LABEL}</Button>
-	<Button variant="primary" size="sm" onclick={() => openInstall()}>{ADD_PLUGIN_LABEL}</Button>
-</PageHeader>
+<div class="page-head">
+	<PageHeader title="Plugins" {subtitle} icon="extension">
+		{#if updates.checkedAt}
+			<span class="checked">Checked {ago(updates.checkedAt)}</span>
+		{/if}
+		<Button size="sm" disabled={checkingUpdates} onclick={checkUpdates}>
+			{checkingUpdates ? CHECKING_UPDATES_LABEL : CHECK_UPDATES_LABEL}
+		</Button>
+		<Button size="sm" icon="public" onclick={openCommunity}>{COMMUNITY_OPEN_LABEL}</Button>
+		<Button variant="primary" size="sm" onclick={() => openInstall()}>{ADD_PLUGIN_LABEL}</Button>
+	</PageHeader>
+</div>
 
 <PluginDropZone onFiles={uploadDropped}>
 	{#if loadFailed}
@@ -318,5 +320,14 @@
 		justify-content: center;
 		gap: 8px;
 		flex-wrap: wrap;
+	}
+
+	@media (max-width: 600px) {
+		.page-head :global(.header-actions) {
+			flex-wrap: wrap;
+			flex-shrink: 1;
+			min-width: 0;
+			max-width: 100%;
+		}
 	}
 </style>
