@@ -14,6 +14,7 @@
 		SourceAction,
 	} from "../../lib/features/types";
 	import { ago, playtime } from "../../lib/features/format";
+	import { loadGameIcon } from "../../lib/iconService";
 	import { libraryErrorMessage } from "./libraryError";
 	import GameFiles from "./GameFiles.svelte";
 	import GameInstall from "./GameInstall.svelte";
@@ -41,11 +42,33 @@
 	let refreshingFiles = $state(false);
 	let busy = $state(false);
 	let titleEl = $state<HTMLElement>();
+	/** The real game icon, shown for local games that have no cover art. */
+	let gameIcon = $state("");
 
 	const versionLine = $derived(
 		[sourceName, game.version ? `Version ${game.version}` : null].filter(Boolean).join(" · "),
 	);
 	const facts = $derived([game.developer, game.engine].filter(Boolean).join(" · "));
+
+	// A local game with no cover shows its custom or executable icon instead of a generic glyph.
+	$effect(() => {
+		gameIcon = "";
+		if (game.cover || game.coverLocal) return;
+		const path = game.exePath || game.localConfig?.GamePath || game.localConfig?.LauncherPath || "";
+		if (!path) return;
+		let current = true;
+		void loadGameIcon(
+			path,
+			game.localConfig?.CustomIconPath ?? null,
+			"low",
+			false
+		).then((result) => {
+			if (current) gameIcon = result.icon;
+		});
+		return () => {
+			current = false;
+		};
+	});
 
 	onMount(() => {
 		titleEl?.focus();
@@ -139,6 +162,8 @@
 		<div class="cover">
 			{#if game.cover || game.coverLocal}
 				<CoverImage {game} />
+			{:else if gameIcon}
+				<img class="cover-icon" src={gameIcon} alt="" />
 			{:else}
 				<Icon name="videogame_asset" size={40} />
 			{/if}
@@ -280,6 +305,12 @@
 		align-items: center;
 		justify-content: center;
 		color: var(--text-muted);
+	}
+
+	.cover-icon {
+		width: 74%;
+		height: 74%;
+		object-fit: contain;
 	}
 
 	.summary {

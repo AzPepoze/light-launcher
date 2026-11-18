@@ -13,6 +13,7 @@
 		ratio,
 		minColumnPx,
 		card,
+		variant,
 		transfers,
 		blurUntilHover,
 		revealed,
@@ -26,6 +27,8 @@
 		/** Smallest width of one column, from the card size setting. */
 		minColumnPx: number;
 		card: SourceCard | null;
+		/** The card look: media covers, or the square Home-style frame for local games. */
+		variant: "cover" | "home";
 		/** The download or install running for each game id. */
 		transfers: Map<number, TransferKind>;
 		blurUntilHover: boolean;
@@ -119,13 +122,19 @@
 						{game}
 						{ratio}
 						{card}
+						{variant}
 						transfer={transfers.get(game.id) ?? null}
 						{blurUntilHover}
 						revealIndex={revealIndex(index, revealed)}
 						{onOpen}
 					/>
 				{:else}
-					<span class="skeleton cover" style:aspect-ratio={ratio} aria-hidden="true"></span>
+					<span
+						class="skeleton cover"
+						class:home={variant === "home"}
+						style:aspect-ratio={ratio}
+						aria-hidden="true"
+					></span>
 				{/if}
 			</li>
 		{/each}
@@ -153,6 +162,13 @@
 		display: block;
 		width: 100%;
 		border-radius: var(--radius-md);
+	}
+
+	/* Matches the padded Home-style frame used for local games. */
+	.cover.home {
+		width: calc(100% - 16px);
+		margin: 8px;
+		border-radius: var(--radius-lg);
 	}
 
 </style>

@@ -3,7 +3,7 @@
 	import CoverImage from "@components/shared/CoverImage.svelte";
 	import Icon from "@components/shared/Icon.svelte";
 	import Marquee from "@components/shared/Marquee.svelte";
-	import { loadExeIcon } from "../../lib/iconService";
+	import { loadGameIcon } from "../../lib/iconService";
 	import type { Game, SourceCard } from "../../lib/features/types";
 	import { LOCAL_SOURCE } from "./librarySections";
 	import { cardView, type TileState } from "./tileCard";
@@ -13,6 +13,7 @@
 		game,
 		ratio,
 		card,
+		variant,
 		transfer,
 		blurUntilHover,
 		revealIndex,
@@ -22,6 +23,8 @@
 		/** Width divided by height of the cover, which is the whole tile. */
 		ratio: number;
 		card: SourceCard | null;
+		/** The card look: media covers, or the square Home-style frame for local games. */
+		variant: "cover" | "home";
 		/** The download or install running for this game, if any. */
 		transfer: TransferKind | null;
 		/** Covers stay blurred until the tile is hovered or focused. The overlay is never blurred. */
@@ -34,18 +37,23 @@
 	const view = $derived(cardView(game, card, transfer));
 	const cornerStart = $derived(view.states.filter((state) => state === "favorite"));
 	const cornerEnd = $derived(view.states.filter((state) => state !== "favorite"));
-	const exePath = $derived(exeIconPathFor(game));
-	/** The exe icon as a data URL, shown only for a local game with no cover. */
+	const iconPath = $derived(exeIconPathFor(game));
+	/** The custom or exe icon as a data URL, shown only for a local game with no cover. */
 	let exeIcon = $state("");
 
 	// Runs once per game path. Only a stale request is dropped, so a reused tile never shows the old icon.
 	$effect(() => {
-		const path = exePath;
+		const path = iconPath;
 		exeIcon = "";
 		if (!path) return;
 		let current = true;
-		void loadExeIcon(path, "low").then((icon) => {
-			if (current) exeIcon = icon;
+		void loadGameIcon(
+			path,
+			game.localConfig?.CustomIconPath ?? null,
+			"low",
+			false
+		).then((result) => {
+			if (current) exeIcon = result.icon;
 		});
 		return () => {
 			current = false;
@@ -56,7 +64,7 @@
 	function exeIconPathFor(item: Game): string | null {
 		const hasCover = Boolean(item.cover || item.coverLocal);
 		if (item.source !== LOCAL_SOURCE || hasCover) return null;
-		return item.exePath || null;
+		return item.exePath || item.localConfig?.GamePath || item.localConfig?.LauncherPath || null;
 	}
 
 	const STATE_VIEW: Record<TileState, { label: string; icon: string; tone: "danger" | "accent" | "neutral" | "warning" }> = {
@@ -70,19 +78,24 @@
 
 <button
 	class="tile"
+	class:home-card={variant === "home"}
 	class:reveal={revealIndex !== undefined}
 	style:--reveal-index={revealIndex}
 	data-game-id={game.id}
 	onclick={() => onOpen(game)}
 	aria-label="Open {view.title}"
 >
-	<span class="cover" class:blurred={blurUntilHover} style:aspect-ratio={ratio}>
+	<span
+		class="cover"
+		class:blurred={blurUntilHover && variant === "cover"}
+		style:aspect-ratio={ratio}
+	>
 		{#if game.cover || game.coverLocal}
 			<CoverImage {game} />
 		{:else if exeIcon}
 			<img class="exe-icon" src={exeIcon} alt="" />
 		{:else}
-			<Icon name="videogame_asset" size={40} class="placeholder" />
+			<Icon name="videogame_asset" size={variant === "home" ? 56 : 40} class="placeholder" />
 		{/if}
 
 		{#if cornerStart.length > 0}
@@ -194,6 +207,52 @@
 		}
 	}
 
+	/* Local games use the Home card's padded square frame, minus its play overlay. */
+	.tile.home-card {
+		padding: 8px;
+		box-sizing: border-box;
+		border-radius: var(--radius-lg);
+
+		.cover {
+			border: 2px solid rgb(255 255 255 / 0.06);
+			border-radius: var(--radius-lg);
+			background: var(--bg-base);
+			transition:
+				transform var(--motion-base) var(--ease-out),
+				border-color var(--motion-base) var(--ease-out),
+				box-shadow var(--motion-base) var(--ease-out);
+
+			:global(img) {
+				transition:
+					transform var(--motion-quick) var(--ease-out),
+					filter var(--motion-quick) var(--ease-out);
+			}
+		}
+
+		.exe-icon {
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+		}
+
+		&:hover .cover,
+		&:focus-visible .cover {
+			transform: translateY(-4px) scale(1.015);
+			border-color: rgb(255 255 255 / 0.32);
+			box-shadow: 0 0 16px rgb(255 255 255 / 0.28);
+		}
+
+		&:hover :global(img),
+		&:focus-visible :global(img) {
+			transform: scale(1.06);
+			filter: brightness(1.05);
+		}
+
+		&:active .cover {
+			transform: scale(0.98);
+		}
+	}
+
 	.corner {
 		position: absolute;
 		top: 6px;
@@ -286,6 +345,20 @@
 		.overlay {
 			transform: none;
 			transition: opacity 160ms linear;
+		}
+
+		.tile.home-card {
+			&:hover .cover,
+			&:focus-visible .cover,
+			&:active .cover {
+				transform: none;
+			}
+
+			&:hover :global(img),
+			&:focus-visible :global(img) {
+				transform: none;
+				filter: none;
+			}
 		}
 	}
 </style>
