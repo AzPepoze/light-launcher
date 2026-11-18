@@ -286,6 +286,12 @@
 	}
 	.runtime{ color:var(--text-muted); font-size:0.85rem; font-weight:700; }
 
+	@media (max-width: 600px) {
+		.card-inner { gap: 12px; padding: 12px; }
+		.icon-wrap, .icon-tilt { width: 64px; height: 64px; }
+		.name { font-size: 1.1rem; }
+	}
+
 	.stop-btn{
 		display:grid; place-items:center; border:1px solid rgba(255,80,80,0.22);
 		background: rgba(255,80,80,0.08); color:var(--danger); border-radius:999px;

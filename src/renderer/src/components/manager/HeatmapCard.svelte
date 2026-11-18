@@ -223,6 +223,11 @@
 		}
 	}
 
+	@media (max-width: 600px) {
+		.heatmap-grid, .week-col { gap: 2px; }
+		.day-cell { width: 8px; height: 8px; }
+	}
+
 	@keyframes tipIn {
 		from { opacity: 0; transform: translate(-50%, calc(-100% - 4px)); }
 		to { opacity: 1; transform: translate(-50%, calc(-100% - 8px)); }

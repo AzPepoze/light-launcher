@@ -232,6 +232,10 @@
 	}
 
 	@media (max-width: 980px) {
-		.manager-grid { grid-template-columns: 1fr; }
+		.manager-grid { grid-template-columns: minmax(0, 1fr); }
+	}
+
+	@media (max-width: 600px) {
+		.top-summary { gap: 24px; }
 	}
 </style>
