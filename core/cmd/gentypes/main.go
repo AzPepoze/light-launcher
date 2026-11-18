@@ -54,6 +54,7 @@ var structTypes = []typeRef{
 	{modulePath + "/core/internal/library", "Filter", "WireLibraryFilter"},
 	{modulePath + "/core/internal/library", "Page", "WireLibraryList"},
 	{modulePath + "/core/internal/library", "TagCount", "WireTagCount"},
+	{modulePath + "/core/internal/library", "NameCount", "WireNameCount"},
 	{modulePath + "/core/internal/library", "Stats", "WireLibraryStats"},
 	{modulePath + "/core/internal/library", "Overview", "WireLibraryOverview"},
 	{modulePath + "/core/internal/library", "SourceCount", "WireLibrarySource"},

@@ -52,6 +52,16 @@ type SourceCount struct {
 	// GamesFolder is the resolved folder the plugin keeps games in. Empty for local games and
 	// plugins without the $GAMES grant.
 	GamesFolder string `json:"gamesFolder,omitempty"`
+	// Engines counts the visible owned games of the source by engine. Never null.
+	Engines []NameCount `json:"engines"`
+	// Tags counts the visible owned games of the source by tag. Never null.
+	Tags []NameCount `json:"tags"`
+}
+
+// NameCount is a named value, such as an engine or a tag, and how many visible games have it.
+type NameCount struct {
+	Name  string `json:"name"`
+	Count int    `json:"count"`
 }
 
 // Overview is the summary the library shows beside its list. It covers the whole visible library, not a filter.
@@ -64,8 +74,11 @@ type Overview struct {
 // overviewCounts is what the database says about the library. Labels come from the plugins on each call.
 type overviewCounts struct {
 	sources map[string]int
+	engines map[string][]NameCount
 	tags    []TagCount
-	stats   Stats
+	// sourceTags counts tags per source. The global tags stay in tags.
+	sourceTags map[string][]NameCount
+	stats      Stats
 }
 
 // overviewCache keeps the last counts. It recounts after a write, at most once per overviewMinInterval.
@@ -83,7 +96,7 @@ func (l *Library) Overview(ctx context.Context) (Overview, error) {
 	if err != nil {
 		return Overview{}, err
 	}
-	return Overview{Sources: l.sourceList(counts.sources), Tags: counts.tags, Stats: counts.stats}, nil
+	return Overview{Sources: l.sourceList(counts), Tags: counts.tags, Stats: counts.stats}, nil
 }
 
 // cachedCounts returns the counts, recounting only after a write. A recount that comes sooner than
@@ -130,11 +143,100 @@ func (l *Library) countLibrary(ctx context.Context) (overviewCounts, error) {
 	if err != nil {
 		return overviewCounts{}, err
 	}
+	engines, sourceTags, err := l.sourceNameCounts(ctx)
+	if err != nil {
+		return overviewCounts{}, err
+	}
 	stats, err := l.Stats(ctx)
 	if err != nil {
 		return overviewCounts{}, err
 	}
-	return overviewCounts{sources: sources, tags: tags, stats: stats}, nil
+	return overviewCounts{sources: sources, engines: engines, tags: tags, sourceTags: sourceTags, stats: stats}, nil
+}
+
+// sourceNameCounts counts the visible games of each source by engine and by tag. Games without an engine
+// are skipped.
+func (l *Library) sourceNameCounts(ctx context.Context) (engines, tags map[string][]NameCount, err error) {
+	engines, err = l.sourceEngineCounts(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	tags, err = l.sourceTagCounts(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	return engines, tags, nil
+}
+
+func (l *Library) sourceEngineCounts(ctx context.Context) (map[string][]NameCount, error) {
+	rows, err := l.db.QueryContext(ctx, `select source, engine, count(*) from games
+		where hidden = 0 and engine is not null and trim(engine) <> '' group by source, engine`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	counts := map[string]map[string]int{}
+	for rows.Next() {
+		var source, engine string
+		var count int
+		if err := rows.Scan(&source, &engine, &count); err != nil {
+			return nil, err
+		}
+		addCount(counts, source, engine, count)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return sortedNameCounts(counts), nil
+}
+
+func (l *Library) sourceTagCounts(ctx context.Context) (map[string][]NameCount, error) {
+	rows, err := l.db.QueryContext(ctx, `select source, tags from games where hidden = 0`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	counts := map[string]map[string]int{}
+	for rows.Next() {
+		var source, raw string
+		if err := rows.Scan(&source, &raw); err != nil {
+			return nil, err
+		}
+		for _, tag := range decodeStrings(raw) {
+			addCount(counts, source, tag, 1)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return sortedNameCounts(counts), nil
+}
+
+// addCount adds to the count of one name under one source.
+func addCount(counts map[string]map[string]int, source, name string, count int) {
+	if counts[source] == nil {
+		counts[source] = map[string]int{}
+	}
+	counts[source][name] += count
+}
+
+// sortedNameCounts turns the counts of each source into lists, most used first, then by name.
+func sortedNameCounts(counts map[string]map[string]int) map[string][]NameCount {
+	out := make(map[string][]NameCount, len(counts))
+	for source, byName := range counts {
+		list := make([]NameCount, 0, len(byName))
+		for name, count := range byName {
+			list = append(list, NameCount{Name: name, Count: count})
+		}
+		sort.Slice(list, func(i, j int) bool {
+			if list[i].Count != list[j].Count {
+				return list[i].Count > list[j].Count
+			}
+			return list[i].Name < list[j].Name
+		})
+		out[source] = list
+	}
+	return out
 }
 
 // sourceCounts counts the visible games of each source.
@@ -157,13 +259,13 @@ func (l *Library) sourceCounts(ctx context.Context) (map[string]int, error) {
 }
 
 // sourceList joins the counted sources with the sources the plugins offer, so empty sources show too.
-func (l *Library) sourceList(counts map[string]int) []SourceCount {
+func (l *Library) sourceList(counts overviewCounts) []SourceCount {
 	infos := map[string]contract.SourceInfo{}
 	for _, info := range l.sources.Sources() {
 		infos[info.SourceID] = info
 	}
 	ids := map[string]bool{}
-	for id := range counts {
+	for id := range counts.sources {
 		ids[id] = true
 	}
 	for id := range infos {
@@ -171,10 +273,21 @@ func (l *Library) sourceList(counts map[string]int) []SourceCount {
 	}
 	out := make([]SourceCount, 0, len(ids))
 	for id := range ids {
-		out = append(out, sourceCountOf(id, counts[id], infos[id]))
+		entry := sourceCountOf(id, counts.sources[id], infos[id])
+		entry.Engines = nameCountList(counts.engines[id])
+		entry.Tags = nameCountList(counts.sourceTags[id])
+		out = append(out, entry)
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
 	return out
+}
+
+// nameCountList returns the list, or an empty list, so the JSON array is never null.
+func nameCountList(list []NameCount) []NameCount {
+	if list == nil {
+		return []NameCount{}
+	}
+	return list
 }
 
 // sourceCountOf builds the entry for one source. The local source has a fixed label and a square card.

@@ -36,9 +36,12 @@ func TestOverviewCountsSourcesTagsAndStats(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []SourceCount{
-		{ID: "f95", Label: "F95 Zone", Kind: "plugin", Plugin: "f95", Capabilities: []string{}, Tile: "wide", Cover: "16:9", Actions: []contract.SourceAction{}, Count: 1},
-		{ID: "itch", Label: "itch.io", Kind: "plugin", Plugin: "itch", Capabilities: []string{}, Tile: "poster", Cover: "3:4", Actions: []contract.SourceAction{}, Count: 0},
-		{ID: "manual", Label: "Local games", Kind: "local", Capabilities: []string{"launch", "scan"}, Tile: "square", Cover: "1:1", Actions: []contract.SourceAction{}, Count: 1},
+		{ID: "f95", Label: "F95 Zone", Kind: "plugin", Plugin: "f95", Capabilities: []string{}, Tile: "wide", Cover: "16:9", Actions: []contract.SourceAction{}, Count: 1,
+			Engines: []NameCount{}, Tags: []NameCount{{Name: "rpg", Count: 1}}},
+		{ID: "itch", Label: "itch.io", Kind: "plugin", Plugin: "itch", Capabilities: []string{}, Tile: "poster", Cover: "3:4", Actions: []contract.SourceAction{}, Count: 0,
+			Engines: []NameCount{}, Tags: []NameCount{}},
+		{ID: "manual", Label: "Local games", Kind: "local", Capabilities: []string{"launch", "scan"}, Tile: "square", Cover: "1:1", Actions: []contract.SourceAction{}, Count: 1,
+			Engines: []NameCount{}, Tags: []NameCount{}},
 	}
 	if len(overview.Sources) != len(want) {
 		t.Fatalf("sources = %+v, want %+v", overview.Sources, want)
@@ -53,6 +56,59 @@ func TestOverviewCountsSourcesTagsAndStats(t *testing.T) {
 	}
 	if overview.Stats.Total != 2 {
 		t.Errorf("stats.total = %d, want 2", overview.Stats.Total)
+	}
+}
+
+func TestOverviewCountsEnginesAndTagsPerSource(t *testing.T) {
+	sources := &fakeSources{infos: []contract.SourceInfo{
+		{Plugin: "f95", SourceID: "f95", Label: "F95 Zone"},
+		{Plugin: "itch", SourceID: "itch", Label: "itch.io"},
+		{Plugin: "empty", SourceID: "empty", Label: "Empty"},
+	}}
+	lib := openTestLibrary(t, Options{Sources: sources})
+	ctx := context.Background()
+	games := []contract.GameDTO{
+		{Source: "f95", SourceID: "1", URL: "u", Title: "A", Engine: "Ren'Py", Tags: []string{"rpg", "dark"}},
+		{Source: "f95", SourceID: "2", URL: "u", Title: "B", Engine: "Unity", Tags: []string{"rpg"}},
+		{Source: "f95", SourceID: "3", URL: "u", Title: "C", Engine: "Ren'Py", Tags: []string{"dark"}},
+		{Source: "f95", SourceID: "4", URL: "u", Title: "D", Tags: []string{"ztag"}},
+		{Source: "itch", SourceID: "5", URL: "u", Title: "E", Engine: "Godot", Tags: []string{"rpg"}},
+	}
+	for _, game := range games {
+		if _, err := lib.Upsert(ctx, game); err != nil {
+			t.Fatal(err)
+		}
+	}
+	hiddenID, err := lib.Upsert(ctx, contract.GameDTO{Source: "f95", SourceID: "6", URL: "u", Title: "F", Engine: "Unity", Tags: []string{"rpg"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	hidden := true
+	if _, err := lib.Patch(ctx, hiddenID, Patch{Hidden: &hidden}); err != nil {
+		t.Fatal(err)
+	}
+
+	overview, err := lib.Overview(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	byID := map[string]SourceCount{}
+	for _, source := range overview.Sources {
+		byID[source.ID] = source
+	}
+	wantEngines := []NameCount{{Name: "Ren'Py", Count: 2}, {Name: "Unity", Count: 1}}
+	if !reflect.DeepEqual(byID["f95"].Engines, wantEngines) {
+		t.Errorf("f95 engines = %+v, want %+v; games without an engine and hidden games must not count", byID["f95"].Engines, wantEngines)
+	}
+	wantTags := []NameCount{{Name: "dark", Count: 2}, {Name: "rpg", Count: 2}, {Name: "ztag", Count: 1}}
+	if !reflect.DeepEqual(byID["f95"].Tags, wantTags) {
+		t.Errorf("f95 tags = %+v, want %+v; hidden games must not count", byID["f95"].Tags, wantTags)
+	}
+	if !reflect.DeepEqual(byID["itch"].Engines, []NameCount{{Name: "Godot", Count: 1}}) {
+		t.Errorf("itch engines = %+v, want Godot once", byID["itch"].Engines)
+	}
+	if byID["empty"].Engines == nil || byID["empty"].Tags == nil {
+		t.Error("a source with no games must still carry empty engine and tag lists, not null")
 	}
 }
 

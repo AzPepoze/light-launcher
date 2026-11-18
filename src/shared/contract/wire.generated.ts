@@ -145,6 +145,7 @@ export interface WireLibraryFilter {
 	search: string;
 	source: string;
 	tags: string[] | null;
+	engine: string;
 	status: string[] | null;
 	favorite: boolean;
 	installed: boolean | null;
@@ -166,6 +167,12 @@ export interface WireLibraryList {
 /** library.TagCount, from core/internal/library/store_list.go. */
 export interface WireTagCount {
 	tag: string;
+	count: number;
+}
+
+/** library.NameCount, from core/internal/library/overview.go. */
+export interface WireNameCount {
+	name: string;
 	count: number;
 }
 
@@ -201,6 +208,8 @@ export interface WireLibrarySource {
 	card: WireSourceCard | null;
 	sidebar?: WireSidebarGroup[];
 	gamesFolder?: string;
+	engines: WireNameCount[] | null;
+	tags: WireNameCount[] | null;
 }
 
 /** library.UpdatesSummary, from core/internal/library/updates.go. */
