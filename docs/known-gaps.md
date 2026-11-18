@@ -258,5 +258,5 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | Heatmap legend shows level text. Check by eye in the real window. |
 | [ ] | Stale tab chip has a tooltip. Check by eye in the real window. |
 | [ ] | Run header subtitle shows the profile name and game path. Check by eye in the real window. |
-| [ ] | Run sticky actions row fades out and does not cover fields at 1440x900. Check by eye in the real window. |
+| [ ] | Run launch actions are a footer under the form. The form scrolls above it, and no field sits under it at 1440x900 or 390x844. Checked by overlap scan and one screenshot per width. Check by eye in the real window. |
 | [ ] | Empty "Launcher executable" hint is not done. It needs `components/run/ExecutableSelector.svelte`, which is outside this slice. |

@@ -249,7 +249,7 @@
 						easing: cubicOut,
 					}}
 				>
-					<div class="content-zone" class:full-width={activePage === "home" || activePage === "editlsfg" || activePage === "manager" || activePage === "prefix" || activePage === "library"} class:home-zone={activePage === "home"} class:prefix-zone={activePage === "prefix"}>
+					<div class="content-zone" class:full-width={activePage === "home" || activePage === "editlsfg" || activePage === "manager" || activePage === "prefix" || activePage === "library"} class:home-zone={activePage === "home"} class:prefix-zone={activePage === "prefix"} class:run-zone={activePage === "run"}>
 						{#if activePage === "editlsfg"}
 							<EditLsfg gamePath={editLsfgGamePath} />
 						{:else if Object.hasOwn(pageComponents, activePage)}
@@ -469,6 +469,11 @@
 			flex-direction: column;
 			height: 100%;
 			max-height: 100%;
+		}
+
+		/* Gives the Run page a definite height so its form scrolls above the footer. */
+		&.run-zone {
+			height: 100%;
 		}
 	}
 

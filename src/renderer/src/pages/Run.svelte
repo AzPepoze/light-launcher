@@ -31,86 +31,88 @@
 		subtitle={headerSubtitle(state.options.Name, state.options.GamePath)}
 	/>
 
-	<div class="zones-stack">
-		<!-- Zone 1: General & Paths -->
-		<div class="zone-card">
-			<div class="zone-header">
-				<Icon name="folder" size={24} class="zone-icon" />
-				<h2>General & Paths</h2>
-			</div>
+	<div class="run-scroll">
+		<div class="zones-stack">
+			<!-- Zone 1: General & Paths -->
+			<div class="zone-card">
+				<div class="zone-header">
+					<Icon name="folder" size={24} class="zone-icon" />
+					<h2>General & Paths</h2>
+				</div>
 
-			<div class="form-group profile-name-group">
-				<label for="profileName">Profile Name</label>
-				<input
-					id="profileName"
-					type="text"
-					class="input profile-input"
-					bind:value={state.options.Name}
-					placeholder="Enter a name for this profile..."
+				<div class="form-group profile-name-group">
+					<label for="profileName">Profile Name</label>
+					<input
+						id="profileName"
+						type="text"
+						class="input profile-input"
+						bind:value={state.options.Name}
+						placeholder="Enter a name for this profile..."
+					/>
+				</div>
+
+				<ExecutableSelector
+					launcherPath={state.options.LauncherPath}
+					gamePath={state.options.GamePath}
+					bind:useGamePath={state.useGamePath}
+					bind:launcherIcon={state.launcherIcon}
+					bind:gameIcon={state.gameIcon}
+					onBrowseLauncher={() => state.handleBrowseLauncher()}
+					onBrowseGame={() => state.handleBrowseGame()}
 				/>
 			</div>
 
-			<ExecutableSelector
-				launcherPath={state.options.LauncherPath}
-				gamePath={state.options.GamePath}
-				bind:useGamePath={state.useGamePath}
-				bind:launcherIcon={state.launcherIcon}
-				bind:gameIcon={state.gameIcon}
-				onBrowseLauncher={() => state.handleBrowseLauncher()}
-				onBrowseGame={() => state.handleBrowseGame()}
-			/>
-		</div>
-
-		{#if $platform.features.prefix || $platform.features.proton}
-			<!-- Zone 2: Environment & Compatibility (Linux only) -->
-			<div class="zone-card">
-				<div class="zone-header">
-					<Icon name="layers" size={24} class="zone-icon" />
-					<h2>Environment & Compatibility</h2>
-				</div>
-
-				{#if $platform.features.prefix}
-					<PrefixSelector
-						bind:availablePrefixes={state.availablePrefixes}
-						bind:selectedPrefixName={state.selectedPrefixName}
-						bind:prefixPath={state.prefixPath}
-						baseDir={state.baseDir}
-						onPrefixChange={(name) => state.handlePrefixChange(name)}
-						onBrowsePrefix={() => state.handleBrowsePrefix()}
-					/>
-				{/if}
-
-				{#if $platform.features.proton}
-					<div class="form-group">
-						<SlideButton
-							bind:checked={state.options.UseCustomProton}
-							label="Use Custom Proton"
-							subtitle="Prevent prefix changes from overwriting your proton selection"
-						/>
+			{#if $platform.features.prefix || $platform.features.proton}
+				<!-- Zone 2: Environment & Compatibility (Linux only) -->
+				<div class="zone-card">
+					<div class="zone-header">
+						<Icon name="layers" size={24} class="zone-icon" />
+						<h2>Environment & Compatibility</h2>
 					</div>
 
-					<ProtonSelector
-						bind:protonOptions={state.proton.protonOptions}
-						bind:selectedProton={state.proton.selectedProton}
-						bind:isLoadingProton={state.proton.isLoadingProton}
-						onProtonChange={(val) => state.proton.handleProtonChange(val)}
-						disabled={!state.options.UseCustomProton}
-						disabledMessage="Enable 'Use Custom Proton' to change version"
-					/>
-				{/if}
-			</div>
-		{/if}
+					{#if $platform.features.prefix}
+						<PrefixSelector
+							bind:availablePrefixes={state.availablePrefixes}
+							bind:selectedPrefixName={state.selectedPrefixName}
+							bind:prefixPath={state.prefixPath}
+							baseDir={state.baseDir}
+							onPrefixChange={(name) => state.handlePrefixChange(name)}
+							onBrowsePrefix={() => state.handleBrowsePrefix()}
+						/>
+					{/if}
 
-		<!-- Zone 3: Advanced Integrations -->
-		<div class="zone-card">
-			<div class="zone-header">
-				<Icon name="tune" size={24} class="zone-icon" />
-				<h2>Advanced Integrations</h2>
+					{#if $platform.features.proton}
+						<div class="form-group">
+							<SlideButton
+								bind:checked={state.options.UseCustomProton}
+								label="Use Custom Proton"
+								subtitle="Prevent prefix changes from overwriting your proton selection"
+							/>
+						</div>
+
+						<ProtonSelector
+							bind:protonOptions={state.proton.protonOptions}
+							bind:selectedProton={state.proton.selectedProton}
+							bind:isLoadingProton={state.proton.isLoadingProton}
+							onProtonChange={(val) => state.proton.handleProtonChange(val)}
+							disabled={!state.options.UseCustomProton}
+							disabledMessage="Enable 'Use Custom Proton' to change version"
+						/>
+					{/if}
+				</div>
+			{/if}
+
+			<!-- Zone 3: Advanced Integrations -->
+			<div class="zone-card">
+				<div class="zone-header">
+					<Icon name="tune" size={24} class="zone-icon" />
+					<h2>Advanced Integrations</h2>
+				</div>
+				<ConfigForm
+					bind:options={state.options}
+					bind:showLogsWindow={state.showLogsWindow}
+				/>
 			</div>
-			<ConfigForm
-				bind:options={state.options}
-				bind:showLogsWindow={state.showLogsWindow}
-			/>
 		</div>
 	</div>
 
@@ -124,7 +126,7 @@
 	<div class="actions-row">
 		<Button
 			variant="secondary"
-			style="width: 60px; height: 60px; padding: 0; flex-shrink: 0; pointer-events: auto;"
+			style="width: 60px; height: 60px; padding: 0; flex-shrink: 0;"
 			onclick={() => state.handleLaunch(false)}
 			title="Run in Background (Keep Launcher Open)"
 			aria-label="Run in Background (Keep Launcher Open)"
@@ -136,7 +138,7 @@
 		</div>
 		<Button
 			variant="secondary"
-			style="width: 60px; height: 60px; padding: 0; flex-shrink: 0; pointer-events: auto;"
+			style="width: 60px; height: 60px; padding: 0; flex-shrink: 0;"
 			onclick={() => state.handleSave()}
 			disabled={state.isSaving}
 			title="Save Configuration"
@@ -152,9 +154,19 @@
 </div>
 
 <style lang="scss">
+	/* The header stays put, the form scrolls, and the footer stays at the bottom. */
 	.run-container {
+		height: 100%;
 		display: flex;
 		flex-direction: column;
+		min-height: 0;
+	}
+
+	.run-scroll {
+		flex: 1;
+		min-height: 0;
+		overflow-y: auto;
+		padding-bottom: 24px;
 	}
 
 	.zone-header :global(.zone-icon) {
@@ -166,7 +178,6 @@
 		flex-direction: column;
 		gap: 32px;
 		margin-top: 24px;
-		padding-bottom: 120px; // room above the sticky actions row
 	}
 
 	.profile-name-group {
@@ -205,21 +216,31 @@
 	}
 
 	.actions-row {
-		position: sticky;
-		bottom: 0;
-		margin-top: 32px;
-		padding: 24px 0 8px;
-		background: linear-gradient(to top, var(--bg-base) 70%, transparent);
-		z-index: 10;
+		flex-shrink: 0;
+		padding: 16px 0 24px;
+		background: var(--bg-base);
+		border-top: 1px solid var(--glass-border);
 		display: flex;
 		align-items: center;
 		gap: 16px;
-		pointer-events: none;
 	}
 
 	.launch-wrapper {
 		flex: 1;
-		pointer-events: auto;
+		min-width: 0;
+	}
+
+	/* On narrow screens the launch button takes its own row above the two round buttons. */
+	@media (max-width: 560px) {
+		.actions-row {
+			flex-wrap: wrap;
+			justify-content: space-between;
+		}
+
+		.launch-wrapper {
+			order: -1;
+			flex-basis: 100%;
+		}
 	}
 
 	.actions-row :global(.spin) {
