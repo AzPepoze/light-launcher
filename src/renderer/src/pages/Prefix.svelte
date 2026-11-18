@@ -8,6 +8,8 @@
 	import PageHeader from "@components/shared/PageHeader.svelte";
 	import Button from "@components/shared/Button.svelte";
 	import Icon from "@components/shared/Icon.svelte";
+	import Tabs from "@components/shared/Tabs.svelte";
+	import type { TabItem } from "@components/shared/tabs";
 	import { createLaunchOptions } from "@lib/formService";
 	import { formatBytes } from "@lib/features/format";
 	import { createLogger } from "@lib/logger";
@@ -30,7 +32,17 @@
 	let isToolRunning = false;
 
 	let prefixOptions: core.LaunchOptions = createLaunchOptions();
-	let activeTab: "tools" | "config" | "advanced" = "tools";
+	type PrefixTab = "tools" | "config" | "advanced";
+	const prefixTabs: TabItem[] = [
+		{ id: "tools", label: "Wine Tools", icon: "build" },
+		{ id: "config", label: "Defaults", icon: "tune" },
+		{ id: "advanced", label: "Advanced", icon: "settings" }
+	];
+	let activeTab: PrefixTab = "tools";
+
+	function selectTab(id: string) {
+		activeTab = id as PrefixTab;
+	}
 	let runningMap: Record<string, string[]> = {};
 	let runningPoll: ReturnType<typeof setInterval> | null = null;
 	let prefixStatsMap: Record<string, core.PrefixStats> = {};
@@ -274,40 +286,13 @@
 				/>
 
 				<section class="panel tab-panel-wrapper">
-					<div class="tabs" role="tablist">
-						<button
-							type="button"
-							class="tab"
-							class:active={activeTab === 'tools'}
-							on:click={() => (activeTab = 'tools')}
-							role="tab"
-							aria-selected={activeTab === 'tools'}
-						>
-							<Icon name="build" size={18} />
-							Wine Tools
-						</button>
-						<button
-							type="button"
-							class="tab"
-							class:active={activeTab === 'config'}
-							on:click={() => (activeTab = 'config')}
-							role="tab"
-							aria-selected={activeTab === 'config'}
-						>
-							<Icon name="tune" size={18} />
-							Defaults
-						</button>
-						<button
-							type="button"
-							class="tab"
-							class:active={activeTab === 'advanced'}
-							on:click={() => (activeTab = 'advanced')}
-							role="tab"
-							aria-selected={activeTab === 'advanced'}
-						>
-							<Icon name="settings" size={18} />
-							Advanced
-						</button>
+					<div class="tabs">
+						<Tabs
+							tabs={prefixTabs}
+							value={activeTab}
+							onChange={selectTab}
+							aria-label="Prefix sections"
+						/>
 						<span class="tabs-meta">6 tools · 5 toggles</span>
 					</div>
 
@@ -499,41 +484,12 @@
 
 	.tabs {
 		display: flex;
-		align-items: flex-end;
+		align-items: center;
 		gap: 8px;
 		border-bottom: 2px solid var(--glass-border);
-		padding-bottom: 0;
+		padding-bottom: 10px;
 		margin-bottom: 18px;
 		flex-shrink: 0;
-	}
-
-	.tab {
-		display: inline-flex;
-		align-items: center;
-		gap: 6px;
-		padding: 10px 16px;
-		border-radius: 12px 12px 0 0;
-		border: 2px solid transparent;
-		border-bottom: none;
-		background: transparent;
-		color: var(--text-muted);
-		font-weight: 800;
-		font-size: 0.8rem;
-		letter-spacing: 0.5px;
-		text-transform: uppercase;
-		cursor: pointer;
-		transition: all var(--transition-fast);
-
-		&:hover {
-			color: var(--text-main);
-		}
-
-		&.active {
-			background: var(--bg-surface);
-			border-color: var(--glass-border);
-			color: var(--text-main);
-			transform: translateY(2px);
-		}
 	}
 
 	.tabs-meta {
