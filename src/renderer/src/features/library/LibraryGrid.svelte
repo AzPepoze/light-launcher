@@ -5,7 +5,14 @@
 	import type { LibraryState } from "./libraryState.svelte";
 	import type { TransferKind } from "./transferState";
 	import { revealIndex } from "./libraryMotion";
-	import { gridLayout, gridWindow, indexesIn, PAGE_SIZE } from "./libraryWindow";
+	import {
+		COLUMN_GAP_PX,
+		PAGE_SIZE,
+		ROW_GAP_PX,
+		gridLayout,
+		gridWindow,
+		indexesIn
+	} from "./libraryWindow";
 
 	let {
 		library,
@@ -113,6 +120,8 @@
 		class="grid"
 		style:grid-template-columns="repeat({layout.columns}, minmax(0, 1fr))"
 		style:grid-auto-rows="{layout.rowHeight}px"
+		style:column-gap="{COLUMN_GAP_PX}px"
+		style:--row-gap="{ROW_GAP_PX}px"
 	>
 		{#each indexes as index (index)}
 			{@const game = library.gameAt(source, index)}
@@ -145,18 +154,16 @@
 <style lang="scss">
 	.grid {
 		display: grid;
-		/* Covers form a dense wall: 12px between them both ways. */
-		gap: 12px;
 		margin: 0;
 		padding: 0;
 		list-style: none;
 	}
 
-	/* Each row is exactly rowHeight tall, so the spacers line up with the rows. */
+	/* Each row is exactly rowHeight tall: the cover, then the row gap as padding. */
 	li {
 		min-width: 0;
+		padding-bottom: var(--row-gap);
 	}
-
 
 	.cover {
 		display: block;

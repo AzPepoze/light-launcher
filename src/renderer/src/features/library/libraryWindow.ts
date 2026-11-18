@@ -4,8 +4,9 @@ export const PAGE_SIZE = 60;
 export const MAX_RENDERED_TILES = 80;
 
 /** Gap between covers, both ways. Covers form a dense wall. */
-const COLUMN_GAP_PX = 12;
-const ROW_GAP_PX = 12;
+export const COLUMN_GAP_PX = 12;
+/** Space under each row. The grid draws it inside the row, so rows stay exactly rowHeight. */
+export const ROW_GAP_PX = 12;
 const OVERSCAN_ROWS = 1;
 const PREFETCH_PAGES = 1;
 
