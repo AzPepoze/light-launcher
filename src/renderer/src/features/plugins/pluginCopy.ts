@@ -5,6 +5,10 @@ export const LEGAL_NOTICE = "Use only accounts you own and content you are allow
 
 export const UNSIGNED_WARNING = "This plugin is not signed. Only install code you trust.";
 
+export const ADD_PLUGIN_LABEL = "Add plugin";
+
+export const DETAILS_LABEL = "Details";
+
 export const COMMUNITY_TITLE = "Community plugins";
 
 export const COMMUNITY_OPEN_LABEL = "Community";
