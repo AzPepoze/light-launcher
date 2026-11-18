@@ -1,10 +1,22 @@
 <script lang="ts">
 	import Button from "@components/shared/Button.svelte";
+	import IconButton from "@components/shared/IconButton.svelte";
 	import Section from "@components/shared/Section.svelte";
+	import SettingRow from "@components/shared/SettingRow.svelte";
 	import type { SettingsState } from "./settingsState.svelte";
 
-	let { settings } = $props<{ settings: SettingsState }>();
-	const appSettings = $derived(settings.appSettings);
+	const DEFAULT_PREFIX_DIR = "~/.config/light-launcher/prefixes";
+
+	let { settings }: { settings: SettingsState } = $props();
+
+	const savedDir = $derived(settings.appSettings.CustomPrefixDir ?? "");
+	let draft = $state("");
+	const dirty = $derived(draft.trim() !== savedDir);
+
+	// Keeps the draft in step when the saved folder changes, for example after Browse.
+	$effect(() => {
+		draft = savedDir;
+	});
 
 	function handleBrowsePrefixDir() {
 		return settings.browsePrefixDirectory();
@@ -20,63 +32,83 @@
 	icon="folder_special"
 	help="Wine prefixes can take dozens of gigabytes. You can configure a custom folder on another drive or dedicated storage partition."
 >
-	<div class="path-box">
-		<div class="path-info">
-			<span class="label">{appSettings.CustomPrefixDir ? "Custom Location:" : "Default Location:"}</span>
-			<span class="path" title={appSettings.CustomPrefixDir || "~/.config/light-launcher/prefixes"}>
-				{appSettings.CustomPrefixDir || "~/.config/light-launcher/prefixes"}
-			</span>
-		</div>
-
-		<div class="actions">
-			<Button variant="primary" icon="folder_open" onclick={handleBrowsePrefixDir}>
-				Change Location
-			</Button>
-			{#if appSettings.CustomPrefixDir}
-				<Button variant="secondary" icon="restore" onclick={handleResetDefault}>
-					Reset to Default
+	<div class="prefix-setting">
+		<SettingRow
+			title="Wine prefix location"
+			help="Wine prefixes can take dozens of gigabytes. Use a folder on another drive or partition."
+		>
+			<div class="prefix-field">
+				<input
+					class="input"
+					type="text"
+					bind:value={draft}
+					placeholder={DEFAULT_PREFIX_DIR}
+					aria-label="Wine prefix folder"
+					spellcheck="false"
+					autocomplete="off"
+					disabled={settings.loading}
+				/>
+				<Button
+					size="sm"
+					icon="save"
+					loading={settings.savingPrefixDir}
+					disabled={settings.loading || !dirty}
+					onclick={() => void settings.savePrefixDirectory(draft)}
+				>
+					Save
 				</Button>
-			{/if}
-		</div>
+				<IconButton
+					icon="folder_open"
+					label="Browse folder"
+					disabled={settings.loading || settings.savingPrefixDir}
+					onclick={handleBrowsePrefixDir}
+				/>
+				{#if savedDir}
+					<Button
+						size="sm"
+						icon="restore"
+						disabled={settings.loading || settings.savingPrefixDir}
+						onclick={handleResetDefault}
+					>
+						Reset to Default
+					</Button>
+				{/if}
+			</div>
+		</SettingRow>
 	</div>
 </Section>
 
 <style lang="scss">
-	.path-box {
+	.prefix-field {
 		display: flex;
-		flex-direction: column;
-		gap: 16px;
-		background: var(--bg-base);
-		border: 2px solid rgba(255, 255, 255, 0.03);
-		border-radius: var(--radius-md);
-		padding: 16px 20px;
+		align-items: center;
+		justify-content: flex-end;
+		flex-wrap: wrap;
+		gap: 8px;
+		min-width: 0;
 
-		.path-info {
-			display: flex;
+		.input {
+			width: clamp(220px, 26vw, 380px);
+			min-width: 0;
+			font-family: monospace;
+			font-size: 0.82rem;
+		}
+	}
+
+	@media (max-width: 599px) {
+		.prefix-setting :global(.setting-row) {
 			flex-direction: column;
-			gap: 4px;
-
-			.label {
-				font-size: 0.75rem;
-				font-weight: 800;
-				color: var(--text-dim);
-				text-transform: uppercase;
-				letter-spacing: 0.5px;
-			}
-
-			.path {
-				font-size: 0.95rem;
-				font-weight: 700;
-				color: var(--accent-secondary, var(--text-main));
-				font-family: monospace;
-				word-break: break-all;
-			}
+			align-items: stretch;
 		}
 
-		.actions {
-			display: flex;
-			gap: 12px;
-			align-items: center;
+		.prefix-setting :global(.control),
+		.prefix-field,
+		.prefix-field .input {
+			width: 100%;
+		}
+
+		.prefix-field {
+			justify-content: flex-start;
 		}
 	}
 </style>
