@@ -8,7 +8,11 @@
 	import SlideButton from "@components/shared/SlideButton.svelte";
 	import Slider from "@components/shared/Slider.svelte";
 	import { activeSectionId, navSectionIds, SPY_LINE_PX } from "@lib/features/settingsScrollSpy";
-	import { settingsNavGroups } from "@lib/features/settingsSection";
+	import {
+		settingsNavFilter,
+		settingsNavGroups,
+		type SettingsNavGroup
+	} from "@lib/features/settingsSection";
 	import { pendingSettingsSection } from "@stores/navigationStore";
 	import { platform } from "@stores/platformStore";
 	import { onMount } from "svelte";
@@ -43,6 +47,39 @@
 		})
 	);
 	const navIds = $derived(navSectionIds(navGroups));
+
+	const SEARCH_PLACEHOLDER = "Search settings";
+
+	interface SearchResult {
+		id: string;
+		label: string;
+		group: string;
+	}
+
+	let query = $state("");
+	const searching = $derived(query.trim() !== "");
+	const results = $derived(searching ? flattenMatches(settingsNavFilter(navGroups, query)) : []);
+	const hasNoResults = $derived(searching && results.length === 0);
+
+	function flattenMatches(groups: SettingsNavGroup[]): SearchResult[] {
+		return groups.flatMap((group) =>
+			group.items.map((item) => ({ id: item.id, label: item.label, group: group.label }))
+		);
+	}
+
+	function jumpFromSearch(id: string): void {
+		jumpTo(id);
+		query = "";
+	}
+
+	function onSearchKeydown(event: KeyboardEvent): void {
+		if (event.key === "Enter" && results[0]) {
+			event.preventDefault();
+			jumpFromSearch(results[0].id);
+		} else if (event.key === "Escape") {
+			query = "";
+		}
+	}
 
 	function toPercent(value: number): string {
 		return `${Math.round(value * 100)}%`;
@@ -110,6 +147,41 @@
 	<div class="layout">
 		<div class="nav-column">
 			<SettingsNav groups={navGroups} active={activeId} onSelect={jumpTo} />
+		</div>
+
+		<div class="sections-column">
+		<div class="search-bar">
+			<input
+				class="input search"
+				type="search"
+				aria-label={SEARCH_PLACEHOLDER}
+				placeholder={SEARCH_PLACEHOLDER}
+				bind:value={query}
+				onkeydown={onSearchKeydown}
+			/>
+
+			{#if searching}
+				<div class="results">
+					{#if hasNoResults}
+						<p class="no-match">No matching sections.</p>
+					{:else}
+						<ul>
+							{#each results as result (result.id)}
+								<li>
+									<button
+										type="button"
+										class="result"
+										onclick={() => jumpFromSearch(result.id)}
+									>
+										<span class="result-label">{result.label}</span>
+										<span class="result-group">{result.group}</span>
+									</button>
+								</li>
+							{/each}
+						</ul>
+					{/if}
+				</div>
+			{/if}
 		</div>
 
 		<div class="zones-stack" bind:this={scroller} onscroll={refreshActive}>
@@ -262,6 +334,7 @@
 				</div>
 			{/if}
 		</div>
+		</div>
 	</div>
 </div>
 
@@ -288,6 +361,99 @@
 		flex: 0 0 200px;
 		min-height: 0;
 		overflow-y: auto;
+	}
+
+	/* The search bar stays above the scroll area, so the sections scroll under it. */
+	.sections-column {
+		flex: 1;
+		min-width: 0;
+		min-height: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+	}
+
+	.search-bar {
+		position: relative;
+		flex: none;
+	}
+
+	.search {
+		width: 100%;
+		box-sizing: border-box;
+		padding: 10px 16px;
+		font-size: 0.9rem;
+	}
+
+	/* Floats over the sections, so it does not push them down. */
+	.results {
+		position: absolute;
+		top: calc(100% + 8px);
+		left: 0;
+		right: 0;
+		z-index: 20;
+		max-height: 50vh;
+		overflow-y: auto;
+		padding: 8px;
+		background: var(--bg-surface);
+		border: 2px solid rgba(255, 255, 255, 0.05);
+		border-radius: var(--radius-lg);
+	}
+
+	.results ul {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.result {
+		display: flex;
+		align-items: baseline;
+		flex-wrap: wrap;
+		gap: 8px;
+		width: 100%;
+		padding: 10px 12px;
+		border: 0;
+		border-radius: var(--radius-md);
+		background: transparent;
+		color: var(--text-main);
+		font: inherit;
+		font-size: 0.9rem;
+		font-weight: 600;
+		text-align: left;
+		cursor: pointer;
+		transition: background var(--transition-fast);
+
+		&:hover,
+		&:focus-visible {
+			background: var(--bg-elevated);
+		}
+
+		&:focus-visible {
+			outline: 2px solid var(--accent-primary);
+			outline-offset: 2px;
+		}
+	}
+
+	.result-group {
+		color: var(--text-dim);
+		font-size: 0.8rem;
+		font-weight: 600;
+
+		&::before {
+			content: "·";
+			margin-right: 8px;
+		}
+	}
+
+	.no-match {
+		margin: 0;
+		padding: 10px 12px;
+		color: var(--text-dim);
+		font-size: 0.85rem;
 	}
 
 	.zones-stack {
