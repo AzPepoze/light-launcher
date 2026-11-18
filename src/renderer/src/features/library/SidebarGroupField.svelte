@@ -53,12 +53,24 @@
 	function clearSearch() {
 		typed("");
 	}
+
+	/** The arrow shows the direction now. The label names what a click does. */
+	function orderIcon(order: "asc" | "desc"): string {
+		return order === "asc" ? "arrow_upward" : "arrow_downward";
+	}
+
+	function orderLabel(order: "asc" | "desc"): string {
+		return order === "asc" ? "Sort descending" : "Sort ascending";
+	}
 </script>
 
 {#if group.dynamic && !library.choicesLoaded(group.id)}
 	<div class="group">
 		<span class="label">{group.label}</span>
-		<Button size="sm" icon="sync" onclick={() => library.loadChoices()}>Load choices</Button>
+		<div class="load">
+			<Button size="sm" icon="sync" onclick={() => library.loadChoices()}>Load choices</Button>
+			<p class="hint">Fetches options from the site</p>
+		</div>
 	</div>
 {:else if group.type === "toggles"}
 	<div class="group" role="group" aria-label={group.label}>
@@ -79,6 +91,7 @@
 		<span class="label">{group.label}</span>
 		<Dropdown
 			aria-label={group.label}
+			placeholder="Any"
 			options={[ANY_OPTION, ...group.options]}
 			value={selectValue(group.id)}
 			searchable={group.searchable}
@@ -127,17 +140,23 @@
 {:else if group.type === "sort"}
 	<div class="group">
 		<span class="label">{group.label || "Sort"}</span>
-		<Dropdown
-			aria-label={group.label || "Sort"}
-			options={group.options}
-			value={library.filters.sort}
-			onChange={(value) => library.setSort(value)}
-		/>
-		{#if group.orderable}
-			<Button size="sm" onclick={() => library.toggleOrder()}>
-				{library.filters.order === "asc" ? "Ascending" : "Descending"}
-			</Button>
-		{/if}
+		<div class="sort-row">
+			<div class="grow">
+				<Dropdown
+					aria-label={group.label || "Sort"}
+					options={group.options}
+					value={library.filters.sort}
+					onChange={(value) => library.setSort(value)}
+				/>
+			</div>
+			{#if group.orderable}
+				<IconButton
+					icon={orderIcon(library.filters.order)}
+					label={orderLabel(library.filters.order)}
+					onclick={() => library.toggleOrder()}
+				/>
+			{/if}
+		</div>
 	</div>
 {/if}
 
@@ -201,9 +220,28 @@
 		transform: translateY(-50%);
 	}
 
+	.load {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 6px;
+	}
+
+	.hint,
 	.muted {
 		margin: 0;
 		color: var(--text-muted);
 		font-size: 0.875rem;
+	}
+
+	.sort-row {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+
+	.grow {
+		flex: 1;
+		min-width: 0;
 	}
 </style>
