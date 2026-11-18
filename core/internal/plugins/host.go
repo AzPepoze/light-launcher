@@ -46,6 +46,7 @@ type Host struct {
 
 	mu          sync.Mutex
 	supervisors map[string]*Supervisor
+	devWatches  map[string]*devWatch // linked plugin folders being watched, by plugin id
 
 	logsMu sync.Mutex
 	logs   map[string]*lineRing
@@ -89,6 +90,7 @@ func NewHost(opts HostOptions) (*Host, error) {
 		updates:     newUpdateTracker(checker),
 		tuning:      supervisorConfig{idleTimeout: opts.IdleTimeout},
 		supervisors: map[string]*Supervisor{},
+		devWatches:  map[string]*devWatch{},
 		logs:        map[string]*lineRing{},
 	}, nil
 }
@@ -98,7 +100,7 @@ func (h *Host) SetEvents(events api.Events) {
 	h.deps.events = events
 }
 
-// Shutdown stops every running plugin and drops a package kept by the last preview.
+// Shutdown stops every running plugin, ends the folder watches and drops a package kept by the last preview.
 func (h *Host) Shutdown() {
 	h.install.discardPreview()
 	h.mu.Lock()
@@ -107,7 +109,11 @@ func (h *Host) Shutdown() {
 		running = append(running, sup)
 		delete(h.supervisors, id)
 	}
+	watches := h.takeDevWatchesLocked()
 	h.mu.Unlock()
+	for _, w := range watches {
+		w.stop()
+	}
 	for _, sup := range running {
 		sup.Shutdown()
 	}

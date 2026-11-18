@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 // writeDevFolder writes a source folder that holds the fixture plugin at this version, with no checksums.
@@ -159,5 +160,56 @@ func TestDevUnlinkRefusesPluginThatIsNotLinked(t *testing.T) {
 	installFixture(t, host, "0.1.0")
 	if err := host.DevUnlink("fixture"); !errors.Is(err, ErrNotDevLinked) {
 		t.Fatalf("DevUnlink on an installed plugin: err = %v", err)
+	}
+}
+
+func TestDevFileChangeRestartsPlugin(t *testing.T) {
+	host := newTestHost(t)
+	dir := filepath.Join(t.TempDir(), "fixture-src")
+	writeDevFolder(t, dir, "0.2.0")
+	ctx := context.Background()
+	if _, err := host.DevLink(dir); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := host.CallPlugin(ctx, "fixture", "source.parseRef", json.RawMessage(`{"url":"x"}`)); err != nil {
+		t.Fatalf("call before the change: %v", err)
+	}
+
+	if err := os.WriteFile(filepath.Join(dir, "notes.txt"), []byte("changed"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	waitUntil(t, func() bool { return !host.running("fixture") })
+
+	if _, err := host.CallPlugin(ctx, "fixture", "source.parseRef", json.RawMessage(`{"url":"x"}`)); err != nil {
+		t.Fatalf("call after the restart: %v", err)
+	}
+	if !host.running("fixture") {
+		t.Fatalf("the plugin should run again from the folder")
+	}
+}
+
+func TestDevIgnoredFolderChangeDoesNotRestart(t *testing.T) {
+	host := newTestHost(t)
+	dir := filepath.Join(t.TempDir(), "fixture-src")
+	writeDevFolder(t, dir, "0.2.0")
+	ctx := context.Background()
+	if _, err := host.DevLink(dir); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := host.CallPlugin(ctx, "fixture", "source.parseRef", json.RawMessage(`{"url":"x"}`)); err != nil {
+		t.Fatal(err)
+	}
+
+	modules := filepath.Join(dir, "node_modules", "dep")
+	if err := os.MkdirAll(modules, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(modules, "index.js"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	// A restart would land within the debounce window, so waiting past it shows that none happened.
+	time.Sleep(3 * devDebounce)
+	if !host.running("fixture") {
+		t.Fatalf("a change under node_modules must not restart the plugin")
 	}
 }

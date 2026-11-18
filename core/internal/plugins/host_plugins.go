@@ -229,6 +229,7 @@ func (h *Host) Remove(id string, deleteData bool) error {
 	if err := requireID(id); err != nil {
 		return err
 	}
+	h.stopDevWatch(id)
 	h.stopPlugin(id)
 	if err := h.deleteSecrets(id); err != nil {
 		return err
@@ -289,6 +290,7 @@ func (h *Host) DevLink(path string) (PluginInfo, error) {
 	if err != nil {
 		return PluginInfo{}, err
 	}
+	h.stopDevWatch(id)
 	h.stopPlugin(id)
 	h.emitState(id)
 	return h.info(id), nil
@@ -302,6 +304,7 @@ func (h *Host) DevUnlink(id string) error {
 	if !h.install.state.get(id).Dev {
 		return ErrNotDevLinked
 	}
+	h.stopDevWatch(id)
 	h.stopPlugin(id)
 	if !exists(h.layout.PluginDir(id)) {
 		return h.forgetDevOnly(id)

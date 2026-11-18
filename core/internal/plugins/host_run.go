@@ -112,6 +112,7 @@ func (h *Host) supervisorFor(id string) (*Supervisor, error) {
 	cfg.onIdle = func() { h.emitState(id) }
 	if inst.dev {
 		cfg.idleTimeout = noIdleTimeout()
+		h.ensureDevWatchLocked(id, inst.dir)
 	}
 	sup := newSupervisor(cfg)
 	h.supervisors[id] = sup
