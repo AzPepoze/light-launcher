@@ -37,10 +37,10 @@
 </nav>
 
 <style lang="scss">
-	/* Sticks below the global search bar and the Library's sticky header. */
+	/* Sticks just below the Library's sticky header. */
 	.rail {
 		position: sticky;
-		top: calc(var(--topbar-height) + var(--library-head-height, 0px) + 8px);
+		top: calc(var(--library-head-height, 0px) + 8px);
 		z-index: 10;
 		box-sizing: border-box;
 		width: 100%;

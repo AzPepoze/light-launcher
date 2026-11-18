@@ -234,7 +234,8 @@
 			{#key activePage}
 				<div
 					class="page-wrapper"
-					class:home-mode={activePage === "home"}
+					class:no-topbar={activePage === "editlsfg"}
+						class:home-mode={activePage === "home"}
 					class:prefix-mode={activePage === "prefix"}
 					on:scroll={handlePageScroll}
 					in:fly={{
@@ -401,15 +402,26 @@
 		}
 	}
 
+	/*
+	 * The scroll box starts under the top bar, so sticky offsets of 0 sit directly below it and
+	 * scrolled content is clipped at the bar's bottom edge.
+	 */
 	.page-wrapper {
 		position: absolute;
-		top: 0;
+		top: var(--topbar-height);
 		left: 0;
 		width: 100%;
-		height: 100%;
+		height: calc(100% - var(--topbar-height));
 		overflow-y: auto;
-		padding: var(--topbar-height) 48px 40px 84px;
+		padding: 0 48px 40px 84px;
 		box-sizing: border-box;
+
+		/* Pages without the top bar keep the space above their content. */
+		&.no-topbar {
+			top: 0;
+			height: 100%;
+			padding-top: var(--topbar-height);
+		}
 
 		&.home-mode {
 			overflow: hidden;

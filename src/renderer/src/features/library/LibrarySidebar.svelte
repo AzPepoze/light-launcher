@@ -46,7 +46,7 @@
 	@media (min-width: 900px) {
 		.sidebar {
 			position: sticky;
-			top: calc(var(--topbar-height) + var(--library-head-height, 0px) + 8px);
+			top: calc(var(--library-head-height, 0px) + 8px);
 			max-height: calc(100vh - var(--topbar-height) - var(--library-head-height, 0px) - 48px);
 			overflow-y: auto;
 			/* Keeps the scrollbar from shifting the content when the list grows. */

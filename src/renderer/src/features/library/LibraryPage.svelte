@@ -442,28 +442,16 @@
 	}
 
 	/*
-	 * The title and tabs stay put while the page scrolls, below the global search bar. The
-	 * opaque background hides the tiles that pass under them. The ::before paints the same
-	 * background over the band above, so tiles never show through the search bar's row.
+	 * The title and tabs stay put while the page scrolls, directly below the global top bar
+	 * (the page box starts there). The opaque background hides the tiles that pass under them.
 	 */
 	.library-head {
 		position: sticky;
-		top: var(--topbar-height);
+		top: 0;
 		z-index: 20;
 		box-sizing: border-box;
 		padding-bottom: 16px;
 		background: var(--bg-base);
-
-		&::before {
-			content: "";
-			position: absolute;
-			left: 0;
-			right: 0;
-			bottom: 100%;
-			height: var(--topbar-height);
-			background: var(--bg-base);
-			pointer-events: none;
-		}
 	}
 
 	.top-tabs {
@@ -498,7 +486,7 @@
 	/* Each source is a group: its header, then its sync note, notices and grid. */
 	.group {
 		/* Keeps the group title clear of the sticky page header when the rail scrolls to it. */
-		scroll-margin-top: calc(var(--topbar-height) + var(--library-head-height, 0px) + 16px);
+		scroll-margin-top: calc(var(--library-head-height, 0px) + 16px);
 		margin-bottom: 32px;
 	}
 
