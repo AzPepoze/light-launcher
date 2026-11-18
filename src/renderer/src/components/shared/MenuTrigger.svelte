@@ -1,15 +1,18 @@
 <script lang="ts">
+	import { createEventDispatcher } from "svelte";
 	import Icon from "./Icon.svelte";
 
 	export let active: boolean = false;
 	export let label: string = "Open menu";
 	export let icon: string = "more_vert";
+
+	const dispatch = createEventDispatcher<{ click: MouseEvent }>();
 </script>
 
 <button
 	class="menu-trigger"
 	class:active
-	on:click|stopPropagation
+	on:click|stopPropagation={(event) => dispatch("click", event)}
 	type="button"
 	aria-label={label}
 	aria-haspopup="menu"

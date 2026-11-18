@@ -57,7 +57,7 @@
 			<MenuTrigger
 				active={isMenuOpen}
 				label="Folder Options"
-				on:click={onToggleMenu}
+				on:click={(event) => onToggleMenu(event.detail)}
 			/>
 			<AppMenu visible={isMenuOpen} mode="anchor" onClose={onCloseMenu}>
 				<button class="menu-item" on:click={onRescan}>
