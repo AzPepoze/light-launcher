@@ -78,6 +78,10 @@
 	let blurCovers = $state(false);
 	/** Under 900px the filter sidebar slides in over the grid. */
 	let filtersOpen = $state(false);
+	/** Measured height of the sticky header, so the rail and sidebar can stick below it. */
+	let headHeight = $state(0);
+	/** True once the page has scrolled, when the header needs its glass backing. */
+	let headStuck = $state(false);
 
 	/** The sections that show on the page, in rail order. Empty plugin sources are left out. */
 	const visibleSections = $derived(library.sections.filter(isShown));
@@ -116,11 +120,21 @@
 		void downloads.load();
 		const stopDownloads = downloads.subscribe();
 		const stopLibrary = library.subscribe();
+
+		// The header only needs its glass backing while the page is scrolled under it.
+		const scroller = document.querySelector<HTMLElement>(".page-wrapper");
+		const onScroll = () => {
+			headStuck = (scroller?.scrollTop ?? 0) > 0;
+		};
+		scroller?.addEventListener("scroll", onScroll, { passive: true });
+		onScroll();
+
 		return () => {
 			stopTab();
 			downloads.stopSampling();
 			stopDownloads();
 			stopLibrary();
+			scroller?.removeEventListener("scroll", onScroll);
 		};
 	});
 
@@ -134,6 +148,18 @@
 		if (!hasTiles || revealed) return;
 		const timer = setTimeout(() => (revealed = true), revealDoneMs(revealCount));
 		return () => clearTimeout(timer);
+	});
+
+	// The detail drawer is modal: stop the page behind its blurred backdrop from scrolling.
+	$effect(() => {
+		if (!selected) return;
+		const scroller = document.querySelector<HTMLElement>(".page-wrapper");
+		if (!scroller) return;
+		const previous = scroller.style.overflowY;
+		scroller.style.overflowY = "hidden";
+		return () => {
+			scroller.style.overflowY = previous;
+		};
 	});
 
 	async function loadAppearance() {
@@ -230,13 +256,15 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<div class="library">
-	<PageHeader title="Library" {subtitle} icon="collections_bookmark">
-		<Button size="sm" variant="primary" icon="add" onclick={() => (addOpen = true)}>Add game</Button>
-	</PageHeader>
+<div class="library" style:--library-head-height="{headHeight}px">
+	<div class="library-head" class:stuck={headStuck} bind:clientHeight={headHeight}>
+		<PageHeader title="Library" {subtitle} icon="collections_bookmark">
+			<Button size="sm" variant="primary" icon="add" onclick={() => (addOpen = true)}>Add game</Button>
+		</PageHeader>
 
-	<div class="top-tabs">
-		<Tabs tabs={topTabs} value={tab} onChange={selectTab} aria-label="Library sections" />
+		<div class="top-tabs">
+			<Tabs tabs={topTabs} value={tab} onChange={selectTab} aria-label="Library sections" />
+		</div>
 	</div>
 
 	<!--
@@ -285,7 +313,7 @@
 				<Button size="sm" onclick={() => library.refresh()}>Retry</Button>
 			</Notice>
 		{:else}
-			<div class="layout" class:with-detail={selected !== null}>
+			<div class="layout">
 				<div class="rail-col">
 					<SourceRail sections={visibleSections} selected={library.activeSource} onSelect={showSection} />
 				</div>
@@ -367,6 +395,7 @@
 									ratio={coverRatioOf(source.cover)}
 									minColumnPx={cardSize}
 									card={source.card}
+									variant={source.kind === "local" ? "home" : "cover"}
 									{transfers}
 									blurUntilHover={blurCovers}
 									{revealed}
@@ -378,20 +407,33 @@
 				</div>
 
 				{#if selected}
-					<div class="detail-backdrop" role="presentation" onclick={closeGame}></div>
-					<aside class="detail-col" aria-label="Game details">
-						<!-- Keyed by id so switching tiles loads the new game's files and notes. -->
+					<div
+						class="detail-backdrop"
+						role="presentation"
+						title="Click outside to close"
+						onclick={closeGame}
+					></div>
+					<aside
+						class="detail-col"
+						role="dialog"
+						aria-modal="true"
+						aria-label="Game details"
+					>
+						<div class="detail-chrome">
+							<span class="detail-eyebrow">Game details</span>
+							<IconButton icon="close" label="Close" onclick={closeGame} />
+						</div>
+						<!-- Keyed by id so switching tiles resets the scroll and loads the new game's files and notes. -->
 						{#key selected.id}
-							<div class="detail-top">
-								<IconButton icon="close" label="Close" onclick={closeGame} />
+							<div class="detail-scroll">
+								<GameDetail
+									game={selected}
+									sourceName={sourceLabel(library.overview.sources, selected.source)}
+									actions={gameActions}
+									onRemoved={gameRemoved}
+									onChanged={gameChanged}
+								/>
 							</div>
-							<GameDetail
-								game={selected}
-								sourceName={sourceLabel(library.overview.sources, selected.source)}
-								actions={gameActions}
-								onRemoved={gameRemoved}
-								onChanged={gameChanged}
-							/>
 						{/key}
 					</aside>
 				{/if}
@@ -410,23 +452,55 @@
 		line-height: 1.5;
 	}
 
+	/*
+	 * The title and tabs stay put while the page scrolls. The 76px band above the head is
+	 * painted by the ::before, so covers never scroll through the global search bar.
+	 */
+	.library-head {
+		position: sticky;
+		top: 76px;
+		z-index: 20;
+		box-sizing: border-box;
+		padding-bottom: 16px;
+		background: transparent;
+		transition: background-color var(--transition-fast);
+
+		&::before {
+			content: "";
+			position: absolute;
+			left: 0;
+			right: 0;
+			bottom: 100%;
+			height: 76px;
+			background: inherit;
+			pointer-events: none;
+		}
+
+		&.stuck {
+			background: color-mix(in srgb, var(--bg-base) 88%, transparent);
+			-webkit-backdrop-filter: blur(16px);
+			backdrop-filter: blur(16px);
+
+			&::before {
+				-webkit-backdrop-filter: blur(16px);
+				backdrop-filter: blur(16px);
+			}
+		}
+	}
+
 	.top-tabs {
-		margin-bottom: 20px;
+		margin-bottom: 0;
 	}
 
 	/*
 	 * One grid: [rail 56px | filters 260px | grid fills the rest]. The rail and filter columns
 	 * sit on the page background; only the divider after the filters separates them from the grid.
-	 * With a game open, the detail panel is a fourth column on the right.
+	 * The game details open over the page as a drawer, so the grid keeps its full width.
 	 */
 	.layout {
 		display: grid;
 		grid-template-columns: 56px 260px minmax(0, 1fr);
 		align-items: stretch;
-	}
-
-	.layout.with-detail {
-		grid-template-columns: 56px 260px minmax(0, 1fr) 420px;
 	}
 
 	.side-col {
@@ -446,7 +520,7 @@
 	/* Each source is a group: its header, then its sync note, notices and grid. */
 	.group {
 		/* Keeps the group title clear of the sticky page header when the rail scrolls to it. */
-		scroll-margin-top: 84px;
+		scroll-margin-top: calc(76px + var(--library-head-height, 0px) + 16px);
 		margin-bottom: 32px;
 	}
 
@@ -487,40 +561,79 @@
 		color: var(--danger);
 	}
 
-	/* Wide: the panel sits beside the grid and stays in view while the grid scrolls. */
+	/* The backdrop blurs and dims the page, and a click anywhere on it closes the drawer. */
+	.detail-backdrop {
+		position: fixed;
+		inset: 0;
+		z-index: 205;
+		background: rgb(0 0 0 / 0.45);
+		-webkit-backdrop-filter: blur(10px);
+		backdrop-filter: blur(10px);
+		cursor: pointer;
+		animation: detail-backdrop-in var(--motion-base) var(--ease-out) both;
+	}
+
+	/* The drawer itself is sharp and opaque: the blur belongs to the excluded backdrop only. */
 	.detail-col {
-		position: sticky;
-		top: 76px;
-		align-self: start;
-		max-height: calc(100vh - 116px);
-		overflow-y: auto;
-		padding: 16px 20px 24px;
+		position: fixed;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		z-index: 210;
+		display: flex;
+		flex-direction: column;
+		width: min(460px, 100vw);
 		background: var(--bg-surface);
 		border-left: 1px solid var(--glass-border);
+		box-shadow: -18px 0 60px rgb(0 0 0 / 0.4);
 		animation: detail-slide-in var(--motion-base) var(--ease-out) both;
+		overflow: hidden;
 	}
 
-	.detail-top {
+	.detail-chrome {
 		display: flex;
-		justify-content: flex-end;
-		margin-bottom: 8px;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		flex-shrink: 0;
+		padding: 12px 16px;
+		border-bottom: 1px solid var(--glass-border);
+		background: var(--bg-surface);
 	}
 
-	.detail-backdrop {
-		display: none;
+	.detail-eyebrow {
+		color: var(--text-muted);
+		font-size: 0.75rem;
+		font-weight: 800;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+	}
+
+	.detail-scroll {
+		flex: 1;
+		min-height: 0;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		scrollbar-gutter: stable;
+		padding: 16px 20px 28px;
+	}
+
+	@keyframes detail-backdrop-in {
+		from {
+			opacity: 0;
+		}
 	}
 
 	@keyframes detail-slide-in {
 		from {
 			opacity: 0;
-			transform: translateX(24px);
+			transform: translateX(28px);
 		}
 	}
 
 	/* Narrow: the rail stays a column. The filters leave the grid and slide over it. */
 	@media (max-width: 899px) {
-		.layout,
-		.layout.with-detail {
+		.layout {
 			grid-template-columns: 56px minmax(0, 1fr);
 		}
 
@@ -551,25 +664,9 @@
 			display: flex;
 		}
 
-		/* Narrow: the panel overlays the grid from the right, over a backdrop. */
 		.detail-col {
-			position: fixed;
-			top: 0;
-			right: 0;
-			bottom: 0;
-			z-index: 210;
-			width: min(420px, 100vw);
-			max-height: none;
-			padding-top: 24px;
-			box-shadow: 0 0 24px rgb(0 0 0 / 0.35);
-		}
-
-		.detail-backdrop {
-			display: block;
-			position: fixed;
-			inset: 0;
-			z-index: 205;
-			background: rgb(0 0 0 / 0.35);
+			width: 100vw;
+			border-left: none;
 		}
 	}
 
@@ -578,7 +675,8 @@
 			transition: none;
 		}
 
-		.detail-col {
+		.detail-col,
+		.detail-backdrop {
 			animation: none;
 		}
 	}

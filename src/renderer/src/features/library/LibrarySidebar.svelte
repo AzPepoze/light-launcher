@@ -42,12 +42,12 @@
 		padding: 16px 14px 16px 16px;
 	}
 
-	/* From 900px the filters stick at the top of the content and scroll on their own. */
+	/* From 900px the filters stick below the Library header and scroll on their own. */
 	@media (min-width: 900px) {
 		.sidebar {
 			position: sticky;
-			top: 76px;
-			max-height: calc(100vh - 116px);
+			top: calc(76px + var(--library-head-height, 0px) + 8px);
+			max-height: calc(100vh - var(--library-head-height, 0px) - 124px);
 			overflow-y: auto;
 			/* Keeps the scrollbar from shifting the content when the list grows. */
 			scrollbar-gutter: stable;

@@ -37,10 +37,10 @@
 </nav>
 
 <style lang="scss">
-	/* Sticks below the page padding, inside the content. The column behind it is the panel. */
+	/* Sticks below the page padding and the Library's sticky header. */
 	.rail {
 		position: sticky;
-		top: 76px;
+		top: calc(76px + var(--library-head-height, 0px) + 8px);
 		z-index: 10;
 		box-sizing: border-box;
 		width: 100%;
