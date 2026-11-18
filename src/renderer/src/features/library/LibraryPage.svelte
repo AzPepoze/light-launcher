@@ -238,7 +238,17 @@
 <div class="library" style:--library-head-height="{headHeight}px">
 	<div class="library-head" bind:clientHeight={headHeight}>
 		<PageHeader title="Library" {subtitle} icon="collections_bookmark">
-			<Button size="sm" variant="primary" icon="add" onclick={() => (addOpen = true)}>Add game</Button>
+			<Button
+				class="add-game"
+				size="sm"
+				variant="primary"
+				icon="add"
+				aria-label="Add game"
+				title="Add game"
+				onclick={() => (addOpen = true)}
+			>
+				<span class="add-label">Add game</span>
+			</Button>
 		</PageHeader>
 
 		<div class="top-tabs">
@@ -620,8 +630,24 @@
 			display: flex;
 		}
 
+		.library-head :global(.page-header) {
+			flex-wrap: wrap;
+		}
+
+		.library-head :global(.button.add-game) {
+			width: 36px;
+			height: 36px;
+			padding: 0;
+			gap: 0;
+		}
+
+		.add-label {
+			display: none;
+		}
+
 		.detail-col {
-			width: 100vw;
+			left: 0;
+			width: auto;
 			border-left: none;
 		}
 	}
