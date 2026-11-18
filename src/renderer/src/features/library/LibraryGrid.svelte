@@ -4,7 +4,6 @@
 	import GameTile from "./GameTile.svelte";
 	import type { LibraryState } from "./libraryState.svelte";
 	import type { TransferKind } from "./transferState";
-	import { revealIndex } from "./libraryMotion";
 	import {
 		COLUMN_GAP_PX,
 		PAGE_SIZE,
@@ -23,7 +22,6 @@
 		variant,
 		transfers,
 		blurUntilHover,
-		revealed,
 		onOpen
 	}: {
 		library: LibraryState;
@@ -39,8 +37,6 @@
 		/** The download or install running for each game id. */
 		transfers: Map<number, TransferKind>;
 		blurUntilHover: boolean;
-		/** True once the first reveal has run. Later renders do not animate tiles in. */
-		revealed: boolean;
 		onOpen: (game: Game) => void;
 	} = $props();
 
@@ -134,7 +130,6 @@
 						{variant}
 						transfer={transfers.get(game.id) ?? null}
 						{blurUntilHover}
-						revealIndex={revealIndex(index, revealed)}
 						{onOpen}
 					/>
 				{:else}

@@ -16,7 +16,6 @@
 		variant,
 		transfer,
 		blurUntilHover,
-		revealIndex,
 		onOpen
 	}: {
 		game: Game;
@@ -29,8 +28,6 @@
 		transfer: TransferKind | null;
 		/** Covers stay blurred until the tile is hovered or focused. The overlay is never blurred. */
 		blurUntilHover: boolean;
-		/** Position in the first reveal, or undefined when the tile does not animate in. */
-		revealIndex?: number;
 		onOpen: (game: Game) => void;
 	} = $props();
 
@@ -79,8 +76,6 @@
 <button
 	class="tile"
 	class:home-card={variant === "home"}
-	class:reveal={revealIndex !== undefined}
-	style:--reveal-index={revealIndex}
 	data-game-id={game.id}
 	onclick={() => onOpen(game)}
 	aria-label="Open {view.title}"
@@ -122,13 +117,6 @@
 </button>
 
 <style lang="scss">
-	@keyframes tile-reveal {
-		from {
-			opacity: 0;
-			transform: translateY(8px);
-		}
-	}
-
 	.tile {
 		display: flex;
 		flex-direction: column;
@@ -143,11 +131,6 @@
 		text-align: left;
 		cursor: pointer;
 		font: inherit;
-
-		&.reveal {
-			animation: tile-reveal var(--motion-base) var(--ease-out) both;
-			animation-delay: calc(var(--reveal-index) * var(--motion-stagger));
-		}
 
 		&:focus-visible {
 			outline: 2px solid var(--accent-primary);

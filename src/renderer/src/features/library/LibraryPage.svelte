@@ -27,7 +27,6 @@
 	import LibrarySidebar from "./LibrarySidebar.svelte";
 	import SourceRail from "./SourceRail.svelte";
 	import { LibraryState } from "./libraryState.svelte";
-	import { REVEAL_MAX_TILES, revealDoneMs } from "./libraryMotion";
 	import { sourceLabel } from "./librarySections";
 	import { sourceIcon } from "./sourceIcon";
 	import { librarySubtitle, updateCountOf } from "./libraryCounts";
@@ -72,7 +71,6 @@
 	let selected = $state<Game | null>(null);
 	let addOpen = $state(false);
 	let addUrl = $state("");
-	let revealed = $state(false);
 	let cardSize = $state(LIBRARY_CARD_SIZE_DEFAULT);
 	let blurCovers = $state(false);
 	/** Under 900px the filter sidebar slides in over the grid. */
@@ -80,10 +78,6 @@
 	/** Measured height of the sticky header, so the rail and sidebar can stick below it. */
 	let headHeight = $state(0);
 
-	/** Games in the source on the page, for the reveal animation. */
-	const shownTotal = $derived(
-		library.activeSection ? (library.listOf(library.activeSection.source).total ?? 0) : 0
-	);
 	const subtitle = $derived(librarySubtitle(library.overview.stats));
 	const topTabs = $derived<TabItem[]>([
 		{ id: "games", label: "Games", icon: "videogame_asset" },
@@ -101,8 +95,6 @@
 			(action) => action.scope === "game"
 		)
 	);
-	const hasTiles = $derived(shownTotal > 0);
-	const revealCount = $derived(Math.min(shownTotal, REVEAL_MAX_TILES));
 
 	onMount(() => {
 		const stopTab = libraryTab.subscribe((next) => {
@@ -127,13 +119,6 @@
 	/* The Library page owns the speed samples, so they keep coming while another tab is open. */
 	$effect(() => {
 		downloads.setSamplingActive(transfersActive);
-	});
-
-	// Ends the first reveal once its last tile has finished, so later renders never replay it.
-	$effect(() => {
-		if (!hasTiles || revealed) return;
-		const timer = setTimeout(() => (revealed = true), revealDoneMs(revealCount));
-		return () => clearTimeout(timer);
 	});
 
 	// The detail drawer is modal: stop the page behind its blurred backdrop from scrolling.
@@ -375,7 +360,6 @@
 									variant={source.kind === "local" ? "home" : "cover"}
 									{transfers}
 									blurUntilHover={blurCovers}
-									{revealed}
 									onOpen={openTile}
 								/>
 							{/if}
