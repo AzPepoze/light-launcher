@@ -13,6 +13,7 @@ type Filter struct {
 	Search    string   `json:"search"`
 	Source    string   `json:"source"`
 	Tags      []string `json:"tags"`
+	Engine    string   `json:"engine"`
 	Status    []string `json:"status"`
 	Favorite  bool     `json:"favorite"`
 	Installed *bool    `json:"installed"`
@@ -184,6 +185,10 @@ func buildWhere(f Filter) (string, []any) {
 	for _, tag := range f.Tags {
 		clauses = append(clauses, "tags like ?")
 		args = append(args, fmt.Sprintf(`%%"%s"%%`, tag))
+	}
+	if engine := strings.TrimSpace(f.Engine); engine != "" {
+		clauses = append(clauses, "engine = ? collate nocase")
+		args = append(args, engine)
 	}
 	if len(clauses) == 0 {
 		return "", nil

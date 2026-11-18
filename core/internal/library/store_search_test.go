@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"path/filepath"
+	"reflect"
 	"sort"
 	"testing"
 
@@ -184,4 +185,41 @@ func equalStrings(a, b []string) bool {
 		}
 	}
 	return true
+}
+
+func TestFilterByEngineAndTags(t *testing.T) {
+	lib := openTestLibrary(t, Options{})
+	ctx := context.Background()
+	games := []contract.GameDTO{
+		{Source: "manual", SourceID: "e1", URL: "u", Title: "Alpha", Engine: "Unity", Tags: []string{"rpg", "dark"}},
+		{Source: "manual", SourceID: "e2", URL: "u", Title: "Beta", Engine: "RenPy", Tags: []string{"rpg"}},
+		{Source: "manual", SourceID: "e3", URL: "u", Title: "Gamma", Tags: []string{"dark"}},
+	}
+	for _, game := range games {
+		if _, err := lib.Upsert(ctx, game); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	cases := []struct {
+		name   string
+		filter Filter
+		want   []string
+	}{
+		{"empty engine returns all", Filter{}, []string{"Alpha", "Beta", "Gamma"}},
+		{"engine is case-insensitive", Filter{Engine: "unity"}, []string{"Alpha"}},
+		{"engine is trimmed", Filter{Engine: "  RenPy  "}, []string{"Beta"}},
+		{"engine with no match", Filter{Engine: "Godot"}, nil},
+		{"tags need every tag", Filter{Tags: []string{"rpg", "dark"}}, []string{"Alpha"}},
+		{"tags are case-insensitive", Filter{Tags: []string{"RPG"}}, []string{"Alpha", "Beta"}},
+		{"empty tags return all", Filter{Tags: []string{}}, []string{"Alpha", "Beta", "Gamma"}},
+		{"engine and tags combine", Filter{Engine: "unity", Tags: []string{"dark"}}, []string{"Alpha"}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := titlesOf(t, lib, tc.filter); !reflect.DeepEqual(got, tc.want) {
+				t.Errorf("titles = %v, want %v", got, tc.want)
+			}
+		})
+	}
 }
