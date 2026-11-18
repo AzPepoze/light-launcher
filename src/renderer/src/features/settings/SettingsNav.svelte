@@ -72,11 +72,11 @@
 	}
 
 	.item {
+		position: relative;
 		display: block;
 		width: 100%;
 		padding: 7px 12px;
 		border: 0;
-		border-left: 3px solid transparent;
 		border-radius: var(--radius-md);
 		background: transparent;
 		color: var(--text-muted);
@@ -99,8 +99,20 @@
 
 		&.active {
 			background: var(--bg-elevated);
-			border-left-color: var(--accent-primary);
 			color: var(--text-main);
+
+			/* Same accent bar as the main nav, inset so it sits inside the rounded row. */
+			&::before {
+				content: "";
+				position: absolute;
+				left: 0;
+				top: 6px;
+				bottom: 6px;
+				width: 3px;
+				border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
+				background: var(--accent-primary);
+				box-shadow: 0 0 12px var(--accent-glow);
+			}
 		}
 	}
 
@@ -142,6 +154,10 @@
 
 			&.active {
 				border-color: var(--accent-primary);
+
+				&::before {
+					display: none;
+				}
 			}
 		}
 	}
