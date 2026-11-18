@@ -606,6 +606,8 @@ export interface WirePluginInfo {
 	disabledReason?: string;
 	source?: string;
 	unsigned: boolean;
+	dev: boolean;
+	devPath?: string;
 	permissions: WirePermissions;
 	sources: WireSource[] | null;
 	author: string;
