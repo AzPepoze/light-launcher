@@ -3,8 +3,8 @@
 	import Button from "@components/shared/Button.svelte";
 	import Icon from "@components/shared/Icon.svelte";
 	import { gamesInFolder } from "@lib/features/scanFolders";
-	import { GAME_FOLDERS_SECTION } from "@lib/features/settingsSection";
 	import Notice from "@components/shared/Notice.svelte";
+	import Section from "@components/shared/Section.svelte";
 	import ScanFolderRow from "@components/settings/ScanFolderRow.svelte";
 	import { pluginFolderMatches, pluginFolderWarning } from "./pluginFolders";
 	import type { SettingsState } from "./settingsState.svelte";
@@ -18,18 +18,12 @@
 	});
 </script>
 
-<div class="zone-card" id={GAME_FOLDERS_SECTION}>
-	<div class="zone-header">
-		<Icon name="folder_shared" size={24} class="zone-icon" />
-		<h2>Game folders</h2>
-	</div>
-
+<Section
+	title="Game folders"
+	icon="folder_shared"
+	help="The launcher looks for game programs (.exe files) in these folders. Each folder shows how many games it found."
+>
 	<div class="settings-section">
-		<p class="desc">
-			The launcher looks for game programs (<code>.exe</code> files) in these folders. Each folder
-			shows how many games it found.
-		</p>
-
 		<Notice tone="info" icon="info">
 			Games installed by plugins (F95, itch.io) are already in your Library. You do not need to add
 			their download folder here.
@@ -105,39 +99,13 @@
 			{/if}
 		</div>
 	</div>
-</div>
+</Section>
 
 <style lang="scss">
-	.zone-card {
-		scroll-margin-top: 24px;
-	}
-
-	.zone-header h2 {
-		font-size: 1.25rem;
-		font-weight: 600;
-		text-transform: none;
-		letter-spacing: normal;
-	}
-
-	:global(.zone-icon) {
-		color: var(--accent-primary);
-	}
-
 	.settings-section {
 		display: flex;
 		flex-direction: column;
 		gap: 16px;
-
-		.desc {
-			margin: 0;
-			font-size: 1rem;
-			color: var(--text-muted);
-			line-height: 1.5;
-		}
-
-		code {
-			font-size: 0.875rem;
-		}
 	}
 
 	.folder-list {

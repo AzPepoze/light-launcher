@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Button from "@components/shared/Button.svelte";
-	import Icon from "@components/shared/Icon.svelte";
+	import Section from "@components/shared/Section.svelte";
 	import type { SettingsState } from "./settingsState.svelte";
 
 	let { settings } = $props<{ settings: SettingsState }>();
@@ -15,57 +15,33 @@
 	}
 </script>
 
-<div class="zone-card">
-	<div class="zone-header">
-		<Icon name="folder_special" size={24} class="zone-icon" />
-		<h2>Wine Prefix Storage Location</h2>
-	</div>
+<Section
+	title="Wine Prefix Storage Location"
+	icon="folder_special"
+	help="Wine prefixes can take dozens of gigabytes. You can configure a custom folder on another drive or dedicated storage partition."
+>
+	<div class="path-box">
+		<div class="path-info">
+			<span class="label">{appSettings.CustomPrefixDir ? "Custom Location:" : "Default Location:"}</span>
+			<span class="path" title={appSettings.CustomPrefixDir || "~/.config/light-launcher/prefixes"}>
+				{appSettings.CustomPrefixDir || "~/.config/light-launcher/prefixes"}
+			</span>
+		</div>
 
-	<div class="settings-section">
-		<p class="desc">
-			Wine prefixes can take dozens of gigabytes. You can configure a custom folder on another drive or dedicated storage partition.
-		</p>
-
-		<div class="path-box">
-			<div class="path-info">
-				<span class="label">{appSettings.CustomPrefixDir ? "Custom Location:" : "Default Location:"}</span>
-				<span class="path" title={appSettings.CustomPrefixDir || "~/.config/light-launcher/prefixes"}>
-					{appSettings.CustomPrefixDir || "~/.config/light-launcher/prefixes"}
-				</span>
-			</div>
-
-			<div class="actions">
-				<Button variant="primary" icon="folder_open" onclick={handleBrowsePrefixDir}>
-					Change Location
+		<div class="actions">
+			<Button variant="primary" icon="folder_open" onclick={handleBrowsePrefixDir}>
+				Change Location
+			</Button>
+			{#if appSettings.CustomPrefixDir}
+				<Button variant="secondary" icon="restore" onclick={handleResetDefault}>
+					Reset to Default
 				</Button>
-				{#if appSettings.CustomPrefixDir}
-					<Button variant="secondary" icon="restore" onclick={handleResetDefault}>
-						Reset to Default
-					</Button>
-				{/if}
-			</div>
+			{/if}
 		</div>
 	</div>
-</div>
+</Section>
 
 <style lang="scss">
-	.settings-section {
-		display: flex;
-		flex-direction: column;
-		gap: 12px;
-
-		.desc {
-			margin: 0 0 8px 0;
-			font-size: 0.9rem;
-			font-weight: 600;
-			color: var(--text-muted);
-		}
-	}
-
-	:global(.zone-icon) {
-		color: var(--accent-primary);
-	}
-
 	.path-box {
 		display: flex;
 		flex-direction: column;

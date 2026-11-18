@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Button from "@components/shared/Button.svelte";
 	import Icon from "@components/shared/Icon.svelte";
+	import Section from "@components/shared/Section.svelte";
 	import type { SettingsState } from "./settingsState.svelte";
 
 	let { settings } = $props<{ settings: SettingsState }>();
@@ -15,61 +16,41 @@
 	}
 </script>
 
-<div class="zone-card">
-	<div class="zone-header">
-		<Icon name="block" size={24} class="zone-icon" />
-		<h2>Hidden / Blacklisted Games</h2>
-	</div>
-
-	<div class="settings-section">
-		<p class="desc">
-			Manage games that you have hidden/blacklisted from dynamic scans. Restoring them will allow them to appear in your library again.
-		</p>
-
-		{#if appSettings.Blacklist && appSettings.Blacklist.length > 0}
-			<div class="blacklist-list">
-				{#each appSettings.Blacklist as path}
-					<div class="blacklist-item">
-						<div class="game-info-col">
-							<span class="game-name">{getBaseName(path)}</span>
-							<span class="game-path" title={path}>{path}</span>
-						</div>
-						<Button
-							variant="secondary"
-							size="sm"
-							icon="settings_backup_restore"
-							class="restore-btn"
-							onclick={() => handleRestoreGame(path)}
-							title="Restore game"
-						>
-							Restore
-						</Button>
+<Section
+	title="Hidden / Blacklisted Games"
+	icon="block"
+	help="Games you hid from dynamic scans. Restore one to show it in your Library again."
+>
+	{#if appSettings.Blacklist && appSettings.Blacklist.length > 0}
+		<div class="blacklist-list">
+			{#each appSettings.Blacklist as path}
+				<div class="blacklist-item">
+					<div class="game-info-col">
+						<span class="game-name">{getBaseName(path)}</span>
+						<span class="game-path" title={path}>{path}</span>
 					</div>
-				{/each}
-			</div>
-		{:else}
-			<div class="empty-blacklist glass">
-				<Icon name="done_all" size={24} class="empty-icon" />
-				<span class="empty-text">No games are currently hidden.</span>
-			</div>
-		{/if}
-	</div>
-</div>
+					<Button
+						variant="secondary"
+						size="sm"
+						icon="settings_backup_restore"
+						class="restore-btn"
+						onclick={() => handleRestoreGame(path)}
+						title="Restore game"
+					>
+						Restore
+					</Button>
+				</div>
+			{/each}
+		</div>
+	{:else}
+		<div class="empty-blacklist">
+			<Icon name="done_all" size={24} class="empty-icon" />
+			<span class="empty-text">No games are currently hidden.</span>
+		</div>
+	{/if}
+</Section>
 
 <style lang="scss">
-	.settings-section {
-		display: flex;
-		flex-direction: column;
-		gap: 12px;
-
-		.desc {
-			margin: 0 0 16px 0;
-			font-size: 0.9rem;
-			font-weight: 600;
-			color: var(--text-muted);
-			line-height: 1.5;
-		}
-	}
 	.blacklist-list {
 		display: flex;
 		flex-direction: column;
@@ -156,17 +137,5 @@
 			font-size: 0.9rem;
 			font-weight: 600;
 		}
-	}
-
-	:global(.zone-icon) {
-		color: var(--accent-primary);
-	}
-
-	.desc {
-		margin: 0 0 16px 0;
-		font-size: 0.9rem;
-		font-weight: 600;
-		color: var(--text-muted);
-		line-height: 1.5;
 	}
 </style>
