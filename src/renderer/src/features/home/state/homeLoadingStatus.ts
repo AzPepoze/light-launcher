@@ -21,10 +21,42 @@ export function scanPercent(done: number, total: number): number | null {
 	return Math.min(1, Math.max(0, done / total));
 }
 
-/** The top status line while the library loads. Null once it is loaded. */
-export function homeStatus(isLoading: boolean): HomeStatus | null {
-	if (!isLoading) return null;
-	return { text: "Loading games...", percent: null };
+/** The rescan lifecycle shown in the top status line. */
+export type RescanPhase = "idle" | "running" | "done";
+
+export interface RescanStatus {
+	phase: RescanPhase;
+	/** The last count reported by the scan, kept for the completion message. */
+	found: number;
+}
+
+/**
+ * The top status line: the first load, a manual rescan with its live found count, or nothing.
+ * A rescan never opens a toast; it reuses the same strip as the initial loading state.
+ */
+export function homeStatus(
+	isLoading: boolean,
+	scan: HomeScan | null = null,
+	rescan: RescanStatus = { phase: "idle", found: 0 }
+): HomeStatus | null {
+	if (isLoading) return { text: "Loading games...", percent: null };
+	if (rescan.phase === "running") {
+		if (scan?.state !== "running") {
+			return { text: "Preparing rescan...", percent: null };
+		}
+		const where = scan.current ? `Rescanning ${scan.current}` : "Rescanning watched folders...";
+		return {
+			text: `${where} · ${scan.done} of ${scan.total} · ${scan.found} found`,
+			percent: scanPercent(scan.done, scan.total)
+		};
+	}
+	if (rescan.phase === "done") {
+		return {
+			text: `Rescan complete · ${rescan.found} game${rescan.found === 1 ? "" : "s"} found`,
+			percent: 1
+		};
+	}
+	return null;
 }
 
 /** The status of the folder the scan is on. Null when no folder is being scanned. */

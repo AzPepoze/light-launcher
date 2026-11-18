@@ -88,6 +88,7 @@
 				handleChooseLauncher={(game, launcherPath) => state.chooseLauncher(game, launcherPath)}
 				toggleGameSelection={(game, shiftKey, ctrlKey) => state.selection.toggleGameSelection(game, shiftKey, ctrlKey)}
 				onRefresh={() => state.refreshData(true)}
+				onRescan={() => state.rescan()}
 				loadIcon={(path, customIconPath, hasCover) => state.icons.enqueueIconLoad(path, customIconPath, "high", hasCover)}
 				onMarqueeSelect={(paths, additive) => state.selection.applyMarquee(paths, additive)}
 				onSelectAll={() => state.selection.selectAll()}
@@ -160,7 +161,7 @@
 
 	.status-bar {
 		flex: 1;
-		max-width: 260px;
+		max-width: 320px;
 	}
 
 	/* Scrolls so the placeholder grid never clips in a short window. */

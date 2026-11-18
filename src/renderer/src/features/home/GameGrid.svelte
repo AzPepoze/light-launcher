@@ -40,6 +40,8 @@
 	export let handleChooseLauncher: (game: any, launcherPath: string | null) => void = () => {};
 	export let toggleGameSelection: (game: any, shiftKey: boolean, ctrlKey?: boolean) => void;
 	export let onRefresh: () => void = () => {};
+	/** Rescans watched folders and shows the inline progress strip. */
+	export let onRescan: () => void = () => {};
 	export let loadIcon: (path: string, customIconPath?: string | null, hasCover?: boolean) => void = () => {};
 	export let onMarqueeSelect: (paths: string[], additive: boolean) => void = () => {};
 	export let onSelectAll: () => void = () => {};
@@ -73,9 +75,8 @@
 	}
 
 	function handleRescan() {
-		notifications.add("Rescanning watched folders...", "info");
 		activeFolderMenu = null;
-		onRefresh();
+		onRescan();
 	}
 
 	function handleRightClick(event: MouseEvent, game: any) {

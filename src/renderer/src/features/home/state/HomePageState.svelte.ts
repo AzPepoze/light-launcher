@@ -21,7 +21,7 @@ import { IconLoaderState } from "./IconLoaderState.svelte";
 import { SelectionState } from "./SelectionState.svelte";
 import { droppedFiles } from "./homeEvents";
 import type { HomeViewMode } from "./homeViewMemory";
-import { homeStatus, runningFolderScan } from "./homeLoadingStatus";
+import { homeStatus, runningFolderScan, type RescanPhase } from "./homeLoadingStatus";
 import {
 	addLoadingGroups,
 	loadedGroups,
@@ -56,8 +56,7 @@ function gamesSignature(games: GameInfo[]): string {
 function groupsSignature(groups: HomeFolderGroup[]): string {
 	return groups
 		.map(
-			(group) =>
-				`${group.folderPath}:${group.loading ? "1" : "0"}#${gamesSignature(group.games)}`
+			(group) => `${group.folderPath}:${group.loading ? "1" : "0"}#${gamesSignature(group.games)}`
 		)
 		.sort()
 		.join(";");
@@ -80,7 +79,15 @@ export class HomePageState {
 	showAddModal = $state(false);
 	isLoading = $state(true);
 	scan = $state<HomeScan | null>(null);
-	status = $derived(homeStatus(this.isLoading));
+	rescanPhase = $state<RescanPhase>("idle");
+	rescanFound = $state(0);
+	rescanTimer: ReturnType<typeof setTimeout> | null = null;
+	status = $derived(
+		homeStatus(this.isLoading, this.scan, {
+			phase: this.rescanPhase,
+			found: this.rescanFound
+		})
+	);
 	/** Progress shown in the header of the folder being scanned. */
 	folderScan = $derived(runningFolderScan(this.scan));
 	/** True once the library and folder scan are both done and nothing is listed. */
@@ -172,6 +179,31 @@ export class HomePageState {
 		this.scheduleIconWarm();
 	}
 
+	/**
+	 * Rescans watched folders. The top status strip shows the live found count, so the
+	 * user never needs a toast for this.
+	 */
+	async rescan() {
+		if (this.rescanPhase === "running") return;
+		this.rescanPhase = "running";
+		this.rescanFound = 0;
+		try {
+			await this.refreshData(true);
+		} finally {
+			if (this.rescanPhase === "running") this.finishRescan();
+		}
+	}
+
+	/** Keeps the completion line visible briefly, then returns the strip to idle. */
+	private finishRescan() {
+		this.rescanPhase = "done";
+		if (this.rescanTimer) clearTimeout(this.rescanTimer);
+		this.rescanTimer = setTimeout(() => {
+			this.rescanPhase = "idle";
+			this.rescanTimer = null;
+		}, 2400);
+	}
+
 	/** Lists each configured scan folder as loading until its result arrives. */
 	private async prefillScanGroups() {
 		const settings = await loadAppSettings();
@@ -212,7 +244,16 @@ export class HomePageState {
 		// Subscribe before the first refresh so the scan's first progress event is not missed.
 		this.scanUnsubscribe = onEvent(HOME_SCAN_EVENT, (event: unknown) => {
 			const scan = toHomeScan(event);
-			if (scan) this.scan = scan;
+			if (scan) {
+				this.scan = scan;
+				if (this.rescanPhase === "running" && scan.state === "running") {
+					this.rescanFound = scan.found;
+				}
+				if (this.rescanPhase !== "idle" && scan.state === "done") {
+					this.rescanFound = scan.found;
+					if (this.rescanPhase === "running") this.finishRescan();
+				}
+			}
 			const group = toScanGroup(event);
 			if (group) this.scannedFolderGroups = upsertGroup(this.scannedFolderGroups, group);
 		});
@@ -235,6 +276,10 @@ export class HomePageState {
 		if (this.dropUnsubscribe) this.dropUnsubscribe();
 		if (this.scanUnsubscribe) this.scanUnsubscribe();
 		if (this.iconWarmTimer) clearTimeout(this.iconWarmTimer);
+		if (this.rescanTimer) {
+			clearTimeout(this.rescanTimer);
+			this.rescanTimer = null;
+		}
 	}
 
 	async handleQuickLaunch(game: GameInfo, showLogs = false) {

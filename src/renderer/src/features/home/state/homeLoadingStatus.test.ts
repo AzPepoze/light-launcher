@@ -31,6 +31,37 @@ describe("homeStatus", () => {
 	it("shows nothing once the library is loaded", () => {
 		expect(homeStatus(false)).toBeNull();
 	});
+
+	it("shows the live found count while a rescan runs", () => {
+		expect(
+			homeStatus(
+				false,
+				{ state: "running", done: 2, total: 5, found: 37, current: "Games" },
+				{ phase: "running", found: 0 }
+			)
+		).toEqual({
+			text: "Rescanning Games · 2 of 5 · 37 found",
+			percent: 0.4
+		});
+	});
+
+	it("shows an indeterminate preparing line before the first scan event", () => {
+		expect(homeStatus(false, null, { phase: "running", found: 0 })).toEqual({
+			text: "Preparing rescan...",
+			percent: null
+		});
+	});
+
+	it("shows the final count briefly after a rescan", () => {
+		expect(homeStatus(false, { state: "done", found: 42 }, { phase: "done", found: 42 })).toEqual({
+			text: "Rescan complete · 42 games found",
+			percent: 1
+		});
+		expect(homeStatus(false, { state: "done", found: 1 }, { phase: "done", found: 1 })).toEqual({
+			text: "Rescan complete · 1 game found",
+			percent: 1
+		});
+	});
 });
 
 describe("runningFolderScan", () => {
@@ -51,7 +82,7 @@ describe("runningFolderScan", () => {
 	});
 
 	it("returns null when the scan is done", () => {
-		expect(runningFolderScan({ state: "done" })).toBeNull();
+		expect(runningFolderScan({ state: "done", found: 7 })).toBeNull();
 	});
 
 	it("returns null when no scan has reported", () => {
