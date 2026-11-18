@@ -182,7 +182,7 @@
 
 	<div class="actions">
 		{#if game.installed && game.exePath}
-			<Button variant="primary" disabled={busy} onclick={launch}>Play</Button>
+			<IconButton icon="play_arrow" label="Play" filled tone="accent" disabled={busy} onclick={launch} />
 		{/if}
 		<Button aria-pressed={game.favorite} disabled={busy} onclick={toggleFavorite}>
 			<Icon name={game.favorite ? "star" : "star_border"} size={18} />
