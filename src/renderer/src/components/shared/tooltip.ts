@@ -129,7 +129,6 @@ export function tooltip(node: HTMLElement, text: string) {
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	/** Set by a click, so the focus that follows it does not reopen the bubble. */
 	let suppressed = false;
-	let setAriaLabel = false;
 
 	function cancelTimer() {
 		clearTimeout(timer);
@@ -174,27 +173,16 @@ export function tooltip(node: HTMLElement, text: string) {
 		hide();
 	}
 
-	function applyAttributes() {
-		node.removeAttribute("title");
-		if (!node.hasAttribute("aria-label")) {
-			node.setAttribute("aria-label", label);
-			setAriaLabel = true;
-		} else if (setAriaLabel) {
-			node.setAttribute("aria-label", label);
-		}
-	}
-
 	node.addEventListener("pointerenter", onPointerEnter);
 	node.addEventListener("pointerleave", onPointerLeave);
 	node.addEventListener("focus", onFocus);
 	node.addEventListener("blur", onBlur);
 	node.addEventListener("click", onClick);
-	applyAttributes();
+	node.removeAttribute("title");
 
 	return {
 		update(nextText: string) {
 			label = nextText;
-			applyAttributes();
 			if (shownFor === node) {
 				showBubble(node, label);
 			}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { tooltipPlacement } from "./tooltip";
+import { tooltip, tooltipPlacement } from "./tooltip";
 
 const VIEWPORT = { width: 1440, height: 900 };
 const BUBBLE = { width: 120, height: 30 };
@@ -7,6 +7,35 @@ const BUBBLE = { width: 120, height: 30 };
 function anchorAt(left: number, top: number, width = 36, height = 36) {
 	return { left, top, right: left + width, bottom: top + height, width };
 }
+
+/** A minimal stand-in for an element: the action only touches attributes and listeners. */
+function fakeNode(attributes: Record<string, string> = {}) {
+	const store = new Map(Object.entries(attributes));
+	const node = {
+		hasAttribute: (name: string) => store.has(name),
+		setAttribute: (name: string, value: string) => store.set(name, value),
+		removeAttribute: (name: string) => store.delete(name),
+		addEventListener: () => {},
+		removeEventListener: () => {},
+	};
+	return { node: node as unknown as HTMLElement, store };
+}
+
+describe("tooltip action", () => {
+	it("does not set aria-label on a control with visible text", () => {
+		const { node, store } = fakeNode();
+		tooltip(node, "Not played in 30 days");
+
+		expect(store.has("aria-label")).toBe(false);
+	});
+
+	it("removes a native title so the browser does not show a second tip", () => {
+		const { node, store } = fakeNode({ title: "old tip" });
+		tooltip(node, "New tip");
+
+		expect(store.has("title")).toBe(false);
+	});
+});
 
 describe("tooltipPlacement", () => {
 	it("places the bubble above and centred when there is room", () => {
