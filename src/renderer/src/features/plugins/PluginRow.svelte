@@ -5,7 +5,7 @@
 	import type { PluginInfo, PluginUpdateStatus } from "../../lib/features/types";
 	import PluginIdentity from "./PluginIdentity.svelte";
 	import UnsignedBadge from "./UnsignedBadge.svelte";
-	import { DEV_BADGE, STATUS_COPY } from "./pluginCopy";
+	import { DETAILS_LABEL, DEV_BADGE, STATUS_COPY, UNSIGNED_WARNING } from "./pluginCopy";
 	import { UNAVAILABLE_CHECK_TEXT, checkFailureHint, isCheckFailure } from "./pluginNotices";
 
 	let {
@@ -45,6 +45,9 @@
 				{STATUS_COPY[status]}
 			{/if}
 		</span>
+		{#if status === "unsigned"}
+			<span class="unsigned-note">{UNSIGNED_WARNING}</span>
+		{/if}
 		{#if checkFailed && update?.error}
 			<span class="unavailable" title={checkFailureHint(update.error)}>{UNAVAILABLE_CHECK_TEXT}</span>
 		{/if}
@@ -52,6 +55,10 @@
 	{#if update?.available}
 		<span class="update">Update {update.version}</span>
 	{/if}
+	<span class="details">
+		{DETAILS_LABEL}
+		<Icon name="chevron_right" size={18} />
+	</span>
 </button>
 
 <style lang="scss">
@@ -120,9 +127,29 @@
 		}
 	}
 
+	.unsigned-note {
+		font-size: 0.8125rem;
+		color: var(--text-muted);
+	}
+
 	.unavailable {
 		font-size: 0.8125rem;
 		color: var(--text-dim);
+	}
+
+	.details {
+		display: inline-flex;
+		align-items: center;
+		gap: 2px;
+		flex-shrink: 0;
+		font-size: 0.8125rem;
+		font-weight: 600;
+		color: var(--text-muted);
+		transition: color var(--transition-fast);
+	}
+
+	.row:hover .details {
+		color: var(--text-main);
 	}
 
 	.update {
