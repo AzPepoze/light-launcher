@@ -4,6 +4,7 @@
 	import Icon from "@components/shared/Icon.svelte";
 	import Marquee from "@components/shared/Marquee.svelte";
 	import { loadGameIcon } from "../../lib/iconService";
+	import { getGamePath } from "../../lib/gameUtils";
 	import type { Game, SourceCard } from "../../lib/features/types";
 	import { LOCAL_SOURCE } from "./librarySections";
 	import { cardView, type TileState } from "./tileCard";
@@ -61,7 +62,7 @@
 	function exeIconPathFor(item: Game): string | null {
 		const hasCover = Boolean(item.cover || item.coverLocal);
 		if (item.source !== LOCAL_SOURCE || hasCover) return null;
-		return item.exePath || item.localConfig?.GamePath || item.localConfig?.LauncherPath || null;
+		return getGamePath({ exePath: item.exePath, localConfig: item.localConfig }) || null;
 	}
 
 	const STATE_VIEW: Record<TileState, { label: string; icon: string; tone: "danger" | "accent" | "neutral" | "warning" }> = {
