@@ -434,7 +434,7 @@
 						aria-label="Game details"
 					>
 						<div class="detail-chrome">
-							<span class="detail-eyebrow">Game details</span>
+							<span class="detail-label">Game details</span>
 							<IconButton icon="close" label="Close" onclick={closeGame} />
 						</div>
 						<!-- Keyed by id so switching tiles resets the scroll and loads the new game's files and notes. -->
@@ -628,12 +628,10 @@
 		background: var(--bg-surface);
 	}
 
-	.detail-eyebrow {
+	.detail-label {
 		color: var(--text-muted);
-		font-size: 0.75rem;
-		font-weight: 800;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
+		font-size: 0.875rem;
+		font-weight: 600;
 	}
 
 	.detail-scroll {
