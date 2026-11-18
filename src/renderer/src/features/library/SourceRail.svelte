@@ -12,6 +12,11 @@
 		selected: string;
 		onSelect: (source: string) => void;
 	} = $props();
+
+	/** The tooltip and accessible name of a rail icon: the source and its game count. */
+	function railLabel(section: LibrarySource): string {
+		return `${section.label} (${section.count ?? 0})`;
+	}
 </script>
 
 <nav class="rail" aria-label="Library sources">
@@ -21,7 +26,7 @@
 				<IconButton
 					size={32}
 					icon={sourceIcon(section.source)}
-					label={section.label}
+					label={railLabel(section)}
 					filled={section.source === selected}
 					aria-pressed={section.source === selected}
 					onclick={() => onSelect(section.source)}
