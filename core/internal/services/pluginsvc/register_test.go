@@ -58,7 +58,7 @@ func TestRegisterAddsEveryPluginMethod(t *testing.T) {
 	methods := newRouter(t).Methods()
 	sort.Strings(methods)
 	want := []string{
-		"PluginCall", "PluginInstall", "PluginInstallOrUpdate", "PluginLogs", "PluginPermissionsPreview",
+		"PluginCall", "PluginDevLink", "PluginDevUnlink", "PluginInstall", "PluginInstallOrUpdate", "PluginLogs", "PluginPermissionsPreview",
 		"PluginRegistry", "PluginRemove", "PluginRollback", "PluginSetEnabled", "PluginSettingsGet",
 		"PluginSettingsSet", "PluginTrustedKeyAdd", "PluginTrustedKeyRemove", "PluginTrustedKeys",
 		"PluginUpdate", "PluginUpdatesCheck", "PluginUpdatesStatus", "PluginsList",
@@ -213,6 +213,45 @@ func TestPluginCallRefusesHostServices(t *testing.T) {
 	_, err := router.Dispatch(context.Background(), "PluginCall", payload)
 	if err == nil {
 		t.Fatalf("PluginCall must not pass non-source methods to plugins")
+	}
+}
+
+func TestPluginDevLinkAndUnlink(t *testing.T) {
+	router := newRouter(t)
+	dir := t.TempDir()
+	manifest := fmt.Sprintf(`{"id":"demo","name":"Demo","version":"0.2.0","apiVersion":"1","minHost":"2.0.0","entry":{%q:"bin/demo"},"contributes":{"sources":[{"id":"demo","label":"Demo","capabilities":["browse"]}]},"permissions":{"network":[],"fs":[],"secrets":false,"browser":false,"exec":false}}`, plugins.PlatformKey())
+	if err := os.WriteFile(filepath.Join(dir, "plugin.json"), []byte(manifest), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Join(dir, "bin"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "bin", "demo"), []byte("x"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+
+	linked, err := router.Dispatch(ctx, "PluginDevLink", json.RawMessage(fmt.Sprintf(`{"path":%q}`, dir)))
+	if err != nil {
+		t.Fatalf("PluginDevLink: %v", err)
+	}
+	if info, ok := linked.(plugins.PluginInfo); !ok || !info.Dev || info.Version != "0.2.0" {
+		t.Fatalf("PluginDevLink result = %+v", linked)
+	}
+	if _, err := router.Dispatch(ctx, "PluginDevUnlink", json.RawMessage(`{"id":"demo"}`)); err != nil {
+		t.Fatalf("PluginDevUnlink: %v", err)
+	}
+	_, err = router.Dispatch(ctx, "PluginDevUnlink", json.RawMessage(`{"id":"demo"}`))
+	if !errors.Is(err, plugins.ErrNotDevLinked) {
+		t.Fatalf("second PluginDevUnlink: err = %v, want ErrNotDevLinked", err)
+	}
+}
+
+func TestPluginDevLinkRefusesFolderWithoutManifest(t *testing.T) {
+	router := newRouter(t)
+	_, err := router.Dispatch(context.Background(), "PluginDevLink", json.RawMessage(fmt.Sprintf(`{"path":%q}`, t.TempDir())))
+	if !errors.Is(err, plugins.ErrNoManifest) {
+		t.Fatalf("err = %v, want ErrNoManifest", err)
 	}
 }
 

@@ -33,6 +33,11 @@ type removeInput struct {
 	DeleteData bool   `json:"deleteData"`
 }
 
+// devLinkInput names the source folder to run a plugin from.
+type devLinkInput struct {
+	Path string `json:"path"`
+}
+
 type setEnabledInput struct {
 	ID      string `json:"id"`
 	Enabled bool   `json:"enabled"`
@@ -142,6 +147,13 @@ func register(r *api.Router, ev api.Events, host *plugins.Host, uploads *uploads
 	}))
 	r.Handle("PluginRemove", api.Typed(func(_ context.Context, in removeInput) (any, error) {
 		return nil, host.Remove(in.ID, in.DeleteData)
+	}))
+	// PluginDevLink runs a plugin from a source folder, and PluginDevUnlink hands it back to the installed copy.
+	r.Handle("PluginDevLink", api.Typed(func(_ context.Context, in devLinkInput) (any, error) {
+		return host.DevLink(in.Path)
+	}))
+	r.Handle("PluginDevUnlink", api.Typed(func(_ context.Context, in idInput) (any, error) {
+		return nil, host.DevUnlink(in.ID)
 	}))
 	r.Handle("PluginSetEnabled", api.Typed(func(_ context.Context, in setEnabledInput) (any, error) {
 		return host.SetEnabled(in.ID, in.Enabled)
