@@ -80,8 +80,6 @@
 	let filtersOpen = $state(false);
 	/** Measured height of the sticky header, so the rail and sidebar can stick below it. */
 	let headHeight = $state(0);
-	/** True once the page has scrolled, when the header needs its glass backing. */
-	let headStuck = $state(false);
 
 	/** The sections that show on the page, in rail order. Empty plugin sources are left out. */
 	const visibleSections = $derived(library.sections.filter(isShown));
@@ -121,20 +119,11 @@
 		const stopDownloads = downloads.subscribe();
 		const stopLibrary = library.subscribe();
 
-		// The header only needs its glass backing while the page is scrolled under it.
-		const scroller = document.querySelector<HTMLElement>(".page-wrapper");
-		const onScroll = () => {
-			headStuck = (scroller?.scrollTop ?? 0) > 0;
-		};
-		scroller?.addEventListener("scroll", onScroll, { passive: true });
-		onScroll();
-
 		return () => {
 			stopTab();
 			downloads.stopSampling();
 			stopDownloads();
 			stopLibrary();
-			scroller?.removeEventListener("scroll", onScroll);
 		};
 	});
 
@@ -257,7 +246,7 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="library" style:--library-head-height="{headHeight}px">
-	<div class="library-head" class:stuck={headStuck} bind:clientHeight={headHeight}>
+	<div class="library-head" bind:clientHeight={headHeight}>
 		<PageHeader title="Library" {subtitle} icon="collections_bookmark">
 			<Button size="sm" variant="primary" icon="add" onclick={() => (addOpen = true)}>Add game</Button>
 		</PageHeader>
@@ -453,17 +442,17 @@
 	}
 
 	/*
-	 * The title and tabs stay put while the page scrolls. The 76px band above the head is
-	 * painted by the ::before, so covers never scroll through the global search bar.
+	 * The title and tabs stay put while the page scrolls, below the global search bar. The
+	 * opaque background hides the tiles that pass under them. The ::before paints the same
+	 * background over the band above, so tiles never show through the search bar's row.
 	 */
 	.library-head {
 		position: sticky;
-		top: 76px;
+		top: var(--topbar-height);
 		z-index: 20;
 		box-sizing: border-box;
 		padding-bottom: 16px;
-		background: transparent;
-		transition: background-color var(--transition-fast);
+		background: var(--bg-base);
 
 		&::before {
 			content: "";
@@ -471,20 +460,9 @@
 			left: 0;
 			right: 0;
 			bottom: 100%;
-			height: 76px;
-			background: inherit;
+			height: var(--topbar-height);
+			background: var(--bg-base);
 			pointer-events: none;
-		}
-
-		&.stuck {
-			background: color-mix(in srgb, var(--bg-base) 88%, transparent);
-			-webkit-backdrop-filter: blur(16px);
-			backdrop-filter: blur(16px);
-
-			&::before {
-				-webkit-backdrop-filter: blur(16px);
-				backdrop-filter: blur(16px);
-			}
 		}
 	}
 
@@ -520,7 +498,7 @@
 	/* Each source is a group: its header, then its sync note, notices and grid. */
 	.group {
 		/* Keeps the group title clear of the sticky page header when the rail scrolls to it. */
-		scroll-margin-top: calc(76px + var(--library-head-height, 0px) + 16px);
+		scroll-margin-top: calc(var(--topbar-height) + var(--library-head-height, 0px) + 16px);
 		margin-bottom: 32px;
 	}
 

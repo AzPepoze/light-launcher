@@ -408,7 +408,7 @@
 		width: 100%;
 		height: 100%;
 		overflow-y: auto;
-		padding: 76px 48px 40px 84px;
+		padding: var(--topbar-height) 48px 40px 84px;
 		box-sizing: border-box;
 
 		&.home-mode {

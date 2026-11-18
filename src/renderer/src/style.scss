@@ -1,4 +1,7 @@
 :root {
+	/* Height of the band the global search bar sits in. Pages start below it. */
+	--topbar-height: 76px;
+
 	/* New Color Palette — minimal pure black and white */
 	--bg-base-rgb: 0, 0, 0;
 	--bg-base: rgb(var(--bg-base-rgb));
