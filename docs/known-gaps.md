@@ -44,6 +44,9 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | Home at 390x844: no element past the edge and no sideways scroll. Checked by overlap scan and one screenshot. Check by eye in the real window. |
 | [ ] | Grid card shows the game path on hover; long paths truncate. Check by eye in the real window. |
 | [ ] | Larger gear button on grid cards. Check by eye in the real window. |
+| [ ] | Home: the System Status drawer moved here from Game Manager, and the grid fills the space above it. Measured in the browser; check by eye in the real window. |
+| [ ] | Home: duplicate game folder path logic is replaced by the shared `getGamePath`, and Home's order now matches the shared order. Check that Home open-location and remove still use the right path. |
+| [ ] | Home: remove and blacklist still use the profile's launcher path, not the shared path. Decide whether to switch. |
 
 ## Plugin system
 
@@ -149,6 +152,20 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | Settings at 390x844: some number and text fields are 13px wider than the sections column, so the column scrolls sideways a little. The page itself does not. Check the fields and fix their width. |
 | [x] | The plugin SDK docs describe `sidebar`, the `browse:filters` capability, `source.browse` and `source.listFilters`. |
 | [x] | itch implements `source.browse`/`source.listFilters` with a search sidebar. It scrapes itch.io's public search HTML; there is no stable search API or pager, and sort is best-effort. |
+| [ ] | Library card size slider sits beside the tabs and landscape covers scale up. Check by eye in the real window. |
+| [ ] | Library game drawer redesign: full-bleed cover, facts grid, tags with show all, description with show more, notes box with scroll, 640px width, and fade and slide in and out. Check by eye in the real window. |
+| [ ] | Library drawer actions are icons with tooltips (Play, Open page, Refresh files, Open folder location); Play is a white round button and actions are 36px. Check by eye in the real window. |
+| [ ] | Library image viewer for drawer screenshots has zoom, pan, minimap, previous and next, and a thumbnail strip; only the viewer math is tested. Check by eye, and check that Escape closes only the viewer. |
+| [ ] | Library drawer has a Launch executable row that changes the exe through the update call. Check by eye in the real window. |
+| [ ] | Library drawer has an open folder location button that uses `OpenFileLocation`. Check by eye in the real window. |
+| [ ] | Library tile corner badges are solid: update is yellow and install is green. Check the light theme contrast. |
+| [ ] | Library files grouped by platform use full-width headers, and the counts line up with the download buttons. Check with a game that has Windows and Android files. |
+| [ ] | Library sidebar Engine and tag options come from owned games, and picking one filters the owned list; checked only with injected test data. Restart the core and check the real counts. |
+| [ ] | Library sidebar has an owned Tags group for plugin sources that have no tag group. Check with real counts. |
+| [ ] | Library sidebar choices load when a source opens, are cached in memory, and each group has a refresh control; checked in the browser. Check by eye in the real window. |
+| [ ] | Core: owned-game engine filter and per-source engine and tag counts in the library overview; tests pass. Check after the core restart. |
+| [ ] | Library drawer stored paths moved from the Game♥ folder to Games in the library database (backup taken). Check Play on a few games. |
+| [ ] | Core: a saved launch path that is missing gives a misleading "no executable found" message; it should name the stored path. Fix the message in `core/internal/library/launch.go`. |
 
 ## Library, Updates and Downloads UI
 
@@ -211,6 +228,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [x] | Versions, Utils and Plugins at 390x844: no sideways scroll and no element past the edge. Header buttons wrap, the Utils table stacks. Checked by measurement; check by eye in the real window. |
 | [ ] | Versions: check the Steam and External badges, the legend line and the ProtonDB, ProtonPlus and ProtonUp icons by eye in the real window. |
 | [ ] | Prefix: check the Wine Tools, Defaults and Advanced tab strip, the "Choose a Proton version" placeholder with its disabled message, and the tools grid columns by eye in the real window. |
+| [ ] | Prefix Manager: setup runs in order (runtime, location, tools), tools are disabled with a reason, tabs sit in one card, and the selected prefix has its own state. Browser checked at 1440 and 390; check the no-Proton notice and its Versions button by eye. |
 | [ ] | Utils: check the status badges, the install hints and the single LSFG-VK card filling the row by eye in the real window. |
 | [ ] | Utils: Vulkan-Tools and Lossless.dll have no install hint, because neither `docs/linux.md` nor the PKGBUILD names a package for them. |
 | [ ] | Plugins: check the Unsigned note, the Details cue and the "Add plugin" button by eye in the real window. |
@@ -267,3 +285,16 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | Run header subtitle shows the profile name and game path. Check by eye in the real window. |
 | [ ] | Run launch actions are a footer under the form. The form scrolls above it, and no field sits under it at 1440x900 or 390x844. Checked by overlap scan and one screenshot per width. Check by eye in the real window. |
 | [ ] | Empty "Launcher executable" hint is not done. It needs `components/run/ExecutableSelector.svelte`, which is outside this slice. |
+| [ ] | Game Manager fits the screen; on desktop the left and right columns scroll inside their own boxes. Measured in the browser; check by eye in the real window. |
+
+## Recent UI batch
+
+| Status | Item |
+|---|---|
+| [ ] | Settings search is a bar above the sections: typing lists matching sections and Enter jumps to one. Checked by measurement; check by eye in the real window. |
+| [ ] | Settings marks the active section with an accent bar. Checked in the browser; check by eye in the real window. |
+| [ ] | Settings Wine prefix location is a row with an editable path, a Save button and a browse icon. Checked in the browser at 1440 and 390; check by eye in the real window. |
+| [ ] | Settings Downloads number fields use the shared number stepper with custom arrows. Checked in the browser for Retries; check by eye in the real window. |
+| [ ] | All shared number inputs (NumberField, NumericInput, RangeSlider value box) use the shared number stepper. Only RangeSlider's Card size was checked in the browser; check the scan depth field (NumberField). |
+| [ ] | Dialogs, dropdown, app menus and toasts animate in and out. Only Dropdown was checked in the browser; check Modal, AppMenu and toasts by eye. |
+| [ ] | Native `title` tooltips are replaced by the shared tooltip action across the app, and the Stale tab keeps its accessible name. The browser check was partly blocked (Versions and Game Manager not reached); check by eye. |
