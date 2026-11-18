@@ -76,13 +76,14 @@
 
 	.input-row {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
 		gap: 12px;
 		width: 100%;
 	}
 
 	.path-input {
-		flex: 1;
+		flex: 1 1 160px;
 		min-width: 0;
 		padding: 12px 16px;
 		background: var(--bg-input);

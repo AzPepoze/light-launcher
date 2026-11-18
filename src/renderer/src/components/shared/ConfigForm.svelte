@@ -180,7 +180,7 @@
 <style lang="scss">
 	.toggles-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
 		gap: 20px;
 		margin-top: 12px;
 	}

@@ -279,6 +279,7 @@
 	.launcher-input-group,
 	.game-input-group {
 		flex: 1;
+		min-width: 0;
 		display: flex;
 		gap: 12px;
 	}
