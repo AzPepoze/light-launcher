@@ -93,7 +93,7 @@ describe("sidebarGroupsFor", () => {
 
 	it("drops the plugin search group, since the sidebar draws its own search box", () => {
 		const groups = sidebarGroupsFor(PLUGIN, TAGS, {});
-		expect(groups.map((group) => group.id)).toEqual(["genres"]);
+		expect(groups.map((group) => group.id)).toEqual(["genres", TAG_GROUP]);
 	});
 
 	it("fills a dynamic plugin group with the loaded choices", () => {
@@ -178,6 +178,24 @@ describe("owned engine and tags groups", () => {
 	it("asks the plugin only for the groups it owns none of", () => {
 		expect(choiceGroupsOf(OWNED_PLUGIN).map((group) => group.id)).toEqual(["genres"]);
 		expect(pluginGroupsOf(OWNED_PLUGIN).map((group) => group.id)).toEqual(["genres"]);
+	});
+
+	it("adds an owned tags group at the end when the plugin sidebar declares none", () => {
+		const plugin = { ...PLUGIN, tags: [{ name: "Fantasy", count: 5 }] };
+		const added = sidebarGroupsFor(plugin, TAGS, {}).at(-1);
+		expect(added).toMatchObject({ type: "multi", id: TAG_GROUP, label: "Tags", dynamic: false, searchable: true });
+		expect(added?.options).toEqual([{ value: "Fantasy", label: "Fantasy", icon: null, count: 5 }]);
+	});
+
+	it("keeps one tags group when the plugin declares its own", () => {
+		const tagGroups = sidebarGroupsFor(OWNED_PLUGIN, TAGS, {}).filter((group) => group.id === TAG_GROUP);
+		expect(tagGroups).toHaveLength(1);
+	});
+
+	it("leaves the added tags group out of the plugin browse", () => {
+		const plugin = { ...PLUGIN, tags: [{ name: "Fantasy", count: 5 }] };
+		expect(pluginGroupsOf(plugin).map((group) => group.id)).not.toContain(TAG_GROUP);
+		expect(choiceGroupsOf(plugin).map((group) => group.id)).toEqual(["genres"]);
 	});
 
 	it("has no options when the source owns no engines or tags", () => {

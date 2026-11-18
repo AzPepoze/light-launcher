@@ -137,9 +137,26 @@ export function sidebarGroupsFor(
 	if (!source || source.source === LOCAL_SOURCE || source.sidebar.length === 0) {
 		return builtinGroups(tags);
 	}
-	return source.sidebar
+	const groups = source.sidebar
 		.filter((group) => group.type !== "search")
 		.map((group) => sidebarGroupOf(group, source, choices));
+	return hasTagsGroup(source) ? groups : [...groups, addedTagsGroup(source)];
+}
+
+function hasTagsGroup(source: LibrarySource): boolean {
+	return source.sidebar.some((group) => ownedKindOf(group) === "tags");
+}
+
+/** The tags group the launcher adds to the end of a plugin sidebar that declares none. */
+function addedTagsGroup(source: LibrarySource): SidebarGroup {
+	return {
+		...BASE_GROUP,
+		type: "multi",
+		id: TAG_GROUP,
+		label: "Tags",
+		searchable: true,
+		options: ownedOptions(source.tags)
+	};
 }
 
 /**
