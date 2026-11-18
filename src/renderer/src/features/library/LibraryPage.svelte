@@ -9,14 +9,18 @@
 	import LoadingState from "@components/shared/LoadingState.svelte";
 	import Notice from "@components/shared/Notice.svelte";
 	import PageHeader from "@components/shared/PageHeader.svelte";
+	import RangeSlider from "@components/shared/RangeSlider.svelte";
 	import Tabs from "@components/shared/Tabs.svelte";
 	import type { TabItem } from "@components/shared/tabs";
 	import { libraryTab, type LibraryTab } from "@stores/libraryTabStore";
 	import type { Game, LibrarySource, SourceAction } from "../../lib/features/types";
-	import { loadAppSettings } from "../../lib/settingsService";
+	import { loadAppSettings, saveAppSettings } from "../../lib/settingsService";
 	import {
 		LIBRARY_CARD_SIZE_DEFAULT,
+		LIBRARY_CARD_SIZE_MAX,
+		LIBRARY_CARD_SIZE_MIN,
 		blurCoversUntilHover,
+		clampLibraryCardSize,
 		libraryCardSize
 	} from "../settings/libraryAppearance";
 	import { buildRows, groupRows } from "../downloads/downloadGroups";
@@ -40,6 +44,8 @@
 	import { transferKinds } from "./transferState";
 
 	const SYNC_HINT = "Adds the games from your account to the Library";
+	const SIZE_SAVE_DELAY_MS = 400;
+	let cardSizeSaveTimer: ReturnType<typeof setTimeout> | undefined;
 
 	const library = new LibraryState();
 	const downloads = new DownloadsState();
@@ -140,6 +146,19 @@
 		blurCovers = blurCoversUntilHover(settings);
 	}
 
+	/** Shows the new card width at once and saves it after the drag settles. */
+	function changeCardSize(value: number) {
+		cardSize = clampLibraryCardSize(value);
+		clearTimeout(cardSizeSaveTimer);
+		cardSizeSaveTimer = setTimeout(() => void saveCardSize(cardSize), SIZE_SAVE_DELAY_MS);
+	}
+
+	async function saveCardSize(value: number) {
+		const settings = await loadAppSettings();
+		if (!settings) return;
+		await saveAppSettings({ ...settings, LibraryCardSize: value });
+	}
+
 	function selectTab(id: string) {
 		libraryTab.set(id as LibraryTab);
 	}
@@ -221,6 +240,18 @@
 
 		<div class="top-tabs">
 			<Tabs tabs={topTabs} value={tab} onChange={selectTab} aria-label="Library sections" />
+			<div class="size-control">
+				<RangeSlider
+					value={cardSize}
+					min={LIBRARY_CARD_SIZE_MIN}
+					max={LIBRARY_CARD_SIZE_MAX}
+					unit="px"
+					label="Card size"
+					snapValues={[]}
+					showWarning={false}
+					onChange={changeCardSize}
+				/>
+			</div>
 		</div>
 	</div>
 
@@ -427,7 +458,16 @@
 	}
 
 	.top-tabs {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 16px;
 		margin-bottom: 0;
+	}
+
+	.size-control {
+		width: 220px;
+		flex-shrink: 0;
 	}
 
 	/*
