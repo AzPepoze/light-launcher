@@ -4,6 +4,7 @@
 	import type { GameActivity, RunningSession } from "@shared";
 	import type { LaunchOptions } from "@shared";
 	import Icon from "@components/shared/Icon.svelte";
+	import { tooltip } from "@components/shared/tooltip";
 
 	export let sessions: RunningSession[] = [];
 	export let activities: GameActivity[] = [];
@@ -192,10 +193,10 @@
 						</div>
 						<div class="info">
 							<strong class="name">{runningSession.gameName}</strong>
-							<span class="path" title={runningSession.gamePath}>{runningSession.gamePath}</span>
+							<span class="path" use:tooltip={runningSession.gamePath}>{runningSession.gamePath}</span>
 							<span
 								class="meta"
-								title={[runtimeDetails.prefixPath ? `Prefix: ${runtimeDetails.prefixPath}` : "", runtimeDetails.protonPath ? `Proton: ${runtimeDetails.protonPath}` : ""]
+								use:tooltip={[runtimeDetails.prefixPath ? `Prefix: ${runtimeDetails.prefixPath}` : "", runtimeDetails.protonPath ? `Proton: ${runtimeDetails.protonPath}` : ""]
 									.filter(Boolean)
 									.join(" · ") || runtimeDetails.prefixName}
 							>
@@ -208,7 +209,7 @@
 						<button
 							class="stop-btn"
 							on:click={() => onStop(runningSession)}
-							title="Stop {runningSession.gameName}"
+							use:tooltip={`Stop ${runningSession.gameName}`}
 							aria-label={`Stop ${runningSession.gameName}`}
 						>
 							<Icon name="close" size={18} />
