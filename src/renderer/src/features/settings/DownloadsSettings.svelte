@@ -2,7 +2,7 @@
 	import { onDestroy, onMount } from "svelte";
 	import Button from "@components/shared/Button.svelte";
 	import Notice from "@components/shared/Notice.svelte";
-	import NumberField from "@components/shared/NumberField.svelte";
+	import NumberStepper from "@components/shared/NumberStepper.svelte";
 	import Section from "@components/shared/Section.svelte";
 	import SlideButton from "@components/shared/SlideButton.svelte";
 	import { DOWNLOAD_NUMBER_RANGES, type DownloadNumberKey } from "./downloadsSettings";
@@ -20,16 +20,18 @@
 </script>
 
 {#snippet numberField(key: DownloadNumberKey, label: string, help: string)}
-	<NumberField
-		id="download-{key}"
-		{label}
-		value={String(downloads.settings[key])}
-		min={DOWNLOAD_NUMBER_RANGES[key].min}
-		max={DOWNLOAD_NUMBER_RANGES[key].max}
-		oninput={(text) => downloads.setNumber(key, text)}
-	>
+	<div class="number-field">
+		<label for="download-{key}">{label}</label>
+		<NumberStepper
+			id="download-{key}"
+			{label}
+			value={downloads.settings[key]}
+			min={DOWNLOAD_NUMBER_RANGES[key].min}
+			max={DOWNLOAD_NUMBER_RANGES[key].max}
+			onChange={(next) => downloads.setNumber(key, String(next))}
+		/>
 		<p class="help">{help}</p>
-	</NumberField>
+	</div>
 {/snippet}
 
 <Section
@@ -79,6 +81,19 @@
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 		gap: 20px;
+	}
+
+	.number-field {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		min-width: 0;
+
+		label {
+			font-size: 0.875rem;
+			font-weight: 600;
+			color: var(--text-main);
+		}
 	}
 
 	.help {
