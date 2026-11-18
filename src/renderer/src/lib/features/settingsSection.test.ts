@@ -3,8 +3,55 @@ import {
 	GAME_FOLDERS_SECTION,
 	SETTINGS_NAV_GROUPS,
 	sectionScroll,
-	settingsNavGroups
+	settingsNavFilter,
+	settingsNavGroups,
+	type SettingsNavGroup
 } from "./settingsSection";
+
+const sampleGroups: SettingsNavGroup[] = [
+	{
+		label: "Appearance",
+		items: [
+			{ id: "theme-opacity", label: "Theme & opacity", keywords: ["dark", "opacity"] },
+			{ id: "wallpaper", label: "Wallpaper background", keywords: ["image"] }
+		]
+	},
+	{
+		label: "Library",
+		items: [{ id: "hidden-games", label: "Hidden games", keywords: ["blacklist"] }]
+	}
+];
+
+const idsOf = (groups: SettingsNavGroup[]) =>
+	groups.flatMap((group) => group.items.map((item) => item.id));
+
+describe("settingsNavFilter", () => {
+	it("returns the groups unchanged for an empty query", () => {
+		expect(settingsNavFilter(sampleGroups, "")).toBe(sampleGroups);
+		expect(settingsNavFilter(sampleGroups, "   ")).toBe(sampleGroups);
+	});
+
+	it("matches on the item label", () => {
+		expect(idsOf(settingsNavFilter(sampleGroups, "wallpaper"))).toEqual(["wallpaper"]);
+	});
+
+	it("matches on a keyword", () => {
+		expect(idsOf(settingsNavFilter(sampleGroups, "blacklist"))).toEqual(["hidden-games"]);
+	});
+
+	it("ignores case and surrounding spaces", () => {
+		expect(idsOf(settingsNavFilter(sampleGroups, "  DARK  "))).toEqual(["theme-opacity"]);
+	});
+
+	it("drops groups left empty", () => {
+		const groups = settingsNavFilter(sampleGroups, "blacklist");
+		expect(groups.map((group) => group.label)).toEqual(["Library"]);
+	});
+
+	it("returns an empty list when nothing matches", () => {
+		expect(settingsNavFilter(sampleGroups, "nothing here")).toEqual([]);
+	});
+});
 
 describe("settingsNavGroups", () => {
 	const allShown = { linux: true, prefix: true };

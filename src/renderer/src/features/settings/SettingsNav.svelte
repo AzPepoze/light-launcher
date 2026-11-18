@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { SettingsNavGroup } from "@lib/features/settingsSection";
+	import { settingsNavFilter } from "@lib/features/settingsSection";
 
 	let {
 		groups,
@@ -10,31 +11,62 @@
 		active: string | null;
 		onSelect: (id: string) => void;
 	} = $props();
+
+	const SEARCH_PLACEHOLDER = "Search settings";
+
+	let query = $state("");
+	const matches = $derived(settingsNavFilter(groups, query));
+	const firstMatch = $derived(matches[0]?.items[0]?.id ?? null);
+	const hasNoMatch = $derived(query.trim() !== "" && matches.length === 0);
+
+	function onSearchKeydown(event: KeyboardEvent): void {
+		if (event.key === "Enter" && firstMatch) {
+			event.preventDefault();
+			onSelect(firstMatch);
+		} else if (event.key === "Escape") {
+			query = "";
+		}
+	}
 </script>
 
 <nav class="rail" aria-label="Settings sections">
-	<ul>
-		{#each groups as group (group.label)}
-			<li class="group">
-				<span class="group-name">{group.label}</span>
-				<ul>
-					{#each group.items as item (item.id)}
-						<li>
-							<button
-								type="button"
-								class="item"
-								class:active={item.id === active}
-								aria-current={item.id === active ? "true" : undefined}
-								onclick={() => onSelect(item.id)}
-							>
-								{item.label}
-							</button>
-						</li>
-					{/each}
-				</ul>
-			</li>
-		{/each}
-	</ul>
+	<input
+		class="input search"
+		type="search"
+		aria-label={SEARCH_PLACEHOLDER}
+		placeholder={SEARCH_PLACEHOLDER}
+		bind:value={query}
+		onkeydown={onSearchKeydown}
+	/>
+
+	{#if hasNoMatch}
+		<p class="no-match">No matching sections.</p>
+	{/if}
+
+	<div class="list">
+		<ul>
+			{#each matches as group (group.label)}
+				<li class="group">
+					<span class="group-name">{group.label}</span>
+					<ul>
+						{#each group.items as item (item.id)}
+							<li>
+								<button
+									type="button"
+									class="item"
+									class:active={item.id === active}
+									aria-current={item.id === active ? "true" : undefined}
+									onclick={() => onSelect(item.id)}
+								>
+									{item.label}
+								</button>
+							</li>
+						{/each}
+					</ul>
+				</li>
+			{/each}
+		</ul>
+	</div>
 </nav>
 
 <style lang="scss">
@@ -46,6 +78,20 @@
 		box-sizing: border-box;
 		width: 100%;
 		padding: 4px 0;
+	}
+
+	.search {
+		width: 100%;
+		margin-bottom: 16px;
+		padding: 8px 12px;
+		font-size: 0.9rem;
+	}
+
+	.no-match {
+		margin: 0 0 16px;
+		padding: 0 12px;
+		color: var(--text-dim);
+		font-size: 0.85rem;
 	}
 
 	ul {
@@ -116,13 +162,16 @@
 		}
 	}
 
-	/* Under 900px the groups become one horizontal row of chips. */
+	/* Under 900px the groups become one horizontal row of chips. The row scrolls on its own. */
 	@media (max-width: 899px) {
 		.rail {
 			top: 0;
 			z-index: 10;
 			padding: 8px 0;
 			background: var(--bg-base);
+		}
+
+		.list {
 			overflow-x: auto;
 		}
 
