@@ -38,6 +38,7 @@
 	import PluginInstallDialog from "./PluginInstallDialog.svelte";
 	import PluginRow from "./PluginRow.svelte";
 	import {
+		ADD_PLUGIN_LABEL,
 		CHECKING_UPDATES_LABEL,
 		CHECK_UPDATES_LABEL,
 		COMMUNITY_BROWSE_LABEL,
@@ -229,7 +230,7 @@
 		{checkingUpdates ? CHECKING_UPDATES_LABEL : CHECK_UPDATES_LABEL}
 	</Button>
 	<Button size="sm" icon="public" onclick={openCommunity}>{COMMUNITY_OPEN_LABEL}</Button>
-	<Button variant="primary" size="sm" onclick={() => openInstall()}>Install</Button>
+	<Button variant="primary" size="sm" onclick={() => openInstall()}>{ADD_PLUGIN_LABEL}</Button>
 </PageHeader>
 
 <PluginDropZone onFiles={uploadDropped}>
@@ -253,7 +254,7 @@
 	{:else if plugins.length === 0}
 		<EmptyState icon="extension" title="No plugins installed">
 			<div class="empty-actions">
-				<Button variant="primary" size="sm" onclick={() => openInstall()}>Install a plugin</Button>
+				<Button variant="primary" size="sm" onclick={() => openInstall()}>{ADD_PLUGIN_LABEL}</Button>
 				<Button size="sm" icon="public" onclick={openCommunity}>{COMMUNITY_BROWSE_LABEL}</Button>
 			</div>
 		</EmptyState>
