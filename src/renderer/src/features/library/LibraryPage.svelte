@@ -26,10 +26,10 @@
 	import IncomingPanel from "./IncomingPanel.svelte";
 	import LibraryGrid from "./LibraryGrid.svelte";
 	import LibrarySidebar from "./LibrarySidebar.svelte";
-	import SourceRail from "./SourceRail.svelte";
+	import SourceChips from "./SourceChips.svelte";
 	import { LibraryState } from "./libraryState.svelte";
 	import { REVEAL_MAX_TILES, revealDoneMs } from "./libraryMotion";
-	import { sectionElementId, showsSection, sourceLabel } from "./librarySections";
+	import { librarySubtitle, sectionElementId, showsSection, sourceLabel } from "./librarySections";
 	import { sourceIcon } from "./sourceIcon";
 	import { syncMessage } from "./librarySync";
 	import { coverRatioOf } from "./coverRatio";
@@ -76,9 +76,9 @@
 	let revealed = $state(false);
 	let cardSize = $state(LIBRARY_CARD_SIZE_DEFAULT);
 	let blurCovers = $state(false);
-	/** Under 900px the filter sidebar slides in over the grid. */
+	/** The filter panel slides in over the grid, at every width. */
 	let filtersOpen = $state(false);
-	/** Measured height of the sticky header, so the rail and sidebar can stick below it. */
+	/** Measured height of the sticky toolbar, so the page anchors below it. */
 	let headHeight = $state(0);
 	/** True once the page has scrolled, when the header needs its glass backing. */
 	let headStuck = $state(false);
@@ -89,10 +89,7 @@
 	const shownTotal = $derived(
 		visibleSections.reduce((sum, source) => sum + (library.listOf(source.source).total ?? 0), 0)
 	);
-	const subtitle = $derived(
-		`${library.overview.stats.total} games · ${library.overview.stats.installed} installed` +
-			(library.overview.stats.updates ? ` · ${library.overview.stats.updates} updates` : "")
-	);
+	const subtitle = $derived(librarySubtitle(library.overview.stats));
 	const topTabs = $derived<TabItem[]>([
 		{ id: "games", label: "Games", icon: "videogame_asset" },
 		{ id: "updates", label: "Updates", icon: "system_update_alt", badge: updateCount },
@@ -183,8 +180,11 @@
 	}
 
 	function handleKeydown(event: KeyboardEvent) {
-		if (!closesDetailOn(event.key, selected !== null, addOpen)) return;
-		void closeGame();
+		if (closesDetailOn(event.key, selected !== null, addOpen)) {
+			void closeGame();
+		} else if (event.key === "Escape" && filtersOpen && !addOpen && selected === null) {
+			filtersOpen = false;
+		}
 	}
 
 	function openGame(game: Game) {
@@ -210,11 +210,20 @@
 		return showsSection(source, list.total, list.error !== "");
 	}
 
-	/** Scrolls the page to a source's group and shows its sidebar groups. The rail calls this on click. */
+	/** Scrolls the page to a source's group and shows its filter groups. The source chips call this. */
 	function showSection(source: string) {
 		library.selectSource(source);
 		document
 			.getElementById(sectionElementId(source))
+			?.scrollIntoView({ behavior: "smooth", block: "start" });
+	}
+
+	/** Scrolls back to the first group without changing the filter source. The All chip calls this. */
+	function showAll() {
+		const first = visibleSections[0];
+		if (!first) return;
+		document
+			.getElementById(sectionElementId(first.source))
 			?.scrollIntoView({ behavior: "smooth", block: "start" });
 	}
 
@@ -259,12 +268,22 @@
 <div class="library" style:--library-head-height="{headHeight}px">
 	<div class="library-head" class:stuck={headStuck} bind:clientHeight={headHeight}>
 		<PageHeader title="Library" {subtitle} icon="collections_bookmark">
+			<Button size="sm" icon="tune" onclick={() => (filtersOpen = true)}>Filters</Button>
 			<Button size="sm" variant="primary" icon="add" onclick={() => (addOpen = true)}>Add game</Button>
 		</PageHeader>
 
 		<div class="top-tabs">
 			<Tabs tabs={topTabs} value={tab} onChange={selectTab} aria-label="Library sections" />
 		</div>
+
+		{#if tab === "games" && library.overviewLoaded && !library.overviewError}
+			<SourceChips
+				sections={visibleSections}
+				selected={library.activeSource}
+				onSelect={showSection}
+				onAll={showAll}
+			/>
+		{/if}
 	</div>
 
 	<!--
@@ -314,19 +333,20 @@
 			</Notice>
 		{:else}
 			<div class="layout">
-				<div class="rail-col">
-					<SourceRail sections={visibleSections} selected={library.activeSource} onSelect={showSection} />
-				</div>
-
-				<div class="side-col" class:open={filtersOpen}>
-					<LibrarySidebar {library} />
-				</div>
+				{#if filtersOpen}
+					<div class="scrim" role="presentation" onclick={() => (filtersOpen = false)}></div>
+				{/if}
+				<aside class="side-col" class:open={filtersOpen} aria-label="Filters" inert={!filtersOpen}>
+					<div class="side-chrome">
+						<span class="side-title">Filters</span>
+						<IconButton icon="close" label="Close filters" onclick={() => (filtersOpen = false)} />
+					</div>
+					<div class="side-scroll">
+						<LibrarySidebar {library} />
+					</div>
+				</aside>
 
 				<div class="main">
-					<div class="filters-toggle">
-						<Button size="sm" icon="tune" onclick={() => (filtersOpen = !filtersOpen)}>Filters</Button>
-					</div>
-
 					{#each visibleSections as source (source.source)}
 						{@const list = library.listOf(source.source)}
 						<section class="group" id={sectionElementId(source.source)} aria-label={source.label}>
@@ -447,23 +467,33 @@
 </div>
 
 <style lang="scss">
+	/*
+	 * Library-only tokens. --library-top is the search bar's height above the page; the toolbar,
+	 * the chips and the filter panel all anchor to it.
+	 */
 	.library {
+		--library-top: 76px;
+		--radius-lg: 20px;
+		--library-tile-radius: 20px;
+
 		font-size: 1rem;
 		line-height: 1.5;
 	}
 
 	/*
-	 * The title and tabs stay put while the page scrolls. The 76px band above the head is
-	 * painted by the ::before, so covers never scroll through the global search bar.
+	 * One sticky toolbar: title, tabs and source chips. Its solid background hides covers that
+	 * scroll under it, and the band above it hides them under the search bar too.
 	 */
 	.library-head {
 		position: sticky;
-		top: 76px;
+		top: var(--library-top);
 		z-index: 20;
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
 		box-sizing: border-box;
-		padding-bottom: 16px;
-		background: transparent;
-		transition: background-color var(--transition-fast);
+		padding-bottom: 12px;
+		background: var(--bg-base);
 
 		&::before {
 			content: "";
@@ -471,20 +501,13 @@
 			left: 0;
 			right: 0;
 			bottom: 100%;
-			height: 76px;
+			height: var(--library-top);
 			background: inherit;
 			pointer-events: none;
 		}
 
 		&.stuck {
-			background: color-mix(in srgb, var(--bg-base) 88%, transparent);
-			-webkit-backdrop-filter: blur(16px);
-			backdrop-filter: blur(16px);
-
-			&::before {
-				-webkit-backdrop-filter: blur(16px);
-				backdrop-filter: blur(16px);
-			}
+			box-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
 		}
 	}
 
@@ -492,35 +515,70 @@
 		margin-bottom: 0;
 	}
 
-	/*
-	 * One grid: [rail 56px | filters 260px | grid fills the rest]. The rail and filter columns
-	 * sit on the page background; only the divider after the filters separates them from the grid.
-	 * The game details open over the page as a drawer, so the grid keeps its full width.
-	 */
+	/* The grid takes the full width. The filters and the game details both slide over it. */
 	.layout {
-		display: grid;
-		grid-template-columns: 56px 260px minmax(0, 1fr);
-		align-items: stretch;
-	}
-
-	.side-col {
-		border-right: 1px solid var(--glass-border);
+		min-width: 0;
 	}
 
 	.main {
 		min-width: 0;
-		padding-left: 24px;
 	}
 
-	.filters-toggle {
-		display: none;
-		margin-bottom: 12px;
+	.scrim {
+		position: fixed;
+		inset: 0;
+		z-index: 190;
+		background: rgb(0 0 0 / 0.45);
+		cursor: pointer;
+		animation: detail-backdrop-in var(--motion-base) var(--ease-out) both;
+	}
+
+	.side-col {
+		position: fixed;
+		top: 0;
+		bottom: 0;
+		left: 0;
+		z-index: 200;
+		display: flex;
+		flex-direction: column;
+		width: min(340px, 88vw);
+		background: var(--bg-surface);
+		border-right: 1px solid var(--glass-border);
+		box-shadow: 0 0 24px rgb(0 0 0 / 0.35);
+		transform: translateX(-105%);
+		transition: transform var(--motion-base) var(--ease-out);
+	}
+
+	.side-col.open {
+		transform: none;
+	}
+
+	.side-chrome {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		flex-shrink: 0;
+		padding: 12px 12px 12px 16px;
+		border-bottom: 1px solid var(--glass-border);
+	}
+
+	.side-title {
+		font-weight: 600;
+	}
+
+	.side-scroll {
+		flex: 1;
+		min-height: 0;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		scrollbar-gutter: stable;
+		padding: 16px;
 	}
 
 	/* Each source is a group: its header, then its sync note, notices and grid. */
 	.group {
-		/* Keeps the group title clear of the sticky page header when the rail scrolls to it. */
-		scroll-margin-top: calc(76px + var(--library-head-height, 0px) + 16px);
+		/* Keeps the group title clear of the sticky toolbar when a chip scrolls to it. */
+		scroll-margin-top: calc(var(--library-top) + var(--library-head-height, 0px) + 16px);
 		margin-bottom: 32px;
 	}
 
@@ -631,39 +689,8 @@
 		}
 	}
 
-	/* Narrow: the rail stays a column. The filters leave the grid and slide over it. */
+	/* Narrow screens: the game details take the whole width. */
 	@media (max-width: 899px) {
-		.layout {
-			grid-template-columns: 56px minmax(0, 1fr);
-		}
-
-		.side-col {
-			position: fixed;
-			top: 0;
-			bottom: 0;
-			left: 0;
-			z-index: 200;
-			width: min(320px, 88vw);
-			background: var(--bg-surface);
-			padding-top: 24px;
-			overflow-y: auto;
-			box-shadow: 0 0 24px rgb(0 0 0 / 0.35);
-			transform: translateX(-105%);
-			transition: transform 180ms var(--ease-out);
-		}
-
-		.side-col.open {
-			transform: none;
-		}
-
-		.main {
-			padding-left: 16px;
-		}
-
-		.filters-toggle {
-			display: flex;
-		}
-
 		.detail-col {
 			width: 100vw;
 			border-left: none;

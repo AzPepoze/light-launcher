@@ -39,6 +39,14 @@ export function sectionElementId(source: string): string {
 	return `library-section-${source}`;
 }
 
+/** The toolbar's stats line: "12 games, 4 installed" and "2 updates" when any are waiting. */
+export function librarySubtitle(stats: { total: number; installed: number; updates: number }): string {
+	const games = stats.total === 1 ? "1 game" : `${stats.total} games`;
+	const parts = [games, `${stats.installed} installed`];
+	if (stats.updates > 0) parts.push(`${stats.updates} updates`);
+	return parts.join(", ");
+}
+
 /** The human name of a source. Falls back to the id when the overview has no label for it. */
 export function sourceLabel(sources: LibrarySource[], source: string): string {
 	const known = sources.find((item) => item.source === source)?.label;

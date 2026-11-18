@@ -3,10 +3,23 @@ import type { LibrarySource } from "../../lib/features/types";
 import {
 	LOCAL_SOURCE,
 	librarySections,
+	librarySubtitle,
 	sectionElementId,
 	showsSection,
 	sourceLabel
 } from "./librarySections";
+
+describe("librarySubtitle", () => {
+	it("joins the counts with commas, not middle dots", () => {
+		expect(librarySubtitle({ total: 12, installed: 4, updates: 2 })).toBe(
+			"12 games, 4 installed, 2 updates"
+		);
+	});
+
+	it("leaves out the updates when none are waiting and uses the singular for one game", () => {
+		expect(librarySubtitle({ total: 1, installed: 0, updates: 0 })).toBe("1 game, 0 installed");
+	});
+});
 
 const SERVER_SOURCES: LibrarySource[] = [
 	{ source: "f95", label: "F95 Zone", kind: "plugin", plugin: "f95", capabilities: ["browse", "updateCheck"], sync: false, updateCheck: true, count: 12, tile: "wide", cover: "16:9", actions: [], card: null, sidebar: [] },
