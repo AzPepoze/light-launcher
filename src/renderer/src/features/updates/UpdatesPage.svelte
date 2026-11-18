@@ -660,6 +660,20 @@
 		transform: rotate(180deg);
 	}
 
+	/* Phone width: the actions get their own line under the thumbnail and title. */
+	@media (max-width: 600px) {
+		.row {
+			display: grid;
+			grid-template-columns: auto minmax(0, 1fr);
+			align-items: start;
+		}
+
+		.actions {
+			grid-column: 1 / -1;
+			justify-content: flex-end;
+		}
+	}
+
 	.filters {
 		display: flex;
 		flex-wrap: wrap;
