@@ -249,7 +249,7 @@
 						easing: cubicOut,
 					}}
 				>
-					<div class="content-zone" class:full-width={activePage === "home" || activePage === "editlsfg" || activePage === "manager" || activePage === "prefix" || activePage === "library"} class:home-zone={activePage === "home"} class:prefix-zone={activePage === "prefix"} class:run-zone={activePage === "run"}>
+					<div class="content-zone" class:full-width={activePage === "home" || activePage === "editlsfg" || activePage === "manager" || activePage === "prefix" || activePage === "library"} class:home-zone={activePage === "home"} class:prefix-zone={activePage === "prefix"} class:run-zone={activePage === "run"} class:settings-zone={activePage === "settings"}>
 						{#if activePage === "editlsfg"}
 							<EditLsfg gamePath={editLsfgGamePath} />
 						{:else if Object.hasOwn(pageComponents, activePage)}
@@ -482,6 +482,11 @@
 
 		/* Gives the Run page a definite height so its form scrolls above the footer. */
 		&.run-zone {
+			height: 100%;
+		}
+
+		/* Gives the Settings page a definite height so its sections scroll in their own column. */
+		&.settings-zone {
 			height: 100%;
 		}
 	}

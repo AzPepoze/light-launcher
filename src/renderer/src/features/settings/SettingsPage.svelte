@@ -104,13 +104,15 @@
 	});
 </script>
 
-<div class="settings-container" aria-busy={settings.loading} bind:this={scroller} onscroll={refreshActive}>
+<div class="settings-page" aria-busy={settings.loading}>
 	<PageHeader title="Appearance & Settings" icon="settings" />
 
 	<div class="layout">
-		<SettingsNav groups={navGroups} active={activeId} onSelect={jumpTo} />
+		<div class="nav-column">
+			<SettingsNav groups={navGroups} active={activeId} onSelect={jumpTo} />
+		</div>
 
-		<div class="zones-stack">
+		<div class="zones-stack" bind:this={scroller} onscroll={refreshActive}>
 			<div class="anchor" id="theme-opacity">
 				<Section title="Theme & opacity" icon="palette">
 					<SettingRow title="Theme mode" help="Switch between dark and light themes.">
@@ -264,11 +266,38 @@
 </div>
 
 <style lang="scss">
-	.settings-container {
-		padding: 40px 48px;
+	.settings-page {
 		height: 100%;
+		box-sizing: border-box;
 		display: flex;
 		flex-direction: column;
+		padding: 40px 48px 0;
+	}
+
+	/* Fills the page height so the nav stays put and only the sections column scrolls. */
+	.layout {
+		flex: 1;
+		min-height: 0;
+		display: flex;
+		align-items: stretch;
+		gap: 32px;
+		margin-top: 24px;
+	}
+
+	.nav-column {
+		flex: 0 0 200px;
+		min-height: 0;
+		overflow-y: auto;
+	}
+
+	.zones-stack {
+		flex: 1;
+		min-width: 0;
+		min-height: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 32px;
+		padding-bottom: 40px;
 		overflow-y: auto;
 
 		&::-webkit-scrollbar {
@@ -283,36 +312,28 @@
 		}
 	}
 
-	.layout {
-		display: grid;
-		grid-template-columns: 200px minmax(0, 1fr);
-		align-items: start;
-		gap: 32px;
-		margin-top: 24px;
-	}
-
-	.zones-stack {
-		display: flex;
-		flex-direction: column;
-		gap: 32px;
-		min-width: 0;
-	}
-
 	/* Keeps a section clear of the top edge when the nav jumps to it. */
 	.anchor {
 		scroll-margin-top: 24px;
 	}
 
+	/* Under 900px the nav becomes a chip row above the sections, which keep their own scroll. */
 	@media (max-width: 899px) {
 		.layout {
-			grid-template-columns: minmax(0, 1fr);
+			flex-direction: column;
 			gap: 24px;
+		}
+
+		.nav-column {
+			flex: none;
+			width: 100%;
+			overflow: visible;
 		}
 	}
 
 	@media (max-width: 599px) {
-		.settings-container {
-			padding: 24px 16px;
+		.settings-page {
+			padding: 24px 16px 0;
 		}
 
 		/* Keeps each section's header and rows inside the phone width. */
