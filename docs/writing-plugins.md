@@ -308,6 +308,9 @@ A source with a `sidebar` must have the `browse:filters` capability. Without it 
 
 A bad group, option or default fails the manifest check with the field name.
 
+> [!NOTE]
+> A `select` or `multi` group with the id `engine` or `tags` (or the label `Engine` or `Tags`) is filled from the games the user already owns, with their counts. The plugin is not asked for its choices. Picking an engine filters the owned list by engine. Picking tags shows the games that have all of them.
+
 ### source.browse
 
 The launcher sends `source.browse` for each page.

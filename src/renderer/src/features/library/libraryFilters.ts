@@ -10,16 +10,22 @@ import type { BrowseFilters } from "./browseFilters";
 export const SORT_GROUP = "sort";
 export const STATUS_GROUP = "status";
 export const TAG_GROUP = "tags";
+/** The owned-games engine group of a plugin source. The launcher builds it, not the plugin. */
+export const ENGINE_GROUP = "engine";
 export const INSTALLED_OPTION = "installed";
 export const UPDATES_OPTION = "updates";
 export const FAVORITE_OPTION = "favorite";
 
-/** The sidebar values the local list reads. Every other value belongs to a plugin source. */
+/** The sidebar values the local list reads. Dropped when the user leaves a source. */
 const BUILTIN_VALUE_KEYS = [INSTALLED_OPTION, UPDATES_OPTION, FAVORITE_OPTION, TAG_GROUP];
+/** Every value the launcher reads itself. These never go to a plugin's browse. */
+const LAUNCHER_VALUE_KEYS = [...BUILTIN_VALUE_KEYS, ENGINE_GROUP];
 
 export interface LibraryFilters {
 	search: string;
 	tags: string[];
+	/** An engine of the owned games, or an empty string for none. */
+	engine: string;
 	installed: boolean;
 	updates: boolean;
 	favorite: boolean;
@@ -31,6 +37,7 @@ export interface LibraryFilters {
 export const DEFAULT_FILTERS: LibraryFilters = {
 	search: "",
 	tags: [],
+	engine: "",
 	installed: false,
 	updates: false,
 	favorite: false,
@@ -55,6 +62,7 @@ export function hasActiveFilters(filters: LibraryFilters): boolean {
 	return (
 		filters.search !== "" ||
 		filters.tags.length > 0 ||
+		filters.engine !== "" ||
 		filters.installed ||
 		filters.updates ||
 		filters.favorite
@@ -78,13 +86,18 @@ function tagsOf(filters: BrowseFilters): string[] {
 	return Array.isArray(tags) ? [...tags] : [];
 }
 
+function engineOf(filters: BrowseFilters): string {
+	const engine = filters.values[ENGINE_GROUP];
+	return typeof engine === "string" ? engine : "";
+}
+
 function builtinValuesOf(values: Record<string, BrowseFilterValue>): Record<string, BrowseFilterValue> {
 	return Object.fromEntries(Object.entries(values).filter(([key]) => BUILTIN_VALUE_KEYS.includes(key)));
 }
 
 function pluginValuesOf(values: Record<string, BrowseFilterValue>): Record<string, BrowseFilterValue> {
 	return Object.fromEntries(
-		Object.entries(values).filter(([key, value]) => !BUILTIN_VALUE_KEYS.includes(key) && isPicked(value))
+		Object.entries(values).filter(([key, value]) => !LAUNCHER_VALUE_KEYS.includes(key) && isPicked(value))
 	);
 }
 
@@ -116,6 +129,7 @@ export function toLibraryFilters(filters: BrowseFilters): LibraryFilters {
 	return {
 		search: filters.query,
 		tags: tagsOf(filters),
+		engine: engineOf(filters),
 		installed: filters.values[INSTALLED_OPTION] === true,
 		updates: filters.values[UPDATES_OPTION] === true,
 		favorite: filters.values[FAVORITE_OPTION] === true,
@@ -136,6 +150,7 @@ export function withLibraryFilters(filters: BrowseFilters, saved: LibraryFilters
 			[UPDATES_OPTION]: saved.updates,
 			[FAVORITE_OPTION]: saved.favorite,
 			[TAG_GROUP]: [...saved.tags],
+			[ENGINE_GROUP]: saved.engine,
 			...saved.plugin
 		}
 	};
@@ -147,6 +162,7 @@ export function libraryQuery(source: string, filters: LibraryFilters): LibraryQu
 		source,
 		search: filters.search.trim(),
 		tags: [...filters.tags],
+		engine: filters.engine,
 		favorite: filters.favorite,
 		installed: filters.installed,
 		updates: filters.updates,

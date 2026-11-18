@@ -218,7 +218,9 @@ describe("toLibraryOverview", () => {
 						tile: "square",
 						cover: "1:1",
 						actions: null,
-						card: null
+						card: null,
+						engines: null,
+						tags: null
 					},
 					{
 						id: "f95",
@@ -233,7 +235,9 @@ describe("toLibraryOverview", () => {
 						cover: "4:3",
 						actions: [{ id: "sync", label: "Sync", icon: "sync", method: "f95.sync" }],
 						card: { title: "title", badges: ["installed"] },
-						gamesFolder: "/home/me/Games"
+						gamesFolder: "/home/me/Games",
+						engines: [{ name: "Unity", count: 2 }],
+						tags: [{ name: "a", count: 2 }]
 					}
 				],
 				tags: [{ tag: "a", count: 2 }]
@@ -254,7 +258,9 @@ describe("toLibraryOverview", () => {
 				actions: [],
 				card: null,
 				sidebar: [],
-				gamesFolder: null
+				gamesFolder: null,
+				engines: [],
+				tags: []
 			},
 			{
 				source: "f95",
@@ -272,7 +278,9 @@ describe("toLibraryOverview", () => {
 				],
 				card: { title: "title", badges: ["installed"] },
 				sidebar: [],
-				gamesFolder: "/home/me/Games"
+				gamesFolder: "/home/me/Games",
+				engines: [{ name: "Unity", count: 2 }],
+				tags: [{ name: "a", count: 2 }]
 			}
 		]);
 		expect(overview.tags).toEqual([{ tag: "a", count: 2 }]);
@@ -500,6 +508,7 @@ const QUERY: LibraryQuery = {
 	source: "f95",
 	search: "dark",
 	tags: ["rpg"],
+	engine: "Unity",
 	favorite: true,
 	installed: false,
 	updates: false,
@@ -512,6 +521,7 @@ describe("toWireListRequest", () => {
 			search: "dark",
 			source: "f95",
 			tags: ["rpg"],
+			engine: "Unity",
 			status: null,
 			favorite: true,
 			installed: null,

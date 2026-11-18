@@ -23,6 +23,8 @@ function makeSource(id: string, overrides: Partial<LibrarySource> = {}): Library
 		card: null,
 		sidebar: [],
 		gamesFolder: null,
+		engines: [],
+		tags: [],
 		...overrides
 	};
 }

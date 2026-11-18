@@ -18,7 +18,9 @@ const EMPTY_LOCAL: LibrarySource = {
 	cover: "1:1",
 	actions: [],
 	card: null,
-	sidebar: []
+	sidebar: [],
+	engines: [],
+	tags: []
 };
 
 /** Local games first, then each plugin source in the order the server lists them. */

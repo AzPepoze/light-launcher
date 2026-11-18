@@ -1,11 +1,19 @@
 import { describe, expect, it } from "vitest";
 import type { LibrarySource, SidebarGroup } from "../../lib/features/types";
 import { initialBrowseFilters } from "./browseFilters";
-import { DEFAULT_FILTERS, toLibraryFilters, withLibraryFilters } from "./libraryFilters";
+import {
+	DEFAULT_FILTERS,
+	ENGINE_GROUP,
+	TAG_GROUP,
+	toLibraryFilters,
+	withLibraryFilters
+} from "./libraryFilters";
 import { LOCAL_SOURCE } from "./librarySections";
 import {
 	builtinGroups,
 	choiceGroupsOf,
+	ownedKindOf,
+	pluginGroupsOf,
 	searchPlaceholder,
 	sidebarGroupsFor
 } from "./sidebarGroups";
@@ -25,6 +33,8 @@ const PLUGIN: LibrarySource = {
 	cover: "3:4",
 	actions: [],
 	card: null,
+	engines: [],
+	tags: [],
 	sidebar: [
 		{
 			type: "search",
@@ -93,6 +103,91 @@ describe("sidebarGroupsFor", () => {
 	});
 });
 
+const OWNED_PLUGIN: LibrarySource = {
+	...PLUGIN,
+	engines: [
+		{ name: "Unity", count: 9 },
+		{ name: "RPG Maker", count: 2 }
+	],
+	tags: [{ name: "Fantasy", count: 5 }],
+	sidebar: [
+		{
+			type: "select",
+			id: "engine",
+			label: "Engine",
+			placeholder: "",
+			options: [],
+			dynamic: true,
+			searchable: true,
+			orderable: false,
+			default: null
+		},
+		{
+			type: "multi",
+			id: "tag-list",
+			label: "Tags",
+			placeholder: "",
+			options: [],
+			dynamic: true,
+			searchable: true,
+			orderable: false,
+			default: null
+		},
+		{
+			type: "multi",
+			id: "genres",
+			label: "Genres",
+			placeholder: "",
+			options: [],
+			dynamic: true,
+			searchable: true,
+			orderable: false,
+			default: null
+		}
+	]
+};
+
+describe("owned engine and tags groups", () => {
+	it("matches the engine and tags groups by id or label", () => {
+		const kinds = OWNED_PLUGIN.sidebar.map(ownedKindOf);
+		expect(kinds).toEqual(["engine", "tags", null]);
+	});
+
+	it("gives the engine group one choice per owned engine, with its count", () => {
+		const engine = sidebarGroupsFor(OWNED_PLUGIN, TAGS, {}).find((group) => group.id === ENGINE_GROUP);
+		expect(engine?.type).toBe("single");
+		expect(engine?.dynamic).toBe(false);
+		expect(engine?.options).toEqual([
+			{ value: "Unity", label: "Unity", icon: null, count: 9 },
+			{ value: "RPG Maker", label: "RPG Maker", icon: null, count: 2 }
+		]);
+	});
+
+	it("gives the tags group the owned tags, with their counts", () => {
+		const tags = sidebarGroupsFor(OWNED_PLUGIN, TAGS, {}).find((group) => group.id === TAG_GROUP);
+		expect(tags?.type).toBe("multi");
+		expect(tags?.options).toEqual([{ value: "Fantasy", label: "Fantasy", icon: null, count: 5 }]);
+	});
+
+	it("leaves the other plugin groups on their loaded choices", () => {
+		const choices = { genres: [{ value: "rpg", label: "RPG", count: 3 }] };
+		const genres = sidebarGroupsFor(OWNED_PLUGIN, TAGS, choices).find((group) => group.id === "genres");
+		expect(genres?.options).toEqual([{ value: "rpg", label: "RPG", icon: null, count: 3 }]);
+	});
+
+	it("asks the plugin only for the groups it owns none of", () => {
+		expect(choiceGroupsOf(OWNED_PLUGIN).map((group) => group.id)).toEqual(["genres"]);
+		expect(pluginGroupsOf(OWNED_PLUGIN).map((group) => group.id)).toEqual(["genres"]);
+	});
+
+	it("has no options when the source owns no engines or tags", () => {
+		const empty = { ...OWNED_PLUGIN, engines: [], tags: [] };
+		const groups = sidebarGroupsFor(empty, TAGS, {});
+		expect(groups.find((group) => group.id === ENGINE_GROUP)?.options).toEqual([]);
+		expect(groups.find((group) => group.id === TAG_GROUP)?.options).toEqual([]);
+	});
+});
+
 describe("searchPlaceholder", () => {
 	it("uses the plugin search group placeholder when it has one", () => {
 		expect(searchPlaceholder(PLUGIN)).toBe("Find a game");
@@ -115,6 +210,7 @@ describe("local filter conversion", () => {
 		expect(toLibraryFilters(changed)).toEqual({
 			search: "river",
 			tags: ["Sample"],
+			engine: "",
 			installed: true,
 			updates: false,
 			favorite: false,

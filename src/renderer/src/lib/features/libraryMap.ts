@@ -17,6 +17,7 @@ import type {
 	LibraryQuery,
 	LibrarySort,
 	LibraryStats,
+	NameCount,
 	PreviewFile,
 	SearchResponse,
 	SidebarGroup,
@@ -52,6 +53,7 @@ import type {
 	WireLibraryList,
 	WireLibraryOverview,
 	WireLibraryStats,
+	WireNameCount,
 	WirePreview,
 	WireSearchResult,
 	WireSidebarGroup,
@@ -275,6 +277,10 @@ function toSourceCard(card: WireSourceCard | null | undefined): SourceCard | nul
 	return { ...card, badges: card.badges as SourceBadge[] | undefined };
 }
 
+function toNameCounts(wire: WireNameCount[] | null | undefined): NameCount[] {
+	return (wire ?? []).map((item) => ({ name: item.name, count: item.count }));
+}
+
 export function toLibraryOverview(wire: WireLibraryOverview): LibraryOverview {
 	return {
 		sources: (wire.sources ?? []).map((source) => ({
@@ -291,7 +297,9 @@ export function toLibraryOverview(wire: WireLibraryOverview): LibraryOverview {
 			actions: toSourceActions(source.actions),
 			card: toSourceCard(source.card),
 			sidebar: toSidebarGroups(source.sidebar),
-			gamesFolder: orNull(source.gamesFolder)
+			gamesFolder: orNull(source.gamesFolder),
+			engines: toNameCounts(source.engines),
+			tags: toNameCounts(source.tags)
 		})),
 		tags: (wire.tags ?? []).map((tag) => ({ tag: tag.tag, count: tag.count })),
 		stats: toStats(wire.stats)
@@ -319,6 +327,7 @@ export function toWireListRequest(
 		search: query.search,
 		source: query.source,
 		tags: query.tags,
+		engine: query.engine,
 		status: null,
 		favorite: query.favorite,
 		// Go takes a pointer here: null means "any install state", not false.

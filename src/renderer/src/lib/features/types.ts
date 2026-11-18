@@ -63,8 +63,17 @@ export type LibrarySort = "title" | "added" | "lastPlayed";
 /** The shape of a source's covers: 3:4, 16:9 or 1:1. */
 export type SourceTile = "poster" | "wide" | "square";
 
-/** The filter groups a plugin source can put in the Library sidebar. */
-export type SidebarGroupType = "search" | "toggles" | "select" | "multi" | "sort";
+/**
+ * The filter groups a plugin source can put in the Library sidebar. "single" is built by the
+ * launcher for an owned engine list: one choice, picked again to clear.
+ */
+export type SidebarGroupType = "search" | "toggles" | "select" | "multi" | "single" | "sort";
+
+/** A named value of a source's owned games and how many visible games have it. */
+export interface NameCount {
+	name: string;
+	count: number;
+}
 
 export interface SidebarSort {
 	value: string;
@@ -136,6 +145,10 @@ export interface LibrarySource {
 	sidebar: SidebarGroup[];
 	/** The games folder the plugin saves into. Missing or null for local games and plugins without it. */
 	gamesFolder?: string | null;
+	/** Engines of the owned games, with counts. Largest first. */
+	engines: NameCount[];
+	/** Tags of the owned games, with counts. Largest first. */
+	tags: NameCount[];
 }
 
 /** Counts and the tag list for the whole library. Loaded once, not per page. */
@@ -150,6 +163,8 @@ export interface LibraryQuery {
 	source: string;
 	search: string;
 	tags: string[];
+	/** An engine name, matched without case. Empty for no engine filter. */
+	engine: string;
 	favorite: boolean;
 	installed: boolean;
 	updates: boolean;

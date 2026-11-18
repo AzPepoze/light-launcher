@@ -16,7 +16,9 @@ const PLUGIN: LibrarySource = {
 	cover: "3:4",
 	actions: [],
 	card: null,
-	sidebar: []
+	sidebar: [],
+	engines: [],
+	tags: []
 };
 
 describe("canSyncGames", () => {

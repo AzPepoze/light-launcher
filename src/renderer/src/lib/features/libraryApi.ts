@@ -63,6 +63,7 @@ const ALL_GAMES_QUERY: LibraryQuery = {
 	source: "",
 	search: "",
 	tags: [],
+	engine: "",
 	favorite: false,
 	installed: false,
 	updates: false,

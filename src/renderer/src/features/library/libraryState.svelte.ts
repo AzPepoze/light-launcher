@@ -44,7 +44,7 @@ import { LibraryPager, type PagerSnapshot } from "./libraryPager";
 import { LOCAL_SOURCE, librarySections, pickSection, showsSection } from "./librarySections";
 import { PAGE_SIZE, pagesToLoad } from "./libraryWindow";
 import { loadSavedFilters, storeSavedFilters, type SavedFilter } from "./savedFilters";
-import { builtinGroups, choiceGroupsOf, sidebarGroupsFor } from "./sidebarGroups";
+import { builtinGroups, choiceGroupsOf, pluginGroupsOf, sidebarGroupsFor } from "./sidebarGroups";
 
 /** Library events come often during an import. Reloading waits this long, then runs once. */
 const REFRESH_DELAY_MS = 1000;
@@ -186,6 +186,13 @@ export class LibraryState {
 			? selected.filter((item) => item !== value)
 			: [...selected, value];
 		this.filters = setMulti(this.filters, id, next);
+		this.applyFilters();
+	}
+
+	/** One choice of a single-pick group. Picking the chosen one again clears it. */
+	toggleSingle(id: string, value: string): void {
+		const next = this.filters.values[id] === value ? "" : value;
+		this.filters = setSelect(this.filters, id, next);
 		this.applyFilters();
 	}
 
@@ -385,7 +392,7 @@ export class LibraryState {
 	private applyBrowse(): void {
 		const section = this.activeSection;
 		if (!section || section.source === LOCAL_SOURCE) return;
-		const values = sourceValues(this.filters.values, section.sidebar);
+		const values = sourceValues(this.filters.values, pluginGroupsOf(section));
 		if (!anyPicked(values)) {
 			this.browse.clearResults();
 			return;

@@ -1,11 +1,13 @@
 import type {
 	FilterOption,
 	LibrarySource,
+	NameCount,
 	SidebarGroup,
 	SidebarOption
 } from "../../lib/features/types";
 import {
 	DEFAULT_FILTERS,
+	ENGINE_GROUP,
 	FAVORITE_OPTION,
 	INSTALLED_OPTION,
 	SORT_GROUP,
@@ -66,9 +68,66 @@ function choicesOf(choices: FilterOption[] | undefined): SidebarOption[] {
 	return (choices ?? []).map((choice) => option(choice.value, choice.label, choice.count));
 }
 
+/** A plugin group the launcher fills from the owned games: the engine list or the tags. */
+type OwnedKind = "engine" | "tags";
+
+/**
+ * The plugin's engine or tags group, matched by id or by label. Null for every other group.
+ * Only select and multi groups can be owned.
+ */
+export function ownedKindOf(group: SidebarGroup): OwnedKind | null {
+	if (group.type !== "select" && group.type !== "multi") return null;
+	const label = group.label.toLowerCase();
+	if (group.id === ENGINE_GROUP || label === "engine") return "engine";
+	if (group.id === TAG_GROUP || label === "tags") return "tags";
+	return null;
+}
+
+/** The plugin's sidebar groups the plugin answers for. The owned engine and tags groups are left out. */
+export function pluginGroupsOf(source: LibrarySource): SidebarGroup[] {
+	return source.sidebar.filter((group) => ownedKindOf(group) === null);
+}
+
+function ownedOptions(items: NameCount[]): SidebarOption[] {
+	return items.map((item) => option(item.name, item.name, item.count));
+}
+
+/** The owned group: one engine choice, or several tags. Its options come from the source's owned games. */
+function ownedGroup(group: SidebarGroup, kind: OwnedKind, source: LibrarySource): SidebarGroup {
+	if (kind === "engine") {
+		return {
+			...group,
+			type: "single",
+			id: ENGINE_GROUP,
+			dynamic: false,
+			searchable: true,
+			options: ownedOptions(source.engines)
+		};
+	}
+	return {
+		...group,
+		type: "multi",
+		id: TAG_GROUP,
+		dynamic: false,
+		searchable: true,
+		options: ownedOptions(source.tags)
+	};
+}
+
+function sidebarGroupOf(
+	group: SidebarGroup,
+	source: LibrarySource,
+	choices: Record<string, FilterOption[]>
+): SidebarGroup {
+	const kind = ownedKindOf(group);
+	if (kind) return ownedGroup(group, kind, source);
+	return group.dynamic ? { ...group, options: choicesOf(choices[group.id]) } : group;
+}
+
 /**
  * The groups the sidebar shows for a section. Plugin search groups are left out because the
  * sidebar draws its own search box. Dynamic groups take their choices from the loaded lists.
+ * The engine and tags groups of a plugin come from its owned games.
  */
 export function sidebarGroupsFor(
 	source: LibrarySource | undefined,
@@ -80,9 +139,7 @@ export function sidebarGroupsFor(
 	}
 	return source.sidebar
 		.filter((group) => group.type !== "search")
-		.map((group) =>
-			group.dynamic ? { ...group, options: choicesOf(choices[group.id]) } : group
-		);
+		.map((group) => sidebarGroupOf(group, source, choices));
 }
 
 /**
@@ -91,7 +148,7 @@ export function sidebarGroupsFor(
  */
 export function choiceGroupsOf(source: LibrarySource | undefined): SidebarGroup[] {
 	if (!source || source.source === LOCAL_SOURCE || source.sidebar.length === 0) return [];
-	return source.sidebar.filter((group) => group.dynamic);
+	return pluginGroupsOf(source).filter((group) => group.dynamic);
 }
 
 /** The placeholder of the sidebar search box for a section. */

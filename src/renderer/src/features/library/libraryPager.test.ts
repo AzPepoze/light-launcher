@@ -13,6 +13,7 @@ const QUERY: LibraryQuery = {
 	source: "manual",
 	search: "",
 	tags: [],
+	engine: "",
 	favorite: false,
 	installed: false,
 	updates: false,

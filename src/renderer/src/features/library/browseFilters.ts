@@ -18,7 +18,7 @@ export function initialBrowseFilters(groups: SidebarGroup[]): BrowseFilters {
 	for (const group of groups) {
 		if (group.type === "toggles") {
 			for (const option of group.options) values[option.value] = false;
-		} else if (group.type === "select") {
+		} else if (group.type === "select" || group.type === "single") {
 			values[group.id] = "";
 		} else if (group.type === "multi") {
 			values[group.id] = [];

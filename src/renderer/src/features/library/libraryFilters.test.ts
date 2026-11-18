@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { initialBrowseFilters } from "./browseFilters";
 import {
 	DEFAULT_FILTERS,
+	ENGINE_GROUP,
 	anyPicked,
 	hasActiveFilters,
 	libraryQuery,
@@ -29,8 +30,8 @@ const PLUGIN_GROUPS: SidebarGroup[] = [
 	},
 	{
 		type: "select",
-		id: "engine",
-		label: "Engine",
+		id: "genre",
+		label: "Genre",
 		placeholder: "",
 		options: [],
 		dynamic: true,
@@ -53,18 +54,18 @@ const PLUGIN_GROUPS: SidebarGroup[] = [
 
 describe("plugin filter keys", () => {
 	it("lists the select id and the toggle option values, and skips the sort", () => {
-		expect(pluginKeysOf(PLUGIN_GROUPS)).toEqual(["engine", "hide_adult"]);
+		expect(pluginKeysOf(PLUGIN_GROUPS)).toEqual(["genre", "hide_adult"]);
 	});
 
 	it("keeps only the values of the given groups", () => {
-		const values = { engine: "unity", hide_adult: true, installed: true, other: "x" };
-		expect(sourceValues(values, PLUGIN_GROUPS)).toEqual({ engine: "unity", hide_adult: true });
+		const values = { genre: "rpg", hide_adult: true, installed: true, other: "x" };
+		expect(sourceValues(values, PLUGIN_GROUPS)).toEqual({ genre: "rpg", hide_adult: true });
 	});
 
 	it("counts a value as picked only when it narrows the list", () => {
-		expect(anyPicked({ engine: "" })).toBe(false);
+		expect(anyPicked({ genre: "" })).toBe(false);
 		expect(anyPicked({ tags: [], hide_adult: false })).toBe(false);
-		expect(anyPicked({ engine: "unity" })).toBe(true);
+		expect(anyPicked({ genre: "rpg" })).toBe(true);
 	});
 });
 
@@ -72,8 +73,8 @@ describe("plugin choices in the saved filters", () => {
 	const filters = initialBrowseFilters(PLUGIN_GROUPS);
 
 	it("passes the picked plugin choices through toLibraryFilters", () => {
-		const picked = { ...filters, values: { ...filters.values, engine: "unity", hide_adult: true } };
-		expect(toLibraryFilters(picked).plugin).toEqual({ engine: "unity", hide_adult: true });
+		const picked = { ...filters, values: { ...filters.values, genre: "rpg", hide_adult: true } };
+		expect(toLibraryFilters(picked).plugin).toEqual({ genre: "rpg", hide_adult: true });
 	});
 
 	it("leaves out plugin keys that are not picked", () => {
@@ -81,17 +82,17 @@ describe("plugin choices in the saved filters", () => {
 	});
 
 	it("restores the saved plugin choices and drops the ones it does not hold", () => {
-		const current = { ...filters, values: { ...filters.values, engine: "godot" } };
+		const current = { ...filters, values: { ...filters.values, genre: "rpg" } };
 		const saved: LibraryFilters = { ...DEFAULT_FILTERS, plugin: { hide_adult: true } };
 		const restored = withLibraryFilters(current, saved);
 		expect(restored.values.hide_adult).toBe(true);
-		expect(restored.values.engine).toBeUndefined();
+		expect(restored.values.genre).toBeUndefined();
 	});
 
 	it("drops the plugin choices and keeps the local values", () => {
 		const picked = {
 			...filters,
-			values: { ...filters.values, engine: "unity", installed: true }
+			values: { ...filters.values, genre: "rpg", installed: true }
 		};
 		expect(withoutPluginFilters(picked).values).toEqual({ installed: true });
 	});
@@ -121,6 +122,38 @@ describe("hasActiveFilters", () => {
 	});
 });
 
+describe("engine filter", () => {
+	const filters = initialBrowseFilters(PLUGIN_GROUPS);
+
+	it("reads the picked engine into the local filters, not the plugin choices", () => {
+		const picked = { ...filters, values: { ...filters.values, [ENGINE_GROUP]: "Unity" } };
+		expect(toLibraryFilters(picked).engine).toBe("Unity");
+		expect(toLibraryFilters(picked).plugin).toEqual({});
+	});
+
+	it("reads an empty engine when none is picked", () => {
+		expect(toLibraryFilters(filters).engine).toBe("");
+	});
+
+	it("keeps the engine out of the plugin browse values", () => {
+		const values = { [ENGINE_GROUP]: "Unity", hide_adult: true };
+		expect(sourceValues(values, PLUGIN_GROUPS)).toEqual({ hide_adult: true });
+	});
+
+	it("drops the engine when the user leaves the source", () => {
+		const picked = { ...filters, values: { ...filters.values, [ENGINE_GROUP]: "Unity", tags: ["rpg"] } };
+		expect(withoutPluginFilters(picked).values).toEqual({ tags: ["rpg"] });
+	});
+
+	it("counts a picked engine as an active filter", () => {
+		expect(hasActiveFilters({ ...DEFAULT_FILTERS, engine: "Unity" })).toBe(true);
+	});
+
+	it("sends the engine in the list query", () => {
+		expect(libraryQuery("f95", { ...DEFAULT_FILTERS, engine: "Unity" }).engine).toBe("Unity");
+	});
+});
+
 describe("libraryQuery", () => {
 	it("uses the source the section gives, and the filters", () => {
 		const query = libraryQuery("f95", { ...DEFAULT_FILTERS, favorite: true, updates: true });
@@ -128,6 +161,7 @@ describe("libraryQuery", () => {
 			source: "f95",
 			search: "",
 			tags: [],
+			engine: "",
 			favorite: true,
 			installed: false,
 			updates: true,

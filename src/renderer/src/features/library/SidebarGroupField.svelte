@@ -7,11 +7,16 @@
 	import LoadingState from "@components/shared/LoadingState.svelte";
 	import type { SidebarGroup } from "../../lib/features/types";
 	import { filterChoices, showsChoiceSearch } from "./choiceFilter";
+	import { ENGINE_GROUP, TAG_GROUP } from "./libraryFilters";
 	import type { LibraryState } from "./libraryState.svelte";
 
 	let { library, group }: { library: LibraryState; group: SidebarGroup } = $props();
 
 	const ANY_OPTION = { value: "", label: "Any" };
+	const EMPTY_TEXT: Record<string, string> = {
+		[ENGINE_GROUP]: "No engines yet",
+		[TAG_GROUP]: "No tags yet"
+	};
 
 	/** Text typed into a built-in group's search. Dynamic groups search remotely instead. */
 	let localQuery = $state("");
@@ -40,7 +45,13 @@
 
 	function isChosen(id: string, value: string): boolean {
 		const current = library.filters.values[id];
-		return Array.isArray(current) && current.includes(value);
+		if (Array.isArray(current)) return current.includes(value);
+		return current === value && value !== "";
+	}
+
+	function pick(value: string) {
+		if (group.type === "single") library.toggleSingle(group.id, value);
+		else library.toggleMulti(group.id, value);
 	}
 
 	function isOn(id: string): boolean {
@@ -48,7 +59,7 @@
 	}
 
 	function emptyText(): string {
-		return group.dynamic ? "No choices." : "None declared.";
+		return EMPTY_TEXT[group.id] ?? (group.dynamic ? "No choices." : "None declared.");
 	}
 
 	function clearSearch() {
@@ -105,7 +116,7 @@
 			onChange={(value) => library.setSelect(group.id, value)}
 		/>
 	</div>
-{:else if group.type === "multi"}
+{:else if group.type === "multi" || group.type === "single"}
 	<div class="group" role="group" aria-label={group.label}>
 		{@render heading()}
 		{#if showSearch}
@@ -131,7 +142,7 @@
 				{#each view.choices as option (option.value)}
 					<ChoiceRow
 						selected={isChosen(group.id, option.value)}
-						onToggle={() => library.toggleMulti(group.id, option.value)}
+						onToggle={() => pick(option.value)}
 						icon={option.icon}
 						count={option.count}
 					>

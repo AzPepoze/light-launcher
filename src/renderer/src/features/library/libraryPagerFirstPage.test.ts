@@ -7,6 +7,7 @@ const QUERY: LibraryQuery = {
 	source: "example",
 	search: "",
 	tags: [],
+	engine: "",
 	favorite: DEFAULT_FILTERS.favorite,
 	installed: DEFAULT_FILTERS.installed,
 	updates: DEFAULT_FILTERS.updates,

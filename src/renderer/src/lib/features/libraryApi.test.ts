@@ -21,6 +21,7 @@ const QUERY: LibraryQuery = {
 	source: "f95",
 	search: "",
 	tags: [],
+	engine: "",
 	favorite: false,
 	installed: false,
 	updates: false,
@@ -104,7 +105,9 @@ describe("libraryApi.overview", () => {
 						tile: "wide",
 						cover: "16:9",
 						actions: [],
-						card: null
+						card: null,
+						engines: null,
+						tags: null
 					}
 				],
 				tags: [],
@@ -131,7 +134,9 @@ describe("libraryApi.overview", () => {
 				actions: [],
 				card: null,
 				sidebar: [],
-				gamesFolder: null
+				gamesFolder: null,
+				engines: [],
+				tags: []
 			}
 		]);
 	});
