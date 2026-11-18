@@ -41,6 +41,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [x] | The scan status shows the folder being scanned ("Scanning Library... 3 of 5"). Built and tested, not seen in a window. |
 | [x] | Game cards show a neutral skeleton while an icon is pending, share in-flight loads, and use the rocket only when the icon is truly missing or failed. Grid and list views match. |
 | [ ] | Quick Launch header on the shared page header: controls wrap and search width look right. Check by eye in the real window. |
+| [ ] | Home at 390x844: no element past the edge and no sideways scroll. Checked by overlap scan and one screenshot. Check by eye in the real window. |
 | [ ] | Grid card shows the game path on hover; long paths truncate. Check by eye in the real window. |
 | [ ] | Larger gear button on grid cards. Check by eye in the real window. |
 
@@ -253,6 +254,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | Status | Item |
 |---|---|
 | [ ] | Game Manager page header added. Check by eye in the real window. |
+| [ ] | Game Manager at 390x844: no element past the edge and no sideways scroll. The heatmap shrinks to fit. Checked by overlap scan and one screenshot. Check by eye in the real window. |
 | [ ] | Last Game Manager rows clear the status drawer when collapsed. Check by eye in the real window. |
 | [ ] | Last Game Manager rows clear the status drawer when expanded. The drawer height depends on its content, so the padding may not be enough. Check by eye in the real window. |
 | [ ] | Heatmap legend shows level text. Check by eye in the real window. |
