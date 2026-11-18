@@ -26,6 +26,19 @@ export function isCurrentResponse(asked: RequestStamp, now: RequestStamp): boole
 	return asked.source !== "" && asked.source === now.source && asked.epoch === now.epoch;
 }
 
+/** A dynamic group whose unfiltered choices are being asked for, or whose last ask failed. */
+export type ChoiceStatus = "loading" | "failed";
+
+/**
+ * The unfiltered choices of each source's dynamic groups, by source and group id. Kept for the whole
+ * app run, so a source is not asked again on each visit.
+ */
+const savedChoices: Record<string, Record<string, FilterOption[]>> = {};
+
+function saveChoices(source: string, groupId: string, options: FilterOption[]): void {
+	savedChoices[source] = { ...savedChoices[source], [groupId]: options };
+}
+
 /**
  * The pages of one plugin source's browse, plus the choices of its dynamic sidebar groups.
  * Results are not saved to the library.
@@ -46,6 +59,8 @@ export class BrowseFeed {
 	choices = $state<Record<string, FilterOption[]>>({});
 	/** The text in each dynamic group's search box, by group id. */
 	choiceSearch = $state<Record<string, string>>({});
+	/** Dynamic groups of the source shown that are loading or failed, by group id. */
+	choiceStatus = $state<Record<string, ChoiceStatus>>({});
 	/** Changes whenever the grid's pages are dropped, so the list asks again. */
 	version = $state(0);
 
@@ -78,13 +93,24 @@ export class BrowseFeed {
 		if (end > this.games.length) this.loadMore();
 	}
 
-	/** Starts a source's browse: clears the old choices and loads the dynamic ones. */
-	start(source: string, groups: SidebarGroup[]): void {
+	/**
+	 * Shows a source's dynamic choices. Saved choices are kept, and each dynamic group with none yet is asked once.
+	 */
+	showChoices(source: string, groups: SidebarGroup[]): void {
+		const dynamic = groups.filter((group) => group.dynamic);
+		if (dynamic.length === 0) return;
 		if (source !== this.source) this.switchTo(source);
-		else this.clearChoices();
-		for (const group of groups) {
-			if (group.dynamic) void this.loadChoices(group, "");
+		for (const group of dynamic) {
+			const askable = this.choices[group.id] === undefined && this.choiceStatus[group.id] === undefined;
+			if (askable) void this.loadChoices(group, "");
 		}
+	}
+
+	/** Asks the source again for one dynamic group's unfiltered choices. Only a press gets here. */
+	refreshChoices(group: SidebarGroup): void {
+		clearTimeout(this.choiceTimers[group.id]);
+		this.choiceSearch = { ...this.choiceSearch, [group.id]: "" };
+		void this.loadChoices(group, "");
 	}
 
 	/** Lets go of the source: drops its grid, its choices and every answer still on its way. */
@@ -125,18 +151,16 @@ export class BrowseFeed {
 		};
 	}
 
+	/** Moves the feed to another source. The saved choices of that source come back at once. */
 	private switchTo(source: string): void {
 		this.epoch++;
 		this.source = source;
-		this.clearChoices();
-		this.clearPages();
-	}
-
-	private clearChoices(): void {
 		for (const timer of Object.values(this.choiceTimers)) clearTimeout(timer);
 		this.choiceTimers = {};
-		this.choices = {};
 		this.choiceSearch = {};
+		this.choiceStatus = {};
+		this.choices = { ...(savedChoices[source] ?? {}) };
+		this.clearPages();
 	}
 
 	private clearPages(): void {
@@ -184,19 +208,32 @@ export class BrowseFeed {
 		return isCurrentResponse(asked, this.pageStamp());
 	}
 
+	/** Asks for one dynamic group's choices. Only an unfiltered answer is saved, so a search never replaces them. */
 	private async loadChoices(group: SidebarGroup, query: string): Promise<void> {
 		if (!this.source) return;
 		const run = (this.choiceRuns[group.id] ?? 0) + 1;
 		this.choiceRuns[group.id] = run;
 		const asked = this.choiceStamp();
+		const unfiltered = query === "";
+		if (unfiltered) this.setChoiceStatus(group.id, "loading");
 		try {
 			const options = await libraryApi.filters(asked.source, group.id, query);
+			if (unfiltered && this.choiceRuns[group.id] === run) saveChoices(asked.source, group.id, options);
 			if (!this.choiceIsLive(group.id, run, asked)) return;
 			this.choices = { ...this.choices, [group.id]: options };
+			if (unfiltered) this.setChoiceStatus(group.id, null);
 		} catch (err) {
 			if (!this.choiceIsLive(group.id, run, asked)) return;
+			if (unfiltered) this.setChoiceStatus(group.id, "failed");
 			notifications.error(libraryErrorMessage(err));
 		}
+	}
+
+	private setChoiceStatus(groupId: string, status: ChoiceStatus | null): void {
+		const next = { ...this.choiceStatus };
+		if (status) next[groupId] = status;
+		else delete next[groupId];
+		this.choiceStatus = next;
 	}
 
 	/** A choice answer lands only if its group was not asked again and its source is still shown. */

@@ -4,6 +4,7 @@
 	import Dropdown from "@components/shared/Dropdown.svelte";
 	import Icon from "@components/shared/Icon.svelte";
 	import IconButton from "@components/shared/IconButton.svelte";
+	import LoadingState from "@components/shared/LoadingState.svelte";
 	import type { SidebarGroup } from "../../lib/features/types";
 	import { filterChoices, showsChoiceSearch } from "./choiceFilter";
 	import type { LibraryState } from "./libraryState.svelte";
@@ -55,14 +56,33 @@
 	}
 </script>
 
+{#snippet heading()}
+	<div class="heading">
+		<span class="label">{group.label}</span>
+		{#if group.dynamic && library.choicesLoaded(group.id)}
+			<IconButton
+				icon="refresh"
+				size={32}
+				label="Refresh choices"
+				disabled={library.choicesLoading(group.id)}
+				onclick={() => library.refreshChoices(group)}
+			/>
+		{/if}
+	</div>
+{/snippet}
+
 {#if group.dynamic && !library.choicesLoaded(group.id)}
 	<div class="group">
-		<span class="label">{group.label}</span>
-		<Button size="sm" icon="sync" onclick={() => library.loadChoices()}>Load choices</Button>
+		{@render heading()}
+		{#if library.choicesFailed(group.id)}
+			<Button size="sm" icon="sync" onclick={() => library.refreshChoices(group)}>Retry</Button>
+		{:else}
+			<LoadingState label="Loading choices..." />
+		{/if}
 	</div>
 {:else if group.type === "toggles"}
 	<div class="group" role="group" aria-label={group.label}>
-		<span class="label">{group.label}</span>
+		{@render heading()}
 		<div class="choices">
 			{#each group.options as option (option.value)}
 				<ChoiceRow
@@ -76,7 +96,7 @@
 	</div>
 {:else if group.type === "select"}
 	<div class="group">
-		<span class="label">{group.label}</span>
+		{@render heading()}
 		<Dropdown
 			aria-label={group.label}
 			options={[ANY_OPTION, ...group.options]}
@@ -87,7 +107,7 @@
 	</div>
 {:else if group.type === "multi"}
 	<div class="group" role="group" aria-label={group.label}>
-		<span class="label">{group.label}</span>
+		{@render heading()}
 		{#if showSearch}
 			<div class="search">
 				<Icon name="search" size={16} class="search-icon" />
@@ -151,6 +171,13 @@
 		padding: 0;
 		border: none;
 		min-width: 0;
+	}
+
+	.heading {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
 	}
 
 	.label {

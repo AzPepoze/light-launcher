@@ -88,7 +88,7 @@ export class LibraryState {
 
 	/** One pager per source. Created on first use, so each source loads its own pages. */
 	private readonly pagers = new Map<string, LibraryPager>();
-	/** Plugin choices for the sidebar. Filled only when the user asks for them. */
+	/** Plugin choices for the sidebar. Loaded when a source opens. */
 	readonly browse = new BrowseFeed();
 	sections = $derived(librarySections(this.overview.sources));
 	/** The sources that show in the rail. Empty plugin sources are left out. */
@@ -123,13 +123,15 @@ export class LibraryState {
 	async start(): Promise<void> {
 		await this.loadOverview();
 		this.syncPagers();
+		this.loadActiveChoices();
 	}
 
-	/** Drops every loaded list page and reloads the overview. */
+	/** Drops every loaded list page and reloads the overview. Saved sidebar choices are kept. */
 	async refresh(): Promise<void> {
 		for (const pager of this.pagers.values()) pager.reset();
 		await this.loadOverview();
 		this.syncPagers();
+		this.loadActiveChoices();
 	}
 
 	/** Reloads soon, once per burst of library events. */
@@ -206,6 +208,7 @@ export class LibraryState {
 		this.activeSource = source;
 		this.browse.stop();
 		this.filters = withoutPluginFilters(this.filters);
+		this.loadActiveChoices();
 	}
 
 	/** A section shows when it is local, or a plugin source with games, an error or a live browse. */
@@ -220,11 +223,24 @@ export class LibraryState {
 		return this.browse.choices[groupId] !== undefined;
 	}
 
-	/** Asks the plugin for the choices of the active source's dynamic groups. Runs only on a press. */
-	loadChoices(): void {
-		const source = this.activeSection;
-		if (!source || choiceGroupsOf(source).length === 0) return;
-		this.browse.start(source.source, source.sidebar);
+	choicesLoading(groupId: string): boolean {
+		return this.browse.choiceStatus[groupId] === "loading";
+	}
+
+	choicesFailed(groupId: string): boolean {
+		return this.browse.choiceStatus[groupId] === "failed";
+	}
+
+	/** Asks the plugin again for one dynamic group's choices. Only the refresh and retry buttons call this. */
+	refreshChoices(group: SidebarGroup): void {
+		this.browse.refreshChoices(group);
+	}
+
+	/** Asks the plugin for the choices the active source's dynamic groups lack. Saved ones are not asked again. */
+	private loadActiveChoices(): void {
+		const section = this.activeSection;
+		if (!section) return;
+		this.browse.showChoices(section.source, choiceGroupsOf(section));
 	}
 
 	searchChoices(group: SidebarGroup, text: string): void {
