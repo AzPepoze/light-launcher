@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Badge from "@components/shared/Badge.svelte";
 	import Icon from "@components/shared/Icon.svelte";
 
 	export let systemStatus: {
@@ -9,36 +10,42 @@
 		hasVulkanInfo: boolean;
 	};
 
+	/* Install hints come from the Arch PKGBUILD optdepends. */
 	$: items = [
 		{
 			name: "Gamescope",
 			ok: systemStatus.hasGamescope,
 			statusText: systemStatus.hasGamescope ? "Available" : "Not Found",
-			description: "Provides custom resolution sandbox, upscaling, and HDR support."
+			description: "Provides custom resolution sandbox, upscaling, and HDR support.",
+			hint: "Arch package: gamescope"
 		},
 		{
 			name: "MangoHud",
 			ok: systemStatus.hasMangoHud,
 			statusText: systemStatus.hasMangoHud ? "Available" : "Not Found",
-			description: "Monitors FPS, frame times, CPU/GPU temperatures, and resource usage."
+			description: "Monitors FPS, frame times, CPU/GPU temperatures, and resource usage.",
+			hint: "Arch package: mangohud"
 		},
 		{
 			name: "GameMode",
 			ok: systemStatus.hasGameMode,
 			statusText: systemStatus.hasGameMode ? "Available" : "Not Found",
-			description: "Optimizes CPU governor and scheduler settings for maximum performance."
+			description: "Optimizes CPU governor and scheduler settings for maximum performance.",
+			hint: "Arch package: gamemode"
 		},
 		{
 			name: "Vulkan-Tools",
 			ok: systemStatus.hasVulkanInfo,
 			statusText: systemStatus.hasVulkanInfo ? "Available" : "Missing",
-			description: "Enables GPU auto-detection and Vulkan capabilities verification."
+			description: "Enables GPU auto-detection and Vulkan capabilities verification.",
+			hint: ""
 		},
 		{
 			name: "Lossless.dll",
 			ok: systemStatus.hasLosslessDll,
 			statusText: systemStatus.hasLosslessDll ? "Found" : "Not Found",
-			description: "Lossless Scaling binary libraries required for LSFG-VK frame generation."
+			description: "Lossless Scaling binary libraries required for LSFG-VK frame generation.",
+			hint: ""
 		}
 	];
 </script>
@@ -57,11 +64,14 @@
 		<tbody>
 			{#each items as item}
 				<tr>
-					<td><strong>{item.name}</strong></td>
 					<td>
-						<span class="status-badge" class:ok={item.ok} title={item.statusText}>
-							{item.statusText}
-						</span>
+						<strong>{item.name}</strong>
+						{#if !item.ok && item.hint}
+							<p class="hint">{item.hint}</p>
+						{/if}
+					</td>
+					<td>
+						<Badge tone={item.ok ? "success" : "danger"}>{item.statusText}</Badge>
 					</td>
 					<td class="desc">{item.description}</td>
 				</tr>
@@ -142,27 +152,11 @@
 		}
 	}
 
-	.status-badge {
-		display: inline-block;
-		max-width: 100%;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		vertical-align: middle;
-		text-align: center;
-		font-size: 0.8rem;
-		font-weight: 700;
-		color: var(--danger);
-		padding: 6px 14px;
-		background: rgba(255, 59, 48, 0.1);
-		border: 1px solid rgba(255, 59, 48, 0.2);
-		border-radius: var(--radius-pill);
-
-		&.ok {
-			color: var(--success);
-			background: rgba(52, 199, 89, 0.1);
-			border-color: rgba(52, 199, 89, 0.2);
-		}
+	.hint {
+		margin: 4px 0 0;
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: var(--text-muted);
 	}
 
 	.warning-text {
