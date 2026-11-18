@@ -138,7 +138,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | Home: the folder count shows "..." while the folder loads. Not seen in a window. |
 | [ ] | Library: the local exe-icon fallback for coverless games needs a real window check. |
 | [ ] | Library: local games ignore the sort direction. `toLibraryFilters` does not send `order`, so the list always uses the sort's own order. |
-| [ ] | Library rail: clicking a source scrolls to its group. The highlight does not follow scrolling yet (no scroll spy). |
+| [ ] | Library: one source at a time. Check by eye in the real window. |
 | [ ] | Library grid and header scroll: check by eye in the real window. Checked by code and tests only: grid spacing, sticky title and tabs, rail and sidebar placement, no horizontal scroll at phone width. |
 | [ ] | Library narrow width and update count: check by eye in the real window. |
 | [x] | Updates tab at 390x844: the Notes and Update buttons sit under the title, and none are clipped. Checked by measurement; check by eye in the real window. |
