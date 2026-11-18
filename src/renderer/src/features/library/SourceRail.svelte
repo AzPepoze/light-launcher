@@ -106,7 +106,7 @@
 		pointer-events: none;
 	}
 
-	/* The name slides out to the right of the icon. It shows at once on focus, no delay. */
+	/* The name fades in to the right of the icon on hover or keyboard focus, not after a mouse click. */
 	.flyout {
 		position: absolute;
 		left: calc(100% + 8px);
@@ -122,11 +122,9 @@
 		white-space: nowrap;
 		box-shadow: 0 4px 14px rgb(0 0 0 / 0.25);
 		opacity: 0;
-		transform: translate(-6px, -50%);
+		transform: translate(0, -50%);
 		pointer-events: none;
-		transition:
-			opacity 120ms var(--ease-out),
-			transform 120ms var(--ease-out);
+		transition: opacity 120ms var(--ease-out);
 	}
 
 	.flyout-count {
@@ -136,16 +134,8 @@
 	}
 
 	.item:hover .flyout,
-	.item:focus-within .flyout {
+	.item:has(:global(:focus-visible)) .flyout {
 		opacity: 1;
-		transform: translate(0, -50%);
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		.flyout {
-			transform: translate(0, -50%);
-			transition: opacity 120ms linear;
-		}
 	}
 
 	/* Touch screens have no hover; the aria-label still names each source. */
