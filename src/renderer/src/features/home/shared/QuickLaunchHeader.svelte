@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Dropdown, { asOptions } from "@components/shared/Dropdown.svelte";
 	import Icon from "@components/shared/Icon.svelte";
+	import PageHeader from "@components/shared/PageHeader.svelte";
 
 	$: prefixItems = asOptions(prefixes);
 	import SelectionActions from "./SelectionActions.svelte";
@@ -19,9 +20,8 @@
 	export let onShowHelpModal: () => void;
 </script>
 
-<div class="section-header">
-	<h2 class="section-title">Quick Launch</h2>
-
+<PageHeader title="Quick Launch">
+	<div class="header-controls">
 	{#if isSelectionMode}
 		<SelectionActions {selectedCount} {onBulkRemove} {onToggleSelectionMode} {onSelectAll} />
 	{:else}
@@ -100,27 +100,16 @@
 			<Icon name="view_sidebar" size={18} />
 		</button>
 	</div>
-</div>
+	</div>
+</PageHeader>
 
 <style lang="scss">
-	.section-title {
-		font-size: 1.6rem;
-		font-weight: 800;
-		color: var(--text-main);
-		text-transform: uppercase;
-		letter-spacing: 2px;
-		margin: 0;
-		line-height: 1;
-		white-space: nowrap;
-	}
-
-	.section-header {
+	.header-controls {
 		display: flex;
 		align-items: center;
-		gap: 18px;
-		margin-bottom: 28px;
+		justify-content: flex-end;
 		flex-wrap: wrap;
-		width: 100%;
+		gap: 12px;
 	}
 
 	.view-switcher {
@@ -247,7 +236,8 @@
 		border-radius: var(--radius-pill);
 		padding: 10px 20px;
 		gap: 10px;
-		flex: 1;
+		flex: 0 1 280px;
+		min-width: 200px;
 		transition: border-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 
 		&:focus-within {
