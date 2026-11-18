@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { fade } from "svelte/transition";
 	import { tick } from "svelte";
+	import { fadeParams, menuPanel } from "./motion";
 
 	export let visible: boolean = false;
 	export let x: number = 0;
@@ -14,35 +15,10 @@
 	let menuEl: HTMLDivElement;
 	let backdropEl: HTMLDivElement;
 
-	// internal render state to allow close animation before DOM removal
+	// The panel stays in the DOM until its exit transition ends.
 	let isRendered = false;
-	let isOpen = false;
-	let isClosing = false;
-	let openTimer: ReturnType<typeof setTimeout>;
-	let closeTimer: ReturnType<typeof setTimeout>;
-
-	$: {
-		if (visible) {
-			clearTimeout(closeTimer);
-			clearTimeout(openTimer);
-			if (!isRendered) isRendered = true;
-			isClosing = false;
-			// next tick trigger CSS transition (like Dropdown does with 10ms)
-			openTimer = setTimeout(() => {
-				isOpen = true;
-				clampPosition();
-			}, 10);
-		} else if (isRendered) {
-			clearTimeout(openTimer);
-			isOpen = false;
-			isClosing = true;
-			// keep DOM for exit animation, then unmount
-			closeTimer = setTimeout(() => {
-				isRendered = false;
-				isClosing = false;
-			}, 170);
-		}
-	}
+	$: isRendered = visible;
+	$: if (visible) clampPosition();
 
 	// Clamp to viewport for cursor mode after render
 	async function clampPosition() {
@@ -66,13 +42,13 @@
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
-		if ((visible || isRendered) && e.key === "Escape") {
+		if (visible && e.key === "Escape") {
 			onClose();
 		}
 	}
 
 	function handleAnchorOutsideClick(e: MouseEvent) {
-		if (mode !== "anchor" || !isRendered || isClosing) return;
+		if (mode !== "anchor" || !visible) return;
 		const target = e.target as HTMLElement;
 		if (menuEl && !menuEl.contains(target) && !target.closest(".menu-trigger")) {
 			onClose();
@@ -95,18 +71,19 @@
 			class="app-menu-backdrop"
 			on:click={handleBackdropClick}
 			on:contextmenu|preventDefault={handleBackdropClick}
-			transition:fade={{ duration: 100 }}
+			in:fade={fadeParams("enter")}
+			out:fade={fadeParams("exit")}
 		>
 			<!-- svelte-ignore a11y_click_events_have_key_events -->
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			<div
 				bind:this={menuEl}
 				class="app-menu-panel glass"
-				class:open={isOpen && !isClosing}
-				class:closing={isClosing}
 				style="left: {x}px; top: {y}px; transform-origin: {transformOrigin};"
 				on:click|stopPropagation
 				role="menu"
+				in:menuPanel={{ placement }}
+				out:menuPanel|global={{ placement }}
 			>
 				<slot />
 			</div>
@@ -115,11 +92,11 @@
 		<div
 			bind:this={menuEl}
 			class="app-menu-panel anchor glass"
-			class:open={isOpen && !isClosing}
-			class:closing={isClosing}
 			class:anchor-top={placement === "top"}
 			style="transform-origin: {transformOrigin};"
 			role="menu"
+			in:menuPanel={{ placement }}
+			out:menuPanel={{ placement }}
 		>
 			<slot />
 		</div>
@@ -147,29 +124,6 @@
 		gap: 2px;
 		z-index: 10000;
 
-		// container animation : closed state
-		opacity: 0;
-		transform: translateY(-8px) scale(0.96);
-		transition:
-			opacity 180ms cubic-bezier(0.215, 0.61, 0.355, 1),
-			transform 180ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
-		pointer-events: none;
-
-		&.open {
-			opacity: 1;
-			transform: translateY(0) scale(1);
-			pointer-events: auto;
-		}
-
-		&.closing {
-			opacity: 0;
-			transform: translateY(-6px) scale(0.97);
-			pointer-events: none;
-			transition:
-				opacity 130ms cubic-bezier(0.4, 0, 1, 1),
-				transform 130ms cubic-bezier(0.4, 0, 1, 1);
-		}
-
 		&.anchor {
 			position: absolute;
 			right: 0;
@@ -187,15 +141,6 @@
 				left: 0;
 				width: var(--app-menu-anchor-width, auto);
 				min-width: 0;
-				transform: translateY(8px) scale(0.96);
-
-				&.open {
-					transform: translateY(0) scale(1);
-				}
-
-				&.closing {
-					transform: translateY(6px) scale(0.97);
-				}
 			}
 		}
 	}
@@ -229,22 +174,6 @@
 	.app-menu-panel :global(.menu-divider:nth-child(5)) { animation-delay: 88ms; }
 	.app-menu-panel :global(.menu-divider:nth-child(6)) { animation-delay: 110ms; }
 
-	/* Close: items fade/scale out quickly, reversed stagger for polish */
-	.app-menu-panel.closing :global(.menu-item) {
-		animation: menuItemOut 110ms cubic-bezier(0.4, 0, 1, 1) both;
-	}
-	.app-menu-panel.closing :global(.menu-item:nth-child(1)) { animation-delay: 56ms; }
-	.app-menu-panel.closing :global(.menu-item:nth-child(2)) { animation-delay: 42ms; }
-	.app-menu-panel.closing :global(.menu-item:nth-child(3)) { animation-delay: 28ms; }
-	.app-menu-panel.closing :global(.menu-item:nth-child(4)) { animation-delay: 14ms; }
-	.app-menu-panel.closing :global(.menu-item:nth-child(5)) { animation-delay: 0ms; }
-	.app-menu-panel.closing :global(.menu-item:nth-child(6)) { animation-delay: 0ms; }
-	.app-menu-panel.closing :global(.menu-item:nth-child(7)) { animation-delay: 0ms; }
-	.app-menu-panel.closing :global(.menu-item:nth-child(8)) { animation-delay: 0ms; }
-
-	.app-menu-panel.closing :global(.menu-divider) {
-		animation: menuDividerOut 90ms ease both;
-	}
 
 	@keyframes menuItemIn {
 		from {
@@ -257,25 +186,9 @@
 		}
 	}
 
-	@keyframes menuItemOut {
-		from {
-			opacity: 1;
-			transform: scale(1) translateY(0);
-		}
-		to {
-			opacity: 0;
-			transform: scale(0.94) translateY(-4px);
-		}
-	}
-
 	@keyframes menuDividerIn {
 		from { opacity: 0; }
 		to { opacity: 1; }
-	}
-
-	@keyframes menuDividerOut {
-		from { opacity: 1; }
-		to { opacity: 0; }
 	}
 
 	/* Shared menu-item styles */
@@ -326,11 +239,6 @@
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.app-menu-panel,
-		.app-menu-panel.open,
-		.app-menu-panel.closing {
-			transition: none !important;
-		}
 		.app-menu-panel :global(.menu-item),
 		.app-menu-panel :global(.menu-divider) {
 			animation: none !important;

@@ -13,6 +13,7 @@
 	import Icon from "./Icon.svelte";
 	import IconButton from "./IconButton.svelte";
 	import { filterDropdownOptions, showsDropdownSearch } from "./dropdownSearch";
+	import { menuPanel } from "./motion";
 
 	let {
 		options = [],
@@ -35,14 +36,10 @@
 	} & Omit<HTMLButtonAttributes, "value"> = $props();
 
 	let isRendered = $state(false);
-	let isOpen = $state(false);
-	let isClosing = $state(false);
 	let searchQuery = $state("");
 	let triggerEl = $state<HTMLButtonElement | null>(null);
 	let menuEl = $state<HTMLDivElement | null>(null);
 	let searchEl = $state<HTMLInputElement | null>(null);
-	let openTimeout: ReturnType<typeof setTimeout>;
-	let closeTimeout: ReturnType<typeof setTimeout>;
 
 	const selectedLabel = $derived(options.find((option) => option.value === value)?.label ?? placeholder);
 	const showSearch = $derived(showsDropdownSearch(options.length, searchable));
@@ -58,32 +55,22 @@
 	}
 
 	function openDropdown() {
-		clearTimeout(closeTimeout);
-		isClosing = false;
 		isRendered = true;
 		searchQuery = "";
-		openTimeout = setTimeout(() => {
-			isOpen = true;
-			focusSearch();
-		}, 10);
+		focusSearch();
 	}
 
 	async function focusSearch() {
 		if (!showSearch) return;
 		await tick();
-		if (isRendered && isOpen && !isClosing) searchEl?.focus({ preventScroll: true });
+		if (isRendered) searchEl?.focus({ preventScroll: true });
 	}
 
+	// The panel stays in the DOM until its exit transition ends.
 	function closeDropdown() {
-		if (!isRendered || isClosing) return;
-		clearTimeout(openTimeout);
-		isClosing = true;
-		closeTimeout = setTimeout(() => {
-			isOpen = false;
-			isRendered = false;
-			isClosing = false;
-			searchQuery = "";
-		}, 150);
+		if (!isRendered) return;
+		isRendered = false;
+		searchQuery = "";
 	}
 
 	function select(option: DropdownOption) {
@@ -161,7 +148,7 @@
 		{...rest}
 		bind:this={triggerEl}
 		class="dropdown-trigger"
-		class:open={isRendered && !isClosing}
+		class:open={isRendered}
 		onclick={toggle}
 		type="button"
 	>
@@ -177,7 +164,12 @@
 	{/if}
 
 	{#if isRendered}
-		<div class="dropdown-menu" class:open={isOpen && !isClosing} bind:this={menuEl}>
+		<div
+			class="dropdown-menu"
+			bind:this={menuEl}
+			in:menuPanel={{ placement: "bottom" }}
+			out:menuPanel={{ placement: "bottom" }}
+		>
 			{#if showSearch}
 				<div class="dropdown-search">
 					<Icon name="search" size={16} class="search-icon" />
@@ -331,17 +323,6 @@
 		box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
 		padding: 8px;
 		box-sizing: border-box;
-
-		opacity: 0;
-		transform: translateY(-8px);
-		transition: opacity 150ms cubic-bezier(0.25, 1, 0.5, 1), transform 150ms cubic-bezier(0.25, 1, 0.5, 1);
-		pointer-events: none;
-
-		&.open {
-			opacity: 1;
-			transform: translateY(0);
-			pointer-events: auto;
-		}
 
 		&::-webkit-scrollbar {
 			width: 6px;

@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { fade, scale } from "svelte/transition";
-	import { backOut } from "svelte/easing";
 	import Button from "./Button.svelte";
 	import Icon from "./Icon.svelte";
+	import { fadeParams, fadeScale } from "./motion";
 
 	export let show = false;
 	export let title = "Settings";
@@ -29,7 +29,8 @@
 		class="modal-backdrop"
 		on:click={close}
 		on:keydown={(e) => e.key === "Escape" && close()}
-		transition:fade={{ duration: 250 }}
+		in:fade={fadeParams("enter")}
+		out:fade={fadeParams("exit")}
 		role="presentation"
 	>
 		<div
@@ -37,7 +38,8 @@
 			class:fullscreen
 			on:click|stopPropagation
 			on:keydown|stopPropagation={handleKeydown}
-			transition:scale={{ duration: 400, start: 0.85, easing: backOut }}
+			in:scale={fadeScale("enter")}
+			out:scale|global={fadeScale("exit")}
 			role="dialog"
 			tabindex="0"
 			aria-modal="true"

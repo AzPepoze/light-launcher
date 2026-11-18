@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { notifications, type NotificationType } from "@stores/notificationStore";
 	import { flip } from "svelte/animate";
-	import { fade, fly } from "svelte/transition";
+	import { fly } from "svelte/transition";
 	import Icon from "./Icon.svelte";
+	import { slideIn } from "./motion";
 
 	/* Material Symbols names. The old Material Icons names rendered as literal text. */
 	const TYPE_ICONS: Record<NotificationType, string> = {
@@ -20,8 +21,8 @@
 		<div
 			class="notification-card {n.type}"
 			animate:flip={{ duration: 300 }}
-			in:fly={{ y: 20, duration: 300 }}
-			out:fade={{ duration: 200 }}
+			in:fly={slideIn("enter")}
+			out:fly={slideIn("exit")}
 			on:mouseenter={() => notifications.pause(n.id)}
 			on:mouseleave={() => notifications.resume(n.id)}
 		>
