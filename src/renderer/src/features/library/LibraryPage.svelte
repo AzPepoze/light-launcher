@@ -31,7 +31,7 @@
 	import { sourceIcon } from "./sourceIcon";
 	import { librarySubtitle, updateCountOf } from "./libraryCounts";
 	import { syncMessage } from "./librarySync";
-	import { coverRatioOf } from "./coverRatio";
+	import { coverRatioOf, tileMinWidth } from "./coverRatio";
 	import { canSyncGames } from "./syncFlag";
 	import { closesDetailOn } from "./detailPanel";
 	import { DownloadsState } from "../downloads/downloadsState.svelte";
@@ -355,7 +355,7 @@
 									{library}
 									source={source.source}
 									ratio={coverRatioOf(source.cover)}
-									minColumnPx={cardSize}
+									minColumnPx={tileMinWidth(cardSize, coverRatioOf(source.cover))}
 									card={source.card}
 									variant={source.kind === "local" ? "home" : "cover"}
 									{transfers}

@@ -21,3 +21,11 @@ export function parseCoverRatio(text: string | null | undefined): number | null 
 export function coverRatioOf(text: string | null | undefined): number {
 	return parseCoverRatio(text) ?? DEFAULT_COVER_RATIO;
 }
+
+/** Wide covers get this many times the width of a portrait card, so they read as large as the rest. */
+const LANDSCAPE_WIDTH_FACTOR = 1.6;
+
+/** The smallest column width for a cover. Landscape covers are scaled up so they do not shrink. */
+export function tileMinWidth(cardSize: number, ratio: number): number {
+	return ratio > 1 ? Math.round(cardSize * LANDSCAPE_WIDTH_FACTOR) : cardSize;
+}

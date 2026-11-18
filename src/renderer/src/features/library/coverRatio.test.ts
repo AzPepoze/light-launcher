@@ -1,5 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_COVER_RATIO, coverRatioOf, parseCoverRatio } from "./coverRatio";
+import { DEFAULT_COVER_RATIO, coverRatioOf, parseCoverRatio, tileMinWidth } from "./coverRatio";
+
+describe("tileMinWidth", () => {
+	it("keeps the card size for portrait and square covers", () => {
+		expect(tileMinWidth(160, 3 / 4)).toBe(160);
+		expect(tileMinWidth(160, 1)).toBe(160);
+	});
+
+	it("scales up landscape covers", () => {
+		expect(tileMinWidth(160, 16 / 9)).toBe(256);
+	});
+});
 
 describe("parseCoverRatio", () => {
 	it("turns W:H into width divided by height", () => {
