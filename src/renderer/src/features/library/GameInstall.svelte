@@ -1,6 +1,8 @@
 <script lang="ts">
 	import Button from "@components/shared/Button.svelte";
+	import { tooltip } from "@components/shared/tooltip";
 	import { notifications } from "@stores/notificationStore";
+	import { PickFile } from "@lib/api";
 	import { libraryApi } from "../../lib/features/libraryApi";
 	import type { Game } from "../../lib/features/types";
 	import { libraryErrorMessage } from "./libraryError";
@@ -12,6 +14,27 @@
 	let folderPath = $state("");
 	let showFolderField = $state(false);
 	let linkingFolder = $state(false);
+	let changingExe = $state(false);
+
+	/** Splits a path into its folder and file name, for Windows and POSIX separators alike. */
+	function splitPath(path: string): { folder: string; name: string } {
+		const index = Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\"));
+		return { folder: index < 0 ? "" : path.slice(0, index), name: path.slice(index + 1) };
+	}
+
+	async function changeExecutable() {
+		changingExe = true;
+		try {
+			const picked = await PickFile();
+			if (!picked) return;
+			onChanged(await libraryApi.update(game.id, { exePath: picked }));
+			notifications.success("Launch executable saved.");
+		} catch (err) {
+			notifications.error(libraryErrorMessage(err));
+		} finally {
+			changingExe = false;
+		}
+	}
 
 	async function linkFolder(path: string) {
 		const folder = path.trim();
@@ -71,6 +94,20 @@
 		<p class="muted">Not installed. Download a file above, or link a source page.</p>
 	{/if}
 
+	<div class="exe-row">
+		<div class="exe-text">
+			<span class="label">Launch executable</span>
+			{#if game.exePath}
+				{@const exe = splitPath(game.exePath)}
+				<span class="exe-name">{exe.name}</span>
+				<span class="exe-folder" use:tooltip={exe.folder}>{exe.folder}</span>
+			{:else}
+				<span class="muted">Not set</span>
+			{/if}
+		</div>
+		<Button size="sm" disabled={changingExe} onclick={changeExecutable}>Change</Button>
+	</div>
+
 	<div class="link">
 		<Button size="sm" disabled={linkingFolder} onclick={pickFolder}>Link folder</Button>
 		{#if showFolderField}
@@ -123,6 +160,43 @@
 	.muted {
 		color: var(--text-muted);
 		font-size: 0.875rem;
+	}
+
+	.exe-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		min-width: 0;
+	}
+
+	.exe-text {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		flex: 1 1 auto;
+		min-width: 0;
+	}
+
+	.label {
+		font-size: 0.8rem;
+		color: var(--text-muted);
+	}
+
+	.exe-name {
+		font-weight: 600;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.exe-folder {
+		font-family: monospace;
+		font-size: 0.8rem;
+		color: var(--text-muted);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	.link {
