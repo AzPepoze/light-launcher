@@ -134,8 +134,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | Home: the folder count shows "..." while the folder loads. Not seen in a window. |
 | [ ] | Library: the local exe-icon fallback for coverless games needs a real window check. |
 | [ ] | Library: local games ignore the sort direction. `toLibraryFilters` does not send `order`, so the list always uses the sort's own order. |
-| [ ] | Library source chips: clicking a source scrolls to its group. The highlight does not follow scrolling yet (no scroll spy). |
-| [ ] | Library redesign (toolbar, source chips, filter panel, tiles, game drawer): check by eye in the real window. Only typecheck and tests so far. |
+| [ ] | Library rail: clicking a source scrolls to its group. The highlight does not follow scrolling yet (no scroll spy). |
 | [x] | The plugin SDK docs describe `sidebar`, the `browse:filters` capability, `source.browse` and `source.listFilters`. |
 | [x] | itch implements `source.browse`/`source.listFilters` with a search sidebar. It scrapes itch.io's public search HTML; there is no stable search API or pager, and sort is best-effort. |
 
@@ -165,9 +164,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [x] | The Library overview carries `kind`, `capabilities`, `sync` and `updateCheck`; the Updates page reads them from the overview instead of `PluginsList`. |
 | [x] | Updates, Downloads and Incoming mount lazily on first visit and then stay mounted but hidden; in-flight and expanded state survives tab switches. Per-tab scroll still uses the shared page scroller. |
 | [x] | Library sidebar and rail have no background or divider; choices are rows with a tinted selected state, no checkbox. |
-| [x] | Library cards: no Installed badge, the name sits under each cover, denser 12 px grid. Superseded by the tile redesign row below for the look. |
-| [ ] | The folder menu on Home (`FolderHeader`) never opened before: `MenuTrigger` swallowed its click. It now forwards the click. Check the menu opens and closes by eye in the real window. |
-| [ ] | Library tile pills: only Favorite, Not installed, Downloading and Installing are drawn. An update that is waiting shows no pill (Updates tab only). Confirm the wording. |
+| [x] | Library cards: no Installed badge, name and version in a hover overlay on the cover, denser 12 px grid. |
 | [x] | Updates page shows "Last checked X ago · Next check in Y" from `nextRunAt`. |
 | [x] | Notification center as a full page, with its bell at the bottom of the left rail. Built and tested, not seen in a window. |
 | [x] | Rebuilt `bin/light-launcher` and `bin/light-launcher-instance` with the embedded UI. |

@@ -1,34 +1,38 @@
 <script lang="ts">
-	import type { Snippet } from "svelte";
-	import { gameCount } from "./librarySections";
+	import type { LibrarySyncProgress } from "../../lib/features/types";
+	import { syncMessage } from "./librarySync";
 
 	let {
 		label,
 		count,
-		children
+		isPlugin,
+		progress
 	}: {
 		label: string;
 		count: number;
-		/** The section's actions, such as Sync. */
-		children?: Snippet;
+		/** Plugin sections report their sync progress here. */
+		isPlugin: boolean;
+		progress: LibrarySyncProgress | undefined;
 	} = $props();
+
+	const countText = $derived(count === 1 ? "1 game" : `${count} games`);
 </script>
 
 <header class="header">
 	<h2>{label}</h2>
-	<p class="count">{gameCount(count)}</p>
-	<div class="actions">
-		{@render children?.()}
-	</div>
+	<p class="count">{countText}</p>
 </header>
+<p class="sync" class:failed={progress?.phase === "error"} role="status">
+	{#if isPlugin && progress}{syncMessage(progress)}{/if}
+</p>
 
 <style lang="scss">
 	.header {
 		display: flex;
 		flex-wrap: wrap;
-		align-items: center;
-		gap: 4px 12px;
-		margin-bottom: 12px;
+		align-items: baseline;
+		gap: 12px;
+		margin-bottom: 4px;
 	}
 
 	h2 {
@@ -43,10 +47,14 @@
 		color: var(--text-muted);
 	}
 
-	.actions {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 6px;
-		margin-left: auto;
+	.sync {
+		min-height: 1.5em;
+		margin: 0 0 12px;
+		font-size: 0.875rem;
+		color: var(--text-muted);
+
+		&.failed {
+			color: var(--danger);
+		}
 	}
 </style>

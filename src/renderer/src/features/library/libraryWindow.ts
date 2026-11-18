@@ -6,15 +6,13 @@ export const MAX_RENDERED_TILES = 80;
 /** Gap between covers, both ways. Covers form a dense wall. */
 const COLUMN_GAP_PX = 12;
 const ROW_GAP_PX = 12;
-/** The name line under each cover, with the gap above it. Every tile has one, so rows stay even. */
-export const TILE_LABEL_PX = 32;
 const OVERSCAN_ROWS = 1;
 const PREFETCH_PAGES = 1;
 
 export interface GridLayout {
 	columns: number;
 	tileWidth: number;
-	/** Height of one row: the cover, its name line, and the gap under it. */
+	/** Height of one row, including the gap under it. */
 	rowHeight: number;
 }
 
@@ -45,7 +43,7 @@ function clamp(value: number, low: number, high: number): number {
 export function gridLayout(width: number, ratio: number, minColumnPx: number): GridLayout {
 	const columns = Math.max(1, Math.floor((width + COLUMN_GAP_PX) / (minColumnPx + COLUMN_GAP_PX)));
 	const tileWidth = Math.max(0, (width - (columns - 1) * COLUMN_GAP_PX) / columns);
-	const rowHeight = tileWidth / ratio + TILE_LABEL_PX + ROW_GAP_PX;
+	const rowHeight = tileWidth / ratio + ROW_GAP_PX;
 	return { columns, tileWidth, rowHeight };
 }
 

@@ -5,9 +5,8 @@ import { describe, expect, it } from "vitest";
 
 const root = fileURLToPath(new URL(".", import.meta.url));
 
-/** The one raw link left: an external link needs href/target, which IconButton cannot carry. */
+/** The one raw `.btn` left: an external link needs href/target, which Button cannot carry. */
 const LINK_EXCEPTION = "features/library/GameDetail.svelte";
-const LINK_CLASS = 'class="icon-link"';
 
 function svelteFiles(dir: string): string[] {
 	const files: string[] = [];
@@ -40,7 +39,7 @@ describe("shared UI primitives", () => {
 		const path = join(root, LINK_EXCEPTION);
 		const line = readFileSync(path, "utf8")
 			.split("\n")
-			.find((text) => text.includes(LINK_CLASS));
+			.find((text) => text.includes('class="btn'));
 		expect(line).toContain("<a ");
 		expect(line).toContain("href=");
 	});

@@ -9,7 +9,7 @@
 	let { library }: { library: LibraryState } = $props();
 </script>
 
-<div class="sidebar">
+<aside class="sidebar" aria-label="Library filters">
 	<label class="field">
 		<span class="label">Search</span>
 		<input
@@ -30,7 +30,7 @@
 	{/if}
 
 	<SavedFilters {library} />
-</div>
+</aside>
 
 <style lang="scss">
 	.sidebar {
@@ -39,6 +39,19 @@
 		gap: 18px;
 		box-sizing: border-box;
 		min-width: 0;
+		padding: 16px 14px 16px 16px;
+	}
+
+	/* From 900px the filters stick below the Library header and scroll on their own. */
+	@media (min-width: 900px) {
+		.sidebar {
+			position: sticky;
+			top: calc(76px + var(--library-head-height, 0px) + 8px);
+			max-height: calc(100vh - var(--library-head-height, 0px) - 124px);
+			overflow-y: auto;
+			/* Keeps the scrollbar from shifting the content when the list grows. */
+			scrollbar-gutter: stable;
+		}
 	}
 
 	.field {

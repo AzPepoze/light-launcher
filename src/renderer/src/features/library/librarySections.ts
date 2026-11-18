@@ -34,21 +34,9 @@ export function showsSection(source: LibrarySource, total: number | null, hasErr
 	return (total ?? 0) > 0 || hasError;
 }
 
-/** The element id of a source's group on the Library page, used by the source chips to scroll to it. */
+/** The element id of a source's group on the Library page, used by the source rail to scroll to it. */
 export function sectionElementId(source: string): string {
 	return `library-section-${source}`;
-}
-
-/** "1 game" or "12 games". */
-export function gameCount(count: number): string {
-	return count === 1 ? "1 game" : `${count} games`;
-}
-
-/** The toolbar's stats line: "12 games, 4 installed" and "2 updates" when any are waiting. */
-export function librarySubtitle(stats: { total: number; installed: number; updates: number }): string {
-	const parts = [gameCount(stats.total), `${stats.installed} installed`];
-	if (stats.updates > 0) parts.push(`${stats.updates} updates`);
-	return parts.join(", ");
 }
 
 /** The human name of a source. Falls back to the id when the overview has no label for it. */

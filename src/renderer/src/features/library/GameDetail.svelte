@@ -1,11 +1,8 @@
 <script lang="ts">
 	import { onMount } from "svelte";
-	import AppMenu from "@components/shared/AppMenu.svelte";
 	import Button from "@components/shared/Button.svelte";
 	import CoverImage from "@components/shared/CoverImage.svelte";
 	import Icon from "@components/shared/Icon.svelte";
-	import IconButton from "@components/shared/IconButton.svelte";
-	import MenuTrigger from "@components/shared/MenuTrigger.svelte";
 	import ScreenshotImage from "@components/shared/ScreenshotImage.svelte";
 	import { notifications } from "@stores/notificationStore";
 	import { libraryApi } from "../../lib/features/libraryApi";
@@ -40,9 +37,6 @@
 	let files = $state<GameFile[]>([]);
 	let changes = $state<GameChange[]>([]);
 	let notes = $state("");
-	let notesSaved = $state(false);
-	let menuOpen = $state(false);
-	/** The overflow menu's remove needs a second click, so one slip cannot delete a game. */
 	let confirmingRemove = $state(false);
 	let runningAction = $state("");
 	let refreshingFiles = $state(false);
@@ -151,12 +145,7 @@
 		if (notes === (game.notes ?? "")) return;
 		run(async () => {
 			onChanged(await libraryApi.update(game.id, { notes }));
-			notesSaved = true;
 		});
-	}
-
-	function editNotes() {
-		notesSaved = false;
 	}
 
 	function remove() {
@@ -166,24 +155,6 @@
 		});
 	}
 
-	function toggleMenu() {
-		if (menuOpen) closeMenu();
-		else menuOpen = true;
-	}
-
-	/** Closing the menu also drops a pending remove, so the next open starts clean. */
-	function closeMenu() {
-		menuOpen = false;
-		confirmingRemove = false;
-	}
-
-	function askRemove() {
-		confirmingRemove = true;
-	}
-
-	function cancelRemove() {
-		confirmingRemove = false;
-	}
 </script>
 
 <div class="detail">
@@ -200,70 +171,46 @@
 		<div class="summary">
 			<h2 bind:this={titleEl} tabindex="-1">{game.title}</h2>
 			<p class="meta">{versionLine}</p>
+
+			<div class="actions">
+				{#if game.installed && game.exePath}
+					<Button size="sm" variant="primary" disabled={busy} onclick={launch}>Play</Button>
+				{/if}
+				{#each actions as action (action.id)}
+					<Button
+						size="sm"
+						icon={action.icon}
+						loading={runningAction === action.id}
+						disabled={runningAction !== "" || busy}
+						onclick={() => runGameAction(action)}
+					>
+						{action.label}
+					</Button>
+				{/each}
+				{#if game.sourceKind === "plugin"}
+					<Button
+						size="sm"
+						icon="refresh"
+						loading={refreshingFiles}
+						disabled={runningAction !== "" || busy}
+						onclick={refreshFiles}
+					>
+						Refresh files
+					</Button>
+				{/if}
+				<Button size="sm" aria-pressed={game.favorite} disabled={busy} onclick={toggleFavorite}>
+					{game.favorite ? "Unfavorite" : "Favorite"}
+				</Button>
+				<a class="btn sm" href={game.url} target="_blank" rel="noreferrer">Open page</a>
+				{#if confirmingRemove}
+					<Button size="sm" variant="danger" disabled={busy} onclick={remove}>Confirm remove</Button>
+					<Button size="sm" onclick={() => (confirmingRemove = false)}>Cancel</Button>
+				{:else}
+					<Button size="sm" onclick={() => (confirmingRemove = true)}>Remove</Button>
+				{/if}
+			</div>
 		</div>
 	</header>
-
-	{#if game.installed && game.exePath}
-		<div class="play-row">
-			<Button class="play" variant="primary" icon="play_arrow" disabled={busy} onclick={launch}>Play</Button>
-		</div>
-	{/if}
-
-	<div class="actions">
-		<IconButton
-			icon="favorite"
-			label={game.favorite ? "Unfavorite" : "Favorite"}
-			filled={game.favorite}
-			disabled={busy}
-			onclick={toggleFavorite}
-		/>
-		<a class="icon-link" href={game.url} target="_blank" rel="noreferrer" title="Open page" aria-label="Open page">
-			<Icon name="open_in_new" size={20} />
-		</a>
-		{#each actions as action (action.id)}
-			<Button
-				size="sm"
-				icon={action.icon}
-				loading={runningAction === action.id}
-				disabled={runningAction !== "" || busy}
-				onclick={() => runGameAction(action)}
-			>
-				{action.label}
-			</Button>
-		{/each}
-		{#if game.sourceKind === "plugin"}
-			<Button
-				size="sm"
-				icon="refresh"
-				loading={refreshingFiles}
-				disabled={runningAction !== "" || busy}
-				onclick={refreshFiles}
-			>
-				Refresh files
-			</Button>
-		{/if}
-
-		<div class="overflow">
-			<MenuTrigger active={menuOpen} label="More actions" on:click={toggleMenu} />
-			<AppMenu visible={menuOpen} mode="anchor" onClose={closeMenu}>
-				{#if confirmingRemove}
-					<button class="menu-item danger" disabled={busy} onclick={remove}>
-						<Icon name="delete_forever" size={18} />
-						<span>Confirm remove</span>
-					</button>
-					<button class="menu-item" onclick={cancelRemove}>
-						<Icon name="close" size={18} />
-						<span>Cancel</span>
-					</button>
-				{:else}
-					<button class="menu-item danger" onclick={askRemove}>
-						<Icon name="delete_outline" size={18} />
-						<span>Remove game</span>
-					</button>
-				{/if}
-			</AppMenu>
-		</div>
-	</div>
 
 	{#if game.screenshots.length}
 		<ul class="shots" aria-label="Screenshots">
@@ -281,13 +228,13 @@
 	{/if}
 
 	{#if game.description}
-		<section class="card">
+		<section>
 			<h3>About</h3>
 			<p class="description">{game.description}</p>
 		</section>
 	{/if}
 
-	<section class="card">
+	<section class="facts-block">
 		{#if facts}
 			<p class="muted">{facts}</p>
 		{/if}
@@ -301,32 +248,24 @@
 		<p class="muted">Played {playtime(game.playtimeS)} · Last played {ago(game.lastPlayedAt)}</p>
 	</section>
 
-	<div class="card">
-		<GameInstall {game} {onChanged} />
-	</div>
+	<GameInstall {game} {onChanged} />
 
-	<div class="card">
-		<GameFiles gameId={game.id} {files} />
-	</div>
+	<GameFiles gameId={game.id} {files} />
 
-	<section class="card">
-		<div class="card-head">
-			<h3 id="notes-title">Notes</h3>
-			{#if notesSaved}<span class="saved" role="status">Saved</span>{/if}
-		</div>
+	<section>
+		<h3 id="notes-title">Notes</h3>
 		<textarea
 			aria-labelledby="notes-title"
 			class="input"
 			rows="4"
 			bind:value={notes}
-			oninput={editNotes}
 			onblur={saveNotes}
 			placeholder="Write a note about this game"
 		></textarea>
 	</section>
 
 	{#if changes.length}
-		<section class="card">
+		<section>
 			<h3>Changes</h3>
 			<ul class="changes">
 				{#each changes as change (change.id)}
@@ -341,25 +280,25 @@
 </div>
 
 <style lang="scss">
-	/* The game panel is narrow: the cover sits beside the title, and the actions wrap below. */
+	/* The game panel is narrow: the cover sits beside the title and the actions wrap below. */
 	.detail {
 		display: flex;
 		flex-direction: column;
-		gap: 16px;
+		gap: 24px;
 		min-width: 0;
 	}
 
 	.hero {
 		display: flex;
-		gap: 16px;
-		align-items: flex-end;
+		gap: 20px;
+		flex-wrap: wrap;
 	}
 
 	.cover {
-		width: 112px;
+		width: 128px;
 		aspect-ratio: 3 / 4;
 		flex-shrink: 0;
-		border-radius: var(--radius-lg);
+		border-radius: var(--radius-md);
 		overflow: hidden;
 		background: var(--bg-elevated);
 		display: flex;
@@ -377,13 +316,13 @@
 	.summary {
 		display: flex;
 		flex-direction: column;
-		gap: 6px;
+		gap: 10px;
 		min-width: 0;
 		flex: 1 1 180px;
 
 		h2 {
 			margin: 0;
-			font-size: 1.5rem;
+			font-size: 1.75rem;
 			font-weight: 700;
 			line-height: 1.2;
 			overflow-wrap: anywhere;
@@ -396,50 +335,8 @@
 
 	.meta {
 		margin: 0;
-		font-size: 0.9375rem;
-		color: var(--text-muted);
-	}
-
-	/* One large Play button across the panel. */
-	.play-row :global(.play) {
-		width: 100%;
-		height: 48px;
 		font-size: 1rem;
-	}
-
-	.actions {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: 8px;
-	}
-
-	.icon-link {
-		display: inline-grid;
-		place-items: center;
-		width: 36px;
-		height: 36px;
-		border-radius: var(--radius-pill);
 		color: var(--text-muted);
-		transition:
-			background var(--transition-fast),
-			color var(--transition-fast);
-
-		&:hover {
-			background: rgb(255 255 255 / 0.08);
-			color: var(--text-main);
-		}
-
-		&:focus-visible {
-			outline: 2px solid var(--accent-primary);
-			outline-offset: 2px;
-		}
-	}
-
-	/* The overflow panel opens under this wrapper, aligned to its right edge. */
-	.overflow {
-		position: relative;
-		margin-left: auto;
 	}
 
 	.muted {
@@ -448,33 +345,10 @@
 		font-size: 0.875rem;
 	}
 
-	/* A rounded group: each block of the panel sits on its own surface. */
-	.card {
+	.facts-block {
 		display: flex;
 		flex-direction: column;
-		gap: 10px;
-		min-width: 0;
-		padding: 14px 16px;
-		border-radius: var(--radius-lg);
-		background: var(--bg-elevated);
-
-		h3 {
-			margin: 0;
-			font-size: 1.0625rem;
-			font-weight: 600;
-		}
-	}
-
-	.card-head {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
 		gap: 8px;
-	}
-
-	.saved {
-		color: var(--text-muted);
-		font-size: 0.8125rem;
 	}
 
 	.tags {
@@ -489,9 +363,15 @@
 			font-size: 0.875rem;
 			padding: 3px 10px;
 			border-radius: var(--radius-pill);
-			background: var(--bg-input);
+			background: var(--bg-elevated);
 			color: var(--text-muted);
 		}
+	}
+
+	.actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
 	}
 
 	.shots {
@@ -507,17 +387,29 @@
 		}
 	}
 
+	section {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+
+		h3 {
+			margin: 0;
+			font-size: 1.25rem;
+			font-weight: 600;
+		}
+	}
+
 	.description {
 		max-width: 68ch;
 		white-space: pre-line;
-		font-size: 0.9375rem;
+		font-size: 1rem;
 		line-height: 1.5;
 		margin: 0;
 	}
 
 	textarea {
 		resize: vertical;
-		font-size: 0.9375rem;
+		font-size: 1rem;
 	}
 
 	.changes {

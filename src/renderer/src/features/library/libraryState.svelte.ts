@@ -91,7 +91,7 @@ export class LibraryState {
 	/** Plugin choices for the sidebar. Filled only when the user asks for them. */
 	readonly browse = new BrowseFeed();
 	sections = $derived(librarySections(this.overview.sources));
-	/** The source a chip picked last. The filter panel shows its groups. */
+	/** The source the rail picked last. The sidebar shows its groups. */
 	activeSource = $state(LOCAL_SOURCE);
 	activeSection = $derived(this.sections.find((item) => item.source === this.activeSource));
 	sidebarGroups = $derived(

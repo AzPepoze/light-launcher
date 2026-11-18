@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { onMount, tick } from "svelte";
 	import { get } from "svelte/store";
+	import Badge from "@components/shared/Badge.svelte";
 	import Button from "@components/shared/Button.svelte";
 	import EmptyState from "@components/shared/EmptyState.svelte";
+	import Icon from "@components/shared/Icon.svelte";
 	import IconButton from "@components/shared/IconButton.svelte";
 	import LoadingState from "@components/shared/LoadingState.svelte";
 	import Notice from "@components/shared/Notice.svelte";
@@ -24,11 +26,11 @@
 	import IncomingPanel from "./IncomingPanel.svelte";
 	import LibraryGrid from "./LibraryGrid.svelte";
 	import LibrarySidebar from "./LibrarySidebar.svelte";
-	import SectionHeader from "./SectionHeader.svelte";
-	import SourceChips from "./SourceChips.svelte";
+	import SourceRail from "./SourceRail.svelte";
 	import { LibraryState } from "./libraryState.svelte";
 	import { REVEAL_MAX_TILES, revealDoneMs } from "./libraryMotion";
-	import { librarySubtitle, sectionElementId, showsSection, sourceLabel } from "./librarySections";
+	import { sectionElementId, showsSection, sourceLabel } from "./librarySections";
+	import { sourceIcon } from "./sourceIcon";
 	import { syncMessage } from "./librarySync";
 	import { coverRatioOf } from "./coverRatio";
 	import { canSyncGames } from "./syncFlag";
@@ -74,20 +76,23 @@
 	let revealed = $state(false);
 	let cardSize = $state(LIBRARY_CARD_SIZE_DEFAULT);
 	let blurCovers = $state(false);
-	/** The filter panel slides in over the grid, at every width. */
+	/** Under 900px the filter sidebar slides in over the grid. */
 	let filtersOpen = $state(false);
-	/** Measured height of the sticky toolbar, so the page anchors below it. */
+	/** Measured height of the sticky header, so the rail and sidebar can stick below it. */
 	let headHeight = $state(0);
 	/** True once the page has scrolled, when the header needs its glass backing. */
 	let headStuck = $state(false);
 
-	/** The sections that show on the page, in chip order. Empty plugin sources are left out. */
+	/** The sections that show on the page, in rail order. Empty plugin sources are left out. */
 	const visibleSections = $derived(library.sections.filter(isShown));
 	/** Games in the sections on the page, for the reveal animation. */
 	const shownTotal = $derived(
 		visibleSections.reduce((sum, source) => sum + (library.listOf(source.source).total ?? 0), 0)
 	);
-	const subtitle = $derived(librarySubtitle(library.overview.stats));
+	const subtitle = $derived(
+		`${library.overview.stats.total} games · ${library.overview.stats.installed} installed` +
+			(library.overview.stats.updates ? ` · ${library.overview.stats.updates} updates` : "")
+	);
 	const topTabs = $derived<TabItem[]>([
 		{ id: "games", label: "Games", icon: "videogame_asset" },
 		{ id: "updates", label: "Updates", icon: "system_update_alt", badge: updateCount },
@@ -178,11 +183,8 @@
 	}
 
 	function handleKeydown(event: KeyboardEvent) {
-		if (closesDetailOn(event.key, selected !== null, addOpen)) {
-			void closeGame();
-		} else if (event.key === "Escape" && filtersOpen && !addOpen && selected === null) {
-			filtersOpen = false;
-		}
+		if (!closesDetailOn(event.key, selected !== null, addOpen)) return;
+		void closeGame();
 	}
 
 	function openGame(game: Game) {
@@ -208,20 +210,11 @@
 		return showsSection(source, list.total, list.error !== "");
 	}
 
-	/** Scrolls the page to a source's group and shows its filter groups. The source chips call this. */
+	/** Scrolls the page to a source's group and shows its sidebar groups. The rail calls this on click. */
 	function showSection(source: string) {
 		library.selectSource(source);
 		document
 			.getElementById(sectionElementId(source))
-			?.scrollIntoView({ behavior: "smooth", block: "start" });
-	}
-
-	/** Scrolls back to the first group without changing the filter source. The All chip calls this. */
-	function showAll() {
-		const first = visibleSections[0];
-		if (!first) return;
-		document
-			.getElementById(sectionElementId(first.source))
 			?.scrollIntoView({ behavior: "smooth", block: "start" });
 	}
 
@@ -266,22 +259,12 @@
 <div class="library" style:--library-head-height="{headHeight}px">
 	<div class="library-head" class:stuck={headStuck} bind:clientHeight={headHeight}>
 		<PageHeader title="Library" {subtitle} icon="collections_bookmark">
-			<Button size="sm" icon="tune" onclick={() => (filtersOpen = true)}>Filters</Button>
 			<Button size="sm" variant="primary" icon="add" onclick={() => (addOpen = true)}>Add game</Button>
 		</PageHeader>
 
 		<div class="top-tabs">
 			<Tabs tabs={topTabs} value={tab} onChange={selectTab} aria-label="Library sections" />
 		</div>
-
-		{#if tab === "games" && library.overviewLoaded && !library.overviewError}
-			<SourceChips
-				sections={visibleSections}
-				selected={library.activeSource}
-				onSelect={showSection}
-				onAll={showAll}
-			/>
-		{/if}
 	</div>
 
 	<!--
@@ -331,62 +314,64 @@
 			</Notice>
 		{:else}
 			<div class="layout">
-				{#if filtersOpen}
-					<div class="scrim" role="presentation" onclick={() => (filtersOpen = false)}></div>
-				{/if}
-				<aside class="side-col" class:open={filtersOpen} aria-label="Filters" inert={!filtersOpen}>
-					<div class="side-chrome">
-						<span class="side-title">Filters</span>
-						<IconButton icon="close" label="Close filters" onclick={() => (filtersOpen = false)} />
-					</div>
-					<div class="side-scroll">
-						<LibrarySidebar {library} />
-					</div>
-				</aside>
+				<div class="rail-col">
+					<SourceRail sections={visibleSections} selected={library.activeSource} onSelect={showSection} />
+				</div>
+
+				<div class="side-col" class:open={filtersOpen}>
+					<LibrarySidebar {library} />
+				</div>
 
 				<div class="main">
+					<div class="filters-toggle">
+						<Button size="sm" icon="tune" onclick={() => (filtersOpen = !filtersOpen)}>Filters</Button>
+					</div>
+
 					{#each visibleSections as source (source.source)}
 						{@const list = library.listOf(source.source)}
 						<section class="group" id={sectionElementId(source.source)} aria-label={source.label}>
-							<SectionHeader label={source.label} count={list.total ?? 0}>
-								{#if canSyncGames(source)}
-									<Button
-										size="sm"
-										variant="text"
-										icon="sync"
-										title={SYNC_HINT}
-										disabled={library.isSyncing(source.source)}
-										onclick={() => library.startSync(source.source)}
-									>
-										{library.isSyncing(source.source) ? "Syncing..." : "Sync"}
-									</Button>
-								{/if}
-								{#each libraryActionsOf(source) as action (action.id)}
-									<Button
-										size="sm"
-										variant="text"
-										icon={action.icon}
-										loading={library.runningAction === action.id}
-										disabled={library.runningAction !== ""}
-										onclick={() => library.runSourceAction(source.source, action)}
-									>
-										{action.label}
-									</Button>
-								{/each}
-							</SectionHeader>
+							<header class="group-header">
+								<span class="group-icon"><Icon name={sourceIcon(source.source)} size={22} /></span>
+								<h2>{source.label}</h2>
+								<Badge>{list.total ?? 0}</Badge>
+								<div class="group-actions">
+									{#if canSyncGames(source)}
+										<Button
+											size="sm"
+											icon="sync"
+											title={SYNC_HINT}
+											disabled={library.isSyncing(source.source)}
+											onclick={() => library.startSync(source.source)}
+										>
+											{library.isSyncing(source.source) ? "Syncing..." : "Sync now"}
+										</Button>
+									{/if}
+									{#each libraryActionsOf(source) as action (action.id)}
+										<Button
+											size="sm"
+											icon={action.icon}
+											loading={library.runningAction === action.id}
+											disabled={library.runningAction !== ""}
+											onclick={() => library.runSourceAction(source.source, action)}
+										>
+											{action.label}
+										</Button>
+									{/each}
+								</div>
+							</header>
 
 							{#if library.syncs[source.source]}
 								{@const progress = library.syncs[source.source]}
-								<p class="status" class:failed={progress.phase === "error"} role="status">
+								<p class="sync" class:failed={progress.phase === "error"} role="status">
 									{syncMessage(progress)}
 								</p>
 							{/if}
 
 							{#if list.error}
-								<p class="status failed" role="alert">
+								<Notice tone="error">
 									{list.error}
-									<Button size="sm" variant="text" onclick={() => library.retry(source.source)}>Retry</Button>
-								</p>
+									<Button size="sm" onclick={() => library.retry(source.source)}>Retry</Button>
+								</Notice>
 							{/if}
 
 							{#if list.total === null}
@@ -410,6 +395,7 @@
 									ratio={coverRatioOf(source.cover)}
 									minColumnPx={cardSize}
 									card={source.card}
+									variant={source.kind === "local" ? "home" : "cover"}
 									{transfers}
 									blurUntilHover={blurCovers}
 									{revealed}
@@ -434,7 +420,7 @@
 						aria-label="Game details"
 					>
 						<div class="detail-chrome">
-							<span class="detail-label">Game details</span>
+							<span class="detail-eyebrow">Game details</span>
 							<IconButton icon="close" label="Close" onclick={closeGame} />
 						</div>
 						<!-- Keyed by id so switching tiles resets the scroll and loads the new game's files and notes. -->
@@ -461,33 +447,23 @@
 </div>
 
 <style lang="scss">
-	/*
-	 * Library-only tokens. --library-top is the search bar's height above the page; the toolbar,
-	 * the chips and the filter panel all anchor to it.
-	 */
 	.library {
-		--library-top: 76px;
-		--radius-lg: 20px;
-		--library-tile-radius: 20px;
-
 		font-size: 1rem;
 		line-height: 1.5;
 	}
 
 	/*
-	 * One sticky toolbar: title, tabs and source chips. Its solid background hides covers that
-	 * scroll under it, and the band above it hides them under the search bar too.
+	 * The title and tabs stay put while the page scrolls. The 76px band above the head is
+	 * painted by the ::before, so covers never scroll through the global search bar.
 	 */
 	.library-head {
 		position: sticky;
-		top: var(--library-top);
+		top: 76px;
 		z-index: 20;
-		display: flex;
-		flex-direction: column;
-		gap: 12px;
 		box-sizing: border-box;
-		padding-bottom: 12px;
-		background: var(--bg-base);
+		padding-bottom: 16px;
+		background: transparent;
+		transition: background-color var(--transition-fast);
 
 		&::before {
 			content: "";
@@ -495,13 +471,20 @@
 			left: 0;
 			right: 0;
 			bottom: 100%;
-			height: var(--library-top);
+			height: 76px;
 			background: inherit;
 			pointer-events: none;
 		}
 
 		&.stuck {
-			box-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
+			background: color-mix(in srgb, var(--bg-base) 88%, transparent);
+			-webkit-backdrop-filter: blur(16px);
+			backdrop-filter: blur(16px);
+
+			&::before {
+				-webkit-backdrop-filter: blur(16px);
+				backdrop-filter: blur(16px);
+			}
 		}
 	}
 
@@ -509,82 +492,72 @@
 		margin-bottom: 0;
 	}
 
-	/* The grid takes the full width. The filters and the game details both slide over it. */
+	/*
+	 * One grid: [rail 56px | filters 260px | grid fills the rest]. The rail and filter columns
+	 * sit on the page background; only the divider after the filters separates them from the grid.
+	 * The game details open over the page as a drawer, so the grid keeps its full width.
+	 */
 	.layout {
-		min-width: 0;
+		display: grid;
+		grid-template-columns: 56px 260px minmax(0, 1fr);
+		align-items: stretch;
+	}
+
+	.side-col {
+		border-right: 1px solid var(--glass-border);
 	}
 
 	.main {
 		min-width: 0;
+		padding-left: 24px;
 	}
 
-	.scrim {
-		position: fixed;
-		inset: 0;
-		z-index: 190;
-		background: rgb(0 0 0 / 0.45);
-		cursor: pointer;
-		animation: detail-backdrop-in var(--motion-base) var(--ease-out) both;
-	}
-
-	.side-col {
-		position: fixed;
-		top: 0;
-		bottom: 0;
-		left: 0;
-		z-index: 200;
-		display: flex;
-		flex-direction: column;
-		width: min(340px, 88vw);
-		background: var(--bg-surface);
-		border-right: 1px solid var(--glass-border);
-		box-shadow: 0 0 24px rgb(0 0 0 / 0.35);
-		transform: translateX(-105%);
-		transition: transform var(--motion-base) var(--ease-out);
-	}
-
-	.side-col.open {
-		transform: none;
-	}
-
-	.side-chrome {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		flex-shrink: 0;
-		padding: 12px 12px 12px 16px;
-		border-bottom: 1px solid var(--glass-border);
-	}
-
-	.side-title {
-		font-weight: 600;
-	}
-
-	.side-scroll {
-		flex: 1;
-		min-height: 0;
-		overflow-y: auto;
-		overscroll-behavior: contain;
-		scrollbar-gutter: stable;
-		padding: 16px;
+	.filters-toggle {
+		display: none;
+		margin-bottom: 12px;
 	}
 
 	/* Each source is a group: its header, then its sync note, notices and grid. */
 	.group {
-		/* Keeps the group title clear of the sticky toolbar when a chip scrolls to it. */
-		scroll-margin-top: calc(var(--library-top) + var(--library-head-height, 0px) + 16px);
+		/* Keeps the group title clear of the sticky page header when the rail scrolls to it. */
+		scroll-margin-top: calc(76px + var(--library-head-height, 0px) + 16px);
 		margin-bottom: 32px;
 	}
 
-	/* Sync and error lines are quiet text under the header, not boxes. */
-	.status {
+	.group-header {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 10px;
+		margin-bottom: 12px;
+	}
+
+	.group-icon {
+		display: inline-flex;
+		color: var(--text-muted);
+	}
+
+	.group-header h2 {
+		margin: 0;
+		font-size: 1.25rem;
+		font-weight: 600;
+	}
+
+	.group-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+		margin-left: auto;
+	}
+
+	.sync {
 		min-height: 1.5em;
 		margin: 0 0 12px;
 		font-size: 0.875rem;
 		color: var(--text-muted);
 	}
 
-	.status.failed {
+	.sync.failed {
 		color: var(--danger);
 	}
 
@@ -628,10 +601,12 @@
 		background: var(--bg-surface);
 	}
 
-	.detail-label {
+	.detail-eyebrow {
 		color: var(--text-muted);
-		font-size: 0.875rem;
-		font-weight: 600;
+		font-size: 0.75rem;
+		font-weight: 800;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
 	}
 
 	.detail-scroll {
@@ -656,8 +631,39 @@
 		}
 	}
 
-	/* Narrow screens: the game details take the whole width. */
+	/* Narrow: the rail stays a column. The filters leave the grid and slide over it. */
 	@media (max-width: 899px) {
+		.layout {
+			grid-template-columns: 56px minmax(0, 1fr);
+		}
+
+		.side-col {
+			position: fixed;
+			top: 0;
+			bottom: 0;
+			left: 0;
+			z-index: 200;
+			width: min(320px, 88vw);
+			background: var(--bg-surface);
+			padding-top: 24px;
+			overflow-y: auto;
+			box-shadow: 0 0 24px rgb(0 0 0 / 0.35);
+			transform: translateX(-105%);
+			transition: transform 180ms var(--ease-out);
+		}
+
+		.side-col.open {
+			transform: none;
+		}
+
+		.main {
+			padding-left: 16px;
+		}
+
+		.filters-toggle {
+			display: flex;
+		}
+
 		.detail-col {
 			width: 100vw;
 			border-left: none;

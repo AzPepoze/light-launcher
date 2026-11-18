@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
 	MAX_RENDERED_TILES,
 	PAGE_SIZE,
-	TILE_LABEL_PX,
 	gridLayout,
 	indexesIn,
 	gridWindow,
@@ -37,8 +36,8 @@ describe("gridLayout", () => {
 	it("uses the cover ratio for the row height", () => {
 		const wide = gridLayout(1000, WIDE.ratio, WIDE.minColumnPx);
 		expect(wide.columns).toBe(4);
-		// Four 241 px covers at 16:9 are 135.6 px high; the tile is the cover, the name line, then 12 px of gap.
-		expect(wide.rowHeight).toBeCloseTo(135.5625 + TILE_LABEL_PX + 12);
+		// Four 241 px covers at 16:9 are 135.6 px high; the tile is the cover, then 12 px of gap.
+		expect(wide.rowHeight).toBeCloseTo(147.5625);
 	});
 
 	it("uses the minimum column width from the card size setting", () => {
