@@ -5,9 +5,13 @@
 	import ExpandableText from "@components/shared/ExpandableText.svelte";
 	import Icon from "@components/shared/Icon.svelte";
 	import IconButton from "@components/shared/IconButton.svelte";
+	import ImageViewer from "@components/shared/ImageViewer.svelte";
 	import ScreenshotImage from "@components/shared/ScreenshotImage.svelte";
 	import { notifications } from "@stores/notificationStore";
+	import { OpenFileLocation } from "@lib/api";
+	import { plainMessage } from "@lib/plainMessage";
 	import { libraryApi } from "../../lib/features/libraryApi";
+	import { useScreenshotUrls } from "../../lib/features/useMedia.svelte";
 	import type {
 		Game,
 		GameChange,
@@ -16,6 +20,7 @@
 		SourceAction,
 	} from "../../lib/features/types";
 	import { ago, playtime } from "../../lib/features/format";
+	import { getGamePath } from "../../lib/gameUtils";
 	import { loadGameIcon } from "../../lib/iconService";
 	import { libraryErrorMessage } from "./libraryError";
 	import GameFiles from "./GameFiles.svelte";
@@ -46,6 +51,25 @@
 	let titleEl = $state<HTMLElement>();
 	/** The real game icon, shown for local games that have no cover art. */
 	let gameIcon = $state("");
+	/** The screenshot the image viewer shows, or null when it is closed. */
+	let viewerIndex = $state<number | null>(null);
+	const screenshotUrls = useScreenshotUrls(() =>
+		game.screenshots.map((remote, index) => ({
+			gameId: game.id,
+			index,
+			local: game.screenshotLocals[index] ?? null,
+			remote
+		}))
+	);
+	const viewerImages = $derived(
+		game.screenshots.map((_, index) => ({
+			url: screenshotUrls.urls[index] ?? "",
+			alt: `Screenshot ${index + 1}`
+		}))
+	);
+
+	/** The install folder, else the exe's path or the saved launch path. Empty when the game has none. */
+	const folderPath = $derived(getGamePath(game));
 
 	const developerLine = $derived([game.developer, game.engine].filter(Boolean).join(" · "));
 	const versionText = $derived(game.version ? `Version ${game.version}` : "Version unknown");
@@ -147,6 +171,14 @@
 		run(() => libraryApi.launch(game.id));
 	}
 
+	async function openFolder() {
+		try {
+			await OpenFileLocation(folderPath);
+		} catch (err) {
+			notifications.error(`Failed to open file location: ${plainMessage(err)}`);
+		}
+	}
+
 	function saveNotes() {
 		if (notes === (game.notes ?? "")) return;
 		run(async () => {
@@ -198,6 +230,12 @@
 		<a class="btn icon-link" href={game.url} target="_blank" rel="noreferrer" title="Open page" aria-label="Open page">
 			<Icon name="open_in_new" size={18} />
 		</a>
+		<IconButton
+			icon="folder_open"
+			label="Open folder location"
+			disabled={!folderPath}
+			onclick={openFolder}
+		/>
 		{#each actions as action (action.id)}
 			<Button
 				icon={action.icon}
@@ -262,15 +300,31 @@
 		<ul class="shots" aria-label="Screenshots">
 			{#each game.screenshots as shot, index (shot)}
 				<li>
-					<ScreenshotImage
-						gameId={game.id}
-						{index}
-						local={game.screenshotLocals[index] ?? null}
-						remote={shot}
-					/>
+					<button
+						class="shot"
+						type="button"
+						aria-label="Open screenshot {index + 1}"
+						onclick={() => (viewerIndex = index)}
+					>
+						<ScreenshotImage
+							gameId={game.id}
+							{index}
+							local={game.screenshotLocals[index] ?? null}
+							remote={shot}
+						/>
+					</button>
 				</li>
 			{/each}
 		</ul>
+	{/if}
+
+	{#if viewerIndex !== null}
+		<ImageViewer
+			images={viewerImages}
+			index={viewerIndex}
+			onIndexChange={(next) => (viewerIndex = next)}
+			onClose={() => (viewerIndex = null)}
+		/>
 	{/if}
 
 	{#if game.description}
@@ -523,6 +577,22 @@
 		li {
 			flex: 0 0 240px;
 			scroll-snap-align: start;
+		}
+	}
+
+	/* The screenshot is a button; it keeps the image's size and radius. */
+	.shot {
+		display: block;
+		width: 100%;
+		padding: 0;
+		border: none;
+		border-radius: var(--radius-sm);
+		background: none;
+		cursor: zoom-in;
+
+		&:focus-visible {
+			outline: 2px solid var(--accent-primary);
+			outline-offset: 2px;
 		}
 	}
 
