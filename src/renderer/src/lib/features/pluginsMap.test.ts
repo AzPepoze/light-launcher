@@ -31,6 +31,7 @@ function makeWire(overrides: Partial<WirePluginInfo> = {}): WirePluginInfo {
 		running: false,
 		idle: false,
 		unsigned: false,
+		dev: false,
 		permissions: NO_PERMISSIONS,
 		sources: [
 			{ plugin: "com.example.store", sourceId: "example", label: "Example", capabilities: [], cover: "3:4" }
@@ -171,8 +172,16 @@ describe("toPluginInfo", () => {
 			updateSources: [],
 			source: null,
 			consent: [],
-			commands: []
+			commands: [],
+			dev: false,
+			devPath: null
 		});
+	});
+
+	it("maps a dev-linked plugin and its source folder", () => {
+		const info = toPluginInfo(makeWire({ dev: true, devPath: "/work/demo" }));
+		expect(info.dev).toBe(true);
+		expect(info.devPath).toBe("/work/demo");
 	});
 
 	it.each(["broken", "disabled", "running", "stopped"] as const)(

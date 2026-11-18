@@ -31,6 +31,7 @@ function wirePlugin(overrides: Partial<WirePluginInfo> = {}): WirePluginInfo {
 		running: false,
 		idle: false,
 		unsigned: false,
+		dev: false,
 		permissions: NO_PERMISSIONS,
 		sources: [],
 		author: "Ada",
@@ -248,5 +249,29 @@ describe("communityEntries", () => {
 		const first = entry({ id: "first" });
 		const second = entry({ id: "second" });
 		expect(communityEntries([first, second], [])).toEqual([first, second]);
+	});
+});
+
+describe("pluginsApi dev mode", () => {
+	beforeEach(() => {
+		rpcMock.mockReset();
+	});
+
+	it("sends the folder to PluginDevLink and maps the linked plugin", async () => {
+		rpcMock.mockResolvedValue(wirePlugin({ dev: true, devPath: "/work/demo" }));
+
+		const info = await pluginsApi.devLink("/work/demo");
+
+		expect(rpcMock).toHaveBeenCalledWith("PluginDevLink", { path: "/work/demo" });
+		expect(info.dev).toBe(true);
+		expect(info.devPath).toBe("/work/demo");
+	});
+
+	it("sends the id to PluginDevUnlink", async () => {
+		rpcMock.mockResolvedValue(null);
+
+		await pluginsApi.devUnlink("demo");
+
+		expect(rpcMock).toHaveBeenCalledWith("PluginDevUnlink", { id: "demo" });
 	});
 });

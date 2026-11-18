@@ -128,7 +128,9 @@ export function toPluginInfo(wire: WirePluginInfo): PluginInfo {
 			id: command.id,
 			label: command.label,
 			method: command.method ?? null
-		}))
+		})),
+		dev: wire.dev ?? false,
+		devPath: wire.devPath || null
 	};
 }
 

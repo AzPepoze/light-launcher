@@ -195,6 +195,16 @@ export const pluginsApi = {
 			})
 		),
 
+	/**
+	 * Runs the plugin in a source folder, for development. The folder needs a valid plugin.json.
+	 * A linked plugin skips the checksum, signature and consent checks.
+	 */
+	devLink: async (path: string): Promise<PluginInfo> =>
+		toPluginInfo(await rpc<WirePluginInfo>("PluginDevLink", { path })),
+
+	/** Hands a linked plugin back to its installed copy. Fails when the plugin is not linked. */
+	devUnlink: (id: string) => rpc<void>("PluginDevUnlink", { id }),
+
 	/** Removal keeps the plugin's data folder. */
 	remove: (id: string) => rpc<void>("PluginRemove", { id, deleteData: false }),
 

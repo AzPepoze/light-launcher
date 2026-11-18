@@ -478,6 +478,10 @@ export interface PluginInfo {
 	consent: string[];
 	/** Command palette actions the plugin declares. */
 	commands: PluginCommand[];
+	/** True when the plugin runs from a source folder linked for development. */
+	dev: boolean;
+	/** The linked source folder, or null for an installed plugin. */
+	devPath: string | null;
 }
 
 interface PluginCommand {

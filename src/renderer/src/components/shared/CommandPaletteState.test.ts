@@ -65,6 +65,7 @@ function wirePlugin(overrides: Partial<WirePluginInfo> = {}): WirePluginInfo {
 		running: true,
 		idle: false,
 		unsigned: false,
+		dev: false,
 		permissions: { network: null, fs: null, secrets: false, browser: false, exec: false },
 		sources: [],
 		author: "Ada",
