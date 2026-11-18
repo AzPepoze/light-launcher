@@ -423,6 +423,10 @@
 			padding-top: var(--topbar-height);
 		}
 
+		@media (max-width: 900px) {
+			padding-right: 16px;
+		}
+
 		&.home-mode {
 			overflow: hidden;
 			display: flex;

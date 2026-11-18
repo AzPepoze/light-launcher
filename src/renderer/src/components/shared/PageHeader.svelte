@@ -40,6 +40,7 @@
 <style lang="scss">
 	.page-header {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: flex-end;
 		justify-content: space-between;
 		gap: 16px;
@@ -70,6 +71,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: 4px;
+		min-width: 0;
 
 		h1 {
 			font-size: 1.75rem;
@@ -79,6 +81,13 @@
 			letter-spacing: 2px;
 			margin: 0;
 			line-height: 1.1;
+		}
+	}
+
+	@media (max-width: 900px) {
+		.header-text h1 {
+			font-size: 1.35rem;
+			letter-spacing: 1.5px;
 		}
 	}
 
