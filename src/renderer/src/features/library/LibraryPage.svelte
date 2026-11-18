@@ -81,7 +81,7 @@
 	/** True once the page has scrolled, when the header needs its glass backing. */
 	let headStuck = $state(false);
 
-	/** The sections that show on the page, in rail order. Empty plugin sources are left out. */
+	/** The sections that show on the page, in chip order. Empty plugin sources are left out. */
 	const visibleSections = $derived(library.sections.filter(isShown));
 	/** Games in the sections on the page, for the reveal animation. */
 	const shownTotal = $derived(

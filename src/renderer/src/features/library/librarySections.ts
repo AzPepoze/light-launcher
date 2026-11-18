@@ -34,7 +34,7 @@ export function showsSection(source: LibrarySource, total: number | null, hasErr
 	return (total ?? 0) > 0 || hasError;
 }
 
-/** The element id of a source's group on the Library page, used by the source rail to scroll to it. */
+/** The element id of a source's group on the Library page, used by the source chips to scroll to it. */
 export function sectionElementId(source: string): string {
 	return `library-section-${source}`;
 }
