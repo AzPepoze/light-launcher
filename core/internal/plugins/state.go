@@ -17,6 +17,9 @@ type PluginState struct {
 	AcceptedPermissions []string `json:"acceptedPermissions,omitempty"`
 	// SecretKeys lists the secrets the plugin stored. Keyrings cannot list keys, so uninstall reads them here.
 	SecretKeys []string `json:"secretKeys,omitempty"`
+	// Dev runs the plugin from DevPath, a source folder, instead of the installed version.
+	Dev     bool   `json:"dev,omitempty"`
+	DevPath string `json:"devPath,omitempty"`
 }
 
 // stateStore keeps state.json in step with memory. It is safe for concurrent use.
@@ -63,6 +66,19 @@ func (s *stateStore) update(id string, change func(*PluginState)) error {
 	change(&state)
 	s.entries[id] = state
 	return s.saveLocked()
+}
+
+// devIDs lists the plugins linked from a source folder.
+func (s *stateStore) devIDs() []string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var ids []string
+	for id, state := range s.entries {
+		if state.Dev {
+			ids = append(ids, id)
+		}
+	}
+	return ids
 }
 
 func (s *stateStore) remove(id string) error {

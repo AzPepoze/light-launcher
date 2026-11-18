@@ -3,26 +3,32 @@ package plugins
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"light-launcher/core/internal/logger"
 )
 
-// installedPlugin is the current version of one installed plugin.
+// installedPlugin is the current version of one installed plugin, or the source folder of a dev-linked one.
 type installedPlugin struct {
 	manifest Manifest
 	version  string
 	previous string
 	dir      string
+	dev      bool
 }
 
-// loadInstalled reads the manifest of the current version.
+// loadInstalled reads the manifest of the current version, or of the linked source folder in dev mode.
 func (h *Host) loadInstalled(id string) (installedPlugin, error) {
 	if err := requireID(id); err != nil {
 		return installedPlugin{}, err
+	}
+	if state := h.install.state.get(id); state.Dev {
+		return loadDevFolder(id, state.DevPath)
 	}
 	pluginDir := h.layout.PluginDir(id)
 	version, err := readPointer(pluginDir, currentPointer)
@@ -49,6 +55,30 @@ func (h *Host) loadInstalled(id string) (installedPlugin, error) {
 		return installedPlugin{}, err
 	}
 	return installedPlugin{manifest: manifest, version: version, previous: previous, dir: dir}, nil
+}
+
+// loadDevFolder reads the manifest in a plugin folder linked for development.
+func loadDevFolder(id, dir string) (installedPlugin, error) {
+	manifest, err := readFolderManifest(dir)
+	if err != nil {
+		return installedPlugin{}, err
+	}
+	if manifest.ID != id {
+		return installedPlugin{}, fmt.Errorf("dev folder %q holds plugin %q", dir, manifest.ID)
+	}
+	return installedPlugin{manifest: manifest, version: manifest.Version, dir: dir, dev: true}, nil
+}
+
+// readFolderManifest parses the plugin.json of a folder. It does not check signatures or checksums.
+func readFolderManifest(dir string) (Manifest, error) {
+	data, err := os.ReadFile(filepath.Join(dir, "plugin.json"))
+	if errors.Is(err, os.ErrNotExist) {
+		return Manifest{}, ErrNoManifest
+	}
+	if err != nil {
+		return Manifest{}, err
+	}
+	return ParseManifest(data)
 }
 
 // supervisorFor returns the running supervisor of an enabled plugin, creating it when needed.
@@ -80,9 +110,18 @@ func (h *Host) supervisorFor(id string) (*Supervisor, error) {
 	cfg.env = env
 	cfg.onDisable = func(reason string) { h.disable(id, reason) }
 	cfg.onIdle = func() { h.emitState(id) }
+	if inst.dev {
+		cfg.idleTimeout = noIdleTimeout()
+	}
 	sup := newSupervisor(cfg)
 	h.supervisors[id] = sup
 	return sup, nil
+}
+
+// noIdleTimeout returns the timeout that turns the idle stop off.
+func noIdleTimeout() *time.Duration {
+	none := time.Duration(0)
+	return &none
 }
 
 // stopPlugin stops the running plugin and forgets its supervisor. The next call starts a fresh one.

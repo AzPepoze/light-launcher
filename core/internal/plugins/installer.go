@@ -19,6 +19,10 @@ var (
 	ErrNoUpdate         = errors.New("plugin is already at this version")
 	ErrNoPrevious       = errors.New("no previous version to roll back to")
 	ErrNoSource         = errors.New("plugin has no recorded install source, install it again")
+	ErrDevLinked        = errors.New("plugin is linked from a source folder, unlink it first")
+	ErrNotDevLinked     = errors.New("plugin is not linked from a source folder")
+	ErrNoManifest       = errors.New("folder has no plugin.json")
+	ErrNotFolder        = errors.New("path is not a folder")
 )
 
 // installer installs, updates, rolls back and removes packages under a Layout.
@@ -126,6 +130,9 @@ func (in *installer) Install(ctx context.Context, source string, allowUnsigned b
 		return "", ErrUnsigned
 	}
 	id := prepared.Manifest.ID
+	if in.state.get(id).Dev {
+		return "", ErrDevLinked
+	}
 	if exists(in.layout.PluginDir(id)) {
 		return "", ErrAlreadyInstalled
 	}
@@ -252,7 +259,7 @@ func (in *installer) Rollback(id string) error {
 
 // Remove deletes the plugin files and its state. Plugin data is deleted only when deleteData is set.
 func (in *installer) Remove(id string, deleteData bool) error {
-	if !exists(in.layout.PluginDir(id)) {
+	if !exists(in.layout.PluginDir(id)) && !in.state.get(id).Dev {
 		return ErrNotInstalled
 	}
 	if err := os.RemoveAll(in.layout.PluginDir(id)); err != nil {

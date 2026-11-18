@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"slices"
 	"sort"
 	"time"
@@ -13,26 +15,29 @@ import (
 
 // PluginInfo is what the UI shows for one plugin.
 type PluginInfo struct {
-	ID             string                `json:"id"`
-	Name           string                `json:"name"`
-	Version        string                `json:"version"`
-	Previous       string                `json:"previous,omitempty"`
-	Status         string                `json:"status"`
-	Enabled        bool                  `json:"enabled"`
-	Running        bool                  `json:"running"`
-	Idle           bool                  `json:"idle"`
-	LastActiveAt   string                `json:"lastActiveAt,omitempty"`
-	Error          string                `json:"error,omitempty"`
-	DisabledReason string                `json:"disabledReason,omitempty"`
-	Source         string                `json:"source,omitempty"`
-	Unsigned       bool                  `json:"unsigned"`
-	Permissions    Permissions           `json:"permissions"`
-	Sources        []contract.SourceInfo `json:"sources"`
-	Author         string                `json:"author"`
-	Description    string                `json:"description"`
-	Homepage       string                `json:"homepage"`
-	Repository     string                `json:"repository,omitempty"`
-	HasSettings    bool                  `json:"hasSettings"`
+	ID             string `json:"id"`
+	Name           string `json:"name"`
+	Version        string `json:"version"`
+	Previous       string `json:"previous,omitempty"`
+	Status         string `json:"status"`
+	Enabled        bool   `json:"enabled"`
+	Running        bool   `json:"running"`
+	Idle           bool   `json:"idle"`
+	LastActiveAt   string `json:"lastActiveAt,omitempty"`
+	Error          string `json:"error,omitempty"`
+	DisabledReason string `json:"disabledReason,omitempty"`
+	Source         string `json:"source,omitempty"`
+	Unsigned       bool   `json:"unsigned"`
+	// Dev is true when the plugin runs from a source folder linked for development.
+	Dev         bool                  `json:"dev"`
+	DevPath     string                `json:"devPath,omitempty"`
+	Permissions Permissions           `json:"permissions"`
+	Sources     []contract.SourceInfo `json:"sources"`
+	Author      string                `json:"author"`
+	Description string                `json:"description"`
+	Homepage    string                `json:"homepage"`
+	Repository  string                `json:"repository,omitempty"`
+	HasSettings bool                  `json:"hasSettings"`
 	// Commands are the palette actions the plugin declares. They call the plugin when picked.
 	Commands []CommandContribution `json:"commands"`
 }
@@ -57,7 +62,7 @@ type UpdateRequest struct {
 
 // List returns every installed plugin, sorted by id.
 func (h *Host) List() []PluginInfo {
-	ids, err := h.layout.installedIDs()
+	ids, err := h.pluginIDs()
 	if err != nil {
 		return nil
 	}
@@ -67,6 +72,20 @@ func (h *Host) List() []PluginInfo {
 		infos = append(infos, h.info(id))
 	}
 	return markSourceCollisions(infos)
+}
+
+// pluginIDs lists the installed plugin folders and the dev-linked plugins that have no installed copy.
+func (h *Host) pluginIDs() ([]string, error) {
+	ids, err := h.layout.installedIDs()
+	if err != nil {
+		return nil, err
+	}
+	for _, id := range h.install.state.devIDs() {
+		if !slices.Contains(ids, id) {
+			ids = append(ids, id)
+		}
+	}
+	return ids, nil
 }
 
 // markSourceCollisions keeps the first enabled plugin that claims a source id and marks later ones
@@ -242,6 +261,84 @@ func (h *Host) deleteSecrets(id string) error {
 	return nil
 }
 
+// DevLink runs the plugin in the folder at path instead of its installed version. The folder's manifest
+// must pass the same checks as a package. Linked plugins skip checksums, signatures and consent, and
+// restart when their files change.
+func (h *Host) DevLink(path string) (PluginInfo, error) {
+	dir, err := filepath.Abs(path)
+	if err != nil {
+		return PluginInfo{}, err
+	}
+	if err := requireFolder(dir); err != nil {
+		return PluginInfo{}, err
+	}
+	manifest, err := readFolderManifest(dir)
+	if err != nil {
+		return PluginInfo{}, err
+	}
+	if err := checkCompatibility(manifest, dir, h.hostVersion); err != nil {
+		return PluginInfo{}, err
+	}
+	id := manifest.ID
+	err = h.install.state.update(id, func(state *PluginState) {
+		state.Dev = true
+		state.DevPath = dir
+		state.Enabled = true
+		state.DisabledReason = ""
+	})
+	if err != nil {
+		return PluginInfo{}, err
+	}
+	h.stopPlugin(id)
+	h.emitState(id)
+	return h.info(id), nil
+}
+
+// DevUnlink stops running a plugin from its source folder. The installed copy, if any, runs again.
+func (h *Host) DevUnlink(id string) error {
+	if err := requireID(id); err != nil {
+		return err
+	}
+	if !h.install.state.get(id).Dev {
+		return ErrNotDevLinked
+	}
+	h.stopPlugin(id)
+	if !exists(h.layout.PluginDir(id)) {
+		return h.forgetDevOnly(id)
+	}
+	err := h.install.state.update(id, func(state *PluginState) {
+		state.Dev = false
+		state.DevPath = ""
+	})
+	if err != nil {
+		return err
+	}
+	h.emitState(id)
+	return nil
+}
+
+// forgetDevOnly removes a plugin that only existed as a dev link.
+func (h *Host) forgetDevOnly(id string) error {
+	if err := h.install.state.remove(id); err != nil {
+		return err
+	}
+	h.forgetUpdate(id)
+	h.emitRemoved(id)
+	return nil
+}
+
+// requireFolder returns an error unless path is an existing folder.
+func requireFolder(path string) error {
+	info, err := os.Stat(path)
+	if err != nil {
+		return err
+	}
+	if !info.IsDir() {
+		return ErrNotFolder
+	}
+	return nil
+}
+
 // SetEnabled turns a plugin on or off. Turning it on also clears an auto-disable.
 func (h *Host) SetEnabled(id string, enabled bool) (PluginInfo, error) {
 	if err := requireID(id); err != nil {
@@ -278,6 +375,8 @@ func (h *Host) info(id string) PluginInfo {
 		Enabled:        state.Enabled,
 		Source:         state.Source,
 		Unsigned:       state.Unsigned,
+		Dev:            state.Dev,
+		DevPath:        state.DevPath,
 		DisabledReason: state.DisabledReason,
 		Status:         "stopped",
 	}
