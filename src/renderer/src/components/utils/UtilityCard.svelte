@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Badge from "@components/shared/Badge.svelte";
 	import Button from "@components/shared/Button.svelte";
 
 	export let name: string;
@@ -21,9 +22,9 @@
 		</div>
 		<div class="title-area">
 			<h3>{name}</h3>
-			<span class="badge" class:installed={isInstalled}>
+			<Badge tone={isInstalled ? "success" : "neutral"}>
 				{isInstalled ? "Installed" : "Not Installed"}
-			</span>
+			</Badge>
 		</div>
 	</div>
 
@@ -127,24 +128,6 @@
 				text-transform: uppercase;
 				letter-spacing: 0.5px;
 			}
-		}
-	}
-
-	.badge {
-		display: inline-block;
-		padding: 4px 10px;
-		border-radius: var(--radius-pill);
-		font-size: 0.7rem;
-		font-weight: 900;
-		text-transform: uppercase;
-		background: var(--bg-elevated);
-		color: var(--text-muted);
-		width: max-content;
-
-		&.installed {
-			background: rgba(52, 199, 89, 0.15);
-			color: var(--success);
-			border: 1px solid rgba(52, 199, 89, 0.25);
 		}
 	}
 
