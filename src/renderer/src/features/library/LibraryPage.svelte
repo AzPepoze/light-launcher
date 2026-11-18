@@ -470,9 +470,41 @@
 		margin-bottom: 0;
 	}
 
+	/* One line: label, track, then the number box. The shared slider stacks them by default. */
 	.size-control {
-		width: 220px;
+		width: 340px;
+		max-width: 100%;
 		flex-shrink: 0;
+	}
+
+	.size-control :global(.range-container) {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		margin: 0;
+	}
+
+	.size-control :global(.range-header) {
+		display: contents;
+	}
+
+	.size-control :global(.range-label) {
+		order: 0;
+		white-space: nowrap;
+		flex-shrink: 0;
+	}
+
+	.size-control :global(.track-wrapper) {
+		order: 1;
+		flex: 1 1 auto;
+		min-width: 80px;
+		margin: 0;
+	}
+
+	.size-control :global(.input-wrapper) {
+		order: 2;
+		flex-shrink: 0;
+		white-space: nowrap;
 	}
 
 	/*
