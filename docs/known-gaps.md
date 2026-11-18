@@ -138,6 +138,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | Library grid and header scroll: check by eye in the real window. Checked by code and tests only: grid spacing, sticky title and tabs, rail and sidebar placement, no horizontal scroll at phone width. |
 | [ ] | Library narrow width and update count: check by eye in the real window. |
 | [ ] | `MarkSeen` has no callers, so the unseen update checks never clear. The Updates badge now uses the game count from the header instead. |
+| [ ] | Settings section sidebar: check by eye in the real window. |
 | [x] | The plugin SDK docs describe `sidebar`, the `browse:filters` capability, `source.browse` and `source.listFilters`. |
 | [x] | itch implements `source.browse`/`source.listFilters` with a search sidebar. It scrapes itch.io's public search HTML; there is no stable search API or pager, and sort is best-effort. |
 
