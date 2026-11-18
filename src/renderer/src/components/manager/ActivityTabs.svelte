@@ -3,6 +3,7 @@
 	import { GetImageBase64, GetExeIcon } from "@lib/api";
 	import type { GameActivity } from "@shared";
 	import Icon from "@components/shared/Icon.svelte";
+	import { tooltip } from "@components/shared/tooltip";
 
 	export let recent: GameActivity[] = [];
 	export let mostPlayed: GameActivity[] = [];
@@ -89,14 +90,14 @@
 				<div class="tabs">
 					<button class:active={tab==="recent"} on:click={()=>tab="recent"}>Recent</button>
 					<button class:active={tab==="played"} on:click={()=>tab="played"}>Interest</button>
-					<button class:active={tab==="stale"} on:click={()=>tab="stale"} title="Not played in 30 days">Stale <span class="badge">{stale.length}</span></button>
+					<button class:active={tab==="stale"} on:click={()=>tab="stale"} use:tooltip={"Not played in 30 days"}>Stale <span class="badge">{stale.length}</span></button>
 				</div>
 			{/if}
 			<div class="mode-switch" role="group" aria-label="View mode">
-				<button class:active={mode==="tabs"} on:click={()=>mode="tabs"} title="Tabs view">
+				<button class:active={mode==="tabs"} on:click={()=>mode="tabs"} use:tooltip={"Tabs view"} aria-label="Tabs view">
 					<Icon name="tab" size={16} />
 				</button>
-				<button class:active={mode==="scroll"} on:click={()=>mode="scroll"} title="Scroll view">
+				<button class:active={mode==="scroll"} on:click={()=>mode="scroll"} use:tooltip={"Scroll view"} aria-label="Scroll view">
 					<Icon name="view_headline" size={16} />
 				</button>
 			</div>
