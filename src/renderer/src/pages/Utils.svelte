@@ -132,7 +132,7 @@
 
 	.utils-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(min(100%, 400px), 520px));
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, 400px), 1fr));
 		gap: 24px;
 		width: 100%;
 		margin-top: 8px;
