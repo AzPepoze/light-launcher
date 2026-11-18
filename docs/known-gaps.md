@@ -76,6 +76,8 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [x] | Stop plugins that stay idle for 5 minutes, with `pluginIdleTimeoutMinutes` to change or disable it. |
 | [ ] | Check the "Sleeping" plugin badge by eye in the real window (only typecheck, tests and build so far). |
 | [x] | The idle-stop tests timed out under load: the watcher armed its timer for "wait N seconds" a moment after it computed N, so a clock step in between moved the deadline. It now arms the timer for an absolute deadline (240 stress runs, no failures). |
+| [ ] | Plugin dev mode UI: the **Link folder** button, the **Dev** badge and **Unlink**. Unit-tested only; check them by eye in the real window. |
+| [ ] | Plugin dev mode folder watcher (restart on save, 300 ms debounce) is not tested on Windows. |
 
 ## F95 plugin
 
