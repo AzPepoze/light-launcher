@@ -195,6 +195,17 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [x] | `SettingRow` has an optional icon slot; the Updates settings source rows use it instead of local row markup. |
 | [x] | `Checkbox` is intentionally kept for `PluginConsent` only. |
 
+## Versions, Prefix, Utils and Plugins pages
+
+| Status | Item |
+|---|---|
+| [ ] | Versions: check the Steam and External badges, the legend line and the ProtonDB, ProtonPlus and ProtonUp icons by eye in the real window. |
+| [ ] | Prefix: check the Wine Tools, Defaults and Advanced tab strip, the "Choose a Proton version" placeholder with its disabled message, and the tools grid columns by eye in the real window. |
+| [ ] | Utils: check the status badges, the install hints and the single LSFG-VK card filling the row by eye in the real window. |
+| [ ] | Utils: Vulkan-Tools and Lossless.dll have no install hint, because neither `docs/linux.md` nor the PKGBUILD names a package for them. |
+| [ ] | Plugins: check the Unsigned note, the Details cue and the "Add plugin" button by eye in the real window. |
+| [ ] | Plugins: the drop-zone "Choose files" and "Choose folder" buttons and the install dialog title still say "Install plugin". Align them with "Add plugin". |
+
 ## Browser mode
 
 | Status | Item |
