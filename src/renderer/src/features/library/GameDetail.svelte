@@ -182,7 +182,14 @@
 
 	<div class="actions">
 		{#if game.installed && game.exePath}
-			<IconButton icon="play_arrow" label="Play" filled tone="accent" disabled={busy} onclick={launch} />
+			<IconButton
+				class="play-button"
+				icon="play_arrow"
+				label="Play"
+				filled
+				disabled={busy}
+				onclick={launch}
+			/>
 		{/if}
 		<Button aria-pressed={game.favorite} disabled={busy} onclick={toggleFavorite}>
 			<Icon name={game.favorite ? "star" : "star_border"} size={18} />
@@ -412,6 +419,17 @@
 		flex-wrap: wrap;
 		gap: 8px;
 
+	}
+
+	/* The Play button is a white round icon; the icon inherits the black colour. */
+	.actions :global(.play-button) {
+		background: #ffffff;
+		color: #000000;
+	}
+
+	.actions :global(.play-button:hover:not(:disabled)) {
+		background: #e6e6e6;
+		color: #000000;
 	}
 
 	/* The Open page link is an icon with a tooltip, sized like the icon buttons beside it. */
