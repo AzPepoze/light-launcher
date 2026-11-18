@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
-	import StatusDrawer from "@components/status/StatusDrawer.svelte";
 	import HeatmapCard from "@components/manager/HeatmapCard.svelte";
 	import RunningRail from "@components/manager/RunningRail.svelte";
 	import ActivityTabs from "@components/manager/ActivityTabs.svelte";
@@ -178,9 +177,6 @@
 			</div>
 		</div>
 	</div>
-
-	<!-- System status as fixed bottom drawer (old main style) -->
-	<StatusDrawer />
 </div>
 
 <style lang="scss">
@@ -189,7 +185,6 @@
 		flex-direction: column;
 		gap: 26px;
 		min-height: calc(100vh - 200px);
-		padding-bottom: 240px; // room for the fixed status drawer, collapsed and open
 		box-sizing: border-box;
 	}
 

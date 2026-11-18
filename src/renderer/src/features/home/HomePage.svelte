@@ -15,6 +15,7 @@
 	import ProgressBar from "@components/shared/ProgressBar.svelte";
 	import EmptyState from "@components/shared/EmptyState.svelte";
 	import Button from "@components/shared/Button.svelte";
+	import StatusDrawer from "@components/status/StatusDrawer.svelte";
 
 	const state = new HomePageState();
 
@@ -97,6 +98,8 @@
 			/>
 		{/if}
 	</div>
+
+	<StatusDrawer />
 </div>
 
 <HowItWorksModal show={state.showHelpModal} onClose={() => (state.showHelpModal = false)} />
@@ -139,6 +142,8 @@
 		height: 100%;
 		max-height: 100%;
 		overflow: hidden;
+		/* Room for the fixed status drawer, open (about 380px tall at 900px high). */
+		padding-bottom: 420px;
 	}
 
 	.status-line {
