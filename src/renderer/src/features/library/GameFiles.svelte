@@ -122,7 +122,7 @@
 		align-items: center;
 		gap: 8px;
 		width: 100%;
-		padding: 8px 4px;
+		padding: 8px 10px 8px 4px;
 		border: 0;
 		border-top: 1px solid var(--glass-border);
 		border-radius: var(--radius-md);
@@ -146,6 +146,9 @@
 
 	.count {
 		margin-left: auto;
+		width: 36px;
+		flex-shrink: 0;
+		text-align: center;
 		color: var(--text-muted);
 	}
 
