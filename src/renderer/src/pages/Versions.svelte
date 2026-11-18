@@ -1,6 +1,7 @@
 <script lang="ts">
 	import PageHeader from "@components/shared/PageHeader.svelte";
 	import Button from "@components/shared/Button.svelte";
+	import Badge from "@components/shared/Badge.svelte";
 	import { ScanProtonVersions, OpenURL } from "@lib/api";
 	import * as core from "@shared";
 	import { notifications } from "@stores/notificationStore";
@@ -40,12 +41,16 @@
 	<PageHeader title="Proton Versions" icon={externalIcon} isCustomIcon={true} subtitle="{protonVersions.length} installed">
 		<Button
 			variant="secondary"
+			icon="travel_explore"
+			title="ProtonDB: check game compatibility reports (opens in browser)"
 			onclick={() => openExternal("https://protondb.com")}
 		>
 			ProtonDB
 		</Button>
 		<Button
 			variant="secondary"
+			icon="extension"
+			title="ProtonPlus: manage Proton versions (opens GitHub)"
 			onclick={() =>
 				openExternal("https://github.com/Vysp3r/ProtonPlus")}
 		>
@@ -53,6 +58,8 @@
 		</Button>
 		<Button
 			variant="secondary"
+			icon="download"
+			title="ProtonUp-Qt: install Proton versions (opens GitHub)"
 			onclick={() =>
 				openExternal(
 					"https://github.com/DavidoTek/ProtonUp-Qt",
@@ -61,6 +68,11 @@
 			ProtonUp
 		</Button>
 	</PageHeader>
+
+	<p class="legend">
+		<Badge tone="accent">Steam</Badge> found in Steam's compatibility folders
+		<Badge>External</Badge> found in other tool folders
+	</p>
 
 	<div class="versions-list">
 		{#if isLoading}
@@ -81,9 +93,9 @@
 							{tool.Path}
 						</div>
 					</div>
-					<div class="type-badge" class:steam={tool.IsSteam}>
+					<Badge tone={tool.IsSteam ? "accent" : "neutral"}>
 						{tool.IsSteam ? "Steam" : "External"}
-					</div>
+					</Badge>
 				</div>
 			{/each}
 		{/if}
@@ -96,6 +108,16 @@
 		height: 100%;
 		display: flex;
 		flex-direction: column;
+	}
+
+	.legend {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 8px;
+		margin: 0 0 18px;
+		font-size: 0.8rem;
+		color: var(--text-muted);
 	}
 
 	.versions-list {
@@ -180,22 +202,6 @@
 			text-overflow: ellipsis;
 		}
 
-		.type-badge {
-			font-size: 0.7rem;
-			padding: 6px 14px;
-			border-radius: var(--radius-sm);
-			background: var(--accent-primary);
-			border: none;
-			color: var(--bg-base);
-			font-weight: 900;
-			text-transform: uppercase;
-			letter-spacing: 1px;
-
-			&.steam {
-				background: var(--accent-secondary);
-				color: #000000;
-			}
-		}
 	}
 
 	.loading {
