@@ -131,6 +131,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | Home: a folder group shows its header and skeleton before the scan ends, then fills as each folder finishes. Not seen in a window. |
 | [ ] | Home: the folder count shows "..." while the folder loads. Not seen in a window. |
 | [ ] | Library: the local exe-icon fallback for coverless games needs a real window check. |
+| [ ] | Library: local games ignore the sort direction. `toLibraryFilters` does not send `order`, so the list always uses the sort's own order. |
 | [ ] | Library rail: clicking a source scrolls to its group. The highlight does not follow scrolling yet (no scroll spy). |
 | [x] | The plugin SDK docs describe `sidebar`, the `browse:filters` capability, `source.browse` and `source.listFilters`. |
 | [x] | itch implements `source.browse`/`source.listFilters` with a search sidebar. It scrapes itch.io's public search HTML; there is no stable search API or pager, and sort is best-effort. |

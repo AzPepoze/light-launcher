@@ -60,6 +60,11 @@ describe("builtinGroups", () => {
 		]);
 	});
 
+	it("sorts ascending by default, like the plugin sort groups", () => {
+		const sort = builtinGroups(TAGS).find((group) => group.type === "sort");
+		expect(sort?.default?.order).toBe("asc");
+	});
+
 	it("fills the tag list with the counts", () => {
 		const tags = builtinGroups(TAGS).find((group) => group.id === "tags");
 		expect(tags?.options).toEqual([{ value: "Sample", label: "Sample", icon: null, count: 4 }]);

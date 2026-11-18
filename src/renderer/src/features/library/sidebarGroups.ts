@@ -38,7 +38,7 @@ export function builtinGroups(tags: { tag: string; count: number }[]): SidebarGr
 			id: SORT_GROUP,
 			label: "Sort",
 			options: sort,
-			default: { value: DEFAULT_FILTERS.sort, order: "desc" }
+			default: { value: DEFAULT_FILTERS.sort, order: "asc" }
 		},
 		{
 			...BASE_GROUP,
