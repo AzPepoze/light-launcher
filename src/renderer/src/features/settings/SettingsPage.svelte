@@ -310,6 +310,45 @@
 		}
 	}
 
+	@media (max-width: 599px) {
+		.settings-container {
+			padding: 24px 16px;
+		}
+
+		/* Keeps each section's header and rows inside the phone width. */
+		.zones-stack :global(.section) {
+			padding: 20px 16px;
+		}
+
+		.zones-stack :global(.section-header) {
+			flex-wrap: wrap;
+		}
+
+		.zones-stack :global(.setting-row) {
+			flex-direction: column;
+			align-items: stretch;
+			gap: 12px;
+		}
+
+		.zones-stack :global(.setting-row .control) {
+			flex-wrap: wrap;
+			min-width: 0;
+		}
+
+		.zones-stack :global(.setting-row .button) {
+			max-width: 100%;
+			white-space: normal;
+			text-align: center;
+		}
+
+		.zones-stack :global(.title),
+		.zones-stack :global(.help),
+		.zones-stack :global(.slide-button-card .title),
+		.zones-stack :global(.slide-button-card .subtitle) {
+			overflow-wrap: anywhere;
+		}
+	}
+
 	.bg-path-display {
 		display: flex;
 		align-items: center;
@@ -322,6 +361,7 @@
 		color: var(--text-muted);
 
 		.path-text {
+			min-width: 0;
 			font-size: 0.85rem;
 			font-weight: 600;
 			white-space: nowrap;
@@ -332,6 +372,7 @@
 
 	.actions-row {
 		display: flex;
+		flex-wrap: wrap;
 		gap: 12px;
 	}
 </style>
