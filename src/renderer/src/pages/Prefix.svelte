@@ -8,7 +8,6 @@
 	import PageHeader from "@components/shared/PageHeader.svelte";
 	import Button from "@components/shared/Button.svelte";
 	import Icon from "@components/shared/Icon.svelte";
-	import Section from "@components/shared/Section.svelte";
 	import SettingRow from "@components/shared/SettingRow.svelte";
 	import Tabs from "@components/shared/Tabs.svelte";
 	import type { TabItem } from "@components/shared/tabs";
@@ -63,9 +62,6 @@
 	}
 
 	$: toolBlockReason = getToolBlockReason(chosenProton, prefixPath);
-	$: toolsHelp = chosenProton
-		? `Runs in this prefix with ${chosenProton.DisplayName}.`
-		: "Open a Wine tool in the active prefix.";
 
 	$: currentPrefixName = prefixPath.startsWith(baseDir)
 		? prefixPath.replace(baseDir + "/", "")
@@ -304,24 +300,22 @@
 					heroCreated={heroInfo.created}
 				/>
 
-				<div class="tabs-row">
-					<Tabs
-						tabs={prefixTabs}
-						value={activeTab}
-						onChange={selectTab}
-						aria-label="Prefix sections"
-					/>
-				</div>
-
-				{#if activeTab === 'tools'}
-					<div class="tab-content" role="tabpanel">
-						<Section title="Wine tools" help={toolsHelp}>
-							<PrefixTools {runningToolName} blockReason={toolBlockReason} onRunTool={runTool} />
-						</Section>
+				<section class="tab-card">
+					<div class="tabs-row">
+						<Tabs
+							tabs={prefixTabs}
+							value={activeTab}
+							onChange={selectTab}
+							aria-label="Prefix sections"
+						/>
 					</div>
-				{:else if activeTab === 'config'}
-					<div class="tab-content" role="tabpanel">
-						<Section title="Launch defaults" help="Applied when launching games with this prefix.">
+
+					{#if activeTab === 'tools'}
+						<div class="tab-content" role="tabpanel">
+							<PrefixTools {runningToolName} blockReason={toolBlockReason} onRunTool={runTool} />
+						</div>
+					{:else if activeTab === 'config'}
+						<div class="tab-content" role="tabpanel">
 							<ConfigForm bind:options={prefixOptions} />
 							<div class="save-bar">
 								<Button
@@ -338,20 +332,18 @@
 									{isSaving ? "Saving…" : "Save defaults"}
 								</Button>
 							</div>
-						</Section>
-					</div>
-				{:else}
-					<div class="tab-content" role="tabpanel">
-						<Section title="Advanced" help="Repair and copy the active prefix.">
+						</div>
+					{:else}
+						<div class="tab-content" role="tabpanel">
 							<SettingRow title="Repair symlinks" help="Fix broken prefix symlinks after moving storage.">
 								<Button size="sm">Repair</Button>
 							</SettingRow>
 							<SettingRow title="Duplicate prefix" help="Copy the config and Wine files into a new prefix.">
 								<Button size="sm" onclick={duplicateCurrentPrefix}>Duplicate</Button>
 							</SettingRow>
-						</Section>
-					</div>
-				{/if}
+						</div>
+					{/if}
+				</section>
 			</main>
 		</div>
 	{/if}
@@ -447,10 +439,18 @@
 		}
 	}
 
+	.tab-card {
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+		padding: 16px 20px 20px;
+		background: var(--bg-surface);
+		border: 2px solid var(--glass-border);
+		border-radius: var(--radius-lg);
+	}
+
 	.tabs-row {
 		flex-shrink: 0;
-		margin-bottom: 16px;
-		border-bottom: 2px solid var(--glass-border);
 	}
 
 	.tab-content {
@@ -484,9 +484,7 @@
 		.prefix-sidebar {
 			position: static;
 			height: auto;
-			max-height: 320px;
-			min-height: 0;
-			overflow: hidden;
+			min-width: 0;
 		}
 
 		.prefix-main {
