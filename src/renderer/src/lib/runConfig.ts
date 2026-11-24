@@ -120,6 +120,7 @@ export function applyConfigToOptions(
 	options.ID = config.ID || options.ID;
 	options.Name = config.Name || options.Name;
 	options.CustomArgs = config.CustomArgs || "";
+	options.EnvVars = config.EnvVars || "";
 	options.UseCustomProton = config.UseCustomProton || false;
 	options.CustomIconPath = config.CustomIconPath || "";
 

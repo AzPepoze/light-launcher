@@ -14,17 +14,37 @@ import (
 // BuildCommand returns the command arguments and environment used to start the game.
 func BuildCommand(options types.LaunchOptions) ([]string, []string) {
 	if !platform.Current().Proton {
-		return directCommand(options), os.Environ()
+		return directCommand(options), append(os.Environ(), userEnv(options)...)
 	}
 	return protonCommand(options)
 }
 
-// WorkingDirectory returns the folder to start the game in, or "" to keep the default.
+// WorkingDirectory returns the folder to start the game in.
+// Mods such as ScriptHookVDotNet load files by relative path, so the folder must be the game's own.
 func WorkingDirectory(options types.LaunchOptions) string {
 	if platform.Current().Proton {
-		return ""
+		return filepath.Dir(launchExecutable(options))
 	}
 	return filepath.Dir(options.GamePath)
+}
+
+// launchExecutable returns the program that is started: the launcher if set, otherwise the game.
+func launchExecutable(options types.LaunchOptions) string {
+	if options.LauncherPath != "" {
+		return options.LauncherPath
+	}
+	return options.GamePath
+}
+
+// userEnv returns the KEY=VALUE pairs the user typed for this game. They come last, so they override earlier values.
+func userEnv(options types.LaunchOptions) []string {
+	var pairs []string
+	for _, field := range strings.Fields(options.EnvVars) {
+		if strings.Contains(field, "=") {
+			pairs = append(pairs, field)
+		}
+	}
+	return pairs
 }
 
 // directCommand starts the game executable itself. Used where Proton is not available.
@@ -38,11 +58,7 @@ func protonCommand(options types.LaunchOptions) ([]string, []string) {
 	// 1. Build initial command arguments (base execution command)
 	var arguments []string
 	arguments = append(arguments, "umu-run")
-	executablePath := options.LauncherPath
-	if executablePath == "" {
-		executablePath = options.GamePath
-	}
-	arguments = append(arguments, executablePath)
+	arguments = append(arguments, launchExecutable(options))
 
 	if options.CustomArgs != "" {
 		arguments = append(arguments, strings.Fields(options.CustomArgs)...)
@@ -68,6 +84,7 @@ func protonCommand(options types.LaunchOptions) ([]string, []string) {
 	for _, a := range adapters {
 		environment = a.ModifyEnv(options, environment)
 	}
+	environment = append(environment, userEnv(options)...)
 
 	// Apply WrapCommand
 	for _, a := range adapters {

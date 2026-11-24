@@ -77,6 +77,17 @@
 		/>
 	</div>
 
+	<div class="form-group">
+		<label for="envVars">Environment Variables</label>
+		<input
+			id="envVars"
+			type="text"
+			class="input"
+			bind:value={options.EnvVars}
+			placeholder="e.g. USE_FAKE_EPIC_EXE=true"
+		/>
+	</div>
+
 	<div class="toggles-grid">
 		{#if $platform.features.mangoHud}
 			<SlideButton

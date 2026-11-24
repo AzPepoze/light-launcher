@@ -839,6 +839,7 @@ export interface WireLaunchOptions {
 	ProtonPath: string;
 	UseCustomProton: boolean;
 	CustomArgs: string;
+	EnvVars: string;
 	CustomIconPath?: string;
 	Extras: WireExtrasConfig;
 }

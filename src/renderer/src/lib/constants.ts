@@ -9,6 +9,7 @@ export const DEFAULT_LAUNCH_OPTIONS: core.LaunchOptions = {
 		PrefixPath: "",
 		ProtonPath: "",
 		CustomArgs: "",
+		EnvVars: "",
 		Extras: {
 			EnableMangoHud: false,
 			EnableGamemode: false,

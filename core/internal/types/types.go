@@ -54,6 +54,7 @@ type LaunchOptions struct {
 	ProtonPath      string       `json:"ProtonPath"`
 	UseCustomProton bool         `json:"UseCustomProton"`
 	CustomArgs      string       `json:"CustomArgs"`
+	EnvVars         string       `json:"EnvVars"`
 	CustomIconPath  string       `json:"CustomIconPath,omitempty"`
 	Extras          ExtrasConfig `json:"Extras"`
 }
