@@ -14,7 +14,7 @@ import { plainMessage } from "./plainMessage";
 import { createLaunchOptions } from "./formService";
 import { createLogger } from "./logger";
 import { launchGame } from "./gameLaunchService";
-import { getGamePath } from "./gameUtils";
+import { getGamePath, normalizeGamePath } from "./gameUtils";
 import type { GameInfo, RunningSession } from "@shared";
 
 const log = createLogger("homeService");
@@ -79,14 +79,21 @@ export async function removeGamesBulk(gamePaths: Set<string>): Promise<number> {
 	return removedCount;
 }
 
+async function knownGamePaths(): Promise<Set<string>> {
+	const games = (await GetAllGames()) ?? [];
+	return new Set(games.map((game) => normalizeGamePath(game.path)));
+}
+
 /**
- * Processes dropped files and registers them as games
+ * Processes dropped files and registers them as games.
+ * Executables already in the library are skipped, so their saved config is kept.
  */
 export async function processDroppedFiles(filePaths: string[]): Promise<number> {
 	let addedCount = 0;
 	try {
 		const basePrefixDirectory = await GetPrefixBaseDir();
 		const defaultPrefixPath = `${basePrefixDirectory}/Default`;
+		const libraryPaths = await knownGamePaths();
 
 		for (const filePath of filePaths) {
 			const isFolder = await IsDir(filePath);
@@ -94,6 +101,9 @@ export async function processDroppedFiles(filePaths: string[]): Promise<number> 
 				await AddScanFolder(filePath);
 				addedCount++;
 			} else if (filePath.toLowerCase().endsWith(".exe")) {
+				const normalizedPath = normalizeGamePath(filePath);
+				if (libraryPaths.has(normalizedPath)) continue;
+
 				const gameName = filePath.split("/").pop()?.replace(".exe", "") || "Game";
 
 				const gameConfig = createLaunchOptions();
@@ -103,6 +113,7 @@ export async function processDroppedFiles(filePaths: string[]): Promise<number> 
 				gameConfig.PrefixPath = defaultPrefixPath;
 
 				await SaveGameConfig(gameConfig);
+				libraryPaths.add(normalizedPath);
 				addedCount++;
 			}
 		}

@@ -20,6 +20,7 @@ import type { GameInfo, RunningSession } from "@shared";
 import { IconLoaderState } from "./IconLoaderState.svelte";
 import { SelectionState } from "./SelectionState.svelte";
 import { droppedFiles } from "./homeEvents";
+import { droppedPaths } from "@lib/features/droppedPaths";
 import type { HomeViewMode } from "./homeViewMemory";
 import { homeStatus, runningFolderScan, type RescanPhase } from "./homeLoadingStatus";
 import {
@@ -77,6 +78,7 @@ export class HomePageState {
 	sessionInterval: ReturnType<typeof setInterval> | null = null;
 	showHelpModal = $state(false);
 	showAddModal = $state(false);
+	dragging = $state(false);
 	isLoading = $state(true);
 	scan = $state<HomeScan | null>(null);
 	rescanPhase = $state<RescanPhase>("idle");
@@ -259,16 +261,31 @@ export class HomePageState {
 		});
 		this.refreshData(false);
 
-		this.dropUnsubscribe = onEvent("FilesDropped", async (event: unknown) => {
-			const files = droppedFiles(event);
-			const added = await service.processDroppedFiles(files);
-			if (added > 0) {
-				notifications.add(`Successfully added ${added} game(s)`, "success");
-				this.refreshData(true);
-			}
-		});
+		this.dropUnsubscribe = onEvent("FilesDropped", (event: unknown) =>
+			this.addDroppedPaths(droppedFiles(event))
+		);
 
 		this.sessionInterval = setInterval(() => this.refreshSessions(), 3000);
+	}
+
+	/** Adds dragged-in .exe files and folders. Reads the paths from the drag data. */
+	async handleDrop(dataTransfer: DataTransfer) {
+		const paths = droppedPaths(dataTransfer);
+		if (paths.length === 0) {
+			notifications.add("Could not read the dropped path. Use Add game instead.", "error");
+			return;
+		}
+		await this.addDroppedPaths(paths);
+	}
+
+	private async addDroppedPaths(paths: string[]) {
+		const added = await service.processDroppedFiles(paths);
+		if (added === 0) {
+			notifications.add("Nothing to add. Drop an .exe file or a folder.", "info");
+			return;
+		}
+		notifications.add(`Successfully added ${added} item(s)`, "success");
+		this.refreshData(true);
 	}
 
 	destroy() {

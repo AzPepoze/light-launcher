@@ -16,8 +16,45 @@
 	import EmptyState from "@components/shared/EmptyState.svelte";
 	import Button from "@components/shared/Button.svelte";
 	import StatusDrawer from "@components/status/StatusDrawer.svelte";
+	import DropOverlay from "@components/shared/DropOverlay.svelte";
+	import { carriesFiles, DragDepth } from "@lib/fileDrag";
+	import { carriesUriList } from "@lib/features/droppedPaths";
 
 	const state = new HomePageState();
+	const dragDepth = new DragDepth();
+
+	const modalOpen = $derived(
+		state.showAddModal || state.showHelpModal || state.selection.showBulkRemoveModal
+	);
+
+	function acceptsDrag(event: DragEvent): boolean {
+		return !modalOpen && (carriesFiles(event) || carriesUriList(event));
+	}
+
+	function onDragEnter(event: DragEvent) {
+		if (!acceptsDrag(event)) return;
+		event.preventDefault();
+		dragDepth.enter();
+		state.dragging = true;
+	}
+
+	function onDragOver(event: DragEvent) {
+		if (!acceptsDrag(event)) return;
+		event.preventDefault();
+	}
+
+	function onDragLeave(event: DragEvent) {
+		if (!acceptsDrag(event)) return;
+		if (dragDepth.leave()) state.dragging = false;
+	}
+
+	function onDrop(event: DragEvent) {
+		if (!acceptsDrag(event) || !event.dataTransfer) return;
+		event.preventDefault();
+		dragDepth.reset();
+		state.dragging = false;
+		state.handleDrop(event.dataTransfer);
+	}
 
 	const prefersReducedMotion =
 		typeof window !== "undefined" &&
@@ -32,7 +69,20 @@
 	});
 </script>
 
-<div class="home-container" data-file-drop-target>
+<div
+	class="home-container"
+	data-file-drop-target
+	ondragenter={onDragEnter}
+	ondragover={onDragOver}
+	ondragleave={onDragLeave}
+	ondrop={onDrop}
+	role="region"
+	aria-label="Game library"
+>
+	{#if state.dragging}
+		<DropOverlay title="Add to library" hint="Drop an .exe file or a folder" icon="sports_esports" />
+	{/if}
+
 	<div class="quick-launch-section">
 		<QuickLaunchHeader
 			isSelectionMode={state.selection.isSelectionMode}

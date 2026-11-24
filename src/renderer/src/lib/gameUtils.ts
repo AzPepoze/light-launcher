@@ -36,6 +36,11 @@ export function getGamePath(game: GamePathSource | null | undefined): string {
 	);
 }
 
+/** Makes paths comparable: forward slashes, lower case, no surrounding spaces. */
+export function normalizeGamePath(path: string): string {
+	return path.replace(/\\/g, "/").toLowerCase().trim();
+}
+
 /** Resolves the unique identifier for a game. */
 export function getGameId(game: GamePathSource | null | undefined): string {
 	if (!game) return "";

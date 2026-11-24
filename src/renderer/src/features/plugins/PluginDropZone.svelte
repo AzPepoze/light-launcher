@@ -1,7 +1,8 @@
 <script lang="ts">
 	import type { Snippet } from "svelte";
 	import Button from "@components/shared/Button.svelte";
-	import Icon from "@components/shared/Icon.svelte";
+	import DropOverlay from "@components/shared/DropOverlay.svelte";
+	import { carriesFiles, DragDepth } from "../../lib/fileDrag";
 	import { collectDroppedFiles, filesFromInput } from "../../lib/features/pluginEntries";
 	import type { UploadFile } from "../../lib/features/pluginUpload";
 	import {
@@ -19,17 +20,12 @@
 	let dragging = $state(false);
 	let fileInput: HTMLInputElement | undefined = $state();
 	let folderInput: HTMLInputElement | undefined = $state();
-	/** Counts nested dragenter and dragleave events, so the highlight does not flicker over children. */
-	let dragDepth = 0;
-
-	function carriesFiles(event: DragEvent): boolean {
-		return event.dataTransfer?.types.includes("Files") ?? false;
-	}
+	const dragDepth = new DragDepth();
 
 	function onDragEnter(event: DragEvent) {
 		if (!carriesFiles(event)) return;
 		event.preventDefault();
-		dragDepth += 1;
+		dragDepth.enter();
 		dragging = true;
 	}
 
@@ -40,19 +36,14 @@
 
 	function onDragLeave(event: DragEvent) {
 		if (!carriesFiles(event)) return;
-		dragDepth -= 1;
-		if (dragDepth <= 0) stopDragging();
-	}
-
-	function stopDragging() {
-		dragDepth = 0;
-		dragging = false;
+		if (dragDepth.leave()) dragging = false;
 	}
 
 	async function onDrop(event: DragEvent) {
 		if (!carriesFiles(event) || !event.dataTransfer) return;
 		event.preventDefault();
-		stopDragging();
+		dragDepth.reset();
+		dragging = false;
 		onFiles(await collectDroppedFiles(event.dataTransfer));
 	}
 
@@ -99,10 +90,7 @@
 	{@render children()}
 
 	{#if dragging}
-		<div class="overlay" aria-hidden="true">
-			<Icon name="file_download" size={40} class="lift" />
-			<p>{DROP_OVERLAY_TEXT}</p>
-		</div>
+		<DropOverlay title={DROP_OVERLAY_TEXT} />
 	{/if}
 </div>
 
@@ -135,46 +123,5 @@
 
 	.hidden-input {
 		display: none;
-	}
-
-	.overlay {
-		position: fixed;
-		inset: 0;
-		z-index: 50;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		gap: 12px;
-		background: color-mix(in srgb, var(--bg-main) 70%, transparent);
-		border: 2px dashed var(--accent-primary);
-		pointer-events: none;
-		animation: overlay-in var(--motion-quick) var(--ease-out) both;
-
-		p {
-			margin: 0;
-			font-size: 1.1rem;
-			font-weight: 600;
-			color: var(--text-main);
-		}
-	}
-
-	.overlay :global(.lift) {
-		color: var(--accent-primary);
-		animation: lift-in var(--motion-base) var(--ease-out) both;
-	}
-
-	@keyframes overlay-in {
-		from {
-			opacity: 0;
-			border-color: transparent;
-		}
-	}
-
-	@keyframes lift-in {
-		from {
-			opacity: 0;
-			transform: translateY(12px);
-		}
 	}
 </style>
