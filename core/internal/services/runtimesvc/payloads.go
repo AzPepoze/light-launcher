@@ -1,6 +1,9 @@
 package runtimesvc
 
-import "light-launcher/core/internal/types"
+import (
+	"light-launcher/core/internal/drives"
+	"light-launcher/core/internal/types"
+)
 
 // Payload structs. Field names match the object keys the UI sends (see the old IPC router).
 
@@ -26,6 +29,14 @@ type runPrefixToolInput struct {
 	PrefixPath string `json:"prefixPath"`
 	ToolName   string `json:"toolName"`
 	ProtonPath string `json:"protonPath"`
+}
+
+type prefixPathInput struct {
+	PrefixPath string `json:"prefixPath"`
+}
+
+type saveDriveSetupInput struct {
+	Entries []drives.SetupEntry `json:"entries"`
 }
 
 type variantInput struct {

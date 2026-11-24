@@ -27,3 +27,8 @@ func SettingsFilePath() string {
 func ActivityFilePath() string {
 	return filepath.Join(GetBaseDirectory(), "activity.json")
 }
+
+// DriveSetupFilePath is the launcher-wide list of drives linked into every prefix.
+func DriveSetupFilePath() string {
+	return filepath.Join(GetBaseDirectory(), "drive-setup.json")
+}

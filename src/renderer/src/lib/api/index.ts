@@ -14,7 +14,10 @@ import type {
 	ProtonTool,
 	PrefixConfigWithProton,
 	PrefixStats,
-	PlatformInfo
+	PlatformInfo,
+	Partition,
+	PrefixDrive,
+	SetupEntry
 } from "@shared";
 import { invoke, pickWithShell } from "../transport";
 
@@ -106,6 +109,14 @@ export const LoadPrefixConfigWithProton = (prefixName: string) =>
 	invoke<PrefixConfigWithProton>("LoadPrefixConfigWithProton", { prefixName });
 export const RunPrefixTool = (prefixPath: string, toolName: string, protonPath: string) =>
 	invoke<void>("RunPrefixTool", { prefixPath, toolName, protonPath });
+
+// Drives: disks and folders bound to drive letters in every prefix
+export const ListPartitions = () => invoke<Partition[]>("ListPartitions");
+export const GetDriveSetup = () => invoke<SetupEntry[]>("GetDriveSetup");
+export const SaveDriveSetup = (entries: SetupEntry[]) =>
+	invoke<void>("SaveDriveSetup", { entries });
+export const ListPrefixDrives = (prefixPath: string) =>
+	invoke<PrefixDrive[]>("ListPrefixDrives", { prefixPath });
 
 // Proton Runtimes
 export const ScanProtonVersions = () => invoke<ProtonTool[]>("ScanProtonVersions");

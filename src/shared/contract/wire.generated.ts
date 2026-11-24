@@ -884,6 +884,34 @@ export interface WireGamescopeConfig {
 	CustomArgs: string;
 }
 
+// core/internal/drives
+
+/** drives.Partition, from core/internal/drives/partitions.go. */
+export interface WirePartition {
+	name: string;
+	device: string;
+	mount: string;
+	fsType: string;
+	totalBytes: number;
+	freeBytes: number;
+}
+
+/** drives.PrefixDrive, from core/internal/drives/bindings.go. */
+export interface WirePrefixDrive {
+	letter: string;
+	target: string;
+	kind: string;
+	exists: boolean;
+}
+
+/** drives.SetupEntry, from core/internal/drives/setup.go. */
+export interface WireSetupEntry {
+	letter: string;
+	path: string;
+}
+
+// core/internal/types
+
 /** types.MemoryConfig, from core/internal/types/types.go. */
 export interface WireMemoryConfig {
 	Enabled: boolean;

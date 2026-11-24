@@ -26,6 +26,7 @@ func Register(r *api.Router, ev api.Events) {
 	}))
 
 	registerPrefix(r, features.Prefix, svc)
+	registerDrives(r, features.Prefix)
 	registerProton(r, features.Proton, ev)
 	registerLsfg(r, features.Lsfg, ev, svc)
 }

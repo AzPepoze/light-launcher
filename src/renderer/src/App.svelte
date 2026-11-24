@@ -9,6 +9,8 @@
 	import Navbar from "@components/shared/Navbar.svelte";
 	import NotificationHost from "@components/shared/NotificationHost.svelte";
 	import { navigationCommand } from "@stores/navigationStore";
+	import { confirmLeave } from "@stores/leaveGuard";
+	import UnsavedChangesDialog from "@components/shared/UnsavedChangesDialog.svelte";
 	import { runState } from "@stores/runState";
 	import { currentFeatures, isPageAvailable, loadPlatform } from "@stores/platformStore";
 	import { settingsStore } from "@stores/settingsStore";
@@ -19,6 +21,7 @@
 	import HomePage from "./features/home/HomePage.svelte";
 	import GameManager from "./pages/GameManager.svelte";
 	import Prefix from "./pages/Prefix.svelte";
+	import DriveSetup from "./pages/DriveSetup.svelte";
 	import Run from "./pages/Run.svelte";
 	import SettingsPage from "./features/settings/SettingsPage.svelte";
 	import Utils from "./pages/Utils.svelte";
@@ -74,6 +77,7 @@
 		run: Run,
 		versions: Versions,
 		prefix: Prefix,
+		drives: DriveSetup,
 		utils: Utils,
 		settings: SettingsPage,
 		library: LibraryPage,
@@ -85,9 +89,10 @@
 	let navDirection = 1;
 	let editLsfgGamePath = "";
 
-	function changePage(newPage: string) {
+	async function changePage(newPage: string) {
 		if (!newPage || newPage === activePage) return;
 		if (!isPageAvailable(newPage, currentFeatures())) return;
+		if (!(await confirmLeave())) return;
 		navDirection = routeOrder(newPage) >= routeOrder(activePage) ? 1 : -1;
 		activePage = newPage;
 		scrolled = false;
@@ -266,6 +271,7 @@
 	</div>
 
 	<NotificationHost />
+	<UnsavedChangesDialog />
 	{#if fpsMeterVisible}
 		<FpsMeter />
 	{/if}

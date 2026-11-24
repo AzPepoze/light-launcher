@@ -15,6 +15,7 @@ import (
 	activityStore "light-launcher/core/internal/activity"
 	"light-launcher/core/internal/config"
 	"light-launcher/core/internal/discordrpc"
+	"light-launcher/core/internal/drives"
 	"light-launcher/core/internal/executor"
 	"light-launcher/core/internal/executor/builder"
 	"light-launcher/core/internal/logger"
@@ -39,6 +40,18 @@ func getIconPath() string {
 		_ = os.WriteFile(tmpPath, applicationIconData, 0644)
 	}
 	return tmpPath
+}
+
+// applyDriveSetup links the drives the user set up once for every prefix. A failure is logged, and the game still starts.
+func applyDriveSetup(prefixPath string) {
+	entries, err := drives.LoadSetup(config.DriveSetupFilePath())
+	if err != nil {
+		logger.Warn("Drives", "Cannot read the drive setup: %v", err)
+		return
+	}
+	if err := drives.ApplySetup(prefixPath, entries); err != nil {
+		logger.Warn("Drives", "Cannot apply the drive setup: %v", err)
+	}
 }
 
 func sendNotification(title, message string) {
@@ -75,6 +88,11 @@ func onReady(logPath string) {
 	// Ensure prefix directory exists
 	if opts.PrefixPath != "" && platform.Current().Prefix {
 		_ = os.MkdirAll(config.ExpandPath(opts.PrefixPath), 0755)
+	}
+
+	if platform.Current().Proton {
+		applyDriveSetup(config.ExpandPath(opts.PrefixPath))
+		drives.EnsureGameDrive(config.ExpandPath(opts.PrefixPath), opts.GamePath, opts.LauncherPath)
 	}
 
 	// Start game

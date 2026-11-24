@@ -4,6 +4,7 @@
 	import PrefixList from "@components/prefix/PrefixList.svelte";
 	import PrefixTools from "@components/prefix/PrefixTools.svelte";
 	import PrefixHeroPanel from "@components/prefix/PrefixHeroPanel.svelte";
+	import PrefixDrives from "@components/prefix/PrefixDrives.svelte";
 	import ConfigForm from "@components/shared/ConfigForm.svelte";
 	import PageHeader from "@components/shared/PageHeader.svelte";
 	import Button from "@components/shared/Button.svelte";
@@ -13,6 +14,7 @@
 	import type { TabItem } from "@components/shared/tabs";
 	import { createLaunchOptions } from "@lib/formService";
 	import { formatBytes } from "@lib/features/format";
+	import { confirmLeave, leaveGuard } from "@stores/leaveGuard";
 	import { createLogger } from "@lib/logger";
 	import * as service from "@lib/prefixService";
 	import { onMount, onDestroy } from "svelte";
@@ -33,11 +35,16 @@
 	let isToolRunning = false;
 
 	let prefixOptions: core.LaunchOptions = createLaunchOptions();
-	type PrefixTab = "tools" | "config" | "advanced";
+	/** The options and Proton version as last loaded or saved; the dirty check compares against these. */
+	let savedOptions: core.LaunchOptions = createLaunchOptions();
+	let savedProtonName = "";
+	$: hasUnsavedChanges = isDirty(prefixOptions, chosenProtonName, savedOptions, savedProtonName);
+	type PrefixTab = "tools" | "config" | "advanced" | "drives";
 	const prefixTabs: TabItem[] = [
 		{ id: "tools", label: "Wine Tools", icon: "build" },
 		{ id: "config", label: "Defaults", icon: "tune" },
-		{ id: "advanced", label: "Advanced", icon: "settings" }
+		{ id: "advanced", label: "Advanced", icon: "settings" },
+		{ id: "drives", label: "Drives", icon: "hard_drive" }
 	];
 	let activeTab: PrefixTab = "tools";
 
@@ -164,7 +171,31 @@
 		await refreshPrefixMeta();
 	}
 
+	function isDirty(
+		options: core.LaunchOptions,
+		protonName: string,
+		saved: core.LaunchOptions,
+		savedName: string
+	): boolean {
+		return protonName !== savedName || JSON.stringify(options) !== JSON.stringify(saved);
+	}
+
+	function copyOptions(options: core.LaunchOptions): core.LaunchOptions {
+		return JSON.parse(JSON.stringify(options));
+	}
+
+	function markSaved() {
+		savedOptions = copyOptions(prefixOptions);
+		savedProtonName = chosenProtonName;
+	}
+
+	function discardChanges() {
+		prefixOptions = copyOptions(savedOptions);
+		chosenProtonName = savedProtonName;
+	}
+
 	onMount(async () => {
+		leaveGuard.set({ isDirty: () => hasUnsavedChanges, save: handleSaveConfig });
 		log.info("onMount starting");
 		try {
 			const tools = await ScanProtonVersions();
@@ -182,9 +213,11 @@
 
 	onDestroy(() => {
 		if (runningPoll) clearInterval(runningPoll);
+		leaveGuard.set(null);
 	});
 
 	async function selectPrefix(name: string) {
+		if (!(await confirmLeave())) return;
 		log.info("selectPrefix called", { name });
 		const result = await service.getPrefixConfig(name, baseDir);
 		prefixPath = result.path;
@@ -201,17 +234,19 @@
 				chosenProtonName = protonVersions[0].DisplayName;
 			}
 		}
+		markSaved();
 	}
 
-	async function handleSaveConfig() {
-		if (isSaving) return;
+	/** Saves the options and Proton version. Resolves false when the save failed. */
+	async function handleSaveConfig(): Promise<boolean> {
+		if (isSaving) return false;
 		isSaving = true;
 		try {
-			await service.savePrefixDefaults(
-				prefixPath,
-				prefixOptions,
-				chosenProton,
-			);
+			await service.savePrefixDefaults(prefixPath, prefixOptions, chosenProton);
+			markSaved();
+			return true;
+		} catch {
+			return false;
 		} finally {
 			isSaving = false;
 		}
@@ -317,21 +352,10 @@
 					{:else if activeTab === 'config'}
 						<div class="tab-content" role="tabpanel">
 							<ConfigForm bind:options={prefixOptions} />
-							<div class="save-bar">
-								<Button
-									variant="primary"
-									class="save-btn"
-									onclick={handleSaveConfig}
-									disabled={isSaving}
-								>
-									<Icon
-										name={isSaving ? "sync" : "save"}
-										size={18}
-										class={isSaving ? "spin" : ""}
-									/>
-									{isSaving ? "Saving…" : "Save defaults"}
-								</Button>
-							</div>
+						</div>
+					{:else if activeTab === 'drives'}
+						<div class="tab-content" role="tabpanel">
+							<PrefixDrives {prefixPath} />
 						</div>
 					{:else}
 						<div class="tab-content" role="tabpanel">
@@ -344,6 +368,23 @@
 						</div>
 					{/if}
 				</section>
+
+				{#if hasUnsavedChanges}
+					<div class="save-bar" role="status">
+						<p class="save-text">Unsaved changes</p>
+						<div class="save-actions">
+							<Button onclick={discardChanges} disabled={isSaving}>Discard</Button>
+							<Button
+								variant="primary"
+								onclick={handleSaveConfig}
+								loading={isSaving}
+								disabled={isSaving}
+							>
+								Save changes
+							</Button>
+						</div>
+					</div>
+				{/if}
 			</main>
 		</div>
 	{/if}
@@ -360,8 +401,7 @@
 		max-height: 100%;
 	}
 
-	.loading-state :global(.spin),
-	.save-bar :global(.spin) {
+	.loading-state :global(.spin) {
 		animation: ll-spin 1.2s linear infinite;
 	}
 
@@ -457,16 +497,34 @@
 		animation: fadeIn 150ms ease;
 	}
 
+	/* Sits at the bottom of the column, and stays in view when the tab content scrolls. */
 	.save-bar {
+		position: sticky;
+		bottom: 12px;
+		margin-top: auto;
+		z-index: 2;
 		display: flex;
-		justify-content: flex-end;
-		padding: 16px 0 4px;
-		margin-top: 8px;
-		z-index: 1;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		flex-wrap: wrap;
+		padding: 12px 14px 12px 20px;
+		background: var(--bg-elevated);
+		border: 1px solid var(--glass-border-bright);
+		border-radius: var(--radius-lg);
+		box-shadow: var(--glass-shadow);
 	}
 
-	.save-bar :global(.save-btn) {
-		min-width: 180px;
+	.save-text {
+		margin: 0;
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: var(--text-main);
+	}
+
+	.save-actions {
+		display: flex;
+		gap: 8px;
 	}
 
 	@media (max-width: 900px) {

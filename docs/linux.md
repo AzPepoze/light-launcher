@@ -61,6 +61,41 @@ Optional:
 | GameMode                     | Game performance tuning                                                 |
 | 7-Zip (`7zz`, `7z` or `7za`) | Unpacks `.7z` files. RAR files use a slower built-in reader without it. |
 
+## Game drives
+
+A game on a separate disk, such as an NTFS partition, needs a drive letter inside the Wine prefix.
+
+| Step  | What happens                                                                                  |
+| :---- | :-------------------------------------------------------------------------------------------- |
+| Start | Before the game starts, LightLauncher finds the disk that holds the game.                     |
+| Map   | If the disk has no letter yet, it links the disk to the first free letter from D: to Y:.      |
+| Keep  | An existing letter is never changed, so a letter you set yourself still wins.                 |
+
+> [!NOTE]
+> Disks on the root filesystem are skipped. They are already visible as Z:.
+
+### Drive setup
+
+Set up drives once, and they apply to every prefix.
+
+1. Open **Drive setup**.
+2. Under **Detected disks**, click **Add as drive** on a disk.
+3. Or, under **Add a folder**, pick a folder and a letter.
+4. Click **Save**.
+
+Each prefix gets the saved drives when a game starts.
+
+| Letter | Use                                                                                    |
+| :----- | :------------------------------------------------------------------------------------- |
+| C:     | Replaces the prefix's own C: drive. Remove it to go back to Wine's default.            |
+| D: to Y: | Any folder or disk.                                                                   |
+| Z:     | Not allowed. It is the Linux root.                                                     |
+
+> [!WARNING]
+> C: replaces the prefix's own C: drive. Games then see the chosen disk as C:.
+
+The **Drives** tab on a prefix page shows which drives are active in that prefix. It is read-only. Change drives in **Drive setup**.
+
 ## Window options
 
 | Setting                  | How                                                    |

@@ -48,6 +48,13 @@ const routeDefinitions: RouteDefinition[] = [
 		feature: "prefix"
 	},
 	{
+		id: "drives",
+		label: "Drive setup",
+		icon: "hard_drive",
+		paletteLabel: "Go to Drive setup",
+		feature: "prefix"
+	},
+	{
 		id: "utils",
 		label: "Utils",
 		icon: "handyman",

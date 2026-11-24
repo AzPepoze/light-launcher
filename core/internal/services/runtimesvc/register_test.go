@@ -32,7 +32,8 @@ var expectedMethods = []string{
 	"LoadPrefixConfigWithProton", "RunPrefixTool", "ScanProtonVersions", "GetProtonVariants",
 	"GetProtonReleases", "InstallProtonVersion", "GetLsfgProfileForGame", "DetectLosslessDll",
 	"SaveLsfgProfile", "DisableLsfgProfile", "RemoveProfile", "InstallLsfg", "UninstallLsfg",
-	"GetRunningSessions", "KillSession",
+	"GetRunningSessions", "KillSession", "ListPartitions", "ListPrefixDrives",
+	"GetDriveSetup", "SaveDriveSetup",
 }
 
 func TestRegisterAddsExactlyTheRuntimeMethods(t *testing.T) {

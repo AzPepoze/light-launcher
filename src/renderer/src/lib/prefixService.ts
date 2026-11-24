@@ -1,10 +1,14 @@
 import {
 	CreatePrefix,
+	GetDriveSetup,
 	GetPrefixBaseDir,
+	ListPartitions,
+	ListPrefixDrives,
 	ListPrefixes,
 	LoadPrefixConfigWithProton,
 	RemovePrefix,
 	RunPrefixTool,
+	SaveDriveSetup,
 	SavePrefixConfig
 } from "@lib/api";
 import * as core from "@shared";
@@ -161,5 +165,47 @@ export async function executePrefixTool(
 	} catch (err) {
 		notifications.error(`Failed to run ${toolName}: ${plainMessage(err)}`);
 		throw err;
+	}
+}
+
+/** Returns the disks the launcher can bind. An empty list is returned when the read fails. */
+export async function loadPartitions(): Promise<core.Partition[]> {
+	try {
+		return await ListPartitions();
+	} catch (err) {
+		notifications.error(`Failed to list disks: ${plainMessage(err)}`);
+		return [];
+	}
+}
+
+/** Returns the drive letters bound in a prefix. Shows a message and returns an empty list on failure. */
+export async function loadPrefixDrives(prefixPath: string): Promise<core.PrefixDrive[]> {
+	try {
+		return await ListPrefixDrives(prefixPath);
+	} catch (err) {
+		notifications.error(`Failed to list drives: ${plainMessage(err)}`);
+		return [];
+	}
+}
+
+/** Returns the global drive setup applied to every prefix. Returns null on failure, so callers never mistake it for an empty setup. */
+export async function loadDriveSetup(): Promise<core.SetupEntry[] | null> {
+	try {
+		return await GetDriveSetup();
+	} catch (err) {
+		notifications.error(`Failed to load drive setup: ${plainMessage(err)}`);
+		return null;
+	}
+}
+
+/** Saves the global drive setup. Returns false when the backend rejects it. */
+export async function saveDriveSetup(entries: core.SetupEntry[]): Promise<boolean> {
+	try {
+		await SaveDriveSetup(entries);
+		notifications.success("Drive setup saved");
+		return true;
+	} catch (err) {
+		notifications.error(`Could not save drive setup: ${plainMessage(err)}`);
+		return false;
 	}
 }
