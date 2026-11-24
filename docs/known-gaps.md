@@ -47,6 +47,8 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | Home: the System Status drawer moved here from Game Manager, and the grid fills the space above it. Measured in the browser; check by eye in the real window. |
 | [ ] | Home: duplicate game folder path logic is replaced by the shared `getGamePath`, and Home's order now matches the shared order. Check that Home open-location and remove still use the right path. |
 | [ ] | Home: remove and blacklist still use the profile's launcher path, not the shared path. Decide whether to switch. |
+| [ ] | Drag an `.exe` (or a folder) onto Home to add it. Built and unit-tested; the path comes from `text/uri-list`. Unproven on WebKitGTK (Linux shell) and WebView2 (Windows): check that the drop gives a path and the overlay shows, by eye in the real window. |
+| [ ] | Drop does nothing if the platform gives no `text/uri-list` path. Then the user gets an error toast; a shell-side drop bridge would be the fix. |
 
 ## Plugin system
 
@@ -229,6 +231,7 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | Versions: check the Steam and External badges, the legend line and the ProtonDB, ProtonPlus and ProtonUp icons by eye in the real window. |
 | [ ] | Prefix: check the Wine Tools, Defaults and Advanced tab strip, the "Choose a Proton version" placeholder with its disabled message, and the tools grid columns by eye in the real window. |
 | [ ] | Prefix Manager: setup runs in order (runtime, location, tools), tools are disabled with a reason, tabs sit in one card, and the selected prefix has its own state. Browser checked at 1440 and 390; check the no-Proton notice and its Versions button by eye. |
+| [ ] | Prefix Manager: a "Save changes" / "Discard" bar appears under the hero when the Proton version or a Defaults option differs from the saved config. Leaving the page, or picking another prefix, asks Stay / Discard / Save and leave. Built and unit-tested (`stores/leaveGuard.ts`); check the bar and the dialog by eye in the real window. Browser close is not guarded. |
 | [ ] | Utils: check the status badges, the install hints and the single LSFG-VK card filling the row by eye in the real window. |
 | [ ] | Utils: Vulkan-Tools and Lossless.dll have no install hint, because neither `docs/linux.md` nor the PKGBUILD names a package for them. |
 | [ ] | Plugins: check the Unsigned note, the Details cue and the "Add plugin" button by eye in the real window. |
@@ -286,6 +289,16 @@ This page lists what is missing, unproven or planned. Tick a box when it is done
 | [ ] | Run launch actions are a footer under the form. The form scrolls above it, and no field sits under it at 1440x900 or 390x844. Checked by overlap scan and one screenshot per width. Check by eye in the real window. |
 | [ ] | Empty "Launcher executable" hint is not done. It needs `components/run/ExecutableSelector.svelte`, which is outside this slice. |
 | [ ] | Game Manager fits the screen; on desktop the left and right columns scroll inside their own boxes. Measured in the browser; check by eye in the real window. |
+
+## Wine prefix drives
+
+| Status | Item |
+|---|---|
+| [x] | Game disks are mapped to a free drive letter in the prefix before launch, automatically. Built and tested with the real mount table; check a game launch by eye. |
+| [ ] | Drive setup page: set up disks and folders once for every prefix, including C:. Backend and unit tests pass; the page is not checked in a real window yet. Check by eye, then add a disk and launch a game. |
+| [ ] | GTA V says "Please run Grand Theft Auto V using Rockstar Games Launcher". The Rockstar Launcher is on the Windows disk. Set that disk as C: in Drive setup, then launch and check whether the dialog is gone. |
+| [ ] | GTA V on Linux stayed running past 30 seconds after the fix that starts Proton games in the game's folder. Built and unit-tested; the game was not launched. Check by launching through the launcher and confirming `ScriptHookVDotNet.log` appears in the game folder. |
+| [ ] | OpenIV still shows CEP-001 when its `Core.xml` path (C:) differs from the letter it runs from. The drive mapping does not change that path. |
 
 ## Recent UI batch
 

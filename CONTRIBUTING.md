@@ -81,8 +81,8 @@ bun run build
 | `bun run dev:browser`          | Starts the launcher API and the Vite UI in the browser.                            |
 | `bun run dev:linux`            | Builds and opens the GTK window on the Vite UI (Linux).                            |
 | `bun run dev:renderer`         | Starts only the Vite UI.                                                           |
-| `bun run dev:server`           | Starts only the launcher API.                                                      |
-| `bun run dev:web`              | Starts the UI dev server and opens the launcher in the default browser (all OSes). |
+| `bun run dev:server`           | Starts only the launcher API. Rebuilds the Go binaries on each run.                |
+| `bun run dev:web`              | Starts the UI dev server and opens the launcher in the default browser (all OSes). Rebuilds the Go binaries on each run. |
 | `bun run dev:windows`          | Builds and opens the WebView2 window on the Vite UI (Windows).                     |
 | `bun run e2e`                  | Runs the launcher API end-to-end test.                                             |
 | `bun run format`               | Formats the code with `oxfmt`.                                                     |
