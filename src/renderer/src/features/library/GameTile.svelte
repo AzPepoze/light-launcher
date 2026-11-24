@@ -66,7 +66,7 @@
 		return getGamePath({ exePath: item.exePath, localConfig: item.localConfig }) || null;
 	}
 
-	const STATE_VIEW: Record<TileState, { label: string; icon: string; tone: "danger" | "accent" | "neutral" | "warning" }> = {
+	const STATE_VIEW: Record<TileState, { label: string; icon: string; tone: "danger" | "accent" | "neutral" | "warning" | "success" }> = {
 		favorite: { label: "Favorite", icon: "favorite", tone: "danger" },
 		updateAvailable: { label: "Update", icon: "system_update_alt", tone: "warning" },
 		notInstalled: { label: "Not installed", icon: "download", tone: "success" },
